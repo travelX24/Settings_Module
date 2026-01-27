@@ -1,0 +1,28 @@
+{
+    "name": "athka/system-settings",
+    "description": "Athka HR System Settings Module",
+    "type": "library",
+    "license": "MIT",
+    "authors": [
+        {
+            "name": "Athka Team"
+        }
+    ],
+    "require": {
+        "php": "^8.2",
+        "laravel/framework": "^11.0|^12.0",
+        "livewire/livewire": "^3.0"
+    },
+    "autoload": {
+        "psr-4": {
+            "Athka\\SystemSettings\\": "src/"
+        }
+    },
+    "extra": {
+        "laravel": {
+            "providers": [
+                "Athka\\SystemSettings\\SystemSettingsServiceProvider"
+            ]
+        }
+    }
+}
