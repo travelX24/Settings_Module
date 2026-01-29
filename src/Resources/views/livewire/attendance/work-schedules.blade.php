@@ -1,3 +1,8 @@
+@php
+    $locale = app()->getLocale();
+    $isRtl  = in_array(substr($locale, 0, 2), ['ar','fa','ur','he']);
+@endphp
+
 @section('topbar-left-content')
     <x-ui.page-header
         :title="tr('Work Schedules Management')"
@@ -20,11 +25,6 @@
 @endsection
 
 <div class="space-y-6">
-    @php
-        $locale = app()->getLocale();
-        $isRtl  = in_array(substr($locale, 0, 2), ['ar','fa','ur','he']);
-    @endphp
-
     <x-ui.card>
         <div class="space-y-4">
             {{-- Search Box & Main Actions --}}

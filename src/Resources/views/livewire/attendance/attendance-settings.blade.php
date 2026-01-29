@@ -1,3 +1,8 @@
+@php
+    $locale = app()->getLocale();
+    $isRtl  = in_array(substr($locale, 0, 2), ['ar','fa','ur','he']);
+@endphp
+
 @section('topbar-left-content')
     <x-ui.page-header
         :title="tr('Attendance & Policy Settings')"
@@ -20,11 +25,6 @@
 @endsection
 
 <div class="space-y-5 pb-6">
-    @php
-        $locale = app()->getLocale();
-        $isRtl  = in_array(substr($locale, 0, 2), ['ar','fa','ur','he']);
-    @endphp
-
     {{-- Tabs Navigation --}}
     <x-ui.card class="!p-0 border-none shadow-sm overflow-hidden bg-white">
         <div class="flex border-b border-gray-100">
