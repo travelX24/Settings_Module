@@ -52,19 +52,32 @@
     {{-- Search and Actions --}}
     <x-ui.card :padding="false" class="border-gray-200 p-4 mb-6">
         <div class="flex flex-col sm:flex-row gap-4 items-start sm:items-center justify-between">
-            <div class="flex-1 w-full sm:w-auto relative">
-                <div class="absolute inset-y-0 start-0 flex items-center ps-4 pointer-events-none">
-                    <i class="fas fa-search w-5 h-5 text-gray-400"></i>
-                </div>
+            <div class="flex-1 w-full sm:w-auto">
+                <div class="flex flex-col sm:flex-row gap-3">
+                    <div class="flex-1 relative">
+                        <div class="absolute inset-y-0 start-0 flex items-center ps-4 pointer-events-none">
+                            <i class="fas fa-search w-5 h-5 text-gray-400"></i>
+                        </div>
 
-                <input
-                    type="search"
-                    wire:model.live.debounce.300ms="search"
-                    placeholder="{{ tr('Search departments...') }}"
-                    class="w-full px-4 py-2.5 ps-10 text-sm rounded-xl border border-gray-200 bg-white shadow-sm placeholder-gray-400 text-gray-900
-                           focus:outline-none focus:ring-2 focus:ring-[color:var(--brand-via)]/20 focus:border-[color:var(--brand-via)]
-                           transition"
-                />
+                        <input
+                            type="search"
+                            wire:model.live.debounce.300ms="search"
+                            placeholder="{{ tr('Search departments...') }}"
+                            class="w-full px-4 py-2.5 ps-10 text-sm rounded-xl border border-gray-200 bg-white shadow-sm placeholder-gray-400 text-gray-900
+                                   focus:outline-none focus:ring-2 focus:ring-[color:var(--brand-via)]/20 focus:border-[color:var(--brand-via)]
+                                   transition"
+                        />
+                    </div>
+
+                    <x-ui.filter-select
+                        model="rootDepartmentId"
+                        :placeholder="tr('Department')"
+                        :options="$rootDepartments ?? []"
+                        width="md"
+                        :defer="false"
+                        allValue="all"
+                    />
+                </div>
             </div>
 
             <div class="flex items-center gap-2">
@@ -76,7 +89,7 @@
                         :class="view === 'cards'
                             ? 'bg-amber-500 border-amber-500 text-white shadow-sm'
                             : 'bg-white text-gray-600 border-gray-300 hover:bg-gray-50'"
-                        class="w-10 h-10 inline-flex items-center justify-center rounded-xl border transition"
+                        class="cursor-pointer w-10 h-10 inline-flex items-center justify-center rounded-xl border transition"
                         title="{{ tr('Cards View') }}"
                     >
                     <i class="fas fa-table-cells"></i>
@@ -89,7 +102,7 @@
                         :class="view === 'table'
                             ? 'bg-amber-500 border-amber-500 text-white shadow-sm'
                             : 'bg-white text-gray-600 border-gray-300 hover:bg-gray-50'"
-                        class="w-10 h-10 inline-flex items-center justify-center rounded-xl border transition"
+                        class="cursor-pointer w-10 h-10 inline-flex items-center justify-center rounded-xl border transition"
                         title="{{ tr('Table View') }}"
                     >
                     <i class="fas fa-list"></i>
@@ -99,7 +112,7 @@
                 {{-- Export --}}
                 <button
                     wire:click="export"
-                    class="px-4 py-2.5 text-sm font-semibold text-gray-700 bg-white border border-gray-300 rounded-xl hover:bg-gray-50 transition-colors flex items-center gap-2"
+                    class="cursor-pointer px-4 py-2.5 text-sm font-semibold text-gray-700 bg-white border border-gray-300 rounded-xl hover:bg-gray-50 transition-colors flex items-center gap-2"
                 >
                     <i class="fas fa-download"></i>
                     <span>{{ tr('Export') }}</span>
@@ -143,6 +156,7 @@
 
                                     <x-ui.actions-menu>
                                         <x-ui.dropdown-item
+                                        class="cursor-pointer"
                                             wire:click="openEditModal({{ $department->id }})"
                                             @click="$dispatch('close-actions-menu')"
                                         >
@@ -151,6 +165,7 @@
                                         </x-ui.dropdown-item>
 
                                         <x-ui.dropdown-item
+                                            class="cursor-pointer"
                                             wire:click="toggleActive({{ $department->id }})"
                                             @click="$dispatch('close-actions-menu')"
                                         >
@@ -159,6 +174,7 @@
                                         </x-ui.dropdown-item>
 
                                         <x-ui.dropdown-item
+                                            class="cursor-pointer"
                                             @click="$dispatch('open-confirm-delete-department', { id: {{ $department->id }} }); $dispatch('close-actions-menu')"
                                             danger
                                         >
@@ -351,7 +367,7 @@
                         </div>
                         <button
                             wire:click="closeModal"
-                            class="w-8 h-8 rounded-lg flex items-center justify-center text-gray-400 hover:text-gray-600 hover:bg-gray-100 transition-colors"
+                            class="cursor-pointer w-8 h-8 rounded-lg flex items-center justify-center text-gray-400 hover:text-gray-600 hover:bg-gray-100 transition-colors"
                         >
                             <i class="fas fa-times"></i>
                         </button>
@@ -607,11 +623,11 @@
                     {{-- Footer Actions --}}
                     <div class="p-6 border-t border-gray-200 bg-gray-50">
                         <div class="flex items-center justify-end gap-3">
-                            <x-ui.secondary-button type="button" wire:click="closeModal">
+                            <x-ui.secondary-button type="button" wire:click="closeModal" class="cursor-pointer">
                                 {{ tr('Cancel') }}
                             </x-ui.secondary-button>
 
-                            <x-ui.primary-button type="submit" :fullWidth="false">
+                            <x-ui.primary-button type="submit" :fullWidth="false" class="cursor-pointer">
                                 <i class="fas fa-save me-2"></i>
                                 {{ tr('Save') }}
                             </x-ui.primary-button>

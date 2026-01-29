@@ -63,7 +63,7 @@
                         :class="view === 'cards'
                             ? 'bg-amber-500 border-amber-500 text-white shadow-sm'
                             : 'bg-white text-gray-600 border-gray-300 hover:bg-gray-50'"
-                        class="w-10 h-10 inline-flex items-center justify-center rounded-xl border transition"
+                        class="cursor-pointer w-10 h-10 inline-flex items-center justify-center rounded-xl border transition"
                         title="{{ tr('Cards View') }}"
                     >
                         <i class="fas fa-table-cells"></i>
@@ -75,7 +75,7 @@
                         :class="view === 'table'
                             ? 'bg-amber-500 border-amber-500 text-white shadow-sm'
                             : 'bg-white text-gray-600 border-gray-300 hover:bg-gray-50'"
-                        class="w-10 h-10 inline-flex items-center justify-center rounded-xl border transition"
+                        class="cursor-pointer w-10 h-10 inline-flex items-center justify-center rounded-xl border transition"
                         title="{{ tr('Table View') }}"
                     >
                         <i class="fas fa-list"></i>
@@ -85,7 +85,7 @@
                 {{-- Export --}}
                 <button
                     wire:click="export"
-                    class="px-4 py-2.5 text-sm font-semibold text-gray-700 bg-white border border-gray-300 rounded-xl hover:bg-gray-50 transition-colors flex items-center gap-2"
+                    class="cursor-pointer px-4 py-2.5 text-sm font-semibold text-gray-700 bg-white border border-gray-300 rounded-xl hover:bg-gray-50 transition-colors flex items-center gap-2"
                 >
                     <i class="fas fa-download"></i>
                     <span>{{ tr('Export') }}</span>
@@ -307,7 +307,7 @@
                         </div>
                         <button
                             wire:click="closeModal"
-                            class="w-8 h-8 rounded-lg flex items-center justify-center text-gray-400 hover:text-gray-600 hover:bg-gray-100 transition-colors"
+                            class="cursor-pointer w-8 h-8 rounded-lg flex items-center justify-center text-gray-400 hover:text-gray-600 hover:bg-gray-100 transition-colors"
                         >
                             <i class="fas fa-times"></i>
                         </button>
@@ -371,11 +371,11 @@
                     {{-- Footer Actions --}}
                     <div class="p-6 border-t border-gray-200 bg-gray-50">
                         <div class="flex items-center justify-end gap-3">
-                            <x-ui.secondary-button type="button" wire:click="closeModal">
+                            <x-ui.secondary-button type="button" wire:click="closeModal" class="cursor-pointer">
                                 {{ tr('Cancel') }}
                             </x-ui.secondary-button>
 
-                            <x-ui.primary-button type="submit" :fullWidth="false">
+                            <x-ui.primary-button type="submit" :fullWidth="false" class="cursor-pointer">
                                 <i class="fas fa-save me-2"></i>
                                 {{ tr('Save') }}
                             </x-ui.primary-button>

@@ -34,7 +34,7 @@
                     {{-- Departments Tab --}}
                     <button
                         wire:click="setActiveTab('departments')"
-                        class="px-6 py-4 font-semibold text-sm transition-all duration-200 flex items-center gap-2 {{ $activeTab === 'departments' 
+                        class="cursor-pointer px-6 py-4 font-semibold text-sm transition-all duration-200 flex items-center gap-2 {{ $activeTab === 'departments' 
                             ? 'border-b-2 border-[color:var(--brand-via)] text-[color:var(--brand-via)] bg-white' 
                             : 'text-gray-600 hover:text-gray-900 hover:bg-gray-100' }}"
                     >
@@ -45,7 +45,7 @@
                     {{-- Job Titles Tab --}}
                     <button
                         wire:click="setActiveTab('job-titles')"
-                        class="px-6 py-4 font-semibold text-sm transition-all duration-200 flex items-center gap-2 {{ $activeTab === 'job-titles' 
+                        class="cursor-pointer px-6 py-4 font-semibold text-sm transition-all duration-200 flex items-center gap-2 {{ $activeTab === 'job-titles' 
                             ? 'border-b-2 border-[color:var(--brand-via)] text-[color:var(--brand-via)] bg-white' 
                             : 'text-gray-600 hover:text-gray-900 hover:bg-gray-100' }}"
                     >
@@ -59,7 +59,7 @@
                         <button
                             type="button"
                             @click="$dispatch('open-add-department-modal')"
-                            class="group relative overflow-hidden rounded-xl px-4 py-2 text-sm font-semibold text-white shadow-md bg-gradient-to-r from-[color:var(--brand-from)] via-[color:var(--brand-via)] to-[color:var(--brand-to)] hover:shadow-lg active:scale-[0.98] transition-all duration-300 focus:outline-none focus:ring-2 focus:ring-[color:var(--brand-from)]/30"
+                            class="cursor-pointer group relative overflow-hidden rounded-xl px-4 py-2 text-sm font-semibold text-white shadow-md bg-gradient-to-r from-[color:var(--brand-from)] via-[color:var(--brand-via)] to-[color:var(--brand-to)] hover:shadow-lg active:scale-[0.98] transition-all duration-300 focus:outline-none focus:ring-2 focus:ring-[color:var(--brand-from)]/30"
                         >
                             <span class="absolute inset-0 bg-gradient-to-r from-transparent via-white/20 to-transparent -translate-x-full group-hover:translate-x-full transition-transform duration-1000"></span>
                             <span class="relative flex items-center gap-2">
@@ -71,7 +71,7 @@
                         <button
                             type="button"
                             @click="$dispatch('open-add-job-title-modal')"
-                            class="group relative overflow-hidden rounded-xl px-4 py-2 text-sm font-semibold text-white shadow-md bg-gradient-to-r from-[color:var(--brand-from)] via-[color:var(--brand-via)] to-[color:var(--brand-to)] hover:shadow-lg active:scale-[0.98] transition-all duration-300 focus:outline-none focus:ring-2 focus:ring-[color:var(--brand-from)]/30"
+                            class="cursor-pointer group relative overflow-hidden rounded-xl px-4 py-2 text-sm font-semibold text-white shadow-md bg-gradient-to-r from-[color:var(--brand-from)] via-[color:var(--brand-via)] to-[color:var(--brand-to)] hover:shadow-lg active:scale-[0.98] transition-all duration-300 focus:outline-none focus:ring-2 focus:ring-[color:var(--brand-from)]/30"
                         >
                             <span class="absolute inset-0 bg-gradient-to-r from-transparent via-white/20 to-transparent -translate-x-full group-hover:translate-x-full transition-transform duration-1000"></span>
                             <span class="relative flex items-center gap-2">

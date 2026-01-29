@@ -14,6 +14,8 @@ class Departments extends Component
 
     public $search = '';
 
+     public $rootDepartmentId = 'all';
+
     /** ✅ NEW: view mode (list | cards) */
     public string $viewMode = 'table';
 
@@ -58,6 +60,11 @@ class Departments extends Component
     {
         $this->resetPage();
     }
+
+     public function updatedRootDepartmentId()
+     {
+         $this->resetPage();
+     }
 
     /** ✅ NEW: when switching view mode reset pagination */
     public function updatedViewMode()
@@ -350,7 +357,37 @@ class Departments extends Component
     {
         $companyId = $this->getCompanyId();
 
+         $rootDepartments = Department::forCompany($companyId)
+             ->root()
+             ->select('id', 'name')
+             ->orderBy('name')
+             ->get()
+             ->map(fn ($dept) => [
+                 'value' => $dept->id,
+                 'label' => $dept->name,
+             ])
+             ->values()
+             ->toArray();
+
+         if ($this->rootDepartmentId !== 'all') {
+             $exists = Department::forCompany($companyId)
+                 ->whereKey((int) $this->rootDepartmentId)
+                 ->exists();
+
+             if (! $exists) {
+                 $this->rootDepartmentId = 'all';
+             }
+         }
+
         $query = Department::forCompany($companyId)
+             ->when($this->rootDepartmentId === 'all', function ($q) {
+                 $q->whereNull('parent_id');
+             })
+             ->when($this->rootDepartmentId !== 'all', function ($q) use ($companyId) {
+                 $rootId = (int) $this->rootDepartmentId;
+                 $ids = array_merge([$rootId], $this->getAllDescendantIdsRecursive($rootId, $companyId));
+                 $q->whereIn('id', $ids);
+             })
             ->with([
                 'manager:id,name_ar,name_en',
                 'parent:id,name',
@@ -371,7 +408,7 @@ class Departments extends Component
         // ✅ نحسب employees_count_display بحيث يشمل المدير لو مش موجود ضمن employees
         // ✅ نحسب employees_count_display بشكل تراكمي (يشمل الأقسام الفرعية) ودون تكرار المدير
         $departments->getCollection()->transform(function ($dept) {
-            $allDeptIds = array_merge([$dept->id], $this->getAllDescendantIdsRecursive($dept->id));
+            $allDeptIds = array_merge([$dept->id], $this->getAllDescendantIdsRecursive($dept->id, $this->getCompanyId()));
             
             // جلب معرّفات الموظفين في هذا القسم وجميع أقسامه الفرعية
             $empIds = \Athka\Employees\Models\Employee::whereIn('department_id', $allDeptIds)
@@ -447,20 +484,24 @@ class Departments extends Component
             'departments' => $departments,
             'managers' => $managers,
             'parentDepartments' => $parentDepartments,
+            'rootDepartments' => $rootDepartments,
         ]);
     }
 
     /**
      * Recursively fetch all descendant department IDs.
      */
-    protected function getAllDescendantIdsRecursive($deptId): array
+    protected function getAllDescendantIdsRecursive($deptId, int $companyId): array
     {
         $ids = [];
-        $children = Department::where('parent_id', $deptId)->pluck('id')->toArray();
+        $children = Department::forCompany($companyId)
+            ->where('parent_id', $deptId)
+            ->pluck('id')
+            ->toArray();
         
         foreach ($children as $childId) {
             $ids[] = $childId;
-            $ids = array_merge($ids, $this->getAllDescendantIdsRecursive($childId));
+            $ids = array_merge($ids, $this->getAllDescendantIdsRecursive($childId, $companyId));
         }
         
         return $ids;

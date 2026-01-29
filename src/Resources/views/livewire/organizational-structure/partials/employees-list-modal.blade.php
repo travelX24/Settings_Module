@@ -147,7 +147,7 @@
                 <button 
                     @click="page--" 
                     :disabled="page === 1"
-                    class="flex items-center gap-2 px-4 py-2 text-sm font-bold rounded-xl transition-all"
+                    class="cursor-pointer flex items-center gap-2 px-4 py-2 text-sm font-bold rounded-xl transition-all"
                     :class="page === 1 ? 'text-gray-300 cursor-not-allowed' : 'text-gray-700 hover:bg-white hover:shadow-sm'"
                 >
                     <i class="fas fa-arrow-{{ app()->getLocale() === 'ar' ? 'right' : 'left' }}"></i>
@@ -168,7 +168,7 @@
                 <button 
                     @click="page++" 
                     :disabled="page === totalPages"
-                    class="flex items-center gap-2 px-4 py-2 text-sm font-bold rounded-xl transition-all"
+                    class="cursor-pointer flex items-center gap-2 px-4 py-2 text-sm font-bold rounded-xl transition-all"
                     :class="page === totalPages ? 'text-gray-300 cursor-not-allowed' : 'text-gray-700 hover:bg-white hover:shadow-sm'"
                 >
                     {{ tr('Next') }}
