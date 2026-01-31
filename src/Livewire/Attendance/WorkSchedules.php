@@ -359,6 +359,8 @@ class WorkSchedules extends Component
             'scheduleData.periods.*.end_time' => 'required',
         ]);
 
+        $companyId = auth()->user()->saas_company_id;
+
         // Custom Validation for Durations and Night Shifts
         foreach ($this->scheduleData['periods'] as $index => $period) {
             $start = \Carbon\Carbon::parse($period['start_time']);
@@ -377,7 +379,7 @@ class WorkSchedules extends Component
                 }
             }
 
-            $durationMinutes = $end->diffInMinutes($start);
+            $durationMinutes = $end->diffInMinutes($start, true);
             if ($durationMinutes < 30) {
                 $this->addError("scheduleData.periods.{$index}.end_time", tr('Minimum period duration is 30 minutes.'));
                 return;
@@ -388,7 +390,7 @@ class WorkSchedules extends Component
             }
         }
 
-        DB::transaction(function () {
+        DB::transaction(function () use ($companyId) {
             if ($this->scheduleData['is_default']) {
                 WorkSchedule::where('saas_company_id', $companyId)
                     ->where('is_default', true)
@@ -429,7 +431,7 @@ class WorkSchedules extends Component
             foreach ($this->scheduleData['exceptions'] as $exception) {
                 $schedule->exceptions()->create([
                     'day_of_week' => $exception['day_of_week'],
-                    'specific_date' => null, // Removed as per request
+                    'specific_date' => null,
                     'start_time' => $exception['start_time'],
                     'end_time' => $exception['end_time'],
                     'is_night_shift' => $exception['is_night_shift'],

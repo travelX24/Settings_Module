@@ -5,19 +5,15 @@
     $validPeriods = array_filter($scheduleData['periods'], fn($p) => $p['start_time'] && $p['end_time']);
     
     if (count($validPeriods) > 0) {
-        usort($validPeriods, fn($a, $b) => strcmp($a['start_time'], $b['start_time']));
-        $firstStart = \Carbon\Carbon::parse($validPeriods[0]['start_time']);
-        
-        usort($validPeriods, fn($a, $b) => strcmp($a['end_time'], $b['end_time']));
-        $lastPeriod = end($validPeriods);
-        $lastEnd = \Carbon\Carbon::parse($lastPeriod['end_time']);
-        
-        if($lastPeriod['is_night_shift'] || $lastEnd->lessThan($firstStart)) {
-            $lastEnd->addDay();
-        }
-        $totalMinutes = $lastEnd->diffInMinutes($firstStart);
-
         foreach($validPeriods as $p) {
+            $start = \Carbon\Carbon::parse($p['start_time']);
+            $end = \Carbon\Carbon::parse($p['end_time']);
+            
+            if($p['is_night_shift'] || $end->lessThan($start)) {
+                $end->addDay();
+            }
+            $totalMinutes += $end->diffInMinutes($start);
+            
             $hour = (int)substr($p['start_time'], 0, 2);
             if ($p['is_night_shift'] || $hour >= 18 || $hour < 6) $hasNight = true;
             else $hasDay = true;

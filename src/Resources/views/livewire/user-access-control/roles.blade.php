@@ -21,18 +21,19 @@
                 tr('Created At'),
                 tr('Actions')
             ]"
+            :headerAlign="['start','center','center','center','end']"
             :enablePagination="false"
         >
             @forelse($roles as $role)
-                <tr class="hover:bg-gray-50/50 transition-colors border-b border-gray-50 last:border-0 text-right">
-                    <td class="px-6 py-4 whitespace-nowrap align-middle">
+                <tr class="hover:bg-gray-50/50 transition-colors border-b border-gray-50 last:border-0">
+                    <td class="px-6 py-4 whitespace-nowrap align-middle text-start">
                         <div class="flex flex-col">
                             <span class="text-sm font-bold text-gray-900">{{ $role->name }}</span>
                             <span class="text-[10px] text-gray-400 font-mono uppercase tracking-tighter">{{ $role->guard_name }}</span>
                         </div>
                     </td>
-                    <td class="px-6 py-4 whitespace-nowrap align-middle">
-                        <div class="flex items-center gap-1.5" x-data="{ 
+                    <td class="px-6 py-4 whitespace-nowrap align-middle text-center">
+                        <div class="flex items-center justify-center gap-1.5" x-data="{ 
                             showPerms: false,
                             pos: { top: 0, left: 0 }
                         }">
@@ -66,7 +67,7 @@
                                         class="fixed z-[9999]"
                                         :style="`top: ${pos.top}px; left: ${pos.left}px; transform: translate(-50%, -110%);`"
                                     >
-                                        <div class="bg-white border border-gray-100 rounded-xl shadow-2xl p-3 w-64">
+                                        <div class="bg-white border border-gray-100 rounded-xl shadow-2xl p-3 w-64 text-start">
                                             <h5 class="font-bold text-gray-900 text-[10px] uppercase tracking-wider mb-2 border-b border-gray-50 pb-1 flex items-center gap-2">
                                                 <i class="fas fa-shield-alt text-indigo-500"></i>
                                                 {{ tr('Role Permissions') }}
@@ -85,8 +86,8 @@
                             </div>
                         </div>
                     </td>
-                    <td class="px-6 py-4 whitespace-nowrap align-middle">
-                        <div class="flex items-center" x-data="{ 
+                    <td class="px-6 py-4 whitespace-nowrap align-middle text-center">
+                        <div class="flex items-center justify-center" x-data="{ 
                             showUsers: false,
                             pos: { top: 0, left: 0 }
                         }">
@@ -119,7 +120,7 @@
                                         class="fixed z-[9999]"
                                         :style="`top: ${pos.top}px; left: ${pos.left}px; transform: translate(-50%, -110%);`"
                                     >
-                                        <div class="bg-white border border-gray-100 rounded-xl shadow-2xl p-3 w-48">
+                                        <div class="bg-white border border-gray-100 rounded-xl shadow-2xl p-3 w-48 text-start">
                                             <h5 class="font-bold text-gray-900 text-[10px] uppercase tracking-wider mb-2 border-b border-gray-50 pb-1 flex items-center gap-2">
                                                 <i class="fas fa-user-friends text-slate-500"></i>
                                                 {{ tr('Assigned Users') }}
@@ -147,13 +148,13 @@
                             </div>
                         </div>
                     </td>
-                    <td class="px-6 py-4 whitespace-nowrap align-middle">
+                    <td class="px-6 py-4 whitespace-nowrap align-middle text-center">
                         <div class="flex flex-col">
                             <span class="text-xs text-gray-600 font-medium">{{ $role->created_at->format('Y/m/d') }}</span>
                             <span class="text-[10px] text-gray-400">{{ $role->created_at->format('h:i A') }}</span>
                         </div>
                     </td>
-                    <td class="px-6 py-4 whitespace-nowrap align-middle text-right">
+<td class="px-6 py-4 whitespace-nowrap align-middle {{ app()->isLocale('ar') ? 'text-left' : 'text-right' }}">
                         <x-ui.actions-menu>
                             @can('uac.roles.manage')
                             <x-ui.dropdown-item wire:click="openEditModal({{ $role->id }})">
