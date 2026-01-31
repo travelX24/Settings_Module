@@ -63,17 +63,9 @@
         <div class="grid grid-cols-1 lg:grid-cols-3 gap-6 py-1">
             {{-- Form Side --}}
             <div class="lg:col-span-2 space-y-5">
-                <div class="grid grid-cols-1 md:grid-cols-3 gap-3">
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-3">
                     <div class="col-span-1">
                         <x-ui.input label="{{ tr('Schedule Name') }}" wire:model.defer="scheduleData.name" placeholder="{{ tr('e.g. Morning Shift') }}" class="!py-2 !text-xs" required />
-                    </div>
-                    <div class="col-span-1">
-                        <x-ui.select label="{{ tr('Schedule Type') }}" wire:model.defer="scheduleData.schedule_type" class="!py-2 !text-xs">
-                            <option value="full_time">{{ tr('Full-time') }}</option>
-                            <option value="part_time">{{ tr('Part-time') }}</option>
-                            <option value="shifts">{{ tr('Shifts') }}</option>
-                            <option value="custom">{{ tr('Custom') }}</option>
-                        </x-ui.select>
                     </div>
                     <div class="col-span-1">
                         <x-ui.input label="{{ tr('Description') }}" wire:model.defer="scheduleData.description" placeholder="{{ tr('Optional...') }}" class="!py-2 !text-xs" />

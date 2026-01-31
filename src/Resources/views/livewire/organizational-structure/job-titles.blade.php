@@ -175,81 +175,114 @@
             {{-- ✅ TABLE/LIST VIEW (Default) --}}
             <div x-show="view === 'table'" x-cloak>
                 <x-ui.table
-                    :headers="[
-                        tr('Job Title Name'),
-                        tr('Code'),
-                        tr('Employees'),
-                        tr('Description'),
-                        tr('Status'),
-                        tr('Actions')
-                    ]"
-                    :perPage="10"
-                    :enablePagination="true"
-                >
+    :headers="[]"
+    :perPage="10"
+    :enablePagination="true"
+>
+
                     @foreach($jobTitles as $jobTitle)
                         <tr
-                            wire:key="job-title-row-{{ $jobTitle->id }}"
-                            class="hover:bg-gray-50 transition-colors border-b border-gray-200"
-                        >
-                            <td class="py-3 px-4 whitespace-nowrap">
-                                <div class="text-sm font-medium text-gray-900">{{ $jobTitle->name }}</div>
-                            </td>
+    wire:key="job-title-row-{{ $jobTitle->id }}"
+    class="hover:bg-gray-50 transition-colors border-b border-gray-200"
+>
+    <td class="py-4 px-4 align-top whitespace-nowrap">
+        <div class="space-y-1">
+            <div class="text-[11px] font-bold text-gray-400 uppercase tracking-widest">
+                {{ tr('Job Title Name') }}
+            </div>
+            <div class="text-sm font-bold text-gray-900">
+                {{ $jobTitle->name }}
+            </div>
+        </div>
+    </td>
 
-                            <td class="py-3 px-4 whitespace-nowrap">
-                                <span class="text-xs font-bold font-mono text-gray-500 px-2 py-0.5 bg-gray-50 border border-gray-100 rounded-lg">
-                                    {{ $jobTitle->code ?? '-' }}
-                                </span>
-                            </td>
+    <td class="py-4 px-4 align-top whitespace-nowrap">
+        <div class="space-y-1">
+            <div class="text-[11px] font-bold text-gray-400 uppercase tracking-widest">
+                {{ tr('Code') }}
+            </div>
+            <div>
+                <span class="text-xs font-bold font-mono text-gray-500 px-2 py-0.5 bg-gray-50 border border-gray-100 rounded-lg">
+                    {{ $jobTitle->code ?? '-' }}
+                </span>
+            </div>
+        </div>
+    </td>
 
-                            <td class="py-3 px-4 whitespace-nowrap">
-                                <button
-                                    wire:click="$dispatch('open-employees-modal', { type: 'job-title', id: {{ $jobTitle->id }} })"
-                                    class="text-sm font-semibold text-[color:var(--brand-via)] hover:text-[color:var(--brand-via)]/80 hover:underline cursor-pointer"
-                                >
-                                    {{ (int) ($jobTitle->employees_count ?? 0) }}
-                                </button>
-                            </td>
+    <td class="py-4 px-4 align-top whitespace-nowrap">
+        <div class="space-y-1">
+            <div class="text-[11px] font-bold text-gray-400 uppercase tracking-widest">
+                {{ tr('Employees') }}
+            </div>
+            <button
+                wire:click="$dispatch('open-employees-modal', { type: 'job-title', id: {{ $jobTitle->id }} })"
+                class="text-sm font-semibold text-[color:var(--brand-via)] hover:text-[color:var(--brand-via)]/80 hover:underline cursor-pointer"
+            >
+                {{ (int) ($jobTitle->employees_count ?? 0) }}
+            </button>
+        </div>
+    </td>
 
-                            <td class="py-3 px-4">
-                                <div class="text-sm text-gray-500 max-w-xs truncate">
-                                    {{ $jobTitle->description ?? '-' }}
-                                </div>
-                            </td>
+    <td class="py-4 px-4 align-top">
+        <div class="space-y-1">
+            <div class="text-[11px] font-bold text-gray-400 uppercase tracking-widest">
+                {{ tr('Description') }}
+            </div>
+            <div class="text-sm text-gray-500 max-w-xs whitespace-normal break-words">
+                {{ $jobTitle->description ?? '-' }}
+            </div>
+        </div>
+    </td>
 
-                            <td class="py-3 px-4 whitespace-nowrap">
-                                <span class="px-2 py-1 text-xs font-semibold rounded-full {{ $jobTitle->is_active ? 'bg-green-100 text-green-800' : 'bg-gray-100 text-gray-800' }}">
-                                    {{ $jobTitle->is_active ? tr('Active') : tr('Inactive') }}
-                                </span>
-                            </td>
+    <td class="py-4 px-4 align-top whitespace-nowrap">
+        <div class="space-y-1">
+            <div class="text-[11px] font-bold text-gray-400 uppercase tracking-widest">
+                {{ tr('Status') }}
+            </div>
+            <div>
+                <span class="px-2 py-1 text-xs font-semibold rounded-full {{ $jobTitle->is_active ? 'bg-green-100 text-green-800' : 'bg-gray-100 text-gray-800' }}">
+                    {{ $jobTitle->is_active ? tr('Active') : tr('Inactive') }}
+                </span>
+            </div>
+        </div>
+    </td>
 
-                            <td class="py-3 px-4 whitespace-nowrap text-sm font-medium">
-                                <x-ui.actions-menu>
-                                    <x-ui.dropdown-item
-                                        wire:click="openEditModal({{ $jobTitle->id }})"
-                                        @click="$dispatch('close-actions-menu')"
-                                    >
-                                        <i class="fas fa-edit me-2"></i>
-                                        <span>{{ tr('Edit') }}</span>
-                                    </x-ui.dropdown-item>
+    <td class="py-4 px-4 align-top whitespace-nowrap text-sm font-medium">
+        <div class="space-y-1">
+            <div class="text-[11px] font-bold text-gray-400 uppercase tracking-widest">
+                {{ tr('Actions') }}
+            </div>
+            <div>
+                <x-ui.actions-menu>
+                    <x-ui.dropdown-item
+                        wire:click="openEditModal({{ $jobTitle->id }})"
+                        @click="$dispatch('close-actions-menu')"
+                    >
+                        <i class="fas fa-edit me-2"></i>
+                        <span>{{ tr('Edit') }}</span>
+                    </x-ui.dropdown-item>
 
-                                    <x-ui.dropdown-item
-                                        wire:click="toggleActive({{ $jobTitle->id }})"
-                                        @click="$dispatch('close-actions-menu')"
-                                    >
-                                        <i class="fas fa-{{ $jobTitle->is_active ? 'eye-slash' : 'eye' }} me-2"></i>
-                                        <span>{{ $jobTitle->is_active ? tr('Deactivate') : tr('Activate') }}</span>
-                                    </x-ui.dropdown-item>
+                    <x-ui.dropdown-item
+                        wire:click="toggleActive({{ $jobTitle->id }})"
+                        @click="$dispatch('close-actions-menu')"
+                    >
+                        <i class="fas fa-{{ $jobTitle->is_active ? 'eye-slash' : 'eye' }} me-2"></i>
+                        <span>{{ $jobTitle->is_active ? tr('Deactivate') : tr('Activate') }}</span>
+                    </x-ui.dropdown-item>
 
-                                    <x-ui.dropdown-item
-                                        @click="$dispatch('open-confirm-delete-job-title', { id: {{ $jobTitle->id }} }); $dispatch('close-actions-menu')"
-                                        danger
-                                    >
-                                        <i class="fas fa-trash me-2"></i>
-                                        <span>{{ tr('Delete') }}</span>
-                                    </x-ui.dropdown-item>
-                                </x-ui.actions-menu>
-                            </td>
-                        </tr>
+                    <x-ui.dropdown-item
+                        @click="$dispatch('open-confirm-delete-job-title', { id: {{ $jobTitle->id }} }); $dispatch('close-actions-menu')"
+                        danger
+                    >
+                        <i class="fas fa-trash me-2"></i>
+                        <span>{{ tr('Delete') }}</span>
+                    </x-ui.dropdown-item>
+                </x-ui.actions-menu>
+            </div>
+        </div>
+    </td>
+</tr>
+
                     @endforeach
                 </x-ui.table>
             </div>

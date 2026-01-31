@@ -380,9 +380,6 @@ class Departments extends Component
          }
 
         $query = Department::forCompany($companyId)
-             ->when($this->rootDepartmentId === 'all', function ($q) {
-                 $q->whereNull('parent_id');
-             })
              ->when($this->rootDepartmentId !== 'all', function ($q) use ($companyId) {
                  $rootId = (int) $this->rootDepartmentId;
                  $ids = array_merge([$rootId], $this->getAllDescendantIdsRecursive($rootId, $companyId));
