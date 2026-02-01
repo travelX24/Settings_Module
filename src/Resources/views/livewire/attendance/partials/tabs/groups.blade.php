@@ -15,6 +15,7 @@
         <table class="w-full text-start border-collapse">
             <thead>
                 <tr class="bg-gray-50/50 border-b border-gray-100">
+                    <th class="px-6 py-4 text-[10px] font-black text-gray-400 border-b border-gray-100 uppercase tracking-widest text-center w-12">#</th>
                     <th class="px-6 py-4 text-[10px] font-black text-gray-400 border-b border-gray-100 uppercase tracking-widest text-start">{{ tr('Group Name') }}</th>
                     <th class="px-6 py-4 text-[10px] font-black text-gray-400 border-b border-gray-100 uppercase tracking-widest text-start">{{ tr('Description') }}</th>
                     <th class="px-6 py-4 text-[10px] font-black text-gray-400 border-b border-gray-100 uppercase tracking-widest text-center">{{ tr('Policy') }}</th>
@@ -24,8 +25,11 @@
                 </tr>
             </thead>
             <tbody class="divide-y divide-gray-50">
-                @forelse($groups as $group)
+                @forelse($groups as $index => $group)
                 <tr class="hover:bg-gray-50/30 transition-colors group/row">
+                    <td class="px-6 py-4 text-center">
+                        <span class="text-xs font-bold text-gray-400">{{ $index + 1 }}</span>
+                    </td>
                     <td class="px-6 py-4">
                         <div class="flex items-center gap-3">
                             <div class="w-10 h-10 rounded-xl bg-gradient-to-br from-purple-50 to-blue-50 border border-purple-100 flex items-center justify-center text-purple-600">
@@ -62,7 +66,7 @@
                                 @if(!empty($group['employee_names']))
                                 <div class="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 w-48 bg-white rounded-xl shadow-lg border border-gray-200 p-3 z-[100] opacity-0 invisible group-hover/tooltip:opacity-100 group-hover/tooltip:visible transition-all duration-150 pointer-events-none">
                                     <h4 class="text-[10px] font-bold text-gray-400 uppercase tracking-wider mb-2 pb-1 border-b border-gray-50">{{ tr('Group Members') }}</h4>
-                                    <div class="max-h-40 overflow-y-auto space-y-1.5 custom-scrollbar">
+                                    <div class="max-h-40 overflow-y-auto space-y-1.5 custom-scrollbar text-start">
                                         @foreach($group['employee_names'] as $empName)
                                             <div class="text-[11px] text-gray-600 font-medium flex items-center gap-2">
                                                 <div class="w-1.5 h-1.5 rounded-full bg-gray-200"></div>
@@ -79,27 +83,33 @@
                         </div>
                     </td>
                     <td class="px-6 py-4">
-                        <div class="flex items-center justify-center gap-1.5">
+                        <div class="flex items-center justify-center gap-1">
                             @foreach($group['methods'] as $m)
-                                <div class="w-7 h-7 rounded-lg bg-white border border-gray-200 flex items-center justify-center text-[10px] text-gray-500 shadow-sm">
-                                    <i class="fas {{ $m === 'gps' ? 'fa-map-pin' : ($m === 'nfc' ? 'fa-wifi' : 'fa-fingerprint') }}"></i>
+                                @php
+                                    $methodMeta = match($m) {
+                                        'gps' => ['icon' => 'fa-map-pin', 'cls' => 'bg-blue-50 text-blue-600 border-blue-100', 'label' => 'GPS'],
+                                        'nfc' => ['icon' => 'fa-wifi', 'cls' => 'bg-purple-50 text-purple-600 border-purple-100', 'label' => 'NFC'],
+                                        'fingerprint' => ['icon' => 'fa-fingerprint', 'cls' => 'bg-indigo-50 text-indigo-600 border-indigo-100', 'label' => tr('Finger')],
+                                        default => ['icon' => 'fa-check', 'cls' => 'bg-gray-50 text-gray-600 border-gray-100', 'label' => $m]
+                                    };
+                                @endphp
+                                <div class="px-2 py-0.5 rounded-lg border {{ $methodMeta['cls'] }} flex items-center gap-1 text-[9px] font-black whitespace-nowrap">
+                                    <i class="fas {{ $methodMeta['icon'] }} scale-75"></i>
+                                    {{ $methodMeta['label'] }}
                                 </div>
                             @endforeach
                         </div>
                     </td>
                     <td class="px-6 py-4 text-end">
                         @can('settings.attendance.manage')
-                        <x-ui.actions-menu>
-                            <x-ui.dropdown-item wire:click="editGroup('{{ $group['id'] }}')">
-                                <i class="fas fa-edit me-2 text-blue-500"></i> {{ tr('Edit') }}
-                            </x-ui.dropdown-item>
-                            <x-ui.dropdown-item 
-                                danger
-                                @click="$dispatch('open-confirm-delete-group', { id: '{{ $group['id'] }}' })"
-                            >
-                                <i class="fas fa-trash-alt me-2 text-red-500"></i> {{ tr('Delete') }}
-                            </x-ui.dropdown-item>
-                        </x-ui.actions-menu>
+                        <div class="flex items-center justify-end gap-2">
+                            <button wire:click="editGroup('{{ $group['id'] }}')" class="p-2 text-blue-500 hover:bg-blue-50 rounded-xl transition-colors">
+                                <i class="fas fa-edit text-xs"></i>
+                            </button>
+                            <button @click="$dispatch('open-confirm-delete-group', { id: '{{ $group['id'] }}' })" class="p-2 text-red-500 hover:bg-red-50 rounded-xl transition-colors">
+                                <i class="fas fa-trash-alt text-xs"></i>
+                            </button>
+                        </div>
                         @else
                         <span class="text-[10px] font-bold text-gray-400 italic">{{ tr('View Only') }}</span>
                         @endcan

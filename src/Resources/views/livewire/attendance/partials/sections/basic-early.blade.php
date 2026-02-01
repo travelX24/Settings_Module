@@ -1,0 +1,75 @@
+<x-ui.card class="space-y-4 !p-6 border-none shadow-sm bg-white !rounded-3xl">
+    <div class="flex items-center justify-between">
+        <div class="flex items-center gap-3">
+            <div class="w-10 h-10 rounded-xl bg-blue-50 flex items-center justify-center text-blue-500 border border-blue-100 shadow-sm">
+                <i class="fas fa-sign-out-alt text-lg"></i>
+            </div>
+            <div>
+                <h4 class="text-sm font-bold text-gray-800">{{ tr('B. Early Departure Penalties') }}</h4>
+                <p class="text-[11px] text-gray-400 font-medium">{{ tr('Settings for the first time early departure.') }}</p>
+            </div>
+        </div>
+        <label class="flex items-center gap-3 cursor-pointer group bg-gray-50/50 px-4 py-2 rounded-xl border border-gray-100 hover:bg-white transition-all">
+            <input type="checkbox" 
+                wire:model="basicEarlyPenalty.enabled"
+                wire:change="saveBasicEarlyPenalty"
+                class="w-4 h-4 text-blue-600 rounded border-gray-300 focus:ring-blue-500"
+            >
+            <span class="text-xs font-bold text-gray-700 group-hover:text-blue-600 transition-colors">{{ tr('Activate Penalties') }}</span>
+        </label>
+    </div>
+
+    @if($basicEarlyPenalty['enabled'])
+    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8 pt-6 border-t border-gray-50 mt-2 animate-in fade-in slide-in-from-top-2 duration-300">
+        {{-- Grace Minutes --}}
+        <x-ui.input 
+            label="{{ tr('Grace Period (min)') }}" 
+            type="number" 
+            wire:model.defer="basicEarlyPenalty.grace_minutes" 
+            wire:blur="saveBasicEarlyPenalty"
+            class="!py-3 !rounded-2xl"
+        />
+
+        {{-- Interval Minutes --}}
+        <x-ui.input 
+            label="{{ tr('After grace, for every (min)') }}" 
+            type="number" 
+            wire:model.defer="basicEarlyPenalty.interval_minutes" 
+            wire:blur="saveBasicEarlyPenalty"
+            hint="{{ tr('Deduction will trigger every X minutes.') }}"
+            class="!py-3 !rounded-2xl"
+        />
+
+        {{-- Deduction --}}
+        <div class="space-y-3">
+            <div class="flex items-end gap-3">
+                <div class="flex-1">
+                    <x-ui.select 
+                        label="{{ tr('Deduction Type') }}"
+                        wire:model="basicEarlyPenalty.deduction_type" 
+                        wire:change="saveBasicEarlyPenalty"
+                    >
+                        <option value="percentage">{{ tr('Percentage (%)') }}</option>
+                        <option value="fixed">{{ tr('Fixed Amount') }}</option>
+                    </x-ui.select>
+                </div>
+                <div class="w-24">
+                    <x-ui.input 
+                        type="number" 
+                        wire:model.defer="basicEarlyPenalty.deduction_value" 
+                        wire:blur="saveBasicEarlyPenalty"
+                        class="!py-3 !rounded-2xl"
+                    />
+                </div>
+            </div>
+            <p class="text-[10px] font-bold text-blue-500/70 italic px-1">
+                @if($basicEarlyPenalty['deduction_type'] === 'percentage')
+                    <i class="fas fa-info-circle me-1"></i> {{ tr('Percentage of minute wage.') }}
+                @else
+                    <i class="fas fa-info-circle me-1"></i> {{ tr('Fixed amount per interval.') }}
+                @endif
+            </p>
+        </div>
+    </div>
+    @endif
+</x-ui.card>

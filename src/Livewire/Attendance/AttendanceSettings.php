@@ -54,6 +54,31 @@ class AttendanceSettings extends Component
     public $showPenaltyModal = false;
     public $showAbsenceModal = false;
 
+    // Basic Penalties Form State
+    public $basicLatePenalty = [
+        'enabled' => false,
+        'grace_minutes' => 0,
+        'interval_minutes' => 0,
+        'deduction_type' => 'percentage',
+        'deduction_value' => 0,
+    ];
+
+    public $basicEarlyPenalty = [
+        'enabled' => false,
+        'grace_minutes' => 0,
+        'interval_minutes' => 0,
+        'deduction_type' => 'percentage',
+        'deduction_value' => 0,
+    ];
+
+    public $basicAbsencePenalty = [
+        'enabled' => false,
+        'threshold_minutes' => 0,
+        'notification_message' => '',
+        'deduction_type' => 'percentage',
+        'deduction_value' => 0,
+    ];
+
     public function mount()
     {
         $companyId = auth()->user()->saas_company_id;
@@ -72,6 +97,8 @@ class AttendanceSettings extends Component
                 'late_grace_minutes' => 15,
                 'early_leave_grace_minutes' => 10,
                 'auto_checkout_after_minutes' => 120,
+                'auto_checkout_penalty_enabled' => false,
+                'auto_checkout_penalty_amount' => 0,
                 'is_global_default' => true,
                 'saas_company_id' => $companyId,
             ]);
@@ -79,6 +106,8 @@ class AttendanceSettings extends Component
             'late_arrival' => $this->graceSettings->late_grace_minutes,
             'early_departure' => $this->graceSettings->early_leave_grace_minutes,
             'auto_departure' => $this->graceSettings->auto_checkout_after_minutes,
+            'auto_departure_penalty_enabled' => $this->graceSettings->auto_checkout_penalty_enabled,
+            'auto_departure_penalty_amount' => $this->graceSettings->auto_checkout_penalty_amount,
         ];
 
         // 3. Load Methods
@@ -127,16 +156,64 @@ class AttendanceSettings extends Component
         // Load Penalties linked to default policy
         $this->penalties = AttendancePenaltyPolicy::where('policy_id', $this->defaultPolicy->id)
             ->where('saas_company_id', $companyId)
+            ->where('recurrence_count', '>', 1)
             ->active()
             ->get()
             ->toArray();
 
+        // Load Basic Penalties
+        $late = AttendancePenaltyPolicy::where('policy_id', $this->defaultPolicy->id)
+            ->where('saas_company_id', $companyId)
+            ->where('violation_type', 'late_arrival')
+            ->where('recurrence_count', 1)
+            ->first();
+        if ($late) {
+            $this->basicLatePenalty = [
+                'enabled' => $late->is_enabled,
+                'grace_minutes' => $late->threshold_minutes,
+                'interval_minutes' => $late->interval_minutes,
+                'deduction_type' => $late->deduction_type ?? 'percentage',
+                'deduction_value' => $late->deduction_value,
+            ];
+        }
+
+        $early = AttendancePenaltyPolicy::where('policy_id', $this->defaultPolicy->id)
+            ->where('saas_company_id', $companyId)
+            ->where('violation_type', 'early_departure')
+            ->where('recurrence_count', 1)
+            ->first();
+        if ($early) {
+            $this->basicEarlyPenalty = [
+                'enabled' => $early->is_enabled,
+                'grace_minutes' => $early->threshold_minutes,
+                'interval_minutes' => $early->interval_minutes,
+                'deduction_type' => $early->deduction_type ?? 'percentage',
+                'deduction_value' => $early->deduction_value,
+            ];
+        }
+
         // Load Absence Policies
         $this->absencePolicies = UnexcusedAbsencePolicy::where('policy_id', $this->defaultPolicy->id)
             ->where('saas_company_id', $companyId)
+            ->where('absence_reason_type', '!=', 'no_notice')
             ->active()
             ->get()
             ->toArray();
+
+        // Load Basic Absence
+        $absence = UnexcusedAbsencePolicy::where('policy_id', $this->defaultPolicy->id)
+            ->where('saas_company_id', $companyId)
+            ->where('absence_reason_type', 'no_notice')
+            ->first();
+        if ($absence) {
+            $this->basicAbsencePenalty = [
+                'enabled' => $absence->is_enabled,
+                'threshold_minutes' => $absence->late_minutes,
+                'notification_message' => $absence->notification_message,
+                'deduction_type' => $absence->deduction_type ?? 'percentage',
+                'deduction_value' => $absence->deduction_value,
+            ];
+        }
 
         // Load Groups
         $this->groups = EmployeeGroup::with(['appliedPolicy', 'employees'])
@@ -183,8 +260,82 @@ class AttendanceSettings extends Component
             'late_grace_minutes' => $this->gracePeriods['late_arrival'],
             'early_leave_grace_minutes' => $this->gracePeriods['early_departure'],
             'auto_checkout_after_minutes' => $this->gracePeriods['auto_departure'],
+            'auto_checkout_penalty_enabled' => $this->gracePeriods['auto_departure_penalty_enabled'],
+            'auto_checkout_penalty_amount' => $this->gracePeriods['auto_departure_penalty_amount'],
         ]);
-        $this->dispatch('toast', type: 'success', message: tr('Grace periods for late arrival and early departure have been saved.'));
+        $this->dispatch('toast', type: 'success', message: tr('Grace periods and auto-departure settings have been saved.'));
+    }
+
+    public function saveBasicLatePenalty()
+    {
+        $companyId = auth()->user()->saas_company_id;
+        AttendancePenaltyPolicy::updateOrCreate(
+            [
+                'policy_id' => $this->defaultPolicy->id,
+                'saas_company_id' => $companyId,
+                'violation_type' => 'late_arrival',
+                'recurrence_count' => 1,
+            ],
+            [
+                'is_enabled' => $this->basicLatePenalty['enabled'],
+                'threshold_minutes' => $this->basicLatePenalty['grace_minutes'],
+                'interval_minutes' => $this->basicLatePenalty['interval_minutes'],
+                'deduction_type' => $this->basicLatePenalty['deduction_type'],
+                'deduction_value' => $this->basicLatePenalty['deduction_value'],
+                'penalty_action' => 'deduction',
+                'minutes_from' => 0,
+                'minutes_to' => 0,
+            ]
+        );
+        $this->dispatch('toast', type: 'success', message: tr('Late arrival basic penalties updated.'));
+    }
+
+    public function saveBasicEarlyPenalty()
+    {
+        $companyId = auth()->user()->saas_company_id;
+        AttendancePenaltyPolicy::updateOrCreate(
+            [
+                'policy_id' => $this->defaultPolicy->id,
+                'saas_company_id' => $companyId,
+                'violation_type' => 'early_departure',
+                'recurrence_count' => 1,
+            ],
+            [
+                'is_enabled' => $this->basicEarlyPenalty['enabled'],
+                'threshold_minutes' => $this->basicEarlyPenalty['grace_minutes'],
+                'interval_minutes' => $this->basicEarlyPenalty['interval_minutes'],
+                'deduction_type' => $this->basicEarlyPenalty['deduction_type'],
+                'deduction_value' => $this->basicEarlyPenalty['deduction_value'],
+                'penalty_action' => 'deduction',
+                'minutes_from' => 0,
+                'minutes_to' => 0,
+            ]
+        );
+        $this->dispatch('toast', type: 'success', message: tr('Early departure basic penalties updated.'));
+    }
+
+    public function saveBasicAbsencePenalty()
+    {
+        $companyId = auth()->user()->saas_company_id;
+        UnexcusedAbsencePolicy::updateOrCreate(
+            [
+                'policy_id' => $this->defaultPolicy->id,
+                'saas_company_id' => $companyId,
+                'absence_reason_type' => 'no_notice',
+            ],
+            [
+                'is_enabled' => $this->basicAbsencePenalty['enabled'],
+                'late_minutes' => $this->basicAbsencePenalty['threshold_minutes'],
+                'notification_message' => $this->basicAbsencePenalty['notification_message'],
+                'deduction_type' => $this->basicAbsencePenalty['deduction_type'],
+                'deduction_value' => $this->basicAbsencePenalty['deduction_value'],
+                'penalty_action' => 'deduction',
+                'day_selector_type' => 'single',
+                'day_from' => 1,
+                'day_to' => 1,
+            ]
+        );
+        $this->dispatch('toast', type: 'success', message: tr('Unexcused absence basic penalties updated.'));
     }
 
     public function togglePrepMethod($method)
@@ -215,7 +366,6 @@ class AttendanceSettings extends Component
     public $policyTypes = [
         'general' => 'سياسة عامة',
         'special' => 'سياسة خاصة',
-        'custom' => 'تخصيص',
     ];
 
 
@@ -363,13 +513,12 @@ class AttendanceSettings extends Component
     // Penalties CRUD
     public $newPenalty = [
         'violation_type' => 'late_arrival', 
-        'minutes_from' => 1,
-        'minutes_to' => 30,
-        'recurrence_from' => 1,
-        'recurrence_to' => 1,
-        'penalty_action' => 'notification',
+        'threshold_minutes' => 0,
+        'recurrence_count' => 2,
+        'penalty_action' => 'deduction',
+        'deduction_type' => 'percentage',
         'deduction_value' => 0,
-        'suspension_days' => 0,
+        'include_basic_penalty' => false,
         'notification_message' => '',
     ];
 
@@ -382,13 +531,12 @@ class AttendanceSettings extends Component
         $this->editingPenaltyId = null;
         $this->newPenalty = [
             'violation_type' => 'late_arrival',
-            'minutes_from' => 1,
-            'minutes_to' => 30,
-            'recurrence_from' => 1,
-            'recurrence_to' => 1,
-            'penalty_action' => 'notification',
+            'threshold_minutes' => 0,
+            'recurrence_count' => 2,
+            'penalty_action' => 'deduction',
+            'deduction_type' => 'percentage',
             'deduction_value' => 0,
-            'suspension_days' => 0,
+            'include_basic_penalty' => false,
             'notification_message' => '',
         ];
         $this->showPenaltyModal = true;
@@ -400,39 +548,67 @@ class AttendanceSettings extends Component
         if ($penalty) {
             $this->isEditingPenalty = true;
             $this->editingPenaltyId = $id;
-            $this->newPenalty = $penalty->toArray();
+            $this->newPenalty = [
+                'violation_type' => $penalty->violation_type,
+                'threshold_minutes' => $penalty->threshold_minutes,
+                'recurrence_count' => $penalty->recurrence_count,
+                'penalty_action' => $penalty->penalty_action,
+                'deduction_type' => $penalty->deduction_type ?? 'percentage',
+                'deduction_value' => $penalty->deduction_value,
+                'include_basic_penalty' => $penalty->include_basic_penalty,
+                'notification_message' => $penalty->notification_message,
+            ];
             $this->showPenaltyModal = true;
         }
-    }
-
-    public function deletePenalty($id)
-    {
-        AttendancePenaltyPolicy::destroy($id);
-        $this->refreshData();
-        $this->dispatch('toast', type: 'success', message: tr('Penalty policy and its associated rules have been deleted.'));
     }
 
     public function savePenalty()
     {
         $companyId = auth()->user()->saas_company_id;
-        $data = array_merge($this->newPenalty, [
-            'policy_id' => $this->defaultPolicy->id,
-            'deduction_value' => $this->newPenalty['deduction_value'] ?: 0,
-            'suspension_days' => $this->newPenalty['suspension_days'] ?: 0,
-            'saas_company_id' => $companyId,
-        ]);
+        
+        if ($this->newPenalty['violation_type'] === 'unexcused_absence') {
+            $data = [
+                'policy_id' => $this->defaultPolicy->id,
+                'saas_company_id' => $companyId,
+                'absence_reason_type' => 'repetitive', // Mapping recurring to repetitive type
+                'recurrence_count' => $this->newPenalty['recurrence_count'],
+                'late_minutes' => $this->newPenalty['threshold_minutes'],
+                'penalty_action' => $this->newPenalty['penalty_action'],
+                'deduction_type' => $this->newPenalty['deduction_type'],
+                'deduction_value' => $this->newPenalty['deduction_value'],
+                'notification_message' => $this->newPenalty['notification_message'],
+                'is_enabled' => true,
+                'day_selector_type' => 'single',
+                'day_from' => 1,
+                'day_to' => 1,
+            ];
 
-        if ($this->isEditingPenalty) {
-            AttendancePenaltyPolicy::where('id', $this->editingPenaltyId)->update(
-                collect($data)->except(['id', 'created_at', 'updated_at', 'deleted_at'])->toArray()
-            );
+            if ($this->isEditingPenalty && str_contains($this->editingPenaltyId, 'abs_')) {
+                UnexcusedAbsencePolicy::where('id', str_replace('abs_', '', $this->editingPenaltyId))->update($data);
+            } else {
+                UnexcusedAbsencePolicy::create($data);
+            }
         } else {
-            AttendancePenaltyPolicy::create($data);
+            $data = array_merge($this->newPenalty, [
+                'policy_id' => $this->defaultPolicy->id,
+                'saas_company_id' => $companyId,
+                'is_enabled' => true,
+                'minutes_from' => 0,
+                'minutes_to' => 0,
+            ]);
+
+            if ($this->isEditingPenalty && !str_contains($this->editingPenaltyId, 'abs_')) {
+                AttendancePenaltyPolicy::where('id', $this->editingPenaltyId)->update(
+                    collect($data)->except(['id', 'created_at', 'updated_at', 'deleted_at'])->toArray()
+                );
+            } else {
+                AttendancePenaltyPolicy::create($data);
+            }
         }
 
         $this->showPenaltyModal = false;
         $this->refreshData();
-        $this->dispatch('toast', type: 'success', message: $this->isEditingPenalty ? tr('Penalty policy rules have been updated.') : tr('New penalty policy has been created successfully.'));
+        $this->dispatch('toast', type: 'success', message: $this->isEditingPenalty ? tr('Recurring violation updated.') : tr('New recurring violation added.'));
     }
 
     // Absence Modal
@@ -473,10 +649,19 @@ class AttendanceSettings extends Component
     {
         $policy = UnexcusedAbsencePolicy::find($id);
         if ($policy) {
-            $this->isEditingAbsence = true;
-            $this->editingAbsenceId = $id;
-            $this->newAbsencePolicy = $policy->toArray();
-            $this->showAbsenceModal = true;
+            $this->isEditingPenalty = true;
+            $this->editingPenaltyId = 'abs_' . $id;
+            $this->newPenalty = [
+                'violation_type' => 'unexcused_absence',
+                'threshold_minutes' => $policy->late_minutes,
+                'recurrence_count' => $policy->recurrence_count ?? 1,
+                'penalty_action' => $policy->penalty_action,
+                'deduction_type' => $policy->deduction_type ?? 'percentage',
+                'deduction_value' => $policy->deduction_value,
+                'include_basic_penalty' => false, // Absences don't have basic penalty toggle in analysis logic same way
+                'notification_message' => $policy->notification_message,
+            ];
+            $this->showPenaltyModal = true;
         }
     }
 
