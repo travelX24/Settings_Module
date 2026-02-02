@@ -242,235 +242,245 @@
     {{-- ========================= --}}
     {{-- Create Holiday Modal --}}
     {{-- ========================= --}}
-    @if($createOpen)
-        <div class="fixed inset-0 z-[9999] bg-black/40 flex items-center justify-center p-4" wire:click.self="closeCreate">
-            <div class="w-full max-w-xl bg-white rounded-3xl shadow-xl border border-gray-100 p-6">
-                <div class="flex items-start justify-between gap-3 mb-4">
-                    <div>
-                        <div class="text-lg font-black text-gray-900">{{ tr('New Holiday') }}</div>
-                        <div class="text-xs text-gray-400">{{ tr('Create a holiday template and occurrence') }}</div>
-                    </div>
-
-                    <button type="button" class="text-gray-400 hover:text-gray-700" wire:click="closeCreate">
-                        <i class="fas fa-times"></i>
-                    </button>
+    {{-- Create Holiday Modal --}}
+    <x-ui.modal wire:model="createOpen" maxWidth="lg">
+        <x-slot:title>
+            <div class="flex items-center gap-3">
+                <div class="w-10 h-10 bg-brand-50 text-brand-600 rounded-xl flex items-center justify-center text-lg border border-brand-100 shadow-sm">
+                    <i class="fas fa-umbrella-beach"></i>
                 </div>
-
-                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    <div class="md:col-span-2">
-                        <label class="block text-[11px] font-black text-gray-500 mb-1">{{ tr('Name') }}</label>
-                        <input
-                            type="text"
-                            wire:model.defer="newName"
-                            class="w-full h-[40px] px-3 rounded-xl border border-gray-200 text-sm bg-gray-50/50 focus:bg-white focus:border-[color:var(--brand-via)] focus:ring-4 focus:ring-[color:var(--brand-via)]/10 transition-all"
-                            placeholder="{{ tr('Holiday name...') }}"
-                        >
-                        @error('newName') <div class="text-xs text-red-600 mt-1">{{ $message }}</div> @enderror
-                    </div>
-
-                    <div>
-                        <label class="block text-[11px] font-black text-gray-500 mb-1">{{ tr('Calendar Type') }}</label>
-
-                        <div class="w-full h-[40px] px-3 rounded-xl border border-gray-200 text-sm bg-gray-50/50 flex items-center justify-between">
-                            <span class="font-bold text-gray-800">
-                                {{ $companyCalendarType === 'hijri' ? tr('Hijri') : tr('Gregorian') }}
-                            </span>
-                            <span class="text-[10px] text-gray-400">{{ tr('From settings') }}</span>
-                        </div>
-
-                        <input type="hidden" wire:model.defer="newCalendarType">
-                        @error('newCalendarType') <div class="text-xs text-red-600 mt-1">{{ $message }}</div> @enderror
-                    </div>
-
-                    <div>
-                        <label class="block text-[11px] font-black text-gray-500 mb-1">{{ tr('Duration (days)') }}</label>
-                        <input
-                            type="number"
-                            min="1"
-                            wire:model.defer="newDurationDays"
-                            class="w-full h-[40px] px-3 rounded-xl border border-gray-200 text-sm bg-gray-50/50 focus:bg-white focus:border-[color:var(--brand-via)] focus:ring-4 focus:ring-[color:var(--brand-via)]/10 transition-all"
-                        >
-                        @error('newDurationDays') <div class="text-xs text-red-600 mt-1">{{ $message }}</div> @enderror
-                    </div>
-
-                    <div class="md:col-span-2">
-                        <x-ui.company-date-picker model="newStartDate" :label="tr('Start Date')" />
-                        @error('newStartDate') <div class="text-xs text-red-600 mt-1">{{ $message }}</div> @enderror
-                    </div>
-
-                    @if($companyCalendarType === 'hijri')
-                        <div class="md:col-span-2">
-                            <label class="block text-[11px] font-black text-gray-500 mb-1">{{ tr('Gregorian Date (auto)') }}</label>
-                            <input type="text" readonly value="{{ $newGregorianAuto }}" class="w-full h-[40px] px-3 rounded-xl border border-gray-200 text-sm bg-gray-50/50">
-                        </div>
-                    @endif
-
-                    <div class="md:col-span-2">
-                        <label class="block text-[11px] font-black text-gray-500 mb-1">{{ tr('Hijri Date (auto)') }}</label>
-                        <input type="text" readonly value="{{ $newDisplayHijriAuto }}" class="w-full h-[40px] px-3 rounded-xl border border-gray-200 text-sm bg-gray-50/50">
-                    </div>
-
-                    <div class="md:col-span-2">
-                        <label class="block text-[11px] font-black text-gray-500 mb-1">{{ tr('Hijri display (optional)') }}</label>
-                        <input
-                            type="text"
-                            wire:model.defer="newDisplayHijri"
-                            class="w-full h-[40px] px-3 rounded-xl border border-gray-200 text-sm bg-gray-50/50 focus:bg-white focus:border-[color:var(--brand-via)] focus:ring-4 focus:ring-[color:var(--brand-via)]/10 transition-all"
-                            placeholder="{{ tr('e.g. 1447/10/03') }}"
-                        >
-                        <div class="text-[10px] text-gray-400 mt-1">{{ tr('Leave empty to use auto value if available.') }}</div>
-                        @error('newDisplayHijri') <div class="text-xs text-red-600 mt-1">{{ $message }}</div> @enderror
-                    </div>
-                </div>
-
-                <div class="flex items-center justify-end gap-2 mt-6">
-                    <x-ui.secondary-button :fullWidth="false" wire:click="closeCreate" wire:loading.attr="disabled">
-                        {{ tr('Cancel') }}
-                    </x-ui.secondary-button>
-
-                    <x-ui.primary-button :arrow="false" :fullWidth="false" wire:click="saveNewHoliday" wire:loading.attr="disabled" wire:target="saveNewHoliday">
-                        <i class="fas fa-save"></i>
-                        <span class="ms-2">{{ tr('Save') }}</span>
-                    </x-ui.primary-button>
+                <div>
+                    <h3 class="font-bold text-gray-900 text-lg leading-tight">{{ tr('New Holiday') }}</h3>
+                    <p class="text-[10px] text-gray-400 font-bold uppercase tracking-widest">{{ tr('Create a holiday template and occurrence') }}</p>
                 </div>
             </div>
-        </div>
-    @endif
+        </x-slot:title>
+
+        <x-slot:content>
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-4 py-4">
+                <div class="md:col-span-2">
+                    <x-ui.input
+                        label="{{ tr('Name') }}"
+                        wire:model.defer="newName"
+                        placeholder="{{ tr('Holiday name...') }}"
+                        required
+                    />
+                </div>
+
+                <div>
+                    <x-ui.input
+                        label="{{ tr('Calendar Type') }}"
+                        value="{{ $companyCalendarType === 'hijri' ? tr('Hijri') : tr('Gregorian') }}"
+                        readonly
+                        class="!bg-gray-50"
+                        hint="{{ tr('From settings') }}"
+                    />
+                </div>
+
+                <div>
+                    <x-ui.input
+                        type="number"
+                        min="1"
+                        label="{{ tr('Duration (days)') }}"
+                        wire:model.defer="newDurationDays"
+                        required
+                    />
+                </div>
+
+                <div>
+                    <x-ui.company-date-picker model="newStartDate" :label="tr('Start Date')" />
+                    @error('newStartDate') <div class="text-xs text-red-600 mt-1">{{ $message }}</div> @enderror
+                </div>
+
+                @if($companyCalendarType === 'hijri')
+                    <div>
+                        <x-ui.input
+                            label="{{ tr('Gregorian Date (auto)') }}"
+                            value="{{ $newGregorianAuto }}"
+                            readonly
+                            class="!bg-gray-50"
+                        />
+                    </div>
+                @else
+                    <div class="hidden md:block"></div>
+                @endif
+
+                <div>
+                    <x-ui.input
+                        label="{{ tr('Hijri Date (auto)') }}"
+                        value="{{ $newDisplayHijriAuto }}"
+                        readonly
+                        class="!bg-gray-50"
+                    />
+                </div>
+
+                <div>
+                    <x-ui.input
+                        label="{{ tr('Hijri display (optional)') }}"
+                        wire:model.defer="newDisplayHijri"
+                        placeholder="{{ tr('e.g. 1447/10/03') }}"
+                        hint="{{ tr('Leave empty to use auto value') }}"
+                    />
+                </div>
+            </div>
+        </x-slot:content>
+
+        <x-slot:footer>
+            <div class="flex items-center justify-end gap-3 w-full">
+                <x-ui.secondary-button wire:click="closeCreate" class="!px-6 !rounded-xl">
+                    {{ tr('Cancel') }}
+                </x-ui.secondary-button>
+                <x-ui.primary-button wire:click="saveNewHoliday" class="!px-6 !rounded-xl shadow-lg">
+                    <i class="fas fa-save me-2"></i>
+                    {{ tr('Save') }}
+                </x-ui.primary-button>
+            </div>
+        </x-slot:footer>
+    </x-ui.modal>
 
     {{-- ========================= --}}
     {{-- Edit Holiday Modal --}}
     {{-- ========================= --}}
-    @if($editOpen)
-        <div class="fixed inset-0 z-[9999] bg-black/40 flex items-center justify-center p-4" wire:click.self="closeEdit">
-            <div class="w-full max-w-xl bg-white rounded-3xl shadow-xl border border-gray-100 p-6">
-                <div class="flex items-start justify-between gap-3 mb-4">
-                    <div>
-                        <div class="text-lg font-black text-gray-900">{{ tr('Edit Holiday') }}</div>
-                        <div class="text-xs text-gray-400">{{ tr('Update holiday information') }}</div>
-                    </div>
-
-                    <button type="button" class="text-gray-400 hover:text-gray-700" wire:click="closeEdit">
-                        <i class="fas fa-times"></i>
-                    </button>
+    {{-- Edit Holiday Modal --}}
+    <x-ui.modal wire:model="editOpen" maxWidth="lg">
+        <x-slot:title>
+            <div class="flex items-center gap-3">
+                <div class="w-10 h-10 bg-blue-50 text-blue-600 rounded-xl flex items-center justify-center text-lg border border-blue-100 shadow-sm">
+                    <i class="fas fa-edit"></i>
                 </div>
-
-                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    <div class="md:col-span-2">
-                        <label class="block text-[11px] font-black text-gray-500 mb-1">{{ tr('Name') }}</label>
-                        <input
-                            type="text"
-                            wire:model.defer="editName"
-                            class="w-full h-[40px] px-3 rounded-xl border border-gray-200 text-sm bg-gray-50/50 focus:bg-white focus:border-[color:var(--brand-via)] focus:ring-4 focus:ring-[color:var(--brand-via)]/10 transition-all"
-                        >
-                        @error('editName') <div class="text-xs text-red-600 mt-1">{{ $message }}</div> @enderror
-                    </div>
-
-                    <div>
-                        <label class="block text-[11px] font-black text-gray-500 mb-1">{{ tr('Calendar Type') }}</label>
-                        <div class="w-full h-[40px] px-3 rounded-xl border border-gray-200 text-sm bg-gray-50/50 flex items-center justify-between">
-                            <span class="font-bold text-gray-800">
-                                {{ $companyCalendarType === 'hijri' ? tr('Hijri') : tr('Gregorian') }}
-                            </span>
-                            <span class="text-[10px] text-gray-400">{{ tr('From settings') }}</span>
-                        </div>
-                    </div>
-
-                    <div>
-                        <label class="block text-[11px] font-black text-gray-500 mb-1">{{ tr('Duration (days)') }}</label>
-                        <input
-                            type="number"
-                            min="1"
-                            wire:model.defer="editDurationDays"
-                            class="w-full h-[40px] px-3 rounded-xl border border-gray-200 text-sm bg-gray-50/50 focus:bg-white focus:border-[color:var(--brand-via)] focus:ring-4 focus:ring-[color:var(--brand-via)]/10 transition-all"
-                        >
-                        @error('editDurationDays') <div class="text-xs text-red-600 mt-1">{{ $message }}</div> @enderror
-                    </div>
-
-                    <div class="md:col-span-2">
-                        <x-ui.company-date-picker model="editStartDate" :label="tr('Start Date')" />
-                        @error('editStartDate') <div class="text-xs text-red-600 mt-1">{{ $message }}</div> @enderror
-                    </div>
-
-                    @if($companyCalendarType === 'hijri')
-                        <div class="md:col-span-2">
-                            <label class="block text-[11px] font-black text-gray-500 mb-1">{{ tr('Gregorian Date (auto)') }}</label>
-                            <input type="text" readonly value="{{ $editGregorianAuto }}" class="w-full h-[40px] px-3 rounded-xl border border-gray-200 text-sm bg-gray-50/50">
-                        </div>
-                    @endif
-
-                    <div class="md:col-span-2">
-                        <label class="block text-[11px] font-black text-gray-500 mb-1">{{ tr('Hijri Date (auto)') }}</label>
-                        <input type="text" readonly value="{{ $editDisplayHijriAuto }}" class="w-full h-[40px] px-3 rounded-xl border border-gray-200 text-sm bg-gray-50/50">
-                    </div>
-
-                    <div class="md:col-span-2">
-                        <label class="block text-[11px] font-black text-gray-500 mb-1">{{ tr('Hijri display (optional)') }}</label>
-                        <input
-                            type="text"
-                            wire:model.defer="editDisplayHijri"
-                            class="w-full h-[40px] px-3 rounded-xl border border-gray-200 text-sm bg-gray-50/50 focus:bg-white focus:border-[color:var(--brand-via)] focus:ring-4 focus:ring-[color:var(--brand-via)]/10 transition-all"
-                            placeholder="{{ tr('e.g. 1447/10/03') }}"
-                        >
-                        <div class="text-[10px] text-gray-400 mt-1">{{ tr('Leave empty to use auto value if available.') }}</div>
-                        @error('editDisplayHijri') <div class="text-xs text-red-600 mt-1">{{ $message }}</div> @enderror
-                    </div>
-                </div>
-
-                <div class="flex items-center justify-end gap-2 mt-6">
-                    <x-ui.secondary-button :fullWidth="false" wire:click="closeEdit" wire:loading.attr="disabled">
-                        {{ tr('Cancel') }}
-                    </x-ui.secondary-button>
-
-                    <x-ui.primary-button :arrow="false" :fullWidth="false" wire:click="saveEditHoliday" wire:loading.attr="disabled" wire:target="saveEditHoliday">
-                        <i class="fas fa-save"></i>
-                        <span class="ms-2">{{ tr('Update') }}</span>
-                    </x-ui.primary-button>
+                <div>
+                    <h3 class="font-bold text-gray-900 text-lg leading-tight">{{ tr('Edit Holiday') }}</h3>
+                    <p class="text-[10px] text-gray-400 font-bold uppercase tracking-widest">{{ tr('Update holiday information') }}</p>
                 </div>
             </div>
-        </div>
-    @endif
+        </x-slot:title>
+
+        <x-slot:content>
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-4 py-4">
+                <div class="md:col-span-2">
+                    <x-ui.input
+                        label="{{ tr('Name') }}"
+                        wire:model.defer="editName"
+                        required
+                    />
+                </div>
+
+                <div>
+                    <x-ui.input
+                        label="{{ tr('Calendar Type') }}"
+                        value="{{ $companyCalendarType === 'hijri' ? tr('Hijri') : tr('Gregorian') }}"
+                        readonly
+                        class="!bg-gray-50"
+                        hint="{{ tr('From settings') }}"
+                    />
+                </div>
+
+                <div>
+                    <x-ui.input
+                        type="number"
+                        min="1"
+                        label="{{ tr('Duration (days)') }}"
+                        wire:model.defer="editDurationDays"
+                        required
+                    />
+                </div>
+
+                <div>
+                    <x-ui.company-date-picker model="editStartDate" :label="tr('Start Date')" />
+                    @error('editStartDate') <div class="text-xs text-red-600 mt-1">{{ $message }}</div> @enderror
+                </div>
+
+                @if($companyCalendarType === 'hijri')
+                    <div>
+                        <x-ui.input
+                            label="{{ tr('Gregorian Date (auto)') }}"
+                            value="{{ $editGregorianAuto }}"
+                            readonly
+                            class="!bg-gray-50"
+                        />
+                    </div>
+                @else
+                    <div class="hidden md:block"></div>
+                @endif
+
+                <div>
+                    <x-ui.input
+                        label="{{ tr('Hijri Date (auto)') }}"
+                        value="{{ $editDisplayHijriAuto }}"
+                        readonly
+                        class="!bg-gray-50"
+                    />
+                </div>
+
+                <div>
+                    <x-ui.input
+                        label="{{ tr('Hijri display (optional)') }}"
+                        wire:model.defer="editDisplayHijri"
+                        placeholder="{{ tr('e.g. 1447/10/03') }}"
+                        hint="{{ tr('Leave empty to use auto value') }}"
+                    />
+                </div>
+            </div>
+        </x-slot:content>
+
+        <x-slot:footer>
+            <div class="flex items-center justify-end gap-3 w-full">
+                <x-ui.secondary-button wire:click="closeEdit" class="!px-6 !rounded-xl">
+                    {{ tr('Cancel') }}
+                </x-ui.secondary-button>
+                <x-ui.primary-button wire:click="saveEditHoliday" class="!px-6 !rounded-xl shadow-lg">
+                    <i class="fas fa-save me-2"></i>
+                    {{ tr('Update') }}
+                </x-ui.primary-button>
+            </div>
+        </x-slot:footer>
+    </x-ui.modal>
 
     {{-- ========================= --}}
     {{-- Delete Confirm Modal --}}
     {{-- ========================= --}}
-    @if($confirmDeleteOpen)
-        <div class="fixed inset-0 z-[9999] bg-black/40 flex items-center justify-center p-4" wire:click.self="closeDelete">
-            <div class="w-full max-w-md bg-white rounded-3xl shadow-xl border border-gray-100 p-6">
-                <div class="flex items-start justify-between gap-3 mb-4">
-                    <div>
-                        <div class="text-lg font-black text-gray-900">{{ tr('Delete Holiday') }}</div>
-                        <div class="text-xs text-gray-400">
-                            {{ tr('Are you sure you want to delete') }}: <span class="font-black text-gray-800">{{ $deleteHolidayName }}</span>
-                        </div>
-                    </div>
-
-                    <button type="button" class="text-gray-400 hover:text-gray-700" wire:click="closeDelete">
-                        <i class="fas fa-times"></i>
-                    </button>
+    {{-- Delete Confirm Modal --}}
+    <x-ui.modal wire:model="confirmDeleteOpen" maxWidth="md">
+        <x-slot:title>
+            <div class="flex items-center gap-3">
+                <div class="w-10 h-10 bg-red-50 text-red-600 rounded-xl flex items-center justify-center text-lg border border-red-100 shadow-sm">
+                    <i class="fas fa-trash-alt"></i>
                 </div>
-
-                <div class="text-sm text-gray-600 leading-relaxed">
-                    {{ tr('This action cannot be undone.') }}
-                </div>
-
-                <div class="flex items-center justify-end gap-2 mt-6">
-                    <x-ui.secondary-button :fullWidth="false" wire:click="closeDelete" wire:loading.attr="disabled">
-                        {{ tr('Cancel') }}
-                    </x-ui.secondary-button>
-
-                    <x-ui.primary-button
-                        :arrow="false"
-                        :fullWidth="false"
-                        class="!bg-red-600 hover:!bg-red-700"
-                        wire:click="deleteHoliday"
-                        wire:loading.attr="disabled"
-                        wire:target="deleteHoliday"
-                    >
-                        <i class="fas fa-trash"></i>
-                        <span class="ms-2">{{ tr('Delete') }}</span>
-                    </x-ui.primary-button>
+                <div>
+                    <h3 class="font-bold text-gray-900 text-lg leading-tight">{{ tr('Delete Holiday') }}</h3>
+                    <p class="text-[10px] text-gray-400 font-bold uppercase tracking-widest">{{ tr('Confirm Action') }}</p>
                 </div>
             </div>
-        </div>
-    @endif
+        </x-slot:title>
+
+        <x-slot:content>
+            <div class="py-4 text-center">
+                <div class="text-sm text-gray-600 leading-relaxed mb-2">
+                    {{ tr('Are you sure you want to delete') }}:
+                </div>
+                <div class="text-base font-black text-gray-800 bg-red-50 py-2 rounded-xl mb-4 border border-red-100">
+                    {{ $deleteHolidayName }}
+                </div>
+                <div class="text-xs text-red-500 font-semibold">
+                    {{ tr('This action cannot be undone.') }}
+                </div>
+            </div>
+        </x-slot:content>
+
+        <x-slot:footer>
+            <div class="flex items-center justify-end gap-3 w-full">
+                <x-ui.secondary-button wire:click="closeDelete" class="!px-6 !rounded-xl">
+                    {{ tr('Cancel') }}
+                </x-ui.secondary-button>
+
+                <x-ui.primary-button
+                    wire:click="deleteHoliday"
+                    class="!bg-red-600 hover:!bg-red-700 !px-6 !rounded-xl shadow-lg shadow-red-200"
+                >
+                    <i class="fas fa-trash me-2"></i>
+                    {{ tr('Delete') }}
+                </x-ui.primary-button>
+            </div>
+        </x-slot:footer>
+    </x-ui.modal>
 </div>

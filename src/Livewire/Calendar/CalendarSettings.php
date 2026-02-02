@@ -37,7 +37,10 @@ class CalendarSettings extends Component
 
         $row = OperationalCalendar::query()->firstOrCreate(
             ['company_id' => $companyId],
-            ['calendar_type' => 'gregorian']
+            [
+                'calendar_type' => 'gregorian',
+                'working_days' => json_encode([6, 0, 1, 2, 3]) // السبت-الخميس
+            ]
         );
 
         $this->calendar_type = (string) ($row->calendar_type ?? 'gregorian');
@@ -61,7 +64,10 @@ class CalendarSettings extends Component
 
         OperationalCalendar::updateOrCreate(
             ['company_id' => $companyId],
-            ['calendar_type' => $data['calendar_type']]
+            [
+                'calendar_type' => $data['calendar_type'],
+                'working_days' => json_encode([6, 0, 1, 2, 3]) // السبت-الخميس
+            ]
         );
 
         // Keep UI state in sync with DB (so user sees what is actually saved)

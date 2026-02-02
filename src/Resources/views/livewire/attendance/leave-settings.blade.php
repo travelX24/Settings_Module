@@ -276,438 +276,376 @@
     </div>
 
     {{-- Create Modal --}}
-    @if($createOpen)
-        <div class="fixed inset-0 z-[9999] bg-black/40 flex items-center justify-center p-4" wire:click.self="closeCreate">
-            <div class="w-full max-w-3xl bg-white rounded-3xl shadow-xl border border-gray-100 p-6 overflow-y-auto max-h-[85vh]">
-                <div class="flex items-start justify-between gap-3 mb-4">
-                    <div>
-                        <div class="text-lg font-black text-gray-900">{{ tr('New Leave Type') }}</div>
-                        <div class="text-xs text-gray-400">{{ tr('Create a leave policy for the selected year') }}</div>
-                    </div>
-                    <button type="button" class="text-gray-400 hover:text-gray-700" wire:click="closeCreate">
-                        <i class="fas fa-times"></i>
-                    </button>
+    {{-- Create Modal --}}
+    <x-ui.modal wire:model="createOpen" maxWidth="4xl">
+        <x-slot:title>
+            <div class="flex items-center gap-3">
+                <div class="w-10 h-10 bg-brand-50 text-brand-600 rounded-xl flex items-center justify-center text-lg border border-brand-100 shadow-sm">
+                    <i class="fas fa-umbrella-beach"></i>
                 </div>
+                <div>
+                    <h3 class="font-bold text-gray-900 text-lg leading-tight">{{ tr('New Leave Type') }}</h3>
+                    <p class="text-[10px] text-gray-400 font-bold uppercase tracking-widest">{{ tr('Create a leave policy for the selected year') }}</p>
+                </div>
+            </div>
+        </x-slot:title>
 
-                {{-- Basic --}}
-                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    <div class="md:col-span-2">
-                        <label class="block text-[11px] font-black text-gray-500 mb-1">{{ tr('Name') }}</label>
-                        <input type="text" wire:model.defer="name"
-                               class="w-full h-[40px] px-3 rounded-xl border border-gray-200 text-sm bg-gray-50/50 focus:bg-white focus:border-[color:var(--brand-via)] focus:ring-4 focus:ring-[color:var(--brand-via)]/10 transition-all"
-                               placeholder="{{ tr('Leave name...') }}">
-                        @error('name') <div class="text-xs text-red-600 mt-1">{{ $message }}</div> @enderror
+        <x-slot:content>
+            <div class="grid grid-cols-1 lg:grid-cols-2 gap-6 py-2">
+                {{-- Left Column: Basic Info --}}
+                <div class="space-y-4">
+                    <div class="flex items-center gap-2 mb-1">
+                        <span class="w-1 h-3 bg-brand-500 rounded-full"></span>
+                        <h4 class="text-xs font-black text-gray-700 uppercase tracking-wider">{{ tr('Basic Information') }}</h4>
                     </div>
 
-                    <div>
-                        <label class="block text-[11px] font-black text-gray-500 mb-1">{{ tr('Type') }}</label>
-                        <input type="text" wire:model.defer="leave_type"
-                               class="w-full h-[40px] px-3 rounded-xl border border-gray-200 text-sm bg-gray-50/50 focus:bg-white focus:border-[color:var(--brand-via)] focus:ring-4 focus:ring-[color:var(--brand-via)]/10 transition-all"
-                               placeholder="{{ tr('e.g. annual / sick / emergency') }}">
-                        @error('leave_type') <div class="text-xs text-red-600 mt-1">{{ $message }}</div> @enderror
-                    </div>
+                    <div class="bg-gray-50/50 p-4 rounded-3xl border border-gray-100 space-y-4">
+                        <x-ui.input
+                            label="{{ tr('Name') }}"
+                            wire:model.defer="name"
+                            placeholder="{{ tr('Leave name...') }}"
+                        />
 
-                    <div>
-                        <label class="block text-[11px] font-black text-gray-500 mb-1">{{ tr('Days per year') }}</label>
-                        <input type="number" step="0.5" min="0" wire:model.defer="days_per_year"
-                               class="w-full h-[40px] px-3 rounded-xl border border-gray-200 text-sm bg-gray-50/50 focus:bg-white focus:border-[color:var(--brand-via)] focus:ring-4 focus:ring-[color:var(--brand-via)]/10 transition-all">
-                        @error('days_per_year') <div class="text-xs text-red-600 mt-1">{{ $message }}</div> @enderror
-                    </div>
+                        <div class="grid grid-cols-2 gap-4">
+                            <x-ui.input
+                                label="{{ tr('Type') }}"
+                                wire:model.defer="leave_type"
+                                placeholder="{{ tr('e.g. annual') }}"
+                            />
+                            <x-ui.input
+                                type="number" step="0.5" min="0"
+                                label="{{ tr('Days per year') }}"
+                                wire:model.defer="days_per_year"
+                            />
+                        </div>
 
-                    <div>
-                        <label class="block text-[11px] font-black text-gray-500 mb-1">{{ tr('Gender') }}</label>
-                        <select wire:model.defer="gender"
-                                class="w-full h-[40px] px-3 rounded-xl border border-gray-200 text-sm bg-gray-50/50 focus:bg-white focus:border-[color:var(--brand-via)] focus:ring-4 focus:ring-[color:var(--brand-via)]/10 transition-all">
+                        <x-ui.select label="{{ tr('Gender') }}" wire:model.defer="gender">
                             <option value="all">{{ tr('All') }}</option>
                             <option value="male">{{ tr('Male') }}</option>
                             <option value="female">{{ tr('Female') }}</option>
-                        </select>
-                        @error('gender') <div class="text-xs text-red-600 mt-1">{{ $message }}</div> @enderror
-                    </div>
+                        </x-ui.select>
 
-                    <div class="md:col-span-2 grid grid-cols-1 sm:grid-cols-3 gap-3">
-                        <label class="flex items-center gap-2 text-sm font-semibold text-gray-700">
-                            <input type="checkbox" wire:model.defer="is_active">
-                            <span>{{ tr('Active') }}</span>
-                        </label>
+                        <x-ui.textarea
+                            label="{{ tr('Description') }}"
+                            wire:model.defer="description"
+                            rows="2"
+                        />
 
-                        <label class="flex items-center gap-2 text-sm font-semibold text-gray-700">
-                            <input type="checkbox" wire:model.defer="show_in_app">
-                            <span>{{ tr('Show in App') }}</span>
-                        </label>
+                        <div class="flex flex-wrap gap-4 pt-2">
+                            <label class="flex items-center gap-2 text-sm font-bold text-gray-700 cursor-pointer">
+                                <input type="checkbox" wire:model.defer="is_active" class="rounded-lg border-gray-300 text-brand-600 focus:ring-brand-500">
+                                <span>{{ tr('Active') }}</span>
+                            </label>
 
-                        <label class="flex items-center gap-2 text-sm font-semibold text-gray-700">
-                            <input type="checkbox" wire:model.defer="requires_attachment">
-                            <span>{{ tr('Requires attachment') }}</span>
-                        </label>
-                    </div>
+                            <label class="flex items-center gap-2 text-sm font-bold text-gray-700 cursor-pointer">
+                                <input type="checkbox" wire:model.defer="show_in_app" class="rounded-lg border-gray-300 text-brand-600 focus:ring-brand-500">
+                                <span>{{ tr('Show in App') }}</span>
+                            </label>
 
-                    <div class="md:col-span-2">
-                        <label class="block text-[11px] font-black text-gray-500 mb-1">{{ tr('Description') }}</label>
-                        <textarea wire:model.defer="description" rows="3"
-                                  class="w-full px-3 py-2 rounded-xl border border-gray-200 text-sm bg-gray-50/50 focus:bg-white focus:border-[color:var(--brand-via)] focus:ring-4 focus:ring-[color:var(--brand-via)]/10 transition-all"></textarea>
-                        @error('description') <div class="text-xs text-red-600 mt-1">{{ $message }}</div> @enderror
-                    </div>
-
-                    {{-- Advanced Settings --}}
-                    <div class="md:col-span-2 mt-2 pt-4 border-t border-gray-100">
-                        <div class="text-sm font-black text-gray-900 mb-3">{{ tr('Advanced Policy Settings') }}</div>
-
-                        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-                            {{-- Accrual --}}
-                            <div>
-                                <label class="block text-[11px] font-black text-gray-500 mb-1">{{ tr('Accrual method') }}</label>
-                                <select wire:model.defer="accrual_method"
-                                        class="w-full h-[40px] px-3 rounded-xl border border-gray-200 text-sm bg-gray-50/50">
-                                    <option value="annual_grant">{{ tr('Annual full grant') }}</option>
-                                    <option value="monthly">{{ tr('Monthly accrual') }}</option>
-                                    <option value="by_work_days">{{ tr('By actual work days') }}</option>
-                                </select>
-                                @error('accrual_method') <div class="text-xs text-red-600 mt-1">{{ $message }}</div> @enderror
-                            </div>
-
-                            <div>
-                                <label class="block text-[11px] font-black text-gray-500 mb-1">{{ tr('Minimum unit') }}</label>
-                                <input type="number" step="0.1" min="0" wire:model.defer="min_accrual"
-                                       class="w-full h-[40px] px-3 rounded-xl border border-gray-200 text-sm bg-gray-50/50">
-                                @error('min_accrual') <div class="text-xs text-red-600 mt-1">{{ $message }}</div> @enderror
-                            </div>
-
-                            <div>
-                                <label class="block text-[11px] font-black text-gray-500 mb-1">{{ tr('Monthly rate') }}</label>
-                                <input type="number" step="0.1" min="0" wire:model.defer="monthly_accrual_rate"
-                                       class="w-full h-[40px] px-3 rounded-xl border border-gray-200 text-sm bg-gray-50/50"
-                                       placeholder="{{ tr('e.g. 2.5') }}">
-                                @error('monthly_accrual_rate') <div class="text-xs text-red-600 mt-1">{{ $message }}</div> @enderror
-                            </div>
-
-                            <div>
-                                <label class="block text-[11px] font-black text-gray-500 mb-1">{{ tr('Work-day rate') }}</label>
-                                <input type="number" step="0.01" min="0" wire:model.defer="workday_accrual_rate"
-                                       class="w-full h-[40px] px-3 rounded-xl border border-gray-200 text-sm bg-gray-50/50"
-                                       placeholder="{{ tr('e.g. 0.08') }}">
-                                @error('workday_accrual_rate') <div class="text-xs text-red-600 mt-1">{{ $message }}</div> @enderror
-                            </div>
-
-                            <div>
-                                <label class="block text-[11px] font-black text-gray-500 mb-1">{{ tr('Max balance') }}</label>
-                                <input type="number" step="0.5" min="0" wire:model.defer="max_balance"
-                                       class="w-full h-[40px] px-3 rounded-xl border border-gray-200 text-sm bg-gray-50/50">
-                                @error('max_balance') <div class="text-xs text-red-600 mt-1">{{ $message }}</div> @enderror
-                            </div>
-
-                            <div>
-                                <label class="block text-[11px] font-black text-gray-500 mb-1">{{ tr('Carryover days allowed') }}</label>
-                                <input type="number" step="0.5" min="0" wire:model.defer="carryover_days"
-                                       class="w-full h-[40px] px-3 rounded-xl border border-gray-200 text-sm bg-gray-50/50">
-                                @error('carryover_days') <div class="text-xs text-red-600 mt-1">{{ $message }}</div> @enderror
-                            </div>
-
-                            <div>
-                                <label class="block text-[11px] font-black text-gray-500 mb-1">{{ tr('Carryover expires after (months)') }}</label>
-                                <input type="number" step="1" min="0" wire:model.defer="carryover_expire_months"
-                                       class="w-full h-[40px] px-3 rounded-xl border border-gray-200 text-sm bg-gray-50/50">
-                                @error('carryover_expire_months') <div class="text-xs text-red-600 mt-1">{{ $message }}</div> @enderror
-                            </div>
-
-                            {{-- Weekend --}}
-                            <div>
-                                <label class="block text-[11px] font-black text-gray-500 mb-1">{{ tr('Weekend days') }}</label>
-                                <select wire:model.defer="weekend_policy"
-                                        class="w-full h-[40px] px-3 rounded-xl border border-gray-200 text-sm bg-gray-50/50">
-                                    <option value="exclude">{{ tr('Auto exclude') }}</option>
-                                    <option value="include">{{ tr('Auto include') }}</option>
-                                    <option value="employee_choice">{{ tr('Employee choice') }}</option>
-                                </select>
-                                @error('weekend_policy') <div class="text-xs text-red-600 mt-1">{{ $message }}</div> @enderror
-                            </div>
-
-                            {{-- Deduction --}}
-                            <div>
-                                <label class="block text-[11px] font-black text-gray-500 mb-1">{{ tr('Deduction policy') }}</label>
-                                <select wire:model.defer="deduction_policy"
-                                        class="w-full h-[40px] px-3 rounded-xl border border-gray-200 text-sm bg-gray-50/50">
-                                    <option value="balance_only">{{ tr('Deduct from balance only') }}</option>
-                                    <option value="salary_after_balance">{{ tr('Deduct from salary after balance') }}</option>
-                                    <option value="not_allowed_after_balance">{{ tr('Not allowed after balance') }}</option>
-                                </select>
-                                @error('deduction_policy') <div class="text-xs text-red-600 mt-1">{{ $message }}</div> @enderror
-                            </div>
-
-                            {{-- Duration --}}
-                            <div>
-                                <label class="block text-[11px] font-black text-gray-500 mb-1">{{ tr('Duration type') }}</label>
-                                <select wire:model.defer="duration_unit"
-                                        class="w-full h-[40px] px-3 rounded-xl border border-gray-200 text-sm bg-gray-50/50">
-                                    <option value="full_day">{{ tr('Full day only') }}</option>
-                                    <option value="half_day">{{ tr('Full day or half day') }}</option>
-                                    <option value="hours">{{ tr('By hours') }}</option>
-                                </select>
-                                @error('duration_unit') <div class="text-xs text-red-600 mt-1">{{ $message }}</div> @enderror
-                            </div>
-
-                            {{-- Notice --}}
-                            <div>
-                                <label class="block text-[11px] font-black text-gray-500 mb-1">{{ tr('Min notice (days)') }}</label>
-                                <input type="number" min="0" wire:model.defer="notice_min_days"
-                                       class="w-full h-[40px] px-3 rounded-xl border border-gray-200 text-sm bg-gray-50/50">
-                                @error('notice_min_days') <div class="text-xs text-red-600 mt-1">{{ $message }}</div> @enderror
-                            </div>
-
-                            <div>
-                                <label class="block text-[11px] font-black text-gray-500 mb-1">{{ tr('Max advance (days)') }}</label>
-                                <input type="number" min="0" wire:model.defer="notice_max_advance_days"
-                                       class="w-full h-[40px] px-3 rounded-xl border border-gray-200 text-sm bg-gray-50/50">
-                                @error('notice_max_advance_days') <div class="text-xs text-red-600 mt-1">{{ $message }}</div> @enderror
-                            </div>
-
-                            <div class="md:col-span-2">
-                                <label class="flex items-center gap-2 text-sm font-semibold text-gray-700">
-                                    <input type="checkbox" wire:model.defer="allow_retroactive">
-                                    <span>{{ tr('Allow retroactive requests') }}</span>
-                                </label>
-                                @error('allow_retroactive') <div class="text-xs text-red-600 mt-1">{{ $message }}</div> @enderror
-                            </div>
-
-                            {{-- Notes --}}
-                            <div class="md:col-span-2 mt-2 pt-3 border-t border-gray-100">
-                                <label class="flex items-center gap-2 text-sm font-semibold text-gray-700">
-                                    <input type="checkbox" wire:model.defer="note_required">
-                                    <span>{{ tr('Mandatory note') }}</span>
-                                </label>
-                                @error('note_required') <div class="text-xs text-red-600 mt-1">{{ $message }}</div> @enderror
-
-                                <div class="mt-3">
-                                    <label class="block text-[11px] font-black text-gray-500 mb-1">{{ tr('Note text') }}</label>
-                                    <textarea wire:model.defer="note_text" rows="2"
-                                              class="w-full px-3 py-2 rounded-xl border border-gray-200 text-sm bg-gray-50/50"></textarea>
-                                    @error('note_text') <div class="text-xs text-red-600 mt-1">{{ $message }}</div> @enderror
-                                </div>
-
-                                <label class="flex items-center gap-2 text-sm font-semibold text-gray-700 mt-2">
-                                    <input type="checkbox" wire:model.defer="note_ack_required">
-                                    <span>{{ tr('Require acknowledgment of the note') }}</span>
-                                </label>
-                                @error('note_ack_required') <div class="text-xs text-red-600 mt-1">{{ $message }}</div> @enderror
-                            </div>
-
-                            {{-- Attachments settings --}}
-                            <div class="md:col-span-2 mt-2 pt-3 border-t border-gray-100">
-                                <div class="text-sm font-black text-gray-900 mb-2">{{ tr('Attachments Settings') }}</div>
-
-                                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-                                    <div>
-                                        <label class="block text-[11px] font-black text-gray-500 mb-1">{{ tr('Allowed types') }}</label>
-                                        <div class="flex flex-wrap gap-3">
-                                            <label class="flex items-center gap-2 text-sm font-semibold text-gray-700">
-                                                <input type="checkbox" value="pdf" wire:model.defer="attachment_types">
-                                                <span>PDF</span>
-                                            </label>
-                                            <label class="flex items-center gap-2 text-sm font-semibold text-gray-700">
-                                                <input type="checkbox" value="jpg" wire:model.defer="attachment_types">
-                                                <span>JPG</span>
-                                            </label>
-                                            <label class="flex items-center gap-2 text-sm font-semibold text-gray-700">
-                                                <input type="checkbox" value="png" wire:model.defer="attachment_types">
-                                                <span>PNG</span>
-                                            </label>
-                                        </div>
-                                        @error('attachment_types') <div class="text-xs text-red-600 mt-1">{{ $message }}</div> @enderror
-                                        @error('attachment_types.*') <div class="text-xs text-red-600 mt-1">{{ $message }}</div> @enderror
-                                    </div>
-
-                                    <div>
-                                        <label class="block text-[11px] font-black text-gray-500 mb-1">{{ tr('Max size (MB)') }}</label>
-                                        <input type="number" step="0.5" min="0.5" wire:model.defer="attachment_max_mb"
-                                               class="w-full h-[40px] px-3 rounded-xl border border-gray-200 text-sm bg-gray-50/50">
-                                        @error('attachment_max_mb') <div class="text-xs text-red-600 mt-1">{{ $message }}</div> @enderror
-                                    </div>
-                                </div>
-                            </div>
-
-                            {{-- Constraints --}}
-                            <div class="md:col-span-2 mt-2 pt-3 border-t border-gray-100">
-                                <div class="text-sm font-black text-gray-900 mb-2">{{ tr('General Constraints') }}</div>
-
-                                <label class="flex items-center gap-2 text-sm font-semibold text-gray-700">
-                                    <input type="checkbox" wire:model.defer="blackout_enabled">
-                                    <span>{{ tr('Blackout periods (peak seasons)') }}</span>
-                                </label>
-
-                                <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mt-3">
-                                    <div>
-                                        <label class="block text-[11px] font-black text-gray-500 mb-1">{{ tr('From (MM-DD)') }}</label>
-                                        <input type="text" wire:model.defer="blackout_from"
-                                               class="w-full h-[40px] px-3 rounded-xl border border-gray-200 text-sm bg-gray-50/50"
-                                               placeholder="12-01">
-                                        @error('blackout_from') <div class="text-xs text-red-600 mt-1">{{ $message }}</div> @enderror
-                                    </div>
-
-                                    <div>
-                                        <label class="block text-[11px] font-black text-gray-500 mb-1">{{ tr('To (MM-DD)') }}</label>
-                                        <input type="text" wire:model.defer="blackout_to"
-                                               class="w-full h-[40px] px-3 rounded-xl border border-gray-200 text-sm bg-gray-50/50"
-                                               placeholder="12-31">
-                                        @error('blackout_to') <div class="text-xs text-red-600 mt-1">{{ $message }}</div> @enderror
-                                    </div>
-
-                                    <div class="flex items-end">
-                                        <label class="flex items-center gap-2 text-sm font-semibold text-gray-700">
-                                            <input type="checkbox" wire:model.defer="blackout_exception_requires_approval">
-                                            <span>{{ tr('Exception requires approval') }}</span>
-                                        </label>
-                                        @error('blackout_exception_requires_approval') <div class="text-xs text-red-600 mt-1">{{ $message }}</div> @enderror
-                                    </div>
-                                </div>
-
-                                <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mt-4">
-                                    <div>
-                                        <label class="flex items-center gap-2 text-sm font-semibold text-gray-700">
-                                            <input type="checkbox" wire:model.defer="min_service_enabled">
-                                            <span>{{ tr('Minimum service required') }}</span>
-                                        </label>
-                                        <div class="mt-2">
-                                            <label class="block text-[11px] font-black text-gray-500 mb-1">{{ tr('Months') }}</label>
-                                            <input type="number" min="0" wire:model.defer="min_service_months"
-                                                   class="w-full h-[40px] px-3 rounded-xl border border-gray-200 text-sm bg-gray-50/50">
-                                            @error('min_service_months') <div class="text-xs text-red-600 mt-1">{{ $message }}</div> @enderror
-                                        </div>
-                                    </div>
-
-                                    <div class="space-y-3">
-                                        <label class="flex items-center gap-2 text-sm font-semibold text-gray-700">
-                                            <input type="checkbox" wire:model.defer="requires_presence_before_apply">
-                                            <span>{{ tr('Employee must be present before applying') }}</span>
-                                        </label>
-
-                                        <label class="flex items-center gap-2 text-sm font-semibold text-gray-700">
-                                            <input type="checkbox" wire:model.defer="max_consecutive_enabled">
-                                            <span>{{ tr('Limit consecutive leave') }}</span>
-                                        </label>
-
-                                        <div>
-                                            <label class="block text-[11px] font-black text-gray-500 mb-1">{{ tr('Max consecutive days') }}</label>
-                                            <input type="number" min="1" wire:model.defer="max_consecutive_days"
-                                                   class="w-full h-[40px] px-3 rounded-xl border border-gray-200 text-sm bg-gray-50/50">
-                                            @error('max_consecutive_days') <div class="text-xs text-red-600 mt-1">{{ $message }}</div> @enderror
-                                        </div>
-
-                                        <label class="flex items-center gap-2 text-sm font-semibold text-gray-700">
-                                            <input type="checkbox" wire:model.defer="max_total_enabled">
-                                            <span>{{ tr('Limit total per year') }}</span>
-                                        </label>
-
-                                        <div>
-                                            <label class="block text-[11px] font-black text-gray-500 mb-1">{{ tr('Max total days') }}</label>
-                                            <input type="number" min="1" wire:model.defer="max_total_days"
-                                                   class="w-full h-[40px] px-3 rounded-xl border border-gray-200 text-sm bg-gray-50/50">
-                                            @error('max_total_days') <div class="text-xs text-red-600 mt-1">{{ $message }}</div> @enderror
-                                        </div>
-                                    </div>
-                                </div>
-
-                                @error('blackout_enabled') <div class="text-xs text-red-600 mt-1">{{ $message }}</div> @enderror
-                                @error('min_service_enabled') <div class="text-xs text-red-600 mt-1">{{ $message }}</div> @enderror
-                                @error('requires_presence_before_apply') <div class="text-xs text-red-600 mt-1">{{ $message }}</div> @enderror
-                                @error('max_consecutive_enabled') <div class="text-xs text-red-600 mt-1">{{ $message }}</div> @enderror
-                                @error('max_total_enabled') <div class="text-xs text-red-600 mt-1">{{ $message }}</div> @enderror
-                            </div>
+                            <label class="flex items-center gap-2 text-sm font-bold text-gray-700 cursor-pointer">
+                                <input type="checkbox" wire:model.defer="requires_attachment" class="rounded-lg border-gray-300 text-brand-600 focus:ring-brand-500">
+                                <span>{{ tr('Requires attachment') }}</span>
+                            </label>
                         </div>
                     </div>
                 </div>
 
-                <div class="flex items-center justify-end gap-2 mt-6">
-                    <x-ui.secondary-button :fullWidth="false" wire:click="closeCreate" wire:loading.attr="disabled">
-                        {{ tr('Cancel') }}
-                    </x-ui.secondary-button>
-
-                    <x-ui.primary-button :arrow="false" :fullWidth="false"
-                                         wire:click="saveCreate" wire:loading.attr="disabled" wire:target="saveCreate">
-                        <i class="fas fa-save"></i>
-                        <span class="ms-2">{{ tr('Save') }}</span>
-                    </x-ui.primary-button>
-                </div>
-            </div>
-        </div>
-    @endif
-
-    {{-- Edit Modal (same as Create, uses same bound properties) --}}
-    @if($editOpen)
-        <div class="fixed inset-0 z-[9999] bg-black/40 flex items-center justify-center p-4" wire:click.self="closeEdit">
-            <div class="w-full max-w-3xl bg-white rounded-3xl shadow-xl border border-gray-100 p-6 overflow-y-auto max-h-[85vh]">
-                <div class="flex items-start justify-between gap-3 mb-4">
-                    <div>
-                        <div class="text-lg font-black text-gray-900">{{ tr('Edit Leave Type') }}</div>
-                        <div class="text-xs text-gray-400">{{ tr('Update leave policy fields') }}</div>
+                {{-- Right Column: Advanced Settings --}}
+                <div class="space-y-4">
+                    <div class="flex items-center gap-2 mb-1">
+                        <span class="w-1 h-3 bg-purple-500 rounded-full"></span>
+                        <h4 class="text-xs font-black text-gray-700 uppercase tracking-wider">{{ tr('Advanced Rules') }}</h4>
                     </div>
-                    <button type="button" class="text-gray-400 hover:text-gray-700" wire:click="closeEdit">
-                        <i class="fas fa-times"></i>
-                    </button>
-                </div>
 
-                {{-- نفس حقول Create تماماً --}}
-                {{-- لتخفيف التكرار في مشروعك تقدر تعمل partial، بس هنا خليته كامل لضمان النسخ بدون نقص --}}
-                @includeIf('systemsettings::livewire.attendance.partials.leave-policy-form')
-                {{-- إذا ما عندك partial، انسخ نفس بلوك create هنا حرفياً --}}
-                {{-- (لو تحب، قلّي هل تفضل Partial أو نسخة كاملة مكررة وأنا أعطيك النسخة المكررة بالكامل) --}}
+                    <div class="bg-purple-50/20 p-4 rounded-3xl border border-purple-50 space-y-4">
+                        <div class="grid grid-cols-2 gap-4">
+                             <x-ui.select label="{{ tr('Accrual method') }}" wire:model.defer="accrual_method">
+                                <option value="annual_grant">{{ tr('Annual full grant') }}</option>
+                                <option value="monthly">{{ tr('Monthly accrual') }}</option>
+                                <option value="by_work_days">{{ tr('By actual work days') }}</option>
+                            </x-ui.select>
+                            
+                            <x-ui.input type="number" step="0.1" min="0" label="{{ tr('Monthly rate') }}" wire:model.defer="monthly_accrual_rate" />
+                        </div>
+                        
+                        <div class="grid grid-cols-3 gap-3">
+                            <x-ui.input type="number" step="0.5" min="0" label="{{ tr('Max balance') }}" wire:model.defer="max_balance" />
+                            <x-ui.input type="number" step="0.5" min="0" label="{{ tr('Carryover days') }}" wire:model.defer="carryover_days" />
+                            <x-ui.input type="number" step="1" min="0" label="{{ tr('Expiry') }}" wire:model.defer="carryover_expire_months" />
+                        </div>
 
-                <div class="flex items-center justify-end gap-2 mt-6">
-                    <x-ui.secondary-button :fullWidth="false" wire:click="closeEdit" wire:loading.attr="disabled">
-                        {{ tr('Cancel') }}
-                    </x-ui.secondary-button>
+                         <div class="grid grid-cols-2 gap-4">
+                            <x-ui.select label="{{ tr('Weekend Policy') }}" wire:model.defer="weekend_policy">
+                                <option value="exclude">{{ tr('Auto exclude') }}</option>
+                                <option value="include">{{ tr('Auto include') }}</option>
+                                <option value="employee_choice">{{ tr('Employee choice') }}</option>
+                            </x-ui.select>
 
-                    <x-ui.primary-button :arrow="false" :fullWidth="false"
-                                         wire:click="saveEdit" wire:loading.attr="disabled" wire:target="saveEdit">
-                        <i class="fas fa-save"></i>
-                        <span class="ms-2">{{ tr('Save') }}</span>
-                    </x-ui.primary-button>
+                            <x-ui.select label="{{ tr('Duration Type') }}" wire:model.defer="duration_unit">
+                                <option value="full_day">{{ tr('Full day only') }}</option>
+                                <option value="half_day">{{ tr('Full day or half day') }}</option>
+                                <option value="hours">{{ tr('By hours') }}</option>
+                            </x-ui.select>
+                        </div>
+
+                        {{-- Collapsible More Options --}}
+                         <div x-data="{ expanded: false }">
+                            <button type="button" @click="expanded = !expanded" class="w-full flex items-center justify-between text-xs font-bold text-purple-600 hover:text-purple-800 py-2">
+                                <span>{{ tr('Show More Constraints') }}</span>
+                                <i class="fas" :class="expanded ? 'fa-chevron-up' : 'fa-chevron-down'"></i>
+                            </button>
+                            
+                            <div x-show="expanded" x-collapse class="space-y-4 pt-2 border-t border-purple-100 mt-2">
+                                <div class="grid grid-cols-2 gap-4">
+                                     <x-ui.input type="number" min="0" label="{{ tr('Min notice (days)') }}" wire:model.defer="notice_min_days" />
+                                     <x-ui.input type="number" min="0" label="{{ tr('Max advance (days)') }}" wire:model.defer="notice_max_advance_days" />
+                                </div>
+                                
+                                <label class="flex items-center gap-2 text-xs font-semibold text-gray-700">
+                                    <input type="checkbox" wire:model.defer="allow_retroactive" class="rounded border-gray-300 text-purple-600 focus:ring-purple-500">
+                                    <span>{{ tr('Allow retroactive requests') }}</span>
+                                </label>
+                                
+                                <div class="grid grid-cols-2 gap-4">
+                                    <x-ui.input type="text" label="{{ tr('Blackout From (MM-DD)') }}" wire:model.defer="blackout_from" placeholder="12-01" />
+                                    <x-ui.input type="text" label="{{ tr('Blackout To (MM-DD)') }}" wire:model.defer="blackout_to" placeholder="12-31" />
+                                </div>
+                            </div>
+                        </div>
+                    </div>
                 </div>
             </div>
-        </div>
-    @endif
+        </x-slot:content>
+
+        <x-slot:footer>
+            <div class="flex items-center justify-end gap-3 w-full">
+                <x-ui.secondary-button wire:click="closeCreate" class="!px-6 !rounded-xl">
+                    {{ tr('Cancel') }}
+                </x-ui.secondary-button>
+                <x-ui.primary-button wire:click="saveCreate" class="!px-6 !rounded-xl shadow-lg">
+                    <i class="fas fa-save me-2"></i>
+                    {{ tr('Save Policy') }}
+                </x-ui.primary-button>
+            </div>
+        </x-slot:footer>
+    </x-ui.modal>
+
+    {{-- Edit Modal --}}
+    <x-ui.modal wire:model="editOpen" maxWidth="4xl">
+        <x-slot:title>
+            <div class="flex items-center gap-3">
+                <div class="w-10 h-10 bg-blue-50 text-blue-600 rounded-xl flex items-center justify-center text-lg border border-blue-100 shadow-sm">
+                    <i class="fas fa-edit"></i>
+                </div>
+                <div>
+                    <h3 class="font-bold text-gray-900 text-lg leading-tight">{{ tr('Edit Leave Type') }}</h3>
+                    <p class="text-[10px] text-gray-400 font-bold uppercase tracking-widest">{{ tr('Update leave policy fields') }}</p>
+                </div>
+            </div>
+        </x-slot:title>
+
+        <x-slot:content>
+            <div class="grid grid-cols-1 lg:grid-cols-2 gap-6 py-2">
+                {{-- Left Column: Basic Info --}}
+                <div class="space-y-4">
+                    <div class="flex items-center gap-2 mb-1">
+                        <span class="w-1 h-3 bg-blue-500 rounded-full"></span>
+                        <h4 class="text-xs font-black text-gray-700 uppercase tracking-wider">{{ tr('Basic Information') }}</h4>
+                    </div>
+
+                    <div class="bg-gray-50/50 p-4 rounded-3xl border border-gray-100 space-y-4">
+                        <x-ui.input
+                            label="{{ tr('Name') }}"
+                            wire:model.defer="name"
+                        />
+
+                        <div class="grid grid-cols-2 gap-4">
+                            <x-ui.input
+                                label="{{ tr('Type') }}"
+                                wire:model.defer="leave_type"
+                            />
+                            <x-ui.input
+                                type="number" step="0.5" min="0"
+                                label="{{ tr('Days per year') }}"
+                                wire:model.defer="days_per_year"
+                            />
+                        </div>
+
+                        <x-ui.select label="{{ tr('Gender') }}" wire:model.defer="gender">
+                            <option value="all">{{ tr('All') }}</option>
+                            <option value="male">{{ tr('Male') }}</option>
+                            <option value="female">{{ tr('Female') }}</option>
+                        </x-ui.select>
+
+                        <x-ui.textarea
+                            label="{{ tr('Description') }}"
+                            wire:model.defer="description"
+                            rows="2"
+                        />
+
+                        <div class="flex flex-wrap gap-4 pt-2">
+                            <label class="flex items-center gap-2 text-sm font-bold text-gray-700 cursor-pointer">
+                                <input type="checkbox" wire:model.defer="is_active" class="rounded-lg border-gray-300 text-blue-600 focus:ring-blue-500">
+                                <span>{{ tr('Active') }}</span>
+                            </label>
+
+                            <label class="flex items-center gap-2 text-sm font-bold text-gray-700 cursor-pointer">
+                                <input type="checkbox" wire:model.defer="show_in_app" class="rounded-lg border-gray-300 text-blue-600 focus:ring-blue-500">
+                                <span>{{ tr('Show in App') }}</span>
+                            </label>
+
+                            <label class="flex items-center gap-2 text-sm font-bold text-gray-700 cursor-pointer">
+                                <input type="checkbox" wire:model.defer="requires_attachment" class="rounded-lg border-gray-300 text-blue-600 focus:ring-blue-500">
+                                <span>{{ tr('Requires attachment') }}</span>
+                            </label>
+                        </div>
+                    </div>
+                </div>
+
+                {{-- Right Column: Advanced Settings --}}
+                <div class="space-y-4">
+                    <div class="flex items-center gap-2 mb-1">
+                        <span class="w-1 h-3 bg-purple-500 rounded-full"></span>
+                        <h4 class="text-xs font-black text-gray-700 uppercase tracking-wider">{{ tr('Advanced Rules') }}</h4>
+                    </div>
+
+                    <div class="bg-purple-50/20 p-4 rounded-3xl border border-purple-50 space-y-4">
+                        <div class="grid grid-cols-2 gap-4">
+                             <x-ui.select label="{{ tr('Accrual method') }}" wire:model.defer="accrual_method">
+                                <option value="annual_grant">{{ tr('Annual full grant') }}</option>
+                                <option value="monthly">{{ tr('Monthly accrual') }}</option>
+                                <option value="by_work_days">{{ tr('By actual work days') }}</option>
+                            </x-ui.select>
+                            
+                            <x-ui.input type="number" step="0.1" min="0" label="{{ tr('Monthly rate') }}" wire:model.defer="monthly_accrual_rate" />
+                        </div>
+                        
+                        <div class="grid grid-cols-3 gap-3">
+                            <x-ui.input type="number" step="0.5" min="0" label="{{ tr('Max balance') }}" wire:model.defer="max_balance" />
+                            <x-ui.input type="number" step="0.5" min="0" label="{{ tr('Carryover days') }}" wire:model.defer="carryover_days" />
+                            <x-ui.input type="number" step="1" min="0" label="{{ tr('Expiry') }}" wire:model.defer="carryover_expire_months" />
+                        </div>
+
+                         <div class="grid grid-cols-2 gap-4">
+                            <x-ui.select label="{{ tr('Weekend Policy') }}" wire:model.defer="weekend_policy">
+                                <option value="exclude">{{ tr('Auto exclude') }}</option>
+                                <option value="include">{{ tr('Auto include') }}</option>
+                                <option value="employee_choice">{{ tr('Employee choice') }}</option>
+                            </x-ui.select>
+
+                            <x-ui.select label="{{ tr('Duration Type') }}" wire:model.defer="duration_unit">
+                                <option value="full_day">{{ tr('Full day only') }}</option>
+                                <option value="half_day">{{ tr('Full day or half day') }}</option>
+                                <option value="hours">{{ tr('By hours') }}</option>
+                            </x-ui.select>
+                        </div>
+
+                        {{-- Collapsible More Options --}}
+                         <div x-data="{ expanded: false }">
+                            <button type="button" @click="expanded = !expanded" class="w-full flex items-center justify-between text-xs font-bold text-purple-600 hover:text-purple-800 py-2">
+                                <span>{{ tr('Show More Constraints') }}</span>
+                                <i class="fas" :class="expanded ? 'fa-chevron-up' : 'fa-chevron-down'"></i>
+                            </button>
+                            
+                            <div x-show="expanded" x-collapse class="space-y-4 pt-2 border-t border-purple-100 mt-2">
+                                <div class="grid grid-cols-2 gap-4">
+                                     <x-ui.input type="number" min="0" label="{{ tr('Min notice (days)') }}" wire:model.defer="notice_min_days" />
+                                     <x-ui.input type="number" min="0" label="{{ tr('Max advance (days)') }}" wire:model.defer="notice_max_advance_days" />
+                                </div>
+                                
+                                <label class="flex items-center gap-2 text-xs font-semibold text-gray-700">
+                                    <input type="checkbox" wire:model.defer="allow_retroactive" class="rounded border-gray-300 text-purple-600 focus:ring-purple-500">
+                                    <span>{{ tr('Allow retroactive requests') }}</span>
+                                </label>
+                                
+                                <div class="grid grid-cols-2 gap-4">
+                                    <x-ui.input type="text" label="{{ tr('Blackout From (MM-DD)') }}" wire:model.defer="blackout_from" placeholder="12-01" />
+                                    <x-ui.input type="text" label="{{ tr('Blackout To (MM-DD)') }}" wire:model.defer="blackout_to" placeholder="12-31" />
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </x-slot:content>
+
+        <x-slot:footer>
+            <div class="flex items-center justify-end gap-3 w-full">
+                <x-ui.secondary-button wire:click="closeEdit" class="!px-6 !rounded-xl">
+                    {{ tr('Cancel') }}
+                </x-ui.secondary-button>
+                <x-ui.primary-button wire:click="saveEdit" class="!px-6 !rounded-xl shadow-lg">
+                    <i class="fas fa-save me-2"></i>
+                    {{ tr('Update') }}
+                </x-ui.primary-button>
+            </div>
+        </x-slot:footer>
+    </x-ui.modal>
 
     {{-- Delete Confirm Modal --}}
-    @if($deleteOpen)
-        <div class="fixed inset-0 z-[9999] bg-black/40 flex items-center justify-center p-4" wire:click.self="closeDelete">
-            <div class="w-full max-w-md bg-white rounded-3xl shadow-xl border border-gray-100 p-6">
-                <div class="text-lg font-black text-gray-900">{{ tr('Delete') }}</div>
-                <div class="text-sm text-gray-500 mt-2">{{ tr('Are you sure you want to delete this item?') }}</div>
-
-                <div class="flex items-center justify-end gap-2 mt-6">
-                    <x-ui.secondary-button :fullWidth="false" wire:click="closeDelete">
-                        {{ tr('Cancel') }}
-                    </x-ui.secondary-button>
-
-                    <x-ui.primary-button :arrow="false" :fullWidth="false" wire:click="deleteNow">
-                        <i class="fas fa-trash"></i>
-                        <span class="ms-2">{{ tr('Delete') }}</span>
-                    </x-ui.primary-button>
+    <x-ui.modal wire:model="deleteOpen" maxWidth="md">
+        <x-slot:title>
+            <div class="flex items-center gap-3">
+                <div class="w-10 h-10 bg-red-50 text-red-600 rounded-xl flex items-center justify-center text-lg border border-red-100 shadow-sm">
+                    <i class="fas fa-trash-alt"></i>
+                </div>
+                <div>
+                    <h3 class="font-bold text-gray-900 text-lg leading-tight">{{ tr('Delete') }}</h3>
+                    <p class="text-[10px] text-gray-400 font-bold uppercase tracking-widest">{{ tr('Confirm action') }}</p>
                 </div>
             </div>
-        </div>
-    @endif
+        </x-slot:title>
+
+        <x-slot:content>
+            <div class="py-6 text-center">
+                <p class="text-sm text-gray-600 font-medium">{{ tr('Are you sure you want to delete this item?') }}</p>
+                <p class="text-xs text-red-500 mt-2">{{ tr('This action cannot be undone.') }}</p>
+            </div>
+        </x-slot:content>
+
+        <x-slot:footer>
+            <div class="flex items-center justify-end gap-3 w-full">
+                <x-ui.secondary-button wire:click="closeDelete" class="!px-6 !rounded-xl">
+                    {{ tr('Cancel') }}
+                </x-ui.secondary-button>
+
+                <x-ui.primary-button
+                    wire:click="deleteNow"
+                    class="!bg-red-600 hover:!bg-red-700 !px-6 !rounded-xl shadow-lg shadow-red-200"
+                >
+                    <i class="fas fa-trash me-2"></i>
+                    {{ tr('Delete') }}
+                </x-ui.primary-button>
+            </div>
+        </x-slot:footer>
+    </x-ui.modal>
 
     {{-- Manage Years Modal --}}
-    @if($yearsOpen)
-        <div class="fixed inset-0 z-[9999] bg-black/40 flex items-center justify-center p-4" wire:click.self="closeYears">
-            <div class="w-full max-w-2xl bg-white rounded-3xl shadow-xl border border-gray-100 p-6 overflow-y-auto max-h-[85vh]">
-                <div class="flex items-start justify-between gap-3 mb-4">
-                    <div>
-                        <div class="text-lg font-black text-gray-900">{{ tr('Manage Years') }}</div>
-                        <div class="text-xs text-gray-400">{{ tr('Add / activate / delete years and optionally copy policies') }}</div>
-                    </div>
-                    <button type="button" class="text-gray-400 hover:text-gray-700" wire:click="closeYears">
-                        <i class="fas fa-times"></i>
-                    </button>
+    <x-ui.modal wire:model="yearsOpen" maxWidth="2xl">
+        <x-slot:title>
+            <div class="flex items-center gap-3">
+                <div class="w-10 h-10 bg-brand-50 text-brand-600 rounded-xl flex items-center justify-center text-lg border border-brand-100 shadow-sm">
+                    <i class="fas fa-calendar-alt"></i>
                 </div>
+                <div>
+                    <h3 class="font-bold text-gray-900 text-lg leading-tight">{{ tr('Manage Years') }}</h3>
+                    <p class="text-[10px] text-gray-400 font-bold uppercase tracking-widest">{{ tr('Add / activate / delete years') }}</p>
+                </div>
+            </div>
+        </x-slot:title>
 
+        <x-slot:content>
+            <div class="py-2 space-y-6">
                 {{-- Existing years list --}}
-                <div class="bg-gray-50/50 rounded-2xl border border-gray-100 p-4 mb-5">
-                    <div class="text-sm font-black text-gray-900 mb-3">{{ tr('Existing Years') }}</div>
+                <div class="space-y-3">
+                    <div class="flex items-center gap-2 mb-1">
+                        <span class="w-1 h-3 bg-gray-500 rounded-full"></span>
+                        <h4 class="text-xs font-black text-gray-700 uppercase tracking-wider">{{ tr('Existing Years') }}</h4>
+                    </div>
 
-                    <div class="space-y-2">
+                    <div class="bg-gray-50/50 rounded-3xl border border-gray-100 p-4 space-y-2 max-h-[200px] overflow-y-auto custom-scrollbar">
                         @foreach($years as $y)
-                            <div class="flex items-center justify-between gap-3 bg-white rounded-2xl border border-gray-100 px-4 py-3">
+                            <div class="flex items-center justify-between gap-3 bg-white rounded-2xl border border-gray-100 px-4 py-3 shadow-sm hover:shadow-md transition-all">
                                 <div class="min-w-0">
                                     <div class="text-sm font-black text-gray-900 flex items-center gap-2">
                                         <span>{{ $y->year }}</span>
@@ -717,22 +655,32 @@
                                             </span>
                                         @endif
                                     </div>
-                                    <div class="text-[11px] text-gray-500">
-                                        {{ tr('From') }}: {{ optional($y->starts_on)->format('Y-m-d') ?? '—' }}
-                                        • {{ tr('To') }}: {{ optional($y->ends_on)->format('Y-m-d') ?? '—' }}
+                                    <div class="text-[10px] text-gray-400 mt-1">
+                                        <i class="fas fa-clock me-1 text-gray-300"></i>
+                                        {{ optional($y->starts_on)->format('Y-m-d') ?? '—' }}
+                                        <i class="fas fa-arrow-right mx-1 text-gray-300"></i>
+                                        {{ optional($y->ends_on)->format('Y-m-d') ?? '—' }}
                                     </div>
                                 </div>
 
                                 <div class="flex items-center gap-2">
-                                    <x-ui.secondary-button :fullWidth="false" wire:click="setYearActive({{ (int)$y->id }})">
-                                        <i class="fas fa-bolt"></i>
-                                        <span class="ms-2">{{ tr('Set Active') }}</span>
-                                    </x-ui.secondary-button>
+                                    @if(!$y->is_active)
+                                        <button 
+                                            wire:click="setYearActive({{ (int)$y->id }})"
+                                            class="w-8 h-8 rounded-xl bg-gray-50 text-gray-400 hover:bg-emerald-50 hover:text-emerald-600 border border-gray-100 transition-all flex items-center justify-center"
+                                            title="{{ tr('Set Active') }}"
+                                        >
+                                            <i class="fas fa-bolt text-xs"></i>
+                                        </button>
+                                    @endif
 
-                                    <x-ui.secondary-button :fullWidth="false" class="!text-red-600" wire:click="deleteYear({{ (int)$y->id }})">
-                                        <i class="fas fa-trash"></i>
-                                        <span class="ms-2">{{ tr('Delete') }}</span>
-                                    </x-ui.secondary-button>
+                                    <button 
+                                        wire:click="deleteYear({{ (int)$y->id }})"
+                                        class="w-8 h-8 rounded-xl bg-gray-50 text-gray-400 hover:bg-red-50 hover:text-red-600 border border-gray-100 transition-all flex items-center justify-center"
+                                        title="{{ tr('Delete') }}"
+                                    >
+                                        <i class="fas fa-trash text-xs"></i>
+                                    </button>
                                 </div>
                             </div>
                         @endforeach
@@ -740,255 +688,256 @@
                 </div>
 
                 {{-- Add new year --}}
-                <div class="text-sm font-black text-gray-900 mb-2">{{ tr('Add New Year') }}</div>
-
-                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    <div>
-                        <label class="block text-[11px] font-black text-gray-500 mb-1">{{ tr('Year') }}</label>
-                        <input type="number" min="2000" max="2100" wire:model.defer="newYear"
-                               class="w-full h-[40px] px-3 rounded-xl border border-gray-200 text-sm bg-gray-50/50">
-                        @error('newYear') <div class="text-xs text-red-600 mt-1">{{ $message }}</div> @enderror
+                <div class="space-y-4 pt-4 border-t border-gray-100">
+                    <div class="flex items-center gap-2 mb-1">
+                        <span class="w-1 h-3 bg-brand-500 rounded-full"></span>
+                        <h4 class="text-xs font-black text-gray-700 uppercase tracking-wider">{{ tr('Add New Year') }}</h4>
                     </div>
 
-                    <div>
-                        <label class="block text-[11px] font-black text-gray-500 mb-1">{{ tr('Copy from year (optional)') }}</label>
-                        <select wire:model.defer="copyFromYearId"
-                                class="w-full h-[40px] px-3 rounded-xl border border-gray-200 text-sm bg-gray-50/50">
-                            <option value="">{{ tr('Do not copy') }}</option>
-                            @foreach($years as $y)
-                                <option value="{{ (int) $y->id }}">{{ $y->year }}</option>
-                            @endforeach
-                        </select>
-                        @error('copyFromYearId') <div class="text-xs text-red-600 mt-1">{{ $message }}</div> @enderror
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <x-ui.input 
+                            type="number" min="2000" max="2100" 
+                            label="{{ tr('Year') }}" 
+                            wire:model.defer="newYear" 
+                        />
+
+                        <x-ui.select label="{{ tr('Copy from year (optional)') }}" wire:model.defer="copyFromYearId">
+                             <option value="">{{ tr('Do not copy') }}</option>
+                             @foreach($years as $y)
+                                 <option value="{{ (int) $y->id }}">{{ $y->year }}</option>
+                             @endforeach
+                        </x-ui.select>
+
+                        <x-ui.input type="date" label="{{ tr('Starts on') }}" wire:model.defer="newYearStartsOn" />
+                        <x-ui.input type="date" label="{{ tr('Ends on') }}" wire:model.defer="newYearEndsOn" />
+
+                        <div class="md:col-span-2">
+                             <label class="flex items-center gap-2 text-sm font-bold text-gray-700 cursor-pointer">
+                                <input type="checkbox" wire:model.defer="newYearActive" class="rounded-lg border-gray-300 text-brand-600 focus:ring-brand-500">
+                                <span>{{ tr('Set as active year') }}</span>
+                            </label>
+                        </div>
                     </div>
-
-                    <div>
-                        <label class="block text-[11px] font-black text-gray-500 mb-1">{{ tr('Starts on') }}</label>
-                        <input type="date" wire:model.defer="newYearStartsOn"
-                               class="w-full h-[40px] px-3 rounded-xl border border-gray-200 text-sm bg-gray-50/50">
-                        @error('newYearStartsOn') <div class="text-xs text-red-600 mt-1">{{ $message }}</div> @enderror
-                    </div>
-
-                    <div>
-                        <label class="block text-[11px] font-black text-gray-500 mb-1">{{ tr('Ends on') }}</label>
-                        <input type="date" wire:model.defer="newYearEndsOn"
-                               class="w-full h-[40px] px-3 rounded-xl border border-gray-200 text-sm bg-gray-50/50">
-                        @error('newYearEndsOn') <div class="text-xs text-red-600 mt-1">{{ $message }}</div> @enderror
-                    </div>
-
-                    <div class="md:col-span-2">
-                        <label class="flex items-center gap-2 text-sm font-semibold text-gray-700">
-                            <input type="checkbox" wire:model.defer="newYearActive">
-                            <span>{{ tr('Set as active year') }}</span>
-                        </label>
-                        @error('newYearActive') <div class="text-xs text-red-600 mt-1">{{ $message }}</div> @enderror
-                    </div>
-                </div>
-
-                <div class="flex items-center justify-end gap-2 mt-6">
-                    <x-ui.secondary-button :fullWidth="false" wire:click="closeYears">
-                        {{ tr('Cancel') }}
-                    </x-ui.secondary-button>
-
-                    <x-ui.primary-button :arrow="false" :fullWidth="false" wire:click="saveYear">
-                        <i class="fas fa-save"></i>
-                        <span class="ms-2">{{ tr('Save') }}</span>
-                    </x-ui.primary-button>
                 </div>
             </div>
-        </div>
-    @endif
+        </x-slot:content>
+
+        <x-slot:footer>
+            <div class="flex items-center justify-end gap-3 w-full">
+                <x-ui.secondary-button wire:click="closeYears" class="!px-6 !rounded-xl">
+                    {{ tr('Cancel') }}
+                </x-ui.secondary-button>
+
+                <x-ui.primary-button wire:click="saveYear" class="!px-6 !rounded-xl shadow-lg">
+                    <i class="fas fa-save me-2"></i>
+                    {{ tr('Save') }}
+                </x-ui.primary-button>
+            </div>
+        </x-slot:footer>
+    </x-ui.modal>
 
     {{-- Compare Years Modal --}}
-    @if($compareOpen)
-        <div class="fixed inset-0 z-[9999] bg-black/40 flex items-center justify-center p-4" wire:click.self="closeCompare">
-            <div class="w-full max-w-5xl bg-white rounded-3xl shadow-xl border border-gray-100 p-6 overflow-y-auto max-h-[85vh]">
-                <div class="flex items-start justify-between gap-3 mb-4">
-                    <div>
-                        <div class="text-lg font-black text-gray-900">{{ tr('Compare Years') }}</div>
-                        <div class="text-xs text-gray-400">{{ tr('Compare leave policies between two years') }}</div>
-                    </div>
-                    <button type="button" class="text-gray-400 hover:text-gray-700" wire:click="closeCompare">
-                        <i class="fas fa-times"></i>
-                    </button>
+    <x-ui.modal wire:model="compareOpen" maxWidth="4xl">
+        <x-slot:title>
+             <div class="flex items-center gap-3">
+                <div class="w-10 h-10 bg-indigo-50 text-indigo-600 rounded-xl flex items-center justify-center text-lg border border-indigo-100 shadow-sm">
+                    <i class="fas fa-exchange-alt"></i>
                 </div>
-
-                <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
-                    <div>
-                        <label class="block text-[11px] font-black text-gray-500 mb-1">{{ tr('Year A') }}</label>
-                        <select wire:model="compareYearAId" class="w-full h-[40px] px-3 rounded-xl border border-gray-200 text-sm bg-gray-50/50">
-                            <option value="">{{ tr('Select year') }}</option>
-                            @foreach($years as $y)
-                                <option value="{{ (int)$y->id }}">{{ $y->year }}</option>
-                            @endforeach
-                        </select>
-                    </div>
-
-                    <div>
-                        <label class="block text-[11px] font-black text-gray-500 mb-1">{{ tr('Year B') }}</label>
-                        <select wire:model="compareYearBId" class="w-full h-[40px] px-3 rounded-xl border border-gray-200 text-sm bg-gray-50/50">
-                            <option value="">{{ tr('Select year') }}</option>
-                            @foreach($years as $y)
-                                <option value="{{ (int)$y->id }}">{{ $y->year }}</option>
-                            @endforeach
-                        </select>
-                    </div>
-                </div>
-
-                <div class="bg-white rounded-2xl border border-gray-100 overflow-x-auto">
-                    <table class="w-full text-start border-collapse table-fixed">
-                        <thead>
-                            <tr class="bg-gray-50/50 border-b border-gray-100">
-                                <th class="w-[26%] px-5 py-3 text-[10px] font-black text-gray-400 uppercase tracking-widest text-start">{{ tr('Leave') }}</th>
-                                <th class="w-[10%] px-5 py-3 text-[10px] font-black text-gray-400 uppercase tracking-widest text-center">{{ tr('Type') }}</th>
-                                <th class="w-[32%] px-5 py-3 text-[10px] font-black text-gray-400 uppercase tracking-widest text-center">{{ tr('Year A') }}</th>
-                                <th class="w-[32%] px-5 py-3 text-[10px] font-black text-gray-400 uppercase tracking-widest text-center">{{ tr('Year B') }}</th>
-                            </tr>
-                        </thead>
-                        <tbody class="divide-y divide-gray-50">
-                            @forelse($compareRows as $r)
-                                @php
-                                    $a = $r['a'];
-                                    $b = $r['b'];
-                                    $different = false;
-
-                                    if ($a && $b) {
-                                        $different = (
-                                            (string)$a->days_per_year !== (string)$b->days_per_year ||
-                                            (bool)$a->is_active !== (bool)$b->is_active ||
-                                            (bool)$a->show_in_app !== (bool)$b->show_in_app ||
-                                            (bool)$a->requires_attachment !== (bool)$b->requires_attachment
-                                        );
-                                    } else {
-                                        $different = true;
-                                    }
-                                @endphp
-                                <tr class="{{ $different ? 'bg-amber-50/30' : '' }}">
-                                    <td class="px-5 py-3">
-                                        <div class="text-sm font-bold text-gray-900 truncate">{{ $r['name'] }}</div>
-                                    </td>
-                                    <td class="px-5 py-3 text-center">
-                                        <span class="text-[10px] font-black text-gray-600 uppercase">{{ $r['leave_type'] }}</span>
-                                    </td>
-
-                                    <td class="px-5 py-3">
-                                        @if($a)
-                                            <div class="text-xs text-gray-700 flex flex-wrap gap-3 justify-center">
-                                                <span><b>{{ tr('Days') }}:</b> {{ $a->days_per_year }}</span>
-                                                <span><b>{{ tr('Status') }}:</b> {{ $a->is_active ? tr('Active') : tr('Inactive') }}</span>
-                                                <span><b>{{ tr('App') }}:</b> {{ $a->show_in_app ? tr('Yes') : tr('No') }}</span>
-                                                <span><b>{{ tr('Attach') }}:</b> {{ $a->requires_attachment ? tr('Yes') : tr('No') }}</span>
-                                            </div>
-                                        @else
-                                            <div class="text-xs text-gray-400 text-center">{{ tr('Not found') }}</div>
-                                        @endif
-                                    </td>
-
-                                    <td class="px-5 py-3">
-                                        @if($b)
-                                            <div class="text-xs text-gray-700 flex flex-wrap gap-3 justify-center">
-                                                <span><b>{{ tr('Days') }}:</b> {{ $b->days_per_year }}</span>
-                                                <span><b>{{ tr('Status') }}:</b> {{ $b->is_active ? tr('Active') : tr('Inactive') }}</span>
-                                                <span><b>{{ tr('App') }}:</b> {{ $b->show_in_app ? tr('Yes') : tr('No') }}</span>
-                                                <span><b>{{ tr('Attach') }}:</b> {{ $b->requires_attachment ? tr('Yes') : tr('No') }}</span>
-                                            </div>
-                                        @else
-                                            <div class="text-xs text-gray-400 text-center">{{ tr('Not found') }}</div>
-                                        @endif
-                                    </td>
-                                </tr>
-                            @empty
-                                <tr>
-                                    <td colspan="4" class="px-5 py-10 text-center text-sm text-gray-400">
-                                        {{ tr('No comparison data') }}
-                                    </td>
-                                </tr>
-                            @endforelse
-                        </tbody>
-                    </table>
-                </div>
-
-                <div class="flex items-center justify-end gap-2 mt-6">
-                    <x-ui.secondary-button :fullWidth="false" wire:click="closeCompare">
-                        {{ tr('Close') }}
-                    </x-ui.secondary-button>
+                <div>
+                    <h3 class="font-bold text-gray-900 text-lg leading-tight">{{ tr('Compare Years') }}</h3>
+                    <p class="text-[10px] text-gray-400 font-bold uppercase tracking-widest">{{ tr('Compare leave policies between two years') }}</p>
                 </div>
             </div>
-        </div>
-    @endif
+        </x-slot:title>
+
+        <x-slot:content>
+            <div class="space-y-4 py-2">
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                     <x-ui.select label="{{ tr('Year A') }}" wire:model="compareYearAId">
+                        <option value="">{{ tr('Select year') }}</option>
+                        @foreach($years as $y)
+                            <option value="{{ (int)$y->id }}">{{ $y->year }}</option>
+                        @endforeach
+                    </x-ui.select>
+                    
+                    <x-ui.select label="{{ tr('Year B') }}" wire:model="compareYearBId">
+                        <option value="">{{ tr('Select year') }}</option>
+                        @foreach($years as $y)
+                            <option value="{{ (int)$y->id }}">{{ $y->year }}</option>
+                        @endforeach
+                    </x-ui.select>
+                </div>
+
+                <div class="bg-white rounded-2xl border border-gray-100 overflow-hidden shadow-sm">
+                    <div class="overflow-x-auto">
+                        <table class="w-full text-start border-collapse table-fixed">
+                            <thead>
+                                <tr class="bg-gray-50/50 border-b border-gray-100">
+                                    <th class="w-[20%] px-5 py-3 text-[10px] font-black text-gray-400 uppercase tracking-widest text-start">{{ tr('Leave') }}</th>
+                                    <th class="w-[10%] px-5 py-3 text-[10px] font-black text-gray-400 uppercase tracking-widest text-center">{{ tr('Type') }}</th>
+                                    <th class="w-[35%] px-5 py-3 text-[10px] font-black text-gray-400 uppercase tracking-widest text-center">{{ tr('Year A') }}</th>
+                                    <th class="w-[35%] px-5 py-3 text-[10px] font-black text-gray-400 uppercase tracking-widest text-center">{{ tr('Year B') }}</th>
+                                </tr>
+                            </thead>
+                            <tbody class="divide-y divide-gray-50">
+                                @forelse($compareRows as $r)
+                                    @php
+                                        $a = $r['a'];
+                                        $b = $r['b'];
+                                        $different = false;
+                                        if ($a && $b) {
+                                            $different = (
+                                                (string)$a->days_per_year !== (string)$b->days_per_year ||
+                                                (bool)$a->is_active !== (bool)$b->is_active ||
+                                                (bool)$a->show_in_app !== (bool)$b->show_in_app ||
+                                                (bool)$a->requires_attachment !== (bool)$b->requires_attachment
+                                            );
+                                        } else {
+                                            $different = true;
+                                        }
+                                    @endphp
+                                    <tr class="{{ $different ? 'bg-amber-50/40' : 'hover:bg-gray-50/50' }} transition-colors">
+                                        <td class="px-5 py-3 border-e border-gray-50">
+                                            <div class="text-sm font-bold text-gray-900 truncate">{{ $r['name'] }}</div>
+                                        </td>
+                                        <td class="px-5 py-3 text-center border-e border-gray-50">
+                                            <span class="text-[10px] font-black text-gray-600 uppercase">{{ $r['leave_type'] }}</span>
+                                        </td>
+                                        <td class="px-5 py-3 border-e border-gray-50">
+                                            @if($a)
+                                                <div class="text-xs text-gray-700 flex flex-wrap gap-2 justify-center">
+                                                    <span class="px-2 py-1 bg-gray-100 rounded-md"><b>{{ tr('Days') }}:</b> {{ $a->days_per_year }}</span>
+                                                    <span class="px-2 py-1 {{ $a->is_active ? 'bg-emerald-50 text-emerald-700' : 'bg-red-50 text-red-700' }} rounded-md"><b>{{ tr('Status') }}:</b> {{ $a->is_active ? tr('Active') : tr('Inactive') }}</span>
+                                                    <span class="px-2 py-1 bg-gray-100 rounded-md"><b>{{ tr('App') }}:</b> {{ $a->show_in_app ? tr('Yes') : tr('No') }}</span>
+                                                </div>
+                                            @else
+                                                <div class="text-xs text-gray-400 text-center italic">{{ tr('Not found') }}</div>
+                                            @endif
+                                        </td>
+                                        <td class="px-5 py-3">
+                                            @if($b)
+                                                <div class="text-xs text-gray-700 flex flex-wrap gap-2 justify-center">
+                                                    <span class="px-2 py-1 bg-gray-100 rounded-md"><b>{{ tr('Days') }}:</b> {{ $b->days_per_year }}</span>
+                                                    <span class="px-2 py-1 {{ $b->is_active ? 'bg-emerald-50 text-emerald-700' : 'bg-red-50 text-red-700' }} rounded-md"><b>{{ tr('Status') }}:</b> {{ $b->is_active ? tr('Active') : tr('Inactive') }}</span>
+                                                    <span class="px-2 py-1 bg-gray-100 rounded-md"><b>{{ tr('App') }}:</b> {{ $b->show_in_app ? tr('Yes') : tr('No') }}</span>
+                                                </div>
+                                            @else
+                                                <div class="text-xs text-gray-400 text-center italic">{{ tr('Not found') }}</div>
+                                            @endif
+                                        </td>
+                                    </tr>
+                                @empty
+                                    <tr>
+                                        <td colspan="4" class="px-5 py-10 text-center text-sm text-gray-400">
+                                            <div class="flex flex-col items-center">
+                                                <i class="fas fa-inbox text-2xl mb-2 text-gray-300"></i>
+                                                {{ tr('No comparison data available') }}
+                                            </div>
+                                        </td>
+                                    </tr>
+                                @endforelse
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </x-slot:content>
+
+        <x-slot:footer>
+            <div class="flex items-center justify-end gap-3 w-full">
+                <x-ui.secondary-button wire:click="closeCompare" class="!px-6 !rounded-xl">
+                    {{ tr('Close') }}
+                </x-ui.secondary-button>
+            </div>
+        </x-slot:footer>
+    </x-ui.modal>
 
     {{-- Copy Policies Modal (from year or file) --}}
-    @if($copyOpen)
-        <div class="fixed inset-0 z-[9999] bg-black/40 flex items-center justify-center p-4" wire:click.self="closeCopyPolicies">
-            <div class="w-full max-w-2xl bg-white rounded-3xl shadow-xl border border-gray-100 p-6 overflow-y-auto max-h-[85vh]">
-                <div class="flex items-start justify-between gap-3 mb-4">
-                    <div>
-                        <div class="text-lg font-black text-gray-900">{{ tr('Copy Policies') }}</div>
-                        <div class="text-xs text-gray-400">{{ tr('Copy from another year or import from a file') }}</div>
-                    </div>
-                    <button type="button" class="text-gray-400 hover:text-gray-700" wire:click="closeCopyPolicies">
-                        <i class="fas fa-times"></i>
-                    </button>
+    <x-ui.modal wire:model="copyOpen" maxWidth="3xl">
+        <x-slot:title>
+            <div class="flex items-center gap-3">
+                <div class="w-10 h-10 bg-amber-50 text-amber-600 rounded-xl flex items-center justify-center text-lg border border-amber-100 shadow-sm">
+                    <i class="fas fa-copy"></i>
                 </div>
+                <div>
+                    <h3 class="font-bold text-gray-900 text-lg leading-tight">{{ tr('Copy Policies') }}</h3>
+                    <p class="text-[10px] text-gray-400 font-bold uppercase tracking-widest">{{ tr('Copy from another year or import from a file') }}</p>
+                </div>
+            </div>
+        </x-slot:title>
 
-                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    <div>
-                        <label class="block text-[11px] font-black text-gray-500 mb-1">{{ tr('Source year') }}</label>
-                        <select wire:model.defer="copyPoliciesSourceYearId"
-                                class="w-full h-[40px] px-3 rounded-xl border border-gray-200 text-sm bg-gray-50/50">
-                            <option value="">{{ tr('Select year') }}</option>
-                            @foreach($years as $y)
-                                <option value="{{ (int)$y->id }}">{{ $y->year }}</option>
-                            @endforeach
-                        </select>
-                        @error('copyPoliciesSourceYearId') <div class="text-xs text-red-600 mt-1">{{ $message }}</div> @enderror
+        <x-slot:content>
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-6 py-2">
+                 <div class="md:col-span-2 space-y-4">
+                    <div class="flex items-center gap-2 mb-1">
+                        <span class="w-1 h-3 bg-amber-500 rounded-full"></span>
+                        <h4 class="text-xs font-black text-gray-700 uppercase tracking-wider">{{ tr('Copy Options') }}</h4>
                     </div>
-
-                    <div>
-                        <label class="block text-[11px] font-black text-gray-500 mb-1">{{ tr('Destination year') }}</label>
-                        <select wire:model.defer="copyPoliciesDestYearId"
-                                class="w-full h-[40px] px-3 rounded-xl border border-gray-200 text-sm bg-gray-50/50">
-                            <option value="">{{ tr('Select year') }}</option>
-                            @foreach($years as $y)
-                                <option value="{{ (int)$y->id }}">{{ $y->year }}</option>
-                            @endforeach
-                        </select>
-                        @error('copyPoliciesDestYearId') <div class="text-xs text-red-600 mt-1">{{ $message }}</div> @enderror
-                    </div>
-
-                    <div class="md:col-span-2">
-                        <label class="flex items-center gap-2 text-sm font-semibold text-gray-700">
-                            <input type="checkbox" wire:model.defer="copyOverwrite">
+                    
+                    <div class="bg-amber-50/30 p-4 rounded-3xl border border-amber-100 space-y-4">
+                        <div class="grid grid-cols-2 gap-4">
+                             <x-ui.select label="{{ tr('Source year') }}" wire:model.defer="copyPoliciesSourceYearId">
+                                <option value="">{{ tr('Select year') }}</option>
+                                @foreach($years as $y)
+                                    <option value="{{ (int)$y->id }}">{{ $y->year }}</option>
+                                @endforeach
+                            </x-ui.select>
+                            
+                            <x-ui.select label="{{ tr('Destination year') }}" wire:model.defer="copyPoliciesDestYearId">
+                                <option value="">{{ tr('Select year') }}</option>
+                                @foreach($years as $y)
+                                    <option value="{{ (int)$y->id }}">{{ $y->year }}</option>
+                                @endforeach
+                            </x-ui.select>
+                        </div>
+                        
+                        <label class="flex items-center gap-2 text-sm font-bold text-gray-700 cursor-pointer">
+                            <input type="checkbox" wire:model.defer="copyOverwrite" class="rounded-lg border-gray-300 text-amber-600 focus:ring-amber-500">
                             <span>{{ tr('Overwrite existing policies if they exist') }}</span>
                         </label>
-                        @error('copyOverwrite') <div class="text-xs text-red-600 mt-1">{{ $message }}</div> @enderror
+                    </div>
+                 </div>
+
+                 <div class="md:col-span-2 pt-4 border-t border-gray-100 space-y-4">
+                    <div class="flex items-center gap-2 mb-1">
+                        <span class="w-1 h-3 bg-gray-500 rounded-full"></span>
+                        <h4 class="text-xs font-black text-gray-700 uppercase tracking-wider">{{ tr('Or Import from File') }}</h4>
                     </div>
 
-                    <div class="md:col-span-2 pt-4 mt-2 border-t border-gray-100">
-                        <div class="text-sm font-black text-gray-900 mb-2">{{ tr('Import from file (JSON)') }}</div>
-                        <input type="file" wire:model="importFile" accept=".json,.txt"
-                               class="block w-full text-sm text-gray-600">
-                        @error('importFile') <div class="text-xs text-red-600 mt-1">{{ $message }}</div> @enderror
-                        <div class="text-[11px] text-gray-400 mt-1">{{ tr('Tip: export policies first, then import the same file here.') }}</div>
+                    <div class="bg-gray-50/50 p-4 rounded-3xl border border-gray-100">
+                        <x-ui.input 
+                            type="file" 
+                            label="{{ tr('Import from file (JSON)') }}" 
+                            wire:model="importFile" 
+                            accept=".json,.txt"
+                        />
+                        <div class="text-[10px] text-gray-400 mt-2 flex items-center gap-2">
+                            <i class="fas fa-info-circle"></i>
+                            {{ tr('Tip: export policies first, then import the same file here.') }}
+                        </div>
                     </div>
-                </div>
+                 </div>
+            </div>
+        </x-slot:content>
 
-                <div class="flex items-center justify-end gap-2 mt-6">
-                    <x-ui.secondary-button :fullWidth="false" wire:click="closeCopyPolicies">
-                        {{ tr('Cancel') }}
+        <x-slot:footer>
+             <div class="flex items-center justify-end gap-2 w-full">
+                <x-ui.secondary-button wire:click="closeCopyPolicies" class="!px-3 !py-1.5 !text-xs !rounded-lg">
+                    {{ tr('Cancel') }}
+                </x-ui.secondary-button>
+
+                <div class="flex gap-2">
+                    <x-ui.secondary-button wire:click="copyPoliciesNow" class="!px-3 !py-1.5 !text-xs !rounded-lg !bg-amber-50 !text-amber-700 border-amber-200">
+                        <i class="fas fa-copy me-1"></i>
+                        {{ tr('Copy') }}
                     </x-ui.secondary-button>
 
-                    <x-ui.secondary-button :fullWidth="false" wire:click="copyPoliciesNow">
-                        <i class="fas fa-copy"></i>
-                        <span class="ms-2">{{ tr('Copy from year') }}</span>
-                    </x-ui.secondary-button>
-
-                    <x-ui.primary-button :arrow="false" :fullWidth="false" wire:click="importPoliciesFromFile">
-                        <i class="fas fa-file-import"></i>
-                        <span class="ms-2">{{ tr('Import file') }}</span>
+                    <x-ui.primary-button wire:click="importPoliciesFromFile" class="!px-3 !py-1.5 !text-xs !rounded-lg shadow-sm">
+                        <i class="fas fa-file-import me-1"></i>
+                        {{ tr('Import') }}
                     </x-ui.primary-button>
                 </div>
             </div>
-        </div>
-    @endif  
+        </x-slot:footer>
+    </x-ui.modal>  
 </div> 
