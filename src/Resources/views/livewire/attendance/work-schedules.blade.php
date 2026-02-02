@@ -10,6 +10,10 @@
         class="!flex-col {{ $isRtl ? '!items-end !text-right' : '!items-start !text-left' }} !justify-start !gap-1"
         titleSize="xl"
     />
+
+    <div class="text-xs text-gray-400">calendar_type: {{ config('company.calendar_type') }}</div>
+
+
 @endsection
 
 @section('topbar-actions')
@@ -124,24 +128,23 @@
                         :applyOnChange="true"
                     />
 
-                    <div class="grid grid-cols-2 gap-2">
-                        <div>
-                            <label class="block text-[10px] font-black text-gray-400 uppercase tracking-widest mb-1 px-1">{{ tr('From') }}</label>
-                            <input 
-                                type="date" 
-                                wire:model.live="filterDateStart" 
-                                class="w-full h-[38px] px-3 rounded-xl border-gray-200 text-xs bg-gray-50/50 focus:bg-white focus:border-[color:var(--brand-via)] focus:ring-4 focus:ring-[color:var(--brand-via)]/5 transition-all"
-                            >
-                        </div>
-                        <div>
-                            <label class="block text-[10px] font-black text-gray-400 uppercase tracking-widest mb-1 px-1">{{ tr('To') }}</label>
-                            <input 
-                                type="date" 
-                                wire:model.live="filterDateEnd" 
-                                class="w-full h-[38px] px-3 rounded-xl border-gray-200 text-xs bg-gray-50/50 focus:bg-white focus:border-[color:var(--brand-via)] focus:ring-4 focus:ring-[color:var(--brand-via)]/5 transition-all"
-                            >
-                        </div>
-                    </div>
+            <div class="grid grid-cols-2 gap-2">
+                <x-ui.company-date-picker
+                    model="filterDateStart"
+                    :label="tr('From')"
+                    :placeholder="tr('Select date...')"
+                />
+
+                <x-ui.company-date-picker
+                    model="filterDateEnd"
+                    :label="tr('To')"
+                    :placeholder="tr('Select date...')"
+                />
+            </div>
+
+
+
+
                 {{-- Clear Filters Button --}}
                 <div
                     x-show="search.trim() !== '' || filterType !== 'all' || filterStatus !== 'all' || filterPeriod !== 'all' || filterDateStart !== '' || filterDateEnd !== ''"

@@ -40,15 +40,16 @@
 
         {{-- Leave Settings --}}
         <x-ui.settings-button
-            href="#"
+            href="{{ route('company-admin.settings.attendance.leaves') }}"
             icon="fa-calendar-check"
             :title="tr('Leave Settings')"
             :description="tr('Configure leave types, balances, and approval processes')"
         />
 
+
         {{-- Official Holidays --}}
         <x-ui.settings-button
-            href="#"
+            href="{{ route('company-admin.settings.attendance.holidays') }}"
             icon="fa-calendar-times"
             :title="tr('Official Holidays')"
             :description="tr('Manage official holidays and non-working days')"

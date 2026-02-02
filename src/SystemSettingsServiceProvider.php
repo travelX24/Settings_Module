@@ -53,14 +53,16 @@ class SystemSettingsServiceProvider extends ServiceProvider
      */
     protected function loadRoutes(): void
     {
-        Route::middleware([
-            'web',
-            'auth',
-            EnsureCompanyAdmin::class,
-            ForceCompanyDomain::class,
-            'company.domain',
-            \Athka\Saas\Http\Middleware\SetCompanyTimezone::class,
-        ])
+      Route::middleware([
+                'web',
+                'auth',
+                EnsureCompanyAdmin::class,
+                ForceCompanyDomain::class,
+                'company.domain',
+                \Athka\Saas\Http\Middleware\SetCompanyCalendarType::class,
+                \Athka\Saas\Http\Middleware\SetCompanyTimezone::class,
+            ])
+
             ->prefix('company-admin/settings')
             ->name('company-admin.settings.')
             ->group(function () {
@@ -74,6 +76,12 @@ class SystemSettingsServiceProvider extends ServiceProvider
     protected function registerLivewireComponents(): void
     {
         if (class_exists(Livewire::class)) {
+
+            Livewire::addPersistentMiddleware([
+                \Athka\Saas\Http\Middleware\SetCompanyCalendarType::class,
+                \Athka\Saas\Http\Middleware\SetCompanyTimezone::class,
+            ]);
+
             Livewire::component(
                 'systemsettings.organizational-structure.departments',
                 \Athka\SystemSettings\Livewire\OrganizationalStructure\Departments::class
@@ -118,16 +126,48 @@ class SystemSettingsServiceProvider extends ServiceProvider
                 'systemsettings.attendance.work-schedules',
                 \Athka\SystemSettings\Livewire\Attendance\WorkSchedules::class
             );
+         
+
+            Livewire::component(
+                'systemsettings.attendance.attendance-holidays',
+                \Athka\SystemSettings\Livewire\Attendance\AttendanceHolidays::class
+            );
+
+            Livewire::component(
+                'athka.system-settings.livewire.attendance.attendance-holidays',
+                \Athka\SystemSettings\Livewire\Attendance\AttendanceHolidays::class
+            );
+            Livewire::component(
+                'systemsettings.attendance.attendance-leave-settings',
+                \Athka\SystemSettings\Livewire\Attendance\AttendanceLeaveSettings::class
+            );
+
+            Livewire::component(
+                'athka.system-settings.livewire.attendance.attendance-leave-settings',
+                \Athka\SystemSettings\Livewire\Attendance\AttendanceLeaveSettings::class
+            );
 
             Livewire::component(
                 'systemsettings.organizational-structure.index',
                 \Athka\SystemSettings\Livewire\OrganizationalStructure\OrganizationalStructureIndex::class
             );
-
             Livewire::component(
                 'systemsettings.user-access-control.index',
                 \Athka\SystemSettings\Livewire\UserAccessControl\UserAccessControlIndex::class
             );
+
+         
+            Livewire::component(
+                'systemsettings.calendar.calendar-settings',
+                \Athka\SystemSettings\Livewire\Calendar\CalendarSettings::class
+            );
+
+            Livewire::component(
+                'athka.system-settings.livewire.calendar.calendar-settings',
+                \Athka\SystemSettings\Livewire\Calendar\CalendarSettings::class
+            );
+
+
         }
     }
 }

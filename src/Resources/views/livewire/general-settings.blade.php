@@ -62,12 +62,13 @@
 
         {{-- Calendar --}}
         @can('settings.calendar.manage')
-        <x-ui.settings-button
-            href="#"
-            icon="fa-calendar-alt"
-            :title="tr('Calendar')"
-            :description="tr('Configure calendar settings and working days')"
-        />
+     <x-ui.settings-button
+        href="{{ route('company-admin.settings.calendar') }}"
+        icon="fa-calendar-alt"
+        :title="tr('Calendar')"
+        :description="tr('Configure calendar settings and working days')"
+    />
+
         @endcan
 
         {{-- User Activity Log --}}
