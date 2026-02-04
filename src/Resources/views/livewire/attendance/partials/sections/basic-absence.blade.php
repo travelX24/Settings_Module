@@ -12,7 +12,6 @@
         <label class="flex items-center gap-3 cursor-pointer group bg-gray-50/50 px-4 py-2 rounded-xl border border-gray-100 hover:bg-white transition-all">
             <input type="checkbox" 
                 wire:model="basicAbsencePenalty.enabled"
-                wire:change="saveBasicAbsencePenalty"
                 class="w-4 h-4 text-red-600 rounded border-gray-300 focus:ring-red-500"
             >
             <span class="text-xs font-bold text-gray-700 group-hover:text-red-600 transition-colors">{{ tr('Activate Penalties') }}</span>
@@ -26,7 +25,6 @@
             label="{{ tr('Max Minutes to Count as Absent (min)') }}" 
             type="number" 
             wire:model.defer="basicAbsencePenalty.threshold_minutes" 
-            wire:blur="saveBasicAbsencePenalty"
             hint="{{ tr('Cannot be less than late/early grace periods.') }}"
             class="!py-3 !rounded-2xl"
         />
@@ -38,7 +36,6 @@
                 label="{{ tr('Notification Text (First Time)') }}" 
                 type="text" 
                 wire:model.defer="basicAbsencePenalty.notification_message" 
-                wire:blur="saveBasicAbsencePenalty"
                 placeholder="{{ tr('Enter message to show to employee...') }}"
                 class="!py-3 !rounded-2xl"
             />
@@ -48,19 +45,19 @@
                 <div class="flex items-end gap-3">
                     <div class="flex-1">
                         <x-ui.select 
+                            wire:key="absence-deduction-{{ $basicAbsencePenalty['deduction_type'] }}"
                             label="{{ tr('Additional Deduction') }}"
-                            wire:model="basicAbsencePenalty.deduction_type" 
-                            wire:change="saveBasicAbsencePenalty"
+                            wire:model.defer="basicAbsencePenalty.deduction_type" 
+                            model="basicAbsencePenalty.deduction_type"
                         >
-                            <option value="percentage">{{ tr('Percentage (%)') }}</option>
-                            <option value="fixed">{{ tr('Fixed Amount') }}</option>
+                            <option value="percentage" {{ $basicAbsencePenalty['deduction_type'] === 'percentage' ? 'selected' : '' }}>{{ tr('Percentage (%)') }}</option>
+                            <option value="fixed" {{ $basicAbsencePenalty['deduction_type'] === 'fixed' ? 'selected' : '' }}>{{ tr('Fixed Amount') }}</option>
                         </x-ui.select>
                     </div>
                     <div class="w-24">
                         <x-ui.input 
                             type="number" 
                             wire:model.defer="basicAbsencePenalty.deduction_value" 
-                            wire:blur="saveBasicAbsencePenalty"
                             class="!py-3 !rounded-2xl"
                         />
                     </div>
@@ -74,6 +71,19 @@
                 </p>
             </div>
         </div>
+    </div>
+
+    <div class="flex justify-end pt-4 border-t border-gray-50">
+        <x-ui.primary-button 
+            wire:click="saveBasicAbsencePenalty"
+            wire:loading.attr="disabled"
+            :arrow="false"
+            :fullWidth="false"
+            class="!px-6 !py-2 !rounded-xl !bg-red-600 hover:!bg-red-700"
+        >
+            <i class="fas fa-save me-2"></i>
+            {{ tr('Save Absence Penalties') }}
+        </x-ui.primary-button>
     </div>
     @endif
 </x-ui.card>

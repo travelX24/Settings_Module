@@ -161,19 +161,35 @@ class AttendanceSettings extends Component
             ->get()
             ->toArray();
 
-        // Load Basic Penalties
+        // Load Basic Penalties (Ensure single record)
         $late = AttendancePenaltyPolicy::where('policy_id', $this->defaultPolicy->id)
             ->where('saas_company_id', $companyId)
             ->where('violation_type', 'late_arrival')
             ->where('recurrence_count', 1)
-            ->first();
+            ->orderBy('id', 'desc')
+            ->get();
+
+        if ($late->count() > 1) {
+            // Cleanup duplicates, keep the most recent one
+            $keep = $late->first();
+            AttendancePenaltyPolicy::where('policy_id', $this->defaultPolicy->id)
+                ->where('saas_company_id', $companyId)
+                ->where('violation_type', 'late_arrival')
+                ->where('recurrence_count', 1)
+                ->where('id', '!=', $keep->id)
+                ->delete();
+            $late = $keep;
+        } else {
+            $late = $late->first();
+        }
+
         if ($late) {
             $this->basicLatePenalty = [
                 'enabled' => $late->is_enabled,
                 'grace_minutes' => $late->threshold_minutes,
                 'interval_minutes' => $late->interval_minutes,
                 'deduction_type' => $late->deduction_type ?? 'percentage',
-                'deduction_value' => $late->deduction_value,
+                'deduction_value' => (float)$late->deduction_value,
             ];
         }
 
@@ -181,14 +197,29 @@ class AttendanceSettings extends Component
             ->where('saas_company_id', $companyId)
             ->where('violation_type', 'early_departure')
             ->where('recurrence_count', 1)
-            ->first();
+            ->orderBy('id', 'desc')
+            ->get();
+
+        if ($early->count() > 1) {
+            $keep = $early->first();
+            AttendancePenaltyPolicy::where('policy_id', $this->defaultPolicy->id)
+                ->where('saas_company_id', $companyId)
+                ->where('violation_type', 'early_departure')
+                ->where('recurrence_count', 1)
+                ->where('id', '!=', $keep->id)
+                ->delete();
+            $early = $keep;
+        } else {
+            $early = $early->first();
+        }
+
         if ($early) {
             $this->basicEarlyPenalty = [
                 'enabled' => $early->is_enabled,
                 'grace_minutes' => $early->threshold_minutes,
                 'interval_minutes' => $early->interval_minutes,
                 'deduction_type' => $early->deduction_type ?? 'percentage',
-                'deduction_value' => $early->deduction_value,
+                'deduction_value' => (float)$early->deduction_value,
             ];
         }
 
@@ -204,14 +235,28 @@ class AttendanceSettings extends Component
         $absence = UnexcusedAbsencePolicy::where('policy_id', $this->defaultPolicy->id)
             ->where('saas_company_id', $companyId)
             ->where('absence_reason_type', 'no_notice')
-            ->first();
+            ->orderBy('id', 'desc')
+            ->get();
+
+        if ($absence->count() > 1) {
+            $keep = $absence->first();
+            UnexcusedAbsencePolicy::where('policy_id', $this->defaultPolicy->id)
+                ->where('saas_company_id', $companyId)
+                ->where('absence_reason_type', 'no_notice')
+                ->where('id', '!=', $keep->id)
+                ->delete();
+            $absence = $keep;
+        } else {
+            $absence = $absence->first();
+        }
+
         if ($absence) {
             $this->basicAbsencePenalty = [
                 'enabled' => $absence->is_enabled,
                 'threshold_minutes' => $absence->late_minutes,
                 'notification_message' => $absence->notification_message,
                 'deduction_type' => $absence->deduction_type ?? 'percentage',
-                'deduction_value' => $absence->deduction_value,
+                'deduction_value' => (float)$absence->deduction_value,
             ];
         }
 
@@ -285,8 +330,10 @@ class AttendanceSettings extends Component
                 'penalty_action' => 'deduction',
                 'minutes_from' => 0,
                 'minutes_to' => 0,
+                'is_active' => true,
             ]
         );
+        $this->refreshData();
         $this->dispatch('toast', type: 'success', message: tr('Late arrival basic penalties updated.'));
     }
 
@@ -309,8 +356,10 @@ class AttendanceSettings extends Component
                 'penalty_action' => 'deduction',
                 'minutes_from' => 0,
                 'minutes_to' => 0,
+                'is_active' => true,
             ]
         );
+        $this->refreshData();
         $this->dispatch('toast', type: 'success', message: tr('Early departure basic penalties updated.'));
     }
 
@@ -333,8 +382,10 @@ class AttendanceSettings extends Component
                 'day_selector_type' => 'single',
                 'day_from' => 1,
                 'day_to' => 1,
+                'is_active' => true,
             ]
         );
+        $this->refreshData();
         $this->dispatch('toast', type: 'success', message: tr('Unexcused absence basic penalties updated.'));
     }
 

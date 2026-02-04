@@ -13,7 +13,6 @@
                 label="{{ tr('Monthly Grace Period (min)') }}" 
                 type="number" 
                 wire:model.defer="gracePeriods.late_arrival" 
-                wire:blur="saveGracePeriods"
                 required 
                 hint="{{ tr('Monthly allowance for late arrival and early departure.') }}"
                 class="!py-2.5"
@@ -27,7 +26,6 @@
                 label="{{ tr('Max Auto-Checkout (hours)') }}" 
                 type="number" 
                 wire:model.defer="gracePeriods.auto_departure" 
-                wire:blur="saveGracePeriods"
                 required 
                 hint="{{ tr('System will auto-checkout employee after these hours.') }}"
                 class="!py-2.5"
@@ -41,7 +39,6 @@
             <input type="checkbox" 
                 id="auto_checkout_penalty_enabled"
                 wire:model="gracePeriods.auto_departure_penalty_enabled"
-                wire:change="saveGracePeriods"
                 class="w-4 h-4 text-blue-600 rounded border-gray-300"
             >
             <span class="text-xs font-bold text-gray-700">{{ tr('Activate Auto-Checkout Penalties') }}</span>
@@ -53,11 +50,23 @@
                 placeholder="{{ tr('Deduction Amount') }}"
                 type="number"
                 wire:model.defer="gracePeriods.auto_departure_penalty_amount"
-                wire:blur="saveGracePeriods"
                 class="!py-1.5"
             />
         </div>
         @endif
+    </div>
+
+    <div class="flex justify-end pt-2">
+        <x-ui.primary-button 
+            wire:click="saveGracePeriods"
+            wire:loading.attr="disabled"
+            :arrow="false"
+            :fullWidth="false"
+            class="!px-6 !py-2 !rounded-xl"
+        >
+            <i class="fas fa-save me-2"></i>
+            {{ tr('Save Basic Settings') }}
+        </x-ui.primary-button>
     </div>
 </x-ui.card>
 

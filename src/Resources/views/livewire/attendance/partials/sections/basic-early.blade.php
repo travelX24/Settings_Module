@@ -12,7 +12,6 @@
         <label class="flex items-center gap-3 cursor-pointer group bg-gray-50/50 px-4 py-2 rounded-xl border border-gray-100 hover:bg-white transition-all">
             <input type="checkbox" 
                 wire:model="basicEarlyPenalty.enabled"
-                wire:change="saveBasicEarlyPenalty"
                 class="w-4 h-4 text-blue-600 rounded border-gray-300 focus:ring-blue-500"
             >
             <span class="text-xs font-bold text-gray-700 group-hover:text-blue-600 transition-colors">{{ tr('Activate Penalties') }}</span>
@@ -26,7 +25,6 @@
             label="{{ tr('Grace Period (min)') }}" 
             type="number" 
             wire:model.defer="basicEarlyPenalty.grace_minutes" 
-            wire:blur="saveBasicEarlyPenalty"
             class="!py-3 !rounded-2xl"
         />
 
@@ -35,7 +33,6 @@
             label="{{ tr('After grace, for every (min)') }}" 
             type="number" 
             wire:model.defer="basicEarlyPenalty.interval_minutes" 
-            wire:blur="saveBasicEarlyPenalty"
             hint="{{ tr('Deduction will trigger every X minutes.') }}"
             class="!py-3 !rounded-2xl"
         />
@@ -45,19 +42,19 @@
             <div class="flex items-end gap-3">
                 <div class="flex-1">
                     <x-ui.select 
+                        wire:key="early-deduction-{{ $basicEarlyPenalty['deduction_type'] }}"
                         label="{{ tr('Deduction Type') }}"
-                        wire:model="basicEarlyPenalty.deduction_type" 
-                        wire:change="saveBasicEarlyPenalty"
+                        wire:model.defer="basicEarlyPenalty.deduction_type" 
+                        model="basicEarlyPenalty.deduction_type"
                     >
-                        <option value="percentage">{{ tr('Percentage (%)') }}</option>
-                        <option value="fixed">{{ tr('Fixed Amount') }}</option>
+                        <option value="percentage" {{ $basicEarlyPenalty['deduction_type'] === 'percentage' ? 'selected' : '' }}>{{ tr('Percentage (%)') }}</option>
+                        <option value="fixed" {{ $basicEarlyPenalty['deduction_type'] === 'fixed' ? 'selected' : '' }}>{{ tr('Fixed Amount') }}</option>
                     </x-ui.select>
                 </div>
                 <div class="w-24">
                     <x-ui.input 
                         type="number" 
                         wire:model.defer="basicEarlyPenalty.deduction_value" 
-                        wire:blur="saveBasicEarlyPenalty"
                         class="!py-3 !rounded-2xl"
                     />
                 </div>
@@ -70,6 +67,19 @@
                 @endif
             </p>
         </div>
+    </div>
+
+    <div class="flex justify-end pt-4 border-t border-gray-50">
+        <x-ui.primary-button 
+            wire:click="saveBasicEarlyPenalty"
+            wire:loading.attr="disabled"
+            :arrow="false"
+            :fullWidth="false"
+            class="!px-6 !py-2 !rounded-xl !bg-blue-600 hover:!bg-blue-700"
+        >
+            <i class="fas fa-save me-2"></i>
+            {{ tr('Save Early Departure Penalties') }}
+        </x-ui.primary-button>
     </div>
     @endif
 </x-ui.card>

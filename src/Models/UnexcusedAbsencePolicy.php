@@ -25,6 +25,9 @@ class UnexcusedAbsencePolicy extends Model
         'early_leave_minutes',
         'recurrence_count',
         'is_active',
+        'is_enabled',
+        'notification_message',
+        'wage_unit',
         'saas_company_id',
         'created_by_user_id',
     ];

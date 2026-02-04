@@ -24,6 +24,12 @@ class AttendancePenaltyPolicy extends Model
         'suspension_days',
         'notification_message',
         'is_active',
+        'is_enabled',
+        'interval_minutes',
+        'threshold_minutes',
+        'wage_unit',
+        'include_basic_penalty',
+        'recurrence_count',
         'saas_company_id',
         'created_by_user_id',
     ];
