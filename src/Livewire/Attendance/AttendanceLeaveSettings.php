@@ -39,10 +39,16 @@ class AttendanceLeaveSettings extends Component
     public bool $copyOpen = false;
 
     // Create/Edit fields
+    // Create/Edit fields
     public int $editingId = 0;
+
+    // ✅ Default system policy (Annual) - name locked
+    public string $annualDefaultName = 'سنوية';
+    public bool $editingNameLocked = false;
 
     public string $name = '';
     public string $leave_type = 'annual';
+
     public string $days_per_year = '30';
     public string $gender = 'all';
     public bool $is_active = true;
@@ -94,9 +100,7 @@ class AttendanceLeaveSettings extends Component
     // Year modal
     public string $newYear = '';
     public ?int $copyFromYearId = null;
-    public string $newYearStartsOn = '';
-    public string $newYearEndsOn = '';
-    public bool $newYearActive = true;
+
 
     // Compare modal
     public ?int $compareYearAId = null;
@@ -132,14 +136,21 @@ class AttendanceLeaveSettings extends Component
         }
 
         // Ensure there is an active year (single active)
-        if (! LeavePolicyYear::query()->where('company_id', $companyId)->where('is_active', true)->exists()) {
+        DB::transaction(function () use ($companyId, $year) {
+            LeavePolicyYear::query()
+                ->where('company_id', $companyId)
+                ->update(['is_active' => false]);
+
             LeavePolicyYear::query()
                 ->where('company_id', $companyId)
                 ->where('id', $year->id)
                 ->update(['is_active' => true]);
-        }
+        });
 
         $this->selectedYearId = (int) $year->id;
+
+        // ✅ Ensure default annual policy exists for the selected year
+        $this->ensureAnnualDefaultPolicy($companyId, (int) $this->selectedYearId);
     }
 
     public function updatingSearch(): void { $this->resetPage(); }
@@ -303,9 +314,11 @@ class AttendanceLeaveSettings extends Component
         $this->requires_attachment = false;
         $this->description = '';
 
-        $this->resetAdvancedDefaults();
+    $this->resetAdvancedDefaults();
+    $this->syncMonthlyAccrualRate();
 
-        $this->createOpen = true;
+    $this->createOpen = true;
+
     }
 
     public function closeCreate(): void
@@ -328,16 +341,17 @@ class AttendanceLeaveSettings extends Component
             return;
         }
 
+        $this->syncMonthlyAccrualRate(); // ✅ ensure latest value
         $data = $this->validate($this->policyRules());
-
         $settings = $this->buildSettingsFromValidated($data);
+
 
         LeavePolicy::create([
             'company_id' => $companyId,
             'policy_year_id' => (int) $this->selectedYearId,
 
             'name' => $data['name'],
-            'leave_type' => $data['leave_type'],
+            'leave_type' => 'annual',
             'days_per_year' => $data['days_per_year'],
 
             'gender' => $data['gender'],
@@ -367,8 +381,17 @@ class AttendanceLeaveSettings extends Component
 
         $this->editingId = (int) $row->id;
 
-        $this->name = (string) $row->name;
-        $this->leave_type = (string) $row->leave_type;
+        // ✅ lock name if this is the system annual policy
+        $this->editingNameLocked = $this->isAnnualDefaultPolicy($row);
+
+        $this->name = $this->editingNameLocked ? $this->annualDefaultName : (string) $row->name;
+
+        // keep for compatibility, but we force it later anyway
+        $this->leave_type = 'annual';
+
+
+
+
         $this->days_per_year = (string) $row->days_per_year;
 
         $this->gender = (string) $row->gender;
@@ -379,16 +402,20 @@ class AttendanceLeaveSettings extends Component
         $this->description = (string) ($row->description ?? '');
 
         $this->hydrateAdvancedFromRow($row);
+        $this->syncMonthlyAccrualRate(); 
 
         $this->resetValidation();
         $this->editOpen = true;
+
     }
 
     public function closeEdit(): void
     {
         $this->editOpen = false;
         $this->editingId = 0;
+        $this->editingNameLocked = false;
     }
+
 
     public function saveEdit(): void
     {
@@ -402,13 +429,25 @@ class AttendanceLeaveSettings extends Component
             ->when($companyId > 0, fn ($q) => $q->where('company_id', $companyId))
             ->firstOrFail();
 
-        $data = $this->validate($this->policyRules());
+        // ✅ If locked, force the name before validation & save
+        if ($this->editingNameLocked) {
+            $this->name = $this->annualDefaultName;
+        }
 
+        $this->syncMonthlyAccrualRate(); // ✅ ensure latest value
+        $data = $this->validate($this->policyRules());
         $settings = $this->buildSettingsFromValidated($data);
 
+
+        // ✅ ensure meta lock inside settings for the system policy
+        if ($this->editingNameLocked) {
+            data_set($settings, 'meta.system_key', 'annual_default');
+            data_set($settings, 'meta.lock_name', true);
+        }
+
         $row->update([
-            'name' => $data['name'],
-            'leave_type' => $data['leave_type'],
+            'name' => $this->editingNameLocked ? $this->annualDefaultName : $data['name'],
+            'leave_type' => 'annual',
             'days_per_year' => $data['days_per_year'],
             'gender' => $data['gender'],
             'is_active' => (bool) $data['is_active'],
@@ -426,9 +465,21 @@ class AttendanceLeaveSettings extends Component
     public function confirmDelete(int $id): void
     {
         abort_unless(auth()->user()?->can('settings.attendance.manage'), 403);
+        $companyId = $this->resolveCompanyId();
+
+        $row = LeavePolicy::query()
+            ->where('id', $id)
+            ->when($companyId > 0, fn ($q) => $q->where('company_id', $companyId))
+            ->first();
+
+        if ($row && $this->isAnnualDefaultPolicy($row)) {
+            session()->flash('error', tr('You cannot delete the annual system policy.'));
+            return;
+        }
 
         $this->editingId = $id;
         $this->deleteOpen = true;
+
     }
 
     public function closeDelete(): void
@@ -463,16 +514,12 @@ class AttendanceLeaveSettings extends Component
         abort_unless(auth()->user()?->can('settings.attendance.manage'), 403);
 
         $this->resetValidation();
-        $this->newYear = '';
+        $this->newYear = (string) now()->year;
         $this->copyFromYearId = null;
-
-        $defaultYear = (int) now()->year;
-        $this->newYearStartsOn = Carbon::create($defaultYear, 1, 1)->toDateString();
-        $this->newYearEndsOn = Carbon::create($defaultYear, 12, 31)->toDateString();
-        $this->newYearActive = true;
 
         $this->yearsOpen = true;
     }
+
 
     public function closeYears(): void
     {
@@ -489,13 +536,11 @@ class AttendanceLeaveSettings extends Component
             return;
         }
 
-        $data = $this->validate([
+       $data = $this->validate([
             'newYear' => ['required', 'integer', 'min:2000', 'max:2100'],
             'copyFromYearId' => ['nullable', 'integer'],
-            'newYearStartsOn' => ['nullable', 'date'],
-            'newYearEndsOn' => ['nullable', 'date', 'after_or_equal:newYearStartsOn'],
-            'newYearActive' => ['boolean'],
         ]);
+
 
         $yearInt = (int) $data['newYear'];
 
@@ -509,8 +554,10 @@ class AttendanceLeaveSettings extends Component
             return;
         }
 
-        DB::transaction(function () use ($companyId, $yearInt, $data, &$year) {
-            if (!empty($data['newYearActive'])) {
+        $isCurrentYear = $yearInt === (int) now()->year;
+ 
+        DB::transaction(function () use ($companyId, $yearInt, $data, $isCurrentYear, &$year) {
+            if ($isCurrentYear) {
                 LeavePolicyYear::query()
                     ->where('company_id', $companyId)
                     ->update(['is_active' => false]);
@@ -519,9 +566,9 @@ class AttendanceLeaveSettings extends Component
             $year = LeavePolicyYear::create([
                 'company_id' => $companyId,
                 'year' => $yearInt,
-                'starts_on' => $data['newYearStartsOn'] ?: Carbon::create($yearInt, 1, 1)->toDateString(),
-                'ends_on' => $data['newYearEndsOn'] ?: Carbon::create($yearInt, 12, 31)->toDateString(),
-                'is_active' => !empty($data['newYearActive']),
+                'starts_on' => Carbon::create($yearInt, 1, 1)->toDateString(),
+                'ends_on' => Carbon::create($yearInt, 12, 31)->toDateString(),
+                'is_active' => $isCurrentYear,
             ]);
 
             $fromId = isset($data['copyFromYearId']) ? (int) $data['copyFromYearId'] : 0;
@@ -550,7 +597,11 @@ class AttendanceLeaveSettings extends Component
                         'settings' => $row->settings ?? [],
                     ]);
                 }
+
+
             }
+                            $this->ensureAnnualDefaultPolicy($companyId, (int) $year->id);
+
         });
 
         session()->flash('success', tr('Saved successfully'));
@@ -566,6 +617,18 @@ class AttendanceLeaveSettings extends Component
         $companyId = $this->resolveCompanyId();
         if ($companyId <= 0) return;
 
+        $year = LeavePolicyYear::query()
+            ->where('company_id', $companyId)
+            ->where('id', $id)
+            ->first();
+
+        if (! $year) return;
+
+        if ((int) $year->year !== (int) now()->year) {
+            session()->flash('error', tr('Only the current year can be active.'));
+            return;
+        }
+
         DB::transaction(function () use ($companyId, $id) {
             LeavePolicyYear::query()
                 ->where('company_id', $companyId)
@@ -579,6 +642,7 @@ class AttendanceLeaveSettings extends Component
 
         session()->flash('success', tr('Saved successfully'));
     }
+
 
     public function deleteYear(int $id): void
     {
@@ -943,11 +1007,15 @@ class AttendanceLeaveSettings extends Component
     // ---------------------------
     // Helpers: rules + settings json
     // ---------------------------
+    // public string $leave_type = 'annual';
+
     protected function policyRules(): array
     {
         return [
+            // ✅ حذفنا leave_type من القواعد
+            // 'leave_type' => ['required', 'string', 'max:50'],
+
             'name' => ['required', 'string', 'max:255'],
-            'leave_type' => ['required', 'string', 'max:50'],
             'days_per_year' => ['required', 'numeric', 'min:0', 'max:366'],
             'gender' => ['required', 'in:all,male,female'],
             'is_active' => ['boolean'],
@@ -955,9 +1023,9 @@ class AttendanceLeaveSettings extends Component
             'requires_attachment' => ['boolean'],
             'description' => ['nullable', 'string', 'max:2000'],
 
-            'accrual_method' => ['required', 'in:annual_grant,monthly,by_work_days'],
+            // ✅ آلية الاستحقاق خيارين فقط
+            'accrual_method' => ['required', 'in:annual_grant,monthly'],
             'monthly_accrual_rate' => ['nullable', 'numeric', 'min:0', 'max:366', 'required_if:accrual_method,monthly'],
-            'workday_accrual_rate' => ['nullable', 'numeric', 'min:0', 'max:10', 'required_if:accrual_method,by_work_days'],
 
             'min_accrual' => ['required', 'numeric', 'min:0', 'max:366'],
             'max_balance' => ['required', 'numeric', 'min:0', 'max:999'],
@@ -998,13 +1066,14 @@ class AttendanceLeaveSettings extends Component
         ];
     }
 
+
     protected function buildSettingsFromValidated(array $data): array
     {
         return [
             'accrual' => [
                 'method' => $data['accrual_method'],
                 'monthly_rate' => $data['accrual_method'] === 'monthly' ? (float) ($data['monthly_accrual_rate'] ?? 0) : null,
-                'workday_rate' => $data['accrual_method'] === 'by_work_days' ? (float) ($data['workday_accrual_rate'] ?? 0) : null,
+                // 'workday_rate' => $data['accrual_method'] === 'by_work_days' ? (float) ($data['workday_accrual_rate'] ?? 0) : null,
                 'min_unit' => (float) $data['min_accrual'],
                 'max_balance' => (float) $data['max_balance'],
                 'carryover_days' => (float) $data['carryover_days'],
@@ -1153,4 +1222,148 @@ class AttendanceLeaveSettings extends Component
             'compareRows' => $this->compareRows,
         ])->layout('layouts.company-admin');
     }
+
+    public function updatedDaysPerYear($value = null): void
+    {
+        $this->syncMonthlyAccrualRate();
+    }
+
+    public function updatedAccrualMethod($value = null): void
+    {
+        $this->syncMonthlyAccrualRate();
+    }
+
+
+    protected function syncMonthlyAccrualRate(): void
+    {
+        $days = is_numeric($this->days_per_year) ? (float) $this->days_per_year : 0.0;
+
+        $rate = $days / 12;
+
+        $formatted = rtrim(rtrim(number_format($rate, 2, '.', ''), '0'), '.');
+
+        $this->monthly_accrual_rate = $formatted === '' ? '0' : $formatted;
+    }
+
+    protected function isAnnualDefaultPolicy(LeavePolicy $row): bool
+    {
+        $key = (string) data_get($row->settings ?? [], 'meta.system_key', '');
+        if ($key === 'annual_default') {
+            return true;
+        }
+
+        // fallback (older records) if name already "سنوية"
+        return trim((string) $row->name) === $this->annualDefaultName;
+    }
+
+    protected function defaultAnnualSettings(): array
+    {
+        return [
+            'meta' => [
+                'system_key' => 'annual_default',
+                'lock_name' => true,
+            ],
+
+            'accrual' => [
+                'method' => 'annual_grant',
+                'monthly_rate' => null,
+                'min_unit' => 0.5,
+                'max_balance' => 45,
+                'carryover_days' => 15,
+                'carryover_expire_months' => 3,
+            ],
+
+            'weekend_policy' => 'exclude',
+            'deduction_policy' => 'balance_only',
+            'duration_unit' => 'full_day',
+
+            'notice' => [
+                'min_days' => 3,
+                'max_advance_days' => 90,
+                'allow_retroactive' => false,
+            ],
+
+            'note' => [
+                'required' => false,
+                'text' => null,
+                'ack_required' => false,
+            ],
+
+            'attachments' => [
+                'types' => ['pdf', 'jpg', 'png'],
+                'max_mb' => 5,
+            ],
+
+            'constraints' => [
+                'blackout' => [
+                    'enabled' => false,
+                    'from' => null,
+                    'to' => null,
+                    'exception_requires_approval' => false,
+                ],
+                'min_service' => [
+                    'enabled' => false,
+                    'months' => null,
+                ],
+                'requires_presence_before_apply' => false,
+                'max_consecutive' => [
+                    'enabled' => false,
+                    'days' => null,
+                ],
+                'max_total_per_year' => [
+                    'enabled' => false,
+                    'days' => null,
+                ],
+            ],
+        ];
+    }
+
+    protected function ensureAnnualDefaultPolicy(int $companyId, int $policyYearId): void
+    {
+        // 1) find by meta key
+        $row = LeavePolicy::query()
+            ->where('company_id', $companyId)
+            ->where('policy_year_id', $policyYearId)
+            ->where('settings->meta->system_key', 'annual_default')
+            ->first();
+
+        // 2) fallback find by name (older records)
+        if (! $row) {
+            $row = LeavePolicy::query()
+                ->where('company_id', $companyId)
+                ->where('policy_year_id', $policyYearId)
+                ->where('name', $this->annualDefaultName)
+                ->first();
+        }
+
+        $payload = [
+            'company_id' => $companyId,
+            'policy_year_id' => $policyYearId,
+
+            'name' => $this->annualDefaultName,
+            'leave_type' => 'annual',
+            'days_per_year' => 30,
+
+            'gender' => 'all',
+            'is_active' => true,
+            'show_in_app' => true,
+            'requires_attachment' => false,
+
+            'description' => null,
+            'settings' => $this->defaultAnnualSettings(),
+        ];
+
+        if ($row) {
+            // update to ensure lock/meta exists + name is correct
+            $row->update([
+                'name' => $payload['name'],
+                'leave_type' => $payload['leave_type'],
+                'settings' => $payload['settings'],
+            ]);
+            return;
+        }
+
+        LeavePolicy::create($payload);
+    }
+
 }
