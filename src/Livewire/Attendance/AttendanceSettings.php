@@ -41,6 +41,9 @@ class AttendanceSettings extends Component
     public $absencePolicies = [];
     public $groups = [];
     public $allPolicies = [];
+    // Geographic Locations
+    public $branches = [];
+    public $availableGroups = []; 
     public $trackingModeLabels = [];
 
     // Modal Visibility States
@@ -143,15 +146,35 @@ class AttendanceSettings extends Component
     {
         $companyId = auth()->user()->saas_company_id;
 
+        $mainDeptId = \Athka\SystemSettings\Models\Department::where('saas_company_id', $companyId)->orderBy('id')->first()?->id;
+
         $this->geographicLocations = AttendanceGpsLocation::active()
             ->where('saas_company_id', $companyId)
-            ->get()->toArray();
-        $this->fingerprintDevices = AttendanceDevice::fingerprint()->active()
+            ->get()->map(function($loc) use ($mainDeptId) {
+                $target = '';
+                if ($loc->employee_group_id) {
+                    $target = $loc->employeeGroup?->name;
+                } elseif ($loc->branch_id) {
+                    $target = ((int)$loc->branch_id === (int)$mainDeptId) ? tr('Main Branch HQ') : ($loc->branch?->name ?? tr('N/A'));
+                }
+                return array_merge($loc->toArray(), ['target_name' => $target]);
+            })->toArray();
+
+        $this->fingerprintDevices = AttendanceDevice::with('branch')->fingerprint()->active()
             ->where('saas_company_id', $companyId)
-            ->get()->toArray();
-        $this->nfcDevices = AttendanceDevice::nfc()->active()
+            ->get()
+            ->map(fn($d) => array_merge($d->toArray(), [
+                'branch_name' => ((int)$d->branch_id === (int)$mainDeptId) ? tr('Main Branch HQ') : ($d->branch?->name ?? tr('N/A'))
+            ]))
+            ->toArray();
+            
+        $this->nfcDevices = AttendanceDevice::with('branch')->nfc()->active()
             ->where('saas_company_id', $companyId)
-            ->get()->toArray();
+            ->get()
+            ->map(fn($d) => array_merge($d->toArray(), [
+                'branch_name' => ((int)$d->branch_id === (int)$mainDeptId) ? tr('Main Branch HQ') : ($d->branch?->name ?? tr('N/A'))
+            ]))
+            ->toArray();
         
         // Load Penalties linked to default policy
         $this->penalties = AttendancePenaltyPolicy::where('policy_id', $this->defaultPolicy->id)
@@ -281,6 +304,13 @@ class AttendanceSettings extends Component
         $this->allPolicies = AttendancePolicy::active()
             ->where('saas_company_id', $companyId)
             ->get()->toArray();
+
+        // Load Branches
+        $this->branches = \Athka\SystemSettings\Models\Department::where('saas_company_id', $companyId)
+            ->get()->toArray();
+
+        // Already loading groups above, but let's make sure it's available for select
+        $this->availableGroups = $this->groups;
 
         // Load Employees
         $this->availableEmployees = Employee::forCompany($companyId)
@@ -442,7 +472,16 @@ class AttendanceSettings extends Component
     {
         $this->isEditing = false;
         $this->editingLocationId = null;
-        $this->reset(['locationName', 'selectedBranch', 'selectedGroups']);
+        $this->reset(['locationName']);
+        $this->selectedBranch = 'main';
+        
+        // Set default group if available
+        if (!empty($this->groups)) {
+            $this->selectedGroups = [$this->groups[0]['id']];
+        } else {
+            $this->selectedGroups = [];
+        }
+
         $this->gpsData = [
             'lat' => 15.37946,
             'lng' => 44.17241,
@@ -486,15 +525,41 @@ class AttendanceSettings extends Component
 
     public function saveGpsLocation()
     {
+        $this->validate([
+            'locationName' => 'required|string|max:255',
+            'gpsTarget' => 'required|in:branch,groups',
+            'gpsData.lat' => 'required|numeric',
+            'gpsData.lng' => 'required|numeric',
+            'gpsData.radius' => 'required|numeric|min:1',
+        ], [
+            'locationName.required' => tr('Please enter a location name.'),
+            'gpsData.lat.required' => tr('Please select a point on the map.'),
+            'gpsData.lng.required' => tr('Please select a point on the map.'),
+        ]);
+
         $companyId = auth()->user()->saas_company_id;
+        
+        $branchId = null;
+        $employeeGroupId = null;
+
+        if ($this->gpsTarget === 'branch') {
+            if ($this->selectedBranch === 'main' || empty($this->selectedBranch)) {
+                $branchId = \Athka\SystemSettings\Models\Department::where('saas_company_id', $companyId)->first()?->id;
+            } else {
+                $branchId = $this->selectedBranch;
+            }
+        } else {
+            $employeeGroupId = $this->selectedGroups[0] ?? null;
+        }
+
         $data = [
-            'name' => $this->locationName ?: 'New Location',
+            'name' => $this->locationName,
             'lat' => $this->gpsData['lat'],
             'lng' => $this->gpsData['lng'],
             'radius_meters' => $this->gpsData['radius'],
             'address_text' => $this->gpsData['address'] ?? '',
-            'branch_id' => $this->gpsTarget === 'branch' ? ($this->selectedBranch ?: \Athka\SystemSettings\Models\Department::where('saas_company_id', $companyId)->first()?->id) : null,
-            'employee_group_id' => $this->gpsTarget === 'groups' ? ($this->selectedGroups[0] ?? null) : null,
+            'branch_id' => $branchId,
+            'employee_group_id' => $employeeGroupId,
             'saas_company_id' => $companyId,
         ];
 
@@ -510,9 +575,37 @@ class AttendanceSettings extends Component
         $this->dispatch('toast', type: 'success', message: $this->isEditing ? tr('Geographic location details have been updated successfully.') : tr('New geographic location has been registered and activated.'));
     }
 
+    /**
+     * Proxied Reverse Geocoding to avoid CORS and 403 issues from browser
+     */
+    public function reverseGeocode($lat, $lng)
+    {
+        try {
+            $response = \Illuminate\Support\Facades\Http::withHeaders([
+                'User-Agent' => 'AthkaHR-App/1.0',
+            ])->get("https://nominatim.openstreetmap.org/reverse", [
+                'format' => 'json',
+                'lat' => $lat,
+                'lon' => $lng,
+                'zoom' => 18,
+                'addressdetails' => 1,
+                'accept-language' => app()->getLocale(),
+            ]);
+
+            if ($response->successful()) {
+                return $response->json();
+            }
+        } catch (\Exception $e) {
+            \Illuminate\Support\Facades\Log::error('Geocoding Proxy Error: ' . $e->getMessage());
+        }
+
+        return null;
+    }
+
 
     // Device Form State
     public $deviceForm = [
+        'id' => null,
         'type' => 'fingerprint', // fingerprint, nfc
         'name' => '',
         'branch' => 'main',
@@ -523,6 +616,7 @@ class AttendanceSettings extends Component
     public function openDeviceModal($type)
     {
         $this->deviceForm = [
+            'id' => null,
             'type' => $type,
             'name' => '',
             'branch' => 'main',
@@ -534,17 +628,53 @@ class AttendanceSettings extends Component
         else $this->showNfcModal = true;
     }
 
+    public function editDevice($id)
+    {
+        $device = AttendanceDevice::find($id);
+        if ($device) {
+            $this->deviceForm = [
+                'id' => $device->id,
+                'type' => $device->device_type,
+                'name' => $device->name,
+                'branch' => $device->branch_id,
+                'location_inside' => $device->location_in_branch,
+                'serial_number' => $device->serial_no,
+            ];
+            
+            $this->showSavedFingerprintModal = false;
+            $this->showSavedNfcModal = false;
+            
+            if ($device->device_type === 'fingerprint') $this->showFingerprintModal = true;
+            else $this->showNfcModal = true;
+        }
+    }
+
+    public function deleteDevice($id)
+    {
+        AttendanceDevice::where('id', $id)->where('saas_company_id', auth()->user()->saas_company_id)->delete();
+        $this->refreshData();
+        $this->dispatch('toast', type: 'success', message: tr('The device has been successfully removed.'));
+    }
+
     public function saveDevice()
     {
-        AttendanceDevice::create([
+        $data = [
             'device_type' => $this->deviceForm['type'],
             'name' => $this->deviceForm['name'],
-            'branch_id' => $this->deviceForm['branch'] === 'main' ? \Athka\SystemSettings\Models\Department::where('saas_company_id', auth()->user()->saas_company_id)->first()?->id : $this->deviceForm['branch'],
+            'branch_id' => ($this->deviceForm['branch'] === 'main' || empty($this->deviceForm['branch'])) 
+                ? \Athka\SystemSettings\Models\Department::where('saas_company_id', auth()->user()->saas_company_id)->first()?->id 
+                : $this->deviceForm['branch'],
             'location_in_branch' => $this->deviceForm['location_inside'],
             'serial_no' => $this->deviceForm['serial_number'],
             'is_active' => true,
             'saas_company_id' => auth()->user()->saas_company_id,
-        ]);
+        ];
+
+        if ($this->deviceForm['id']) {
+            AttendanceDevice::where('id', $this->deviceForm['id'])->update($data);
+        } else {
+            AttendanceDevice::create($data);
+        }
 
         if ($this->deviceForm['type'] === 'fingerprint') {
             $this->showFingerprintModal = false;

@@ -40,6 +40,16 @@
         type="danger"
     />
 
+    <x-ui.confirm-dialog 
+        id="delete-device"
+        title="{{ tr('Remove Device?') }}"
+        message="{{ tr('Are you sure you want to remove this device? It will no longer be able to record attendance.') }}"
+        confirmText="{{ tr('Yes, Remove') }}"
+        cancelText="{{ tr('Cancel') }}"
+        confirmAction="wire:deleteDevice(__ID__)"
+        type="danger"
+    />
+
     <style>
         [x-cloak] { display: none !important; }
         ::-webkit-scrollbar { width: 4px; }
@@ -142,8 +152,8 @@
                 async fetchAddress(lat, lng) {
                     this.isFetching = true;
                     try {
-                        const response = await fetch(`https://nominatim.openstreetmap.org/reverse?format=json&lat=${lat}&lon=${lng}&zoom=18&addressdetails=1&accept-language=ar`);
-                        const data = await response.json();
+                        // Call backend proxy via Livewire to avoid CORS/403 issues
+                        const data = await this.$wire.reverseGeocode(lat, lng);
                         
                         if (data && data.address) {
                             this.country = data.address.country || '---';

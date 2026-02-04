@@ -10,6 +10,26 @@
         </div>
     </x-slot:title>
     <x-slot:content>
+        @if($errors->any())
+            <div class="mb-4 bg-red-50 border-s-4 border-red-500 p-3 rounded-e-xl">
+                <div class="flex">
+                    <div class="flex-shrink-0">
+                        <i class="fas fa-exclamation-circle text-red-500 mt-0.5"></i>
+                    </div>
+                    <div class="ms-3">
+                        <p class="text-xs text-red-700 font-bold uppercase tracking-wider mb-1">
+                            {{ tr('Validation Errors') }}
+                        </p>
+                        <ul class="list-disc list-inside text-[11px] text-red-600 space-y-0.5">
+                            @foreach ($errors->all() as $error)
+                                <li>{{ $error }}</li>
+                            @endforeach
+                        </ul>
+                    </div>
+                </div>
+            </div>
+        @endif
+
         <div class="space-y-4 py-1" 
             x-data="mapPicker({ 
                 lat: @entangle('gpsData.lat'), 
@@ -40,19 +60,23 @@
 
                         <div class="space-y-3">
                             @if($gpsTarget === 'branch')
-                                <x-ui.select wire:key="select-branch-target" id="gps_target_branch" label="{{ tr('Select Branch') }}" wire:model.defer="selectedBranch" required class="!py-2 shadow-sm">
+                                <x-ui.select wire:key="select-branch-target" id="gps_target_branch" label="{{ tr('Select Branch') }}" wire:model.defer="selectedBranch" name="selectedBranch" class="!py-2 shadow-sm">
                                     <option value="main">{{ tr('Main Branch HQ') }}</option>
-                                    <option value="" disabled>{{ tr('Additional branches coming soon...') }}</option>
+                                    @foreach($branches as $branch)
+                                        @if(isset($branch['id']))
+                                            <option value="{{ $branch['id'] }}">{{ $branch['name_ar'] ?? $branch['name'] }}</option>
+                                        @endif
+                                    @endforeach
                                 </x-ui.select>
                             @else
-                                <x-ui.select wire:key="select-groups-target" id="gps_target_groups" label="{{ tr('Select Employee Groups') }}" wire:model.defer="selectedGroups" multiple required class="!py-2 shadow-sm">
+                                <x-ui.select wire:key="select-groups-target" id="gps_target_groups" label="{{ tr('Select Employee Groups') }}" wire:model.defer="selectedGroups" name="selectedGroups" multiple class="!py-2 shadow-sm">
                                    @foreach($groups as $g)
                                         <option value="{{ $g['id'] }}">{{ $g['name'] }}</option>
                                    @endforeach
                                 </x-ui.select>
                             @endif
 
-                            <x-ui.input label="{{ tr('Location Name') }}" wire:model.defer="locationName" placeholder="{{ tr('e.g. Sales Dept Area') }}" required class="!py-2" />
+                            <x-ui.input label="{{ tr('Location Name') }}" wire:model.defer="locationName" name="locationName" placeholder="{{ tr('e.g. Sales Dept Area') }}" required class="!py-2" />
                         </div>
                     </div>
 

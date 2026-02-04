@@ -150,6 +150,17 @@ class Users extends Component
         $employee = Employee::find($employeeId);
         if (!$employee) return;
 
+        // Check if this is the primary admin account
+        $firstUser = User::where('saas_company_id', $this->getCompanyId())->orderBy('id', 'asc')->first();
+        if ($this->editingId && (int)$this->editingId === (int)$firstUser->id) {
+             // For the primary admin, the work email MUST match the user email (current value in the input field)
+             if (strtolower(trim($employee->email_work)) !== strtolower(trim($this->email))) {
+                 $message = str_replace(':email', $this->email, tr('For the primary admin account, the linked employee work email must be the same as the user email (:email).'));
+                 $this->dispatch('toast', type: 'error', message: $message);
+                 return;
+             }
+        }
+
         $this->selectedEmployeeId = $employee->id;
         
         // Auto-fill form
@@ -246,10 +257,11 @@ class Users extends Component
                 // Primary account integrity check: 
                 // If this is the FIRST user (Primary Admin), the employee's work email MUST match the user login email.
                 $firstUser = User::where('saas_company_id', $this->getCompanyId())->orderBy('id', 'asc')->first();
-                if ($user->id === $firstUser->id) {
+                if ((int)$user->id === (int)$firstUser->id) {
                     $employee = Employee::find($this->selectedEmployeeId);
-                    if ($employee && strtolower($employee->email_work) !== strtolower($user->email)) {
-                        $this->addError('employeeSearch', tr('For the primary admin account, the linked employee work email must be the same as the user email (:email).', ['email' => $user->email]));
+                    if ($employee && strtolower(trim($employee->email_work)) !== strtolower(trim($this->email))) {
+                        $message = str_replace(':email', $this->email, tr('For the primary admin account, the linked employee work email must be the same as the user email (:email).'));
+                        $this->dispatch('toast', type: 'error', message: $message);
                         return;
                     }
                 }
@@ -331,7 +343,8 @@ class Users extends Component
         $user->save();
 
         $status = $user->is_active ? tr('activated') : tr('deactivated');
-        $this->dispatch('toast', type: 'success', message: tr('User :status successfully', ['status' => $status]));
+        $message = str_replace(':status', $status, tr('User :status successfully'));
+        $this->dispatch('toast', type: 'success', message: $message);
     }
 
     public function getCompanyId()

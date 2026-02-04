@@ -11,6 +11,11 @@
             <x-ui.input label="{{ tr('Device Name') }}" wire:model.defer="deviceForm.name" placeholder="{{ tr('e.g. Front Office ZK') }}" required />
             <x-ui.select label="{{ tr('Device Location (Branch)') }}" wire:model.defer="deviceForm.branch" required>
                 <option value="main">{{ tr('Main Branch HQ') }}</option>
+                @foreach($branches as $branch)
+                    @if(isset($branch['id']))
+                        <option value="{{ $branch['id'] }}">{{ $branch['name_ar'] ?? $branch['name'] }}</option>
+                    @endif
+                @endforeach
             </x-ui.select>
             <x-ui.input label="{{ tr('Location Inside Branch') }}" wire:model.defer="deviceForm.location_inside" placeholder="{{ tr('e.g. 1st Floor Reception') }}" required />
             <x-ui.input label="{{ tr('Serial Number (SN)') }}" wire:model.defer="deviceForm.serial_number" placeholder="{{ tr('SN-XXXX-XXXX') }}" />
@@ -18,7 +23,7 @@
     </x-slot:content>
     <x-slot:footer>
         <x-ui.secondary-button wire:click="$set('showFingerprintModal', false)">{{ tr('Cancel') }}</x-ui.secondary-button>
-        <x-ui.brand-button wire:click="saveDevice" class="!px-10 shadow-lg">{{ tr('Register Device') }}</x-ui.brand-button>
+        <x-ui.brand-button wire:click="saveDevice" class="!px-10 shadow-lg">{{ $deviceForm['id'] ? tr('Update Device') : tr('Register Device') }}</x-ui.brand-button>
     </x-slot:footer>
 </x-ui.modal>
 
@@ -35,6 +40,11 @@
             <x-ui.input label="{{ tr('Device/Card Name') }}" wire:model.defer="deviceForm.name" placeholder="{{ tr('e.g. Security Chip A1') }}" required />
             <x-ui.select label="{{ tr('Location (Branch)') }}" wire:model.defer="deviceForm.branch" required>
                 <option value="main">{{ tr('Main Branch HQ') }}</option>
+                @foreach($branches as $branch)
+                    @if(isset($branch['id']))
+                        <option value="{{ $branch['id'] }}">{{ $branch['name_ar'] ?? $branch['name'] }}</option>
+                    @endif
+                @endforeach
             </x-ui.select>
             <x-ui.input label="{{ tr('Installation Point') }}" wire:model.defer="deviceForm.location_inside" placeholder="{{ tr('e.g. Warehouse Entrance') }}" required />
             <x-ui.input label="{{ tr('Serial Number') }}" wire:model.defer="deviceForm.serial_number" placeholder="{{ tr('HEX-XXXX-XXXX') }}" />
@@ -42,7 +52,7 @@
     </x-slot:content>
     <x-slot:footer>
         <x-ui.secondary-button wire:click="$set('showNfcModal', false)">{{ tr('Cancel') }}</x-ui.secondary-button>
-        <x-ui.brand-button wire:click="saveDevice" class="!px-10 shadow-lg">{{ tr('Register NFC') }}</x-ui.brand-button>
+        <x-ui.brand-button wire:click="saveDevice" class="!px-10 shadow-lg">{{ $deviceForm['id'] ? tr('Update NFC') : tr('Register NFC') }}</x-ui.brand-button>
     </x-slot:footer>
 </x-ui.modal>
 
@@ -74,7 +84,7 @@
                             </div>
                             <div class="hidden md:block">
                                 <span class="text-[8px] font-black text-gray-400 uppercase tracking-widest block">{{ tr('Branch') }}</span>
-                                <span class="text-[10px] font-bold text-gray-600">{{ $dev['branch_id'] === 1 ? tr('Main Branch') : $dev['branch_id'] }}</span>
+                                <x-ui.badge type="info" size="xs" class="!text-[9px] !font-bold !px-2">{{ $dev['branch_name'] ?? tr('Main Branch HQ') }}</x-ui.badge>
                             </div>
                             <div class="hidden md:block">
                                 <span class="text-[8px] font-black text-gray-400 uppercase tracking-widest block">{{ tr('Inside Location') }}</span>
@@ -87,7 +97,14 @@
                         </div>
                         <div class="p-4 flex items-center justify-center bg-gray-50/30">
                             <x-ui.actions-menu>
-                                <x-ui.dropdown-item danger>
+                                <x-ui.dropdown-item wire:click="editDevice({{ $dev['id'] }})">
+                                    <i class="fas fa-edit me-2 text-blue-500"></i>
+                                    <span>{{ tr('Edit') }}</span>
+                                </x-ui.dropdown-item>
+                                <x-ui.dropdown-item 
+                                    danger
+                                    @click="$dispatch('open-confirm-delete-device', { id: {{ $dev['id'] }} })"
+                                >
                                     <i class="fas fa-trash-alt me-2 text-red-500"></i>
                                     <span>{{ tr('Remove') }}</span>
                                 </x-ui.dropdown-item>
@@ -136,7 +153,7 @@
                             </div>
                             <div class="hidden md:block">
                                 <span class="text-[8px] font-black text-gray-400 uppercase tracking-widest block">{{ tr('Branch') }}</span>
-                                <span class="text-[10px] font-bold text-gray-600">{{ $dev['branch_id'] === 1 ? tr('Main Branch') : $dev['branch_id'] }}</span>
+                                <x-ui.badge type="info" size="xs" class="!text-[9px] !font-bold !px-2">{{ $dev['branch_name'] ?? tr('Main Branch HQ') }}</x-ui.badge>
                             </div>
                             <div class="hidden md:block">
                                 <span class="text-[8px] font-black text-gray-400 uppercase tracking-widest block">{{ tr('Inside Location') }}</span>
@@ -149,7 +166,14 @@
                         </div>
                         <div class="p-4 flex items-center justify-center bg-gray-50/30">
                             <x-ui.actions-menu>
-                                <x-ui.dropdown-item danger>
+                                <x-ui.dropdown-item wire:click="editDevice({{ $dev['id'] }})">
+                                    <i class="fas fa-edit me-2 text-blue-500"></i>
+                                    <span>{{ tr('Edit') }}</span>
+                                </x-ui.dropdown-item>
+                                <x-ui.dropdown-item 
+                                    danger
+                                    @click="$dispatch('open-confirm-delete-device', { id: {{ $dev['id'] }} })"
+                                >
                                     <i class="fas fa-trash-alt me-2 text-red-500"></i>
                                     <span>{{ tr('Remove') }}</span>
                                 </x-ui.dropdown-item>
