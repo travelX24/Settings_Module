@@ -31,7 +31,6 @@ class AttendanceHolidays extends Component
     public string $newCalendarType = 'gregorian';
     public string $newStartDate = '';
     public int $newDurationDays = 1;
-    public string $newDisplayHijri = '';
 
     public string $newGregorianAuto = '';
     public string $newDisplayHijriAuto = '';
@@ -44,7 +43,6 @@ class AttendanceHolidays extends Component
     public string $editStartDate = '';
     public int $editDurationDays = 1;
 
-    public string $editDisplayHijri = '';
 
     public string $editGregorianAuto = '';
     public string $editDisplayHijriAuto = '';
@@ -272,7 +270,6 @@ class AttendanceHolidays extends Component
         $this->newStartDate = '';
         $this->newDurationDays = 1;
 
-        $this->newDisplayHijri = '';
         $this->newGregorianAuto = '';
         $this->newDisplayHijriAuto = '';
     }
@@ -296,7 +293,6 @@ class AttendanceHolidays extends Component
             'newCalendarType' => ['required', 'in:hijri,gregorian'],
             'newStartDate' => ['required', 'date'],
             'newDurationDays' => ['required', 'integer', 'min:1', 'max:60'],
-            'newDisplayHijri' => ['nullable', 'string', 'max:50'],
         ]);
 
         $template = OfficialHolidayTemplate::create([
@@ -312,7 +308,7 @@ class AttendanceHolidays extends Component
         $start = Carbon::parse($data['newStartDate'])->startOfDay();
         $end = (clone $start)->addDays(((int) $data['newDurationDays']) - 1);
 
-        $displayHijri = $data['newDisplayHijri'] ?: ($this->newDisplayHijriAuto ?: null);
+        $displayHijri = $this->newDisplayHijriAuto ?: null;
 
         OfficialHolidayOccurrence::create([
             'company_id' => $companyId,
@@ -356,7 +352,6 @@ class AttendanceHolidays extends Component
         $this->editName = (string) ($row->template?->name ?? '');
         $this->editStartDate = (string) ($row->start_date ?? '');
         $this->editDurationDays = (int) ($row->duration_days ?? 1);
-        $this->editDisplayHijri = (string) ($row->display_hijri ?? '');
 
         $this->newCalendarType = $this->companyCalendarType;
 
@@ -373,7 +368,6 @@ class AttendanceHolidays extends Component
         $this->editName = '';
         $this->editStartDate = '';
         $this->editDurationDays = 1;
-        $this->editDisplayHijri = '';
 
         $this->editGregorianAuto = '';
         $this->editDisplayHijriAuto = '';
@@ -394,7 +388,6 @@ class AttendanceHolidays extends Component
             'editName' => ['required', 'string', 'max:255'],
             'editStartDate' => ['required', 'date'],
             'editDurationDays' => ['required', 'integer', 'min:1', 'max:60'],
-            'editDisplayHijri' => ['nullable', 'string', 'max:50'],
         ]);
 
         $companyId = $this->resolveCompanyId();
@@ -431,7 +424,7 @@ class AttendanceHolidays extends Component
                 'duration_days' => (int) $data['editDurationDays'],
             ]);
 
-            $displayHijri = $data['editDisplayHijri'] ?: ($this->editDisplayHijriAuto ?: null);
+            $displayHijri = $this->editDisplayHijriAuto ?: null;
 
             $row->update([
                 'start_date' => $start->toDateString(),

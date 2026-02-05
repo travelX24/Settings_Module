@@ -292,36 +292,15 @@
                     @error('newStartDate') <div class="text-xs text-red-600 mt-1">{{ $message }}</div> @enderror
                 </div>
 
-                @if($companyCalendarType === 'hijri')
-                    <div>
-                        <x-ui.input
-                            label="{{ tr('Gregorian Date (auto)') }}"
-                            value="{{ $newGregorianAuto }}"
-                            readonly
-                            class="!bg-gray-50"
-                        />
-                    </div>
-                @else
-                    <div class="hidden md:block"></div>
-                @endif
+          <div>
+            <x-ui.input
+                label="{{ $companyCalendarType === 'hijri' ? tr('Gregorian Date (auto)') : tr('Hijri Date (auto)') }}"
+                value="{{ $companyCalendarType === 'hijri' ? $newGregorianAuto : $newDisplayHijriAuto }}"
+                readonly
+                class="!bg-gray-50"
+            />
+        </div>
 
-                <div>
-                    <x-ui.input
-                        label="{{ tr('Hijri Date (auto)') }}"
-                        value="{{ $newDisplayHijriAuto }}"
-                        readonly
-                        class="!bg-gray-50"
-                    />
-                </div>
-
-                <div>
-                    <x-ui.input
-                        label="{{ tr('Hijri display (optional)') }}"
-                        wire:model.defer="newDisplayHijri"
-                        placeholder="{{ tr('e.g. 1447/10/03') }}"
-                        hint="{{ tr('Leave empty to use auto value') }}"
-                    />
-                </div>
             </div>
         </x-slot:content>
 
@@ -390,36 +369,15 @@
                     @error('editStartDate') <div class="text-xs text-red-600 mt-1">{{ $message }}</div> @enderror
                 </div>
 
-                @if($companyCalendarType === 'hijri')
-                    <div>
-                        <x-ui.input
-                            label="{{ tr('Gregorian Date (auto)') }}"
-                            value="{{ $editGregorianAuto }}"
-                            readonly
-                            class="!bg-gray-50"
-                        />
-                    </div>
-                @else
-                    <div class="hidden md:block"></div>
-                @endif
-
-                <div>
+               <div>
                     <x-ui.input
-                        label="{{ tr('Hijri Date (auto)') }}"
-                        value="{{ $editDisplayHijriAuto }}"
+                        label="{{ $companyCalendarType === 'hijri' ? tr('Gregorian Date (auto)') : tr('Hijri Date (auto)') }}"
+                        value="{{ $companyCalendarType === 'hijri' ? $editGregorianAuto : $editDisplayHijriAuto }}"
                         readonly
                         class="!bg-gray-50"
                     />
                 </div>
 
-                <div>
-                    <x-ui.input
-                        label="{{ tr('Hijri display (optional)') }}"
-                        wire:model.defer="editDisplayHijri"
-                        placeholder="{{ tr('e.g. 1447/10/03') }}"
-                        hint="{{ tr('Leave empty to use auto value') }}"
-                    />
-                </div>
             </div>
         </x-slot:content>
 

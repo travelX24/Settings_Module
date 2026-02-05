@@ -1,4 +1,4 @@
- @php
+@php
     $locale = app()->getLocale();
     $isRtl  = in_array(substr($locale, 0, 2), ['ar','fa','ur','he']);
     $selectedYear = $years->firstWhere('id', $selectedYearId);
@@ -91,7 +91,7 @@
             {{-- Search & Filters --}}
             <div class="grid grid-cols-1 xl:grid-cols-12 gap-4 items-end">
                 {{-- Filters --}}
-                <div class="xl:col-span-8">
+                <div class="xl:col-span-8 {{ $isRtl ? 'xl:order-2' : '' }}">
                     <div class="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-5 gap-4">
                         <x-ui.filter-select
                             model="filterStatus"
@@ -162,7 +162,7 @@
                 </div>
 
                 {{-- Search --}}
-                <div class="xl:col-span-4 min-w-0">
+                <div class="xl:col-span-4 min-w-0 {{ $isRtl ? 'xl:order-1' : '' }}">
                     <x-ui.search-box
                         model="search"
                         placeholder="{{ tr('Search by leave name...') }}"
@@ -198,7 +198,6 @@
                             <div class="text-[10px] text-gray-400 truncate">{{ $row->description ?? '' }}</div>
                         </td>
 
-                      
                         <td class="px-6 py-4 text-center">
                             <span class="text-xs font-bold text-gray-800">{{ $row->days_per_year }}</span>
                         </td>
@@ -229,7 +228,7 @@
                             </span>
                         </td>
 
-                       @php
+                        @php
                             $isAnnualDefault = (string) data_get($row->settings ?? [], 'meta.system_key', '') === 'annual_default'
                                 || trim((string) $row->name) === 'سنوية';
                         @endphp
@@ -237,15 +236,14 @@
                         <td class="px-6 py-4 text-end">
                             <x-ui.actions-menu>
                                 <x-ui.dropdown-item wire:click="openEdit({{ (int) $row->id }})">
-
                                     <i class="fas fa-edit me-2 text-blue-500"></i> {{ tr('Edit') }}
                                 </x-ui.dropdown-item>
+
                                 @if(! $isAnnualDefault)
                                     <x-ui.dropdown-item danger wire:click="confirmDelete({{ (int) $row->id }})">
                                         <i class="fas fa-trash-alt me-2 text-red-500"></i> {{ tr('Delete') }}
                                     </x-ui.dropdown-item>
                                 @endif
-
                             </x-ui.actions-menu>
                         </td>
                     </tr>
@@ -275,7 +273,6 @@
     </div>
 
     {{-- Create Modal --}}
-    {{-- Create Modal --}}
     <x-ui.modal wire:model="createOpen" maxWidth="4xl">
         <x-slot:title>
             <div class="flex items-center gap-3">
@@ -290,19 +287,36 @@
         </x-slot:title>
 
         <x-slot:content>
-                {{-- ========================= --}}
-                {{-- Section 1: Basic Information --}}
-                {{-- ========================= --}}
-                <div class="mt-2 pt-4 border-t border-gray-100">
-                    <div class="text-sm font-black text-gray-900 mb-3">{{ tr('Basic Information') }}</div>
+            {{-- ========================= --}}
+            {{-- Section 1: Basic Information --}}
+            {{-- ========================= --}}
+            <div class="mt-2 pt-4 border-t border-gray-100">
+                <div class="text-sm font-black text-gray-900 mb-3">{{ tr('Basic Information') }}</div>
 
-                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-                        <div class="md:col-span-2">
-                            <label class="block text-[11px] font-black text-gray-500 mb-1">{{ tr('Name') }}</label>
-                            <input type="text" wire:model.defer="name"
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div class="md:col-span-2">
+                        <label class="block text-[11px] font-black text-gray-500 mb-1">{{ tr('Name') }}</label>
+                        <input type="text" wire:model.defer="name"
+                            class="w-full h-[40px] px-3 rounded-xl border border-gray-200 text-sm bg-gray-50/50 focus:bg-white focus:border-[color:var(--brand-via)] focus:ring-4 focus:ring-[color:var(--brand-via)]/10 transition-all"
+                            placeholder="{{ tr('Leave name...') }}">
+                        @error('name') <div class="text-xs text-red-600 mt-1">{{ $message }}</div> @enderror
+                    </div>
+
+                    {{-- ✅ Days per year (for non-annual policies create) --}}
+                    <div class="md:col-span-2">
+                            <label class="block text-[11px] font-black text-gray-500 mb-1">{{ tr('Description') }}</label>
+                            <input type="text" wire:model.defer="description"
                                 class="w-full h-[40px] px-3 rounded-xl border border-gray-200 text-sm bg-gray-50/50 focus:bg-white focus:border-[color:var(--brand-via)] focus:ring-4 focus:ring-[color:var(--brand-via)]/10 transition-all"
-                                placeholder="{{ tr('Leave name...') }}">
-                            @error('name') <div class="text-xs text-red-600 mt-1">{{ $message }}</div> @enderror
+                                placeholder="{{ tr('Optional description...') }}">
+                            @error('description') <div class="text-xs text-red-600 mt-1">{{ $message }}</div> @enderror
+                        </div>
+
+                        {{-- ✅ Days per year (moved under Description) --}}
+                        <div>
+                            <label class="block text-[11px] font-black text-gray-500 mb-1">{{ tr('Days per year') }}</label>
+                            <input type="number" step="0.5" min="0" wire:model.defer="days_per_year"
+                                class="w-full h-[40px] px-3 rounded-xl border border-gray-200 text-sm bg-gray-50/50 focus:bg-white focus:border-[color:var(--brand-via)] focus:ring-4 focus:ring-[color:var(--brand-via)]/10 transition-all">
+                            @error('days_per_year') <div class="text-xs text-red-600 mt-1">{{ $message }}</div> @enderror
                         </div>
 
                         <div>
@@ -316,315 +330,148 @@
                             @error('gender') <div class="text-xs text-red-600 mt-1">{{ $message }}</div> @enderror
                         </div>
 
-                        <div class="flex items-end">
-                            <div class="w-full">
-                                <label class="block text-[11px] font-black text-gray-500 mb-1">{{ tr('Description') }}</label>
-                                <input type="text" wire:model.defer="description"
-                                    class="w-full h-[40px] px-3 rounded-xl border border-gray-200 text-sm bg-gray-50/50 focus:bg-white focus:border-[color:var(--brand-via)] focus:ring-4 focus:ring-[color:var(--brand-via)]/10 transition-all"
-                                    placeholder="{{ tr('Optional description...') }}">
-                                @error('description') <div class="text-xs text-red-600 mt-1">{{ $message }}</div> @enderror
-                            </div>
-                        </div>
 
-                        <div class="md:col-span-2 grid grid-cols-1 sm:grid-cols-3 gap-3">
-                            <label class="flex items-center gap-2 text-sm font-semibold text-gray-700">
-                                <input type="checkbox" wire:model.defer="is_active">
-                                <span>{{ tr('Active') }}</span>
-                            </label>
+                    <div class="md:col-span-2 grid grid-cols-1 sm:grid-cols-3 gap-3">
+                        <label class="flex items-center gap-2 text-sm font-semibold text-gray-700">
+                            <input type="checkbox" wire:model.defer="is_active">
+                            <span>{{ tr('Active') }}</span>
+                        </label>
 
-                            <label class="flex items-center gap-2 text-sm font-semibold text-gray-700">
-                                <input type="checkbox" wire:model.defer="show_in_app">
-                                <span>{{ tr('Show in App') }}</span>
-                            </label>
+                        <label class="flex items-center gap-2 text-sm font-semibold text-gray-700">
+                            <input type="checkbox" wire:model.defer="show_in_app">
+                            <span>{{ tr('Show in App') }}</span>
+                        </label>
 
-                            <label class="flex items-center gap-2 text-sm font-semibold text-gray-700">
-                                <input type="checkbox" wire:model.defer="requires_attachment">
-                                <span>{{ tr('Requires attachment') }}</span>
-                            </label>
-                        </div>
+                        <label class="flex items-center gap-2 text-sm font-semibold text-gray-700">
+                            <input type="checkbox" wire:model.defer="requires_attachment">
+                            <span>{{ tr('Requires attachment') }}</span>
+                        </label>
                     </div>
                 </div>
+            </div>
 
-                {{-- ========================= --}}
-                {{-- Section 2: Annual Leave Data --}}
-                {{-- ========================= --}}
-                <div class="mt-2 pt-4 border-t border-gray-100">
-                    <div class="text-sm font-black text-gray-900 mb-3">{{ tr('Annual Leave Settings') }}</div>
+            {{-- ========================= --}}
+            {{-- Section 2: Additional Settings --}}
+            {{-- ========================= --}}
+            <div class="mt-2 pt-4 border-t border-gray-100">
+                <div class="text-sm font-black text-gray-900 mb-3">{{ tr('Additional Settings') }}</div>
 
-                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-                        <div>
-                            <label class="block text-[11px] font-black text-gray-500 mb-1">{{ tr('Days per year') }}</label>
-                            <input type="number" step="0.5" min="0" wire:model.live.debounce.150ms="days_per_year"
-                                class="w-full h-[40px] px-3 rounded-xl border border-gray-200 text-sm bg-gray-50/50 focus:bg-white focus:border-[color:var(--brand-via)] focus:ring-4 focus:ring-[color:var(--brand-via)]/10 transition-all">
-                            @error('days_per_year') <div class="text-xs text-red-600 mt-1">{{ $message }}</div> @enderror
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    {{-- Deduction --}}
+                    <div>
+                        <label class="block text-[11px] font-black text-gray-500 mb-1">{{ tr('Deduction policy') }}</label>
+                        <select wire:model.defer="deduction_policy"
+                                class="w-full h-[40px] px-3 rounded-xl border border-gray-200 text-sm bg-gray-50/50">
+                            <option value="balance_only">{{ tr('Deduct from balance only') }}</option>
+                            <option value="salary_after_balance">{{ tr('Deduct from salary after balance') }}</option>
+                            <option value="not_allowed_after_balance">{{ tr('Not allowed after balance') }}</option>
+                        </select>
+                        @error('deduction_policy') <div class="text-xs text-red-600 mt-1">{{ $message }}</div> @enderror
+                    </div>
+
+                    {{-- Duration --}}
+                    <div>
+                        <label class="block text-[11px] font-black text-gray-500 mb-1">{{ tr('Duration type') }}</label>
+                        <select wire:model.defer="duration_unit"
+                                class="w-full h-[40px] px-3 rounded-xl border border-gray-200 text-sm bg-gray-50/50">
+                            <option value="full_day">{{ tr('Full day only') }}</option>
+                            <option value="half_day">{{ tr('Full day or half day') }}</option>
+                            <option value="hours">{{ tr('By hours') }}</option>
+                        </select>
+                        @error('duration_unit') <div class="text-xs text-red-600 mt-1">{{ $message }}</div> @enderror
+                    </div>
+
+                    {{-- Notice --}}
+                    <div>
+                        <label class="block text-[11px] font-black text-gray-500 mb-1">{{ tr('Min notice (days)') }}</label>
+                        <input type="number" min="0" wire:model.defer="notice_min_days"
+                            class="w-full h-[40px] px-3 rounded-xl border border-gray-200 text-sm bg-gray-50/50">
+                        @error('notice_min_days') <div class="text-xs text-red-600 mt-1">{{ $message }}</div> @enderror
+                    </div>
+
+                    <div>
+                        <label class="block text-[11px] font-black text-gray-500 mb-1">{{ tr('Max advance (days)') }}</label>
+                        <input type="number" min="0" wire:model.defer="notice_max_advance_days"
+                            class="w-full h-[40px] px-3 rounded-xl border border-gray-200 text-sm bg-gray-50/50">
+                        @error('notice_max_advance_days') <div class="text-xs text-red-600 mt-1">{{ $message }}</div> @enderror
+                    </div>
+
+                    <div class="md:col-span-2">
+                        <label class="flex items-center gap-2 text-sm font-semibold text-gray-700">
+                            <input type="checkbox" wire:model.defer="allow_retroactive">
+                            <span>{{ tr('Allow retroactive requests') }}</span>
+                        </label>
+                        @error('allow_retroactive') <div class="text-xs text-red-600 mt-1">{{ $message }}</div> @enderror
+                    </div>
+
+                    {{-- Notes --}}
+                    <div class="md:col-span-2 pt-3 border-t border-gray-100">
+                        <div class="text-sm font-black text-gray-900 mb-2">{{ tr('Notes') }}</div>
+
+                        <label class="flex items-center gap-2 text-sm font-semibold text-gray-700">
+                            <input type="checkbox" wire:model.defer="note_required">
+                            <span>{{ tr('Mandatory note') }}</span>
+                        </label>
+                        @error('note_required') <div class="text-xs text-red-600 mt-1">{{ $message }}</div> @enderror
+
+                        <div class="mt-3">
+                            <label class="block text-[11px] font-black text-gray-500 mb-1">{{ tr('Note text') }}</label>
+                            <textarea wire:model.defer="note_text" rows="2"
+                                    class="w-full px-3 py-2 rounded-xl border border-gray-200 text-sm bg-gray-50/50"></textarea>
+                            @error('note_text') <div class="text-xs text-red-600 mt-1">{{ $message }}</div> @enderror
                         </div>
 
-                        <div>
-                            <label class="block text-[11px] font-black text-gray-500 mb-1">{{ tr('Accrual method') }}</label>
-                            <select wire:model.live="accrual_method"
-                                    class="w-full h-[40px] px-3 rounded-xl border border-gray-200 text-sm bg-gray-50/50">
-                                <option value="annual_grant">{{ tr('Annual full grant') }}</option>
-                                <option value="monthly">{{ tr('Monthly accrual') }}</option>
-                            </select>
-                            @error('accrual_method') <div class="text-xs text-red-600 mt-1">{{ $message }}</div> @enderror
-                        </div>
+                        <label class="flex items-center gap-2 text-sm font-semibold text-gray-700 mt-2">
+                            <input type="checkbox" wire:model.defer="note_ack_required">
+                            <span>{{ tr('Require acknowledgment of the note') }}</span>
+                        </label>
+                        @error('note_ack_required') <div class="text-xs text-red-600 mt-1">{{ $message }}</div> @enderror
+                    </div>
 
-                        <div>
-                            <label class="block text-[11px] font-black text-gray-500 mb-1">{{ tr('Monthly rate') }}</label>
-                            <input type="number" step="0.01" min="0"
-                                wire:model="monthly_accrual_rate"
-                                readonly
-                                class="w-full h-[40px] px-3 rounded-xl border border-gray-200 text-sm bg-gray-100/70 text-gray-700 cursor-not-allowed"
-                                placeholder="{{ tr('Auto calculated') }}">
-                            <div class="text-[10px] text-gray-400 mt-1">
-                                {{ tr('Auto: Days per year ÷ 12') }}
+                    {{-- Attachments --}}
+                    <div class="md:col-span-2 pt-3 border-t border-gray-100">
+                        <div class="text-sm font-black text-gray-900 mb-2">{{ tr('Attachments Settings') }}</div>
+
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                            <div>
+                                <label class="block text-[11px] font-black text-gray-500 mb-1">{{ tr('Allowed types') }}</label>
+                                <div class="flex flex-wrap gap-3">
+                                    <label class="flex items-center gap-2 text-sm font-semibold text-gray-700">
+                                        <input type="checkbox" value="pdf" wire:model.defer="attachment_types">
+                                        <span>PDF</span>
+                                    </label>
+                                    <label class="flex items-center gap-2 text-sm font-semibold text-gray-700">
+                                        <input type="checkbox" value="jpg" wire:model.defer="attachment_types">
+                                        <span>JPG</span>
+                                    </label>
+                                    <label class="flex items-center gap-2 text-sm font-semibold text-gray-700">
+                                        <input type="checkbox" value="png" wire:model.defer="attachment_types">
+                                        <span>PNG</span>
+                                    </label>
+                                </div>
+                                @error('attachment_types') <div class="text-xs text-red-600 mt-1">{{ $message }}</div> @enderror
+                                @error('attachment_types.*') <div class="text-xs text-red-600 mt-1">{{ $message }}</div> @enderror
                             </div>
-                            @error('monthly_accrual_rate') <div class="text-xs text-red-600 mt-1">{{ $message }}</div> @enderror
-                        </div>
 
-                        <div>
-                            <label class="block text-[11px] font-black text-gray-500 mb-1">{{ tr('Minimum unit') }}</label>
-                            <input type="number" step="0.1" min="0" wire:model.defer="min_accrual"
-                                class="w-full h-[40px] px-3 rounded-xl border border-gray-200 text-sm bg-gray-50/50">
-                            @error('min_accrual') <div class="text-xs text-red-600 mt-1">{{ $message }}</div> @enderror
-                        </div>
+                          <div>
+                                <label class="block text-[11px] font-black text-gray-500 mb-1">{{ tr('Max size (MB)') }}</label>
+                                <input
+                                    type="text"
+                                    value="2 MB"
+                                    readonly
+                                    class="w-full h-[40px] px-3 rounded-xl border border-gray-200 text-sm bg-gray-100/70 text-gray-700 cursor-not-allowed"
+                                >
+                                <div class="text-[10px] text-gray-400 mt-1">
+                                    {{ tr('Fixed size for all leave attachments.') }}
+                                </div>
+                            </div>
 
-                        <div>
-                            <label class="block text-[11px] font-black text-gray-500 mb-1">{{ tr('Max balance') }}</label>
-                            <input type="number" step="0.5" min="0" wire:model.defer="max_balance"
-                                class="w-full h-[40px] px-3 rounded-xl border border-gray-200 text-sm bg-gray-50/50">
-                            @error('max_balance') <div class="text-xs text-red-600 mt-1">{{ $message }}</div> @enderror
-                        </div>
-
-                        <div>
-                            <label class="block text-[11px] font-black text-gray-500 mb-1">{{ tr('Carryover days allowed') }}</label>
-                            <input type="number" step="0.5" min="0" wire:model.defer="carryover_days"
-                                class="w-full h-[40px] px-3 rounded-xl border border-gray-200 text-sm bg-gray-50/50">
-                            @error('carryover_days') <div class="text-xs text-red-600 mt-1">{{ $message }}</div> @enderror
-                        </div>
-
-                        <div>
-                            <label class="block text-[11px] font-black text-gray-500 mb-1">{{ tr('Carryover expires after (months)') }}</label>
-                            <input type="number" step="1" min="0" wire:model.defer="carryover_expire_months"
-                                class="w-full h-[40px] px-3 rounded-xl border border-gray-200 text-sm bg-gray-50/50">
-                            @error('carryover_expire_months') <div class="text-xs text-red-600 mt-1">{{ $message }}</div> @enderror
-                        </div>
-
-                        <div class="md:col-span-2">
-                            <label class="block text-[11px] font-black text-gray-500 mb-1">{{ tr('Weekend days') }}</label>
-                            <select wire:model.defer="weekend_policy"
-                                    class="w-full h-[40px] px-3 rounded-xl border border-gray-200 text-sm bg-gray-50/50">
-                                <option value="exclude">{{ tr('Auto exclude') }}</option>
-                                <option value="include">{{ tr('Auto include') }}</option>
-                                <option value="employee_choice">{{ tr('Employee choice') }}</option>
-                            </select>
-                            @error('weekend_policy') <div class="text-xs text-red-600 mt-1">{{ $message }}</div> @enderror
                         </div>
                     </div>
+
+                    {{-- ✅ General Constraints REMOVED بالكامل --}}
                 </div>
-
-                {{-- ========================= --}}
-                {{-- Section 3: Additional Settings --}}
-                {{-- ========================= --}}
-                <div class="mt-2 pt-4 border-t border-gray-100">
-                    <div class="text-sm font-black text-gray-900 mb-3">{{ tr('Additional Settings') }}</div>
-
-                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-                        {{-- Deduction --}}
-                        <div>
-                            <label class="block text-[11px] font-black text-gray-500 mb-1">{{ tr('Deduction policy') }}</label>
-                            <select wire:model.defer="deduction_policy"
-                                    class="w-full h-[40px] px-3 rounded-xl border border-gray-200 text-sm bg-gray-50/50">
-                                <option value="balance_only">{{ tr('Deduct from balance only') }}</option>
-                                <option value="salary_after_balance">{{ tr('Deduct from salary after balance') }}</option>
-                                <option value="not_allowed_after_balance">{{ tr('Not allowed after balance') }}</option>
-                            </select>
-                            @error('deduction_policy') <div class="text-xs text-red-600 mt-1">{{ $message }}</div> @enderror
-                        </div>
-
-                        {{-- Duration --}}
-                        <div>
-                            <label class="block text-[11px] font-black text-gray-500 mb-1">{{ tr('Duration type') }}</label>
-                            <select wire:model.defer="duration_unit"
-                                    class="w-full h-[40px] px-3 rounded-xl border border-gray-200 text-sm bg-gray-50/50">
-                                <option value="full_day">{{ tr('Full day only') }}</option>
-                                <option value="half_day">{{ tr('Full day or half day') }}</option>
-                                <option value="hours">{{ tr('By hours') }}</option>
-                            </select>
-                            @error('duration_unit') <div class="text-xs text-red-600 mt-1">{{ $message }}</div> @enderror
-                        </div>
-
-                        {{-- Notice --}}
-                        <div>
-                            <label class="block text-[11px] font-black text-gray-500 mb-1">{{ tr('Min notice (days)') }}</label>
-                            <input type="number" min="0" wire:model.defer="notice_min_days"
-                                class="w-full h-[40px] px-3 rounded-xl border border-gray-200 text-sm bg-gray-50/50">
-                            @error('notice_min_days') <div class="text-xs text-red-600 mt-1">{{ $message }}</div> @enderror
-                        </div>
-
-                        <div>
-                            <label class="block text-[11px] font-black text-gray-500 mb-1">{{ tr('Max advance (days)') }}</label>
-                            <input type="number" min="0" wire:model.defer="notice_max_advance_days"
-                                class="w-full h-[40px] px-3 rounded-xl border border-gray-200 text-sm bg-gray-50/50">
-                            @error('notice_max_advance_days') <div class="text-xs text-red-600 mt-1">{{ $message }}</div> @enderror
-                        </div>
-
-                        <div class="md:col-span-2">
-                            <label class="flex items-center gap-2 text-sm font-semibold text-gray-700">
-                                <input type="checkbox" wire:model.defer="allow_retroactive">
-                                <span>{{ tr('Allow retroactive requests') }}</span>
-                            </label>
-                            @error('allow_retroactive') <div class="text-xs text-red-600 mt-1">{{ $message }}</div> @enderror
-                        </div>
-
-                        {{-- Notes --}}
-                        <div class="md:col-span-2 pt-3 border-t border-gray-100">
-                            <div class="text-sm font-black text-gray-900 mb-2">{{ tr('Notes') }}</div>
-
-                            <label class="flex items-center gap-2 text-sm font-semibold text-gray-700">
-                                <input type="checkbox" wire:model.defer="note_required">
-                                <span>{{ tr('Mandatory note') }}</span>
-                            </label>
-                            @error('note_required') <div class="text-xs text-red-600 mt-1">{{ $message }}</div> @enderror
-
-                            <div class="mt-3">
-                                <label class="block text-[11px] font-black text-gray-500 mb-1">{{ tr('Note text') }}</label>
-                                <textarea wire:model.defer="note_text" rows="2"
-                                        class="w-full px-3 py-2 rounded-xl border border-gray-200 text-sm bg-gray-50/50"></textarea>
-                                @error('note_text') <div class="text-xs text-red-600 mt-1">{{ $message }}</div> @enderror
-                            </div>
-
-                            <label class="flex items-center gap-2 text-sm font-semibold text-gray-700 mt-2">
-                                <input type="checkbox" wire:model.defer="note_ack_required">
-                                <span>{{ tr('Require acknowledgment of the note') }}</span>
-                            </label>
-                            @error('note_ack_required') <div class="text-xs text-red-600 mt-1">{{ $message }}</div> @enderror
-                        </div>
-
-                        {{-- Attachments --}}
-                        <div class="md:col-span-2 pt-3 border-t border-gray-100">
-                            <div class="text-sm font-black text-gray-900 mb-2">{{ tr('Attachments Settings') }}</div>
-
-                            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-                                <div>
-                                    <label class="block text-[11px] font-black text-gray-500 mb-1">{{ tr('Allowed types') }}</label>
-                                    <div class="flex flex-wrap gap-3">
-                                        <label class="flex items-center gap-2 text-sm font-semibold text-gray-700">
-                                            <input type="checkbox" value="pdf" wire:model.defer="attachment_types">
-                                            <span>PDF</span>
-                                        </label>
-                                        <label class="flex items-center gap-2 text-sm font-semibold text-gray-700">
-                                            <input type="checkbox" value="jpg" wire:model.defer="attachment_types">
-                                            <span>JPG</span>
-                                        </label>
-                                        <label class="flex items-center gap-2 text-sm font-semibold text-gray-700">
-                                            <input type="checkbox" value="png" wire:model.defer="attachment_types">
-                                            <span>PNG</span>
-                                        </label>
-                                    </div>
-                                    @error('attachment_types') <div class="text-xs text-red-600 mt-1">{{ $message }}</div> @enderror
-                                    @error('attachment_types.*') <div class="text-xs text-red-600 mt-1">{{ $message }}</div> @enderror
-                                </div>
-
-                                <div>
-                                    <label class="block text-[11px] font-black text-gray-500 mb-1">{{ tr('Max size (MB)') }}</label>
-                                    <input type="number" step="0.5" min="0.5" wire:model.defer="attachment_max_mb"
-                                        class="w-full h-[40px] px-3 rounded-xl border border-gray-200 text-sm bg-gray-50/50">
-                                    @error('attachment_max_mb') <div class="text-xs text-red-600 mt-1">{{ $message }}</div> @enderror
-                                </div>
-                            </div>
-                        </div>
-
-                        {{-- Constraints --}}
-                        <div class="md:col-span-2 pt-3 border-t border-gray-100">
-                            <div class="text-sm font-black text-gray-900 mb-2">{{ tr('General Constraints') }}</div>
-
-                            <label class="flex items-center gap-2 text-sm font-semibold text-gray-700">
-                                <input type="checkbox" wire:model.defer="blackout_enabled">
-                                <span>{{ tr('Blackout periods (peak seasons)') }}</span>
-                            </label>
-
-                            <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mt-3">
-                                <div>
-                                    <label class="block text-[11px] font-black text-gray-500 mb-1">{{ tr('From (MM-DD)') }}</label>
-                                    <input type="text" wire:model.defer="blackout_from"
-                                        class="w-full h-[40px] px-3 rounded-xl border border-gray-200 text-sm bg-gray-50/50"
-                                        placeholder="12-01">
-                                    @error('blackout_from') <div class="text-xs text-red-600 mt-1">{{ $message }}</div> @enderror
-                                </div>
-
-                                <div>
-                                    <label class="block text-[11px] font-black text-gray-500 mb-1">{{ tr('To (MM-DD)') }}</label>
-                                    <input type="text" wire:model.defer="blackout_to"
-                                        class="w-full h-[40px] px-3 rounded-xl border border-gray-200 text-sm bg-gray-50/50"
-                                        placeholder="12-31">
-                                    @error('blackout_to') <div class="text-xs text-red-600 mt-1">{{ $message }}</div> @enderror
-                                </div>
-
-                                <div class="flex items-end">
-                                    <label class="flex items-center gap-2 text-sm font-semibold text-gray-700">
-                                        <input type="checkbox" wire:model.defer="blackout_exception_requires_approval">
-                                        <span>{{ tr('Exception requires approval') }}</span>
-                                    </label>
-                                    @error('blackout_exception_requires_approval') <div class="text-xs text-red-600 mt-1">{{ $message }}</div> @enderror
-                                </div>
-                            </div>
-
-                            <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mt-4">
-                                <div>
-                                    <label class="flex items-center gap-2 text-sm font-semibold text-gray-700">
-                                        <input type="checkbox" wire:model.defer="min_service_enabled">
-                                        <span>{{ tr('Minimum service required') }}</span>
-                                    </label>
-                                    <div class="mt-2">
-                                        <label class="block text-[11px] font-black text-gray-500 mb-1">{{ tr('Months') }}</label>
-                                        <input type="number" min="0" wire:model.defer="min_service_months"
-                                            class="w-full h-[40px] px-3 rounded-xl border border-gray-200 text-sm bg-gray-50/50">
-                                        @error('min_service_months') <div class="text-xs text-red-600 mt-1">{{ $message }}</div> @enderror
-                                    </div>
-                                </div>
-
-                                <div class="space-y-3">
-                                    <label class="flex items-center gap-2 text-sm font-semibold text-gray-700">
-                                        <input type="checkbox" wire:model.defer="requires_presence_before_apply">
-                                        <span>{{ tr('Employee must be present before applying') }}</span>
-                                    </label>
-
-                                    <label class="flex items-center gap-2 text-sm font-semibold text-gray-700">
-                                        <input type="checkbox" wire:model.defer="max_consecutive_enabled">
-                                        <span>{{ tr('Limit consecutive leave') }}</span>
-                                    </label>
-
-                                    <div>
-                                        <label class="block text-[11px] font-black text-gray-500 mb-1">{{ tr('Max consecutive days') }}</label>
-                                        <input type="number" min="1" wire:model.defer="max_consecutive_days"
-                                            class="w-full h-[40px] px-3 rounded-xl border border-gray-200 text-sm bg-gray-50/50">
-                                        @error('max_consecutive_days') <div class="text-xs text-red-600 mt-1">{{ $message }}</div> @enderror
-                                    </div>
-
-                                    <label class="flex items-center gap-2 text-sm font-semibold text-gray-700">
-                                        <input type="checkbox" wire:model.defer="max_total_enabled">
-                                        <span>{{ tr('Limit total per year') }}</span>
-                                    </label>
-
-                                    <div>
-                                        <label class="block text-[11px] font-black text-gray-500 mb-1">{{ tr('Max total days') }}</label>
-                                        <input type="number" min="1" wire:model.defer="max_total_days"
-                                            class="w-full h-[40px] px-3 rounded-xl border border-gray-200 text-sm bg-gray-50/50">
-                                        @error('max_total_days') <div class="text-xs text-red-600 mt-1">{{ $message }}</div> @enderror
-                                    </div>
-                                </div>
-                            </div>
-
-                            @error('blackout_enabled') <div class="text-xs text-red-600 mt-1">{{ $message }}</div> @enderror
-                            @error('min_service_enabled') <div class="text-xs text-red-600 mt-1">{{ $message }}</div> @enderror
-                            @error('requires_presence_before_apply') <div class="text-xs text-red-600 mt-1">{{ $message }}</div> @enderror
-                            @error('max_consecutive_enabled') <div class="text-xs text-red-600 mt-1">{{ $message }}</div> @enderror
-                            @error('max_total_enabled') <div class="text-xs text-red-600 mt-1">{{ $message }}</div> @enderror
-                        </div>
-                    </div>
-                </div>
-
+            </div>
         </x-slot:content>
 
         <x-slot:footer>
@@ -683,26 +530,53 @@
                         @error('name') <div class="text-xs text-red-600 mt-1">{{ $message }}</div> @enderror
                     </div>
 
-                    <div>
-                        <label class="block text-[11px] font-black text-gray-500 mb-1">{{ tr('Gender') }}</label>
-                        <select wire:model.defer="gender"
-                                class="w-full h-[40px] px-3 rounded-xl border border-gray-200 text-sm bg-gray-50/50 focus:bg-white focus:border-[color:var(--brand-via)] focus:ring-4 focus:ring-[color:var(--brand-via)]/10 transition-all">
-                            <option value="all">{{ tr('All') }}</option>
-                            <option value="male">{{ tr('Male') }}</option>
-                            <option value="female">{{ tr('Female') }}</option>
-                        </select>
-                        @error('gender') <div class="text-xs text-red-600 mt-1">{{ $message }}</div> @enderror
-                    </div>
-
-                    <div class="flex items-end">
-                        <div class="w-full">
+                    {{-- ✅ Days per year يظهر هنا فقط لغير السنوية --}}
+                        <div class="md:col-span-2">
                             <label class="block text-[11px] font-black text-gray-500 mb-1">{{ tr('Description') }}</label>
                             <input type="text" wire:model.defer="description"
                                 class="w-full h-[40px] px-3 rounded-xl border border-gray-200 text-sm bg-gray-50/50 focus:bg-white focus:border-[color:var(--brand-via)] focus:ring-4 focus:ring-[color:var(--brand-via)]/10 transition-all"
                                 placeholder="{{ tr('Optional description...') }}">
                             @error('description') <div class="text-xs text-red-600 mt-1">{{ $message }}</div> @enderror
                         </div>
-                    </div>
+
+                        {{-- ✅ Days per year (moved under Description) - only for non-annual --}}
+                        @if(! $editingNameLocked)
+                            <div>
+                                <label class="block text-[11px] font-black text-gray-500 mb-1">{{ tr('Days per year') }}</label>
+                                <input type="number" step="0.5" min="0" wire:model.defer="days_per_year"
+                                    class="w-full h-[40px] px-3 rounded-xl border border-gray-200 text-sm bg-gray-50/50 focus:bg-white focus:border-[color:var(--brand-via)] focus:ring-4 focus:ring-[color:var(--brand-via)]/10 transition-all">
+                                @error('days_per_year') <div class="text-xs text-red-600 mt-1">{{ $message }}</div> @enderror
+                            </div>
+                        @endif
+
+                @if(! $editingNameLocked)
+                        <div>
+                            <label class="block text-[11px] font-black text-gray-500 mb-1">{{ tr('Gender') }}</label>
+                            <select wire:model.defer="gender"
+                                    class="w-full h-[40px] px-3 rounded-xl border border-gray-200 text-sm bg-gray-50/50 focus:bg-white focus:border-[color:var(--brand-via)] focus:ring-4 focus:ring-[color:var(--brand-via)]/10 transition-all">
+                                <option value="all">{{ tr('All') }}</option>
+                                <option value="male">{{ tr('Male') }}</option>
+                                <option value="female">{{ tr('Female') }}</option>
+                            </select>
+                            @error('gender') <div class="text-xs text-red-600 mt-1">{{ $message }}</div> @enderror
+                        </div>
+                    @else
+                        <div>
+                            <label class="block text-[11px] font-black text-gray-500 mb-1">{{ tr('Gender') }}</label>
+                            <input
+                                type="text"
+                                value="{{ tr('All') }}"
+                                readonly
+                                class="w-full h-[40px] px-3 rounded-xl border border-gray-200 text-sm bg-gray-100/70 text-gray-700 cursor-not-allowed"
+                            >
+                            <div class="text-[10px] text-gray-400 mt-1">
+                                {{ tr('Annual policy gender is fixed to All.') }}
+                            </div>
+                        </div>
+                    @endif
+
+
+                  
 
                     <div class="md:col-span-2 grid grid-cols-1 sm:grid-cols-3 gap-3">
                         <label class="flex items-center gap-2 text-sm font-semibold text-gray-700">
@@ -724,84 +598,91 @@
             </div>
 
             {{-- ========================= --}}
-            {{-- Section 2: Annual Leave Data --}}
+            {{-- ✅ Section 2: Annual Leave Settings (ONLY for السنوية) --}}
             {{-- ========================= --}}
-            <div class="mt-2 pt-4 border-t border-gray-100">
-                <div class="text-sm font-black text-gray-900 mb-3">{{ tr('Annual Leave Settings') }}</div>
+            @if($editingNameLocked)
+                <div class="mt-2 pt-4 border-t border-gray-100">
+                    <div class="text-sm font-black text-gray-900 mb-3">{{ tr('Annual Leave Settings') }}</div>
 
-                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    <div>
-                        <label class="block text-[11px] font-black text-gray-500 mb-1">{{ tr('Days per year') }}</label>
-                        {{-- ✅ بدون defer عشان نحسب الشهري مباشرة --}}
-                        <input type="number" step="0.5" min="0" wire:model.live.debounce.150ms="days_per_year"
-                            class="w-full h-[40px] px-3 rounded-xl border border-gray-200 text-sm bg-gray-50/50 focus:bg-white focus:border-[color:var(--brand-via)] focus:ring-4 focus:ring-[color:var(--brand-via)]/10 transition-all">
-                        @error('days_per_year') <div class="text-xs text-red-600 mt-1">{{ $message }}</div> @enderror
-                    </div>
-
-                    <div>
-                        <label class="block text-[11px] font-black text-gray-500 mb-1">{{ tr('Accrual method') }}</label>
-                        {{-- ✅ بدون defer عشان لما يتغير الخيار نحسب الشهري --}}
-                        <select wire:model.live="accrual_method"
-                                class="w-full h-[40px] px-3 rounded-xl border border-gray-200 text-sm bg-gray-50/50">
-                            <option value="annual_grant">{{ tr('Annual full grant') }}</option>
-                            <option value="monthly">{{ tr('Monthly accrual') }}</option>
-                        </select>
-                        @error('accrual_method') <div class="text-xs text-red-600 mt-1">{{ $message }}</div> @enderror
-                    </div>
-
-                    <div>
-                        <label class="block text-[11px] font-black text-gray-500 mb-1">{{ tr('Monthly rate') }}</label>
-                        <input type="number" step="0.01" min="0"
-                            wire:model="monthly_accrual_rate"
-                            readonly
-                            class="w-full h-[40px] px-3 rounded-xl border border-gray-200 text-sm bg-gray-100/70 text-gray-700 cursor-not-allowed"
-                            placeholder="{{ tr('Auto calculated') }}">
-                        <div class="text-[10px] text-gray-400 mt-1">
-                            {{ tr('Auto: Days per year ÷ 12') }}
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <div>
+                            <label class="block text-[11px] font-black text-gray-500 mb-1">{{ tr('Days per year') }}</label>
+                            <input type="number" step="0.5" min="0" wire:model.live.debounce.150ms="days_per_year"
+                                class="w-full h-[40px] px-3 rounded-xl border border-gray-200 text-sm bg-gray-50/50 focus:bg-white focus:border-[color:var(--brand-via)] focus:ring-4 focus:ring-[color:var(--brand-via)]/10 transition-all">
+                            @error('days_per_year') <div class="text-xs text-red-600 mt-1">{{ $message }}</div> @enderror
                         </div>
-                        @error('monthly_accrual_rate') <div class="text-xs text-red-600 mt-1">{{ $message }}</div> @enderror
-                    </div>
 
-                    <div>
-                        <label class="block text-[11px] font-black text-gray-500 mb-1">{{ tr('Minimum unit') }}</label>
-                        <input type="number" step="0.1" min="0" wire:model.defer="min_accrual"
-                            class="w-full h-[40px] px-3 rounded-xl border border-gray-200 text-sm bg-gray-50/50">
-                        @error('min_accrual') <div class="text-xs text-red-600 mt-1">{{ $message }}</div> @enderror
-                    </div>
+                        <div>
+                            <label class="block text-[11px] font-black text-gray-500 mb-1">{{ tr('Accrual method') }}</label>
+                            <select wire:model.live="accrual_method"
+                                    class="w-full h-[40px] px-3 rounded-xl border border-gray-200 text-sm bg-gray-50/50">
+                                <option value="annual_grant">{{ tr('Annual full grant') }}</option>
+                                <option value="monthly">{{ tr('Monthly accrual') }}</option>
+                            </select>
+                            @error('accrual_method') <div class="text-xs text-red-600 mt-1">{{ $message }}</div> @enderror
+                        </div>
 
-                    <div>
-                        <label class="block text-[11px] font-black text-gray-500 mb-1">{{ tr('Max balance') }}</label>
-                        <input type="number" step="0.5" min="0" wire:model.defer="max_balance"
-                            class="w-full h-[40px] px-3 rounded-xl border border-gray-200 text-sm bg-gray-50/50">
-                        @error('max_balance') <div class="text-xs text-red-600 mt-1">{{ $message }}</div> @enderror
-                    </div>
+                        {{-- Monthly rate --}}
+                        <div>
+                            <label class="block text-[11px] font-black text-gray-500 mb-1">{{ tr('Monthly rate') }}</label>
+                            <input type="number" step="0.01" min="0"
+                                wire:model="monthly_accrual_rate"
+                                readonly
+                                class="w-full h-[40px] px-3 rounded-xl border border-gray-200 text-sm bg-gray-100/70 text-gray-700 cursor-not-allowed"
+                                placeholder="{{ tr('Auto calculated') }}">
+                            <div class="text-[10px] text-gray-400 mt-1">
+                                {{ tr('Auto: Days per year ÷ 12') }}
+                            </div>
+                            @error('monthly_accrual_rate') <div class="text-xs text-red-600 mt-1">{{ $message }}</div> @enderror
+                        </div>
 
-                    <div>
-                        <label class="block text-[11px] font-black text-gray-500 mb-1">{{ tr('Carryover days allowed') }}</label>
-                        <input type="number" step="0.5" min="0" wire:model.defer="carryover_days"
-                            class="w-full h-[40px] px-3 rounded-xl border border-gray-200 text-sm bg-gray-50/50">
-                        @error('carryover_days') <div class="text-xs text-red-600 mt-1">{{ $message }}</div> @enderror
-                    </div>
-
-                    <div>
-                        <label class="block text-[11px] font-black text-gray-500 mb-1">{{ tr('Carryover expires after (months)') }}</label>
-                        <input type="number" step="1" min="0" wire:model.defer="carryover_expire_months"
-                            class="w-full h-[40px] px-3 rounded-xl border border-gray-200 text-sm bg-gray-50/50">
-                        @error('carryover_expire_months') <div class="text-xs text-red-600 mt-1">{{ $message }}</div> @enderror
-                    </div>
-
-                    <div class="md:col-span-2">
-                        <label class="block text-[11px] font-black text-gray-500 mb-1">{{ tr('Weekend days') }}</label>
-                        <select wire:model.defer="weekend_policy"
+                        <div>
+                            <label class="block text-[11px] font-black text-gray-500 mb-1">{{ tr('Max balance') }}</label>
+                            <input type="number" step="0.5" min="0" wire:model.defer="max_balance"
                                 class="w-full h-[40px] px-3 rounded-xl border border-gray-200 text-sm bg-gray-50/50">
-                            <option value="exclude">{{ tr('Auto exclude') }}</option>
-                            <option value="include">{{ tr('Auto include') }}</option>
-                            <option value="employee_choice">{{ tr('Employee choice') }}</option>
-                        </select>
-                        @error('weekend_policy') <div class="text-xs text-red-600 mt-1">{{ $message }}</div> @enderror
+                            @error('max_balance') <div class="text-xs text-red-600 mt-1">{{ $message }}</div> @enderror
+                        </div>
+                      <div>
+                    <label class="flex items-center gap-2 text-sm font-semibold text-gray-700 mb-2">
+                        <input type="checkbox" wire:model.live="allow_carryover">
+                        <span>{{ tr('Allow carryover') }}</span>
+                    </label>
+                    @error('allow_carryover') <div class="text-xs text-red-600 mt-1">{{ $message }}</div> @enderror
+
+                    <label class="block text-[11px] font-black text-gray-500 mb-1">{{ tr('Carryover days allowed') }}</label>
+                    <input
+                        type="number"
+                        step="0.5"
+                        min="0"
+                        wire:model.defer="carryover_days"
+                        @disabled(! $allow_carryover)
+                        class="w-full h-[40px] px-3 rounded-xl border border-gray-200 text-sm
+                            {{ $allow_carryover
+                                ? 'bg-gray-50/50 focus:bg-white focus:border-[color:var(--brand-via)] focus:ring-4 focus:ring-[color:var(--brand-via)]/10 transition-all'
+                                : 'bg-gray-100/70 text-gray-700 cursor-not-allowed'
+                            }}"
+                    >
+                    @error('carryover_days') <div class="text-xs text-red-600 mt-1">{{ $message }}</div> @enderror
+
+                    <div class="text-[10px] text-gray-400 mt-1">
+                        {{ $allow_carryover ? tr('Set how many days can be carried over.') : tr('Carryover is disabled.') }}
                     </div>
                 </div>
-            </div>
+
+
+                        <div class="md:col-span-2">
+                            <label class="block text-[11px] font-black text-gray-500 mb-1">{{ tr('Weekend days') }}</label>
+                            <select wire:model.defer="weekend_policy"
+                                    class="w-full h-[40px] px-3 rounded-xl border border-gray-200 text-sm bg-gray-50/50">
+                                <option value="exclude">{{ tr('Auto exclude') }}</option>
+                                <option value="include">{{ tr('Auto include') }}</option>
+                                <option value="employee_choice">{{ tr('Employee choice') }}</option>
+                            </select>
+                            @error('weekend_policy') <div class="text-xs text-red-600 mt-1">{{ $message }}</div> @enderror
+                        </div>
+                    </div>
+                </div>
+            @endif
 
             {{-- ========================= --}}
             {{-- Section 3: Additional Settings --}}
@@ -906,106 +787,26 @@
                                 @error('attachment_types.*') <div class="text-xs text-red-600 mt-1">{{ $message }}</div> @enderror
                             </div>
 
-                            <div>
+                          <div>
                                 <label class="block text-[11px] font-black text-gray-500 mb-1">{{ tr('Max size (MB)') }}</label>
-                                <input type="number" step="0.5" min="0.5" wire:model.defer="attachment_max_mb"
-                                    class="w-full h-[40px] px-3 rounded-xl border border-gray-200 text-sm bg-gray-50/50">
-                                @error('attachment_max_mb') <div class="text-xs text-red-600 mt-1">{{ $message }}</div> @enderror
+                                <input
+                                    type="text"
+                                    value="2 MB"
+                                    readonly
+                                    class="w-full h-[40px] px-3 rounded-xl border border-gray-200 text-sm bg-gray-100/70 text-gray-700 cursor-not-allowed"
+                                >
+                                <div class="text-[10px] text-gray-400 mt-1">
+                                    {{ tr('Fixed size for all leave attachments.') }}
+                                </div>
                             </div>
+
                         </div>
                     </div>
 
-                    {{-- Constraints --}}
-                    <div class="md:col-span-2 pt-3 border-t border-gray-100">
-                        <div class="text-sm font-black text-gray-900 mb-2">{{ tr('General Constraints') }}</div>
-
-                        <label class="flex items-center gap-2 text-sm font-semibold text-gray-700">
-                            <input type="checkbox" wire:model.defer="blackout_enabled">
-                            <span>{{ tr('Blackout periods (peak seasons)') }}</span>
-                        </label>
-
-                        <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mt-3">
-                            <div>
-                                <label class="block text-[11px] font-black text-gray-500 mb-1">{{ tr('From (MM-DD)') }}</label>
-                                <input type="text" wire:model.defer="blackout_from"
-                                    class="w-full h-[40px] px-3 rounded-xl border border-gray-200 text-sm bg-gray-50/50"
-                                    placeholder="12-01">
-                                @error('blackout_from') <div class="text-xs text-red-600 mt-1">{{ $message }}</div> @enderror
-                            </div>
-
-                            <div>
-                                <label class="block text-[11px] font-black text-gray-500 mb-1">{{ tr('To (MM-DD)') }}</label>
-                                <input type="text" wire:model.defer="blackout_to"
-                                    class="w-full h-[40px] px-3 rounded-xl border border-gray-200 text-sm bg-gray-50/50"
-                                    placeholder="12-31">
-                                @error('blackout_to') <div class="text-xs text-red-600 mt-1">{{ $message }}</div> @enderror
-                            </div>
-
-                            <div class="flex items-end">
-                                <label class="flex items-center gap-2 text-sm font-semibold text-gray-700">
-                                    <input type="checkbox" wire:model.defer="blackout_exception_requires_approval">
-                                    <span>{{ tr('Exception requires approval') }}</span>
-                                </label>
-                                @error('blackout_exception_requires_approval') <div class="text-xs text-red-600 mt-1">{{ $message }}</div> @enderror
-                            </div>
-                        </div>
-
-                        <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mt-4">
-                            <div>
-                                <label class="flex items-center gap-2 text-sm font-semibold text-gray-700">
-                                    <input type="checkbox" wire:model.defer="min_service_enabled">
-                                    <span>{{ tr('Minimum service required') }}</span>
-                                </label>
-                                <div class="mt-2">
-                                    <label class="block text-[11px] font-black text-gray-500 mb-1">{{ tr('Months') }}</label>
-                                    <input type="number" min="0" wire:model.defer="min_service_months"
-                                        class="w-full h-[40px] px-3 rounded-xl border border-gray-200 text-sm bg-gray-50/50">
-                                    @error('min_service_months') <div class="text-xs text-red-600 mt-1">{{ $message }}</div> @enderror
-                                </div>
-                            </div>
-
-                            <div class="space-y-3">
-                                <label class="flex items-center gap-2 text-sm font-semibold text-gray-700">
-                                    <input type="checkbox" wire:model.defer="requires_presence_before_apply">
-                                    <span>{{ tr('Employee must be present before applying') }}</span>
-                                </label>
-
-                                <label class="flex items-center gap-2 text-sm font-semibold text-gray-700">
-                                    <input type="checkbox" wire:model.defer="max_consecutive_enabled">
-                                    <span>{{ tr('Limit consecutive leave') }}</span>
-                                </label>
-
-                                <div>
-                                    <label class="block text-[11px] font-black text-gray-500 mb-1">{{ tr('Max consecutive days') }}</label>
-                                    <input type="number" min="1" wire:model.defer="max_consecutive_days"
-                                        class="w-full h-[40px] px-3 rounded-xl border border-gray-200 text-sm bg-gray-50/50">
-                                    @error('max_consecutive_days') <div class="text-xs text-red-600 mt-1">{{ $message }}</div> @enderror
-                                </div>
-
-                                <label class="flex items-center gap-2 text-sm font-semibold text-gray-700">
-                                    <input type="checkbox" wire:model.defer="max_total_enabled">
-                                    <span>{{ tr('Limit total per year') }}</span>
-                                </label>
-
-                                <div>
-                                    <label class="block text-[11px] font-black text-gray-500 mb-1">{{ tr('Max total days') }}</label>
-                                    <input type="number" min="1" wire:model.defer="max_total_days"
-                                        class="w-full h-[40px] px-3 rounded-xl border border-gray-200 text-sm bg-gray-50/50">
-                                    @error('max_total_days') <div class="text-xs text-red-600 mt-1">{{ $message }}</div> @enderror
-                                </div>
-                            </div>
-                        </div>
-
-                        @error('blackout_enabled') <div class="text-xs text-red-600 mt-1">{{ $message }}</div> @enderror
-                        @error('min_service_enabled') <div class="text-xs text-red-600 mt-1">{{ $message }}</div> @enderror
-                        @error('requires_presence_before_apply') <div class="text-xs text-red-600 mt-1">{{ $message }}</div> @enderror
-                        @error('max_consecutive_enabled') <div class="text-xs text-red-600 mt-1">{{ $message }}</div> @enderror
-                        @error('max_total_enabled') <div class="text-xs text-red-600 mt-1">{{ $message }}</div> @enderror
-                    </div>
+                    {{-- ✅ General Constraints REMOVED بالكامل --}}
                 </div>
             </div>
         </x-slot:content>
-
 
         <x-slot:footer>
             <div class="flex items-center justify-end gap-3 w-full">
@@ -1185,7 +986,13 @@
         </x-slot:title>
 
         <x-slot:content>
+            @php
+                $yearA = $years->firstWhere('id', $compareYearAId)?->year;
+                $yearB = $years->firstWhere('id', $compareYearBId)?->year;
+            @endphp
+
             <div class="space-y-4 py-2">
+
                 <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
                      <x-ui.select label="{{ tr('Year A') }}" wire:model="compareYearAId">
                         <option value="">{{ tr('Select year') }}</option>
@@ -1208,11 +1015,10 @@
                             <thead>
                                 <tr class="bg-gray-50/50 border-b border-gray-100">
                                     <th class="w-[20%] px-5 py-3 text-[10px] font-black text-gray-400 uppercase tracking-widest text-start">{{ tr('Leave') }}</th>
-                                    <th class="w-[10%] px-5 py-3 text-[10px] font-black text-gray-400 uppercase tracking-widest text-center">{{ tr('Type') }}</th>
-                                    <th class="w-[35%] px-5 py-3 text-[10px] font-black text-gray-400 uppercase tracking-widest text-center">{{ tr('Year A') }}</th>
-                                    <th class="w-[35%] px-5 py-3 text-[10px] font-black text-gray-400 uppercase tracking-widest text-center">{{ tr('Year B') }}</th>
+                                    <th class="w-[35%] px-5 py-3 text-[10px] font-black text-gray-400 uppercase tracking-widest text-center"> {{ $yearA ? (string) $yearA : tr('Year') }}</th>
+                                    <th class="w-[35%] px-5 py-3 text-[10px] font-black text-gray-400 uppercase tracking-widest text-center">  {{ $yearB ? (string) $yearB : tr('Year') }}</th>
                                 </tr>
-                            </thead>
+                            </thead
                             <tbody class="divide-y divide-gray-50">
                                 @forelse($compareRows as $r)
                                     @php
@@ -1234,35 +1040,155 @@
                                         <td class="px-5 py-3 border-e border-gray-50">
                                             <div class="text-sm font-bold text-gray-900 truncate">{{ $r['name'] }}</div>
                                         </td>
-                                        <td class="px-5 py-3 text-center border-e border-gray-50">
-                                            <span class="text-[10px] font-black text-gray-600 uppercase">{{ $r['leave_type'] }}</span>
-                                        </td>
+                                       
                                         <td class="px-5 py-3 border-e border-gray-50">
                                             @if($a)
                                                 <div class="text-xs text-gray-700 flex flex-wrap gap-2 justify-center">
-                                                    <span class="px-2 py-1 bg-gray-100 rounded-md"><b>{{ tr('Days') }}:</b> {{ $a->days_per_year }}</span>
-                                                    <span class="px-2 py-1 {{ $a->is_active ? 'bg-emerald-50 text-emerald-700' : 'bg-red-50 text-red-700' }} rounded-md"><b>{{ tr('Status') }}:</b> {{ $a->is_active ? tr('Active') : tr('Inactive') }}</span>
-                                                    <span class="px-2 py-1 bg-gray-100 rounded-md"><b>{{ tr('App') }}:</b> {{ $a->show_in_app ? tr('Yes') : tr('No') }}</span>
-                                                </div>
+                                                        <span class="px-2 py-1 bg-gray-100 rounded-md"><b>{{ tr('Days') }}:</b> {{ $a->days_per_year }}</span>
+
+                                                        <span class="px-2 py-1 {{ $a->is_active ? 'bg-emerald-50 text-emerald-700' : 'bg-red-50 text-red-700' }} rounded-md">
+                                                            <b>{{ tr('Status') }}:</b> {{ $a->is_active ? tr('Active') : tr('Inactive') }}
+                                                        </span>
+
+                                                    
+                                                    </div>
+
                                             @else
                                                 <div class="text-xs text-gray-400 text-center italic">{{ tr('Not found') }}</div>
                                             @endif
                                         </td>
-                                        <td class="px-5 py-3">
-                                            @if($b)
-                                                <div class="text-xs text-gray-700 flex flex-wrap gap-2 justify-center">
-                                                    <span class="px-2 py-1 bg-gray-100 rounded-md"><b>{{ tr('Days') }}:</b> {{ $b->days_per_year }}</span>
-                                                    <span class="px-2 py-1 {{ $b->is_active ? 'bg-emerald-50 text-emerald-700' : 'bg-red-50 text-red-700' }} rounded-md"><b>{{ tr('Status') }}:</b> {{ $b->is_active ? tr('Active') : tr('Inactive') }}</span>
-                                                    <span class="px-2 py-1 bg-gray-100 rounded-md"><b>{{ tr('App') }}:</b> {{ $b->show_in_app ? tr('Yes') : tr('No') }}</span>
-                                                </div>
-                                            @else
-                                                <div class="text-xs text-gray-400 text-center italic">{{ tr('Not found') }}</div>
-                                            @endif
-                                        </td>
+                                      <td class="px-5 py-3">
+                                    @if($b)
+                                        <div class="text-xs text-gray-700 flex flex-wrap gap-2 justify-center">
+                                            <span class="px-2 py-1 bg-gray-100 rounded-md"><b>{{ tr('Days') }}:</b> {{ $b->days_per_year }}</span>
+
+                                            <span class="px-2 py-1 {{ $b->is_active ? 'bg-emerald-50 text-emerald-700' : 'bg-red-50 text-red-700' }} rounded-md">
+                                                <b>{{ tr('Status') }}:</b> {{ $b->is_active ? tr('Active') : tr('Inactive') }}
+                                            </span>
+
+                                            {{-- ✅ Eye icon بدل App --}}
+                                            <button
+                                                type="button"
+                                                wire:click="toggleCompareDetails('{{ $r['key'] }}')"
+                                                class="px-2 py-1 bg-white rounded-md border border-gray-200 hover:bg-gray-50 text-gray-700 inline-flex items-center gap-2"
+                                                title="{{ tr('View details') }}"
+                                            >
+                                                <i class="fas fa-eye text-[11px]"></i>
+                                                <span class="text-[11px] font-bold">{{ tr('Details') }}</span>
+                                            </button>
+                                        </div>
+                                    @else
+                                        <div class="text-xs text-gray-400 text-center italic">{{ tr('Not found') }}</div>
+                                    @endif
+                                </td>
+
                                     </tr>
-                                @empty
-                                    <tr>
-                                        <td colspan="4" class="px-5 py-10 text-center text-sm text-gray-400">
+                               </tr>
+
+{{-- ✅ Expanded Details Card --}}
+@if(!empty($compareExpanded[$r['key']] ?? false))
+    <tr class="bg-white">
+        <td colspan="3" class="px-5 py-4">
+            <div class="rounded-2xl border border-gray-100 bg-gray-50/40 p-4">
+                <div class="flex items-center justify-between gap-3 mb-3">
+                    <div class="text-sm font-black text-gray-900">
+                        <i class="fas fa-circle-info text-gray-400 me-2"></i>
+                        {{ tr('Leave Details') }} — {{ $r['name'] }}
+                    </div>
+
+                    <button type="button" wire:click="toggleCompareDetails('{{ $r['key'] }}')"
+                        class="text-xs font-black text-gray-500 hover:text-gray-900">
+                        {{ tr('Close') }}
+                    </button>
+                </div>
+
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    {{-- Year A Details --}}
+                    <div class="rounded-xl bg-white border border-gray-100 p-3">
+                        <div class="text-[11px] font-black text-gray-500 mb-2">
+                            {{ $yearA ? (string)$yearA : tr('Year') }}
+                        </div>
+
+                        @if($a)
+                            <div class="grid grid-cols-2 gap-2 text-[12px]">
+                                <div><b>{{ tr('Show in App') }}:</b> {{ $a->show_in_app ? tr('Yes') : tr('No') }}</div>
+                                <div><b>{{ tr('Requires attachment') }}:</b> {{ $a->requires_attachment ? tr('Yes') : tr('No') }}</div>
+
+                                <div><b>{{ tr('Accrual method') }}:</b> {{ data_get($a->settings ?? [], 'accrual.method', '—') }}</div>
+                                <div><b>{{ tr('Monthly rate') }}:</b> {{ data_get($a->settings ?? [], 'accrual.monthly_rate', '—') }}</div>
+
+                                <div><b>{{ tr('Max balance') }}:</b> {{ data_get($a->settings ?? [], 'accrual.max_balance', '—') }}</div>
+
+                                <div><b>{{ tr('Carryover days') }}:</b> {{ data_get($a->settings ?? [], 'accrual.carryover_days', '—') }}</div>
+                                <div><b>{{ tr('Weekend policy') }}:</b> {{ data_get($a->settings ?? [], 'weekend_policy', '—') }}</div>
+
+                                <div><b>{{ tr('Deduction policy') }}:</b> {{ data_get($a->settings ?? [], 'deduction_policy', '—') }}</div>
+                                <div><b>{{ tr('Duration unit') }}:</b> {{ data_get($a->settings ?? [], 'duration_unit', '—') }}</div>
+
+                                <div><b>{{ tr('Notice min days') }}:</b> {{ data_get($a->settings ?? [], 'notice.min_days', '—') }}</div>
+                                <div><b>{{ tr('Notice max days') }}:</b> {{ data_get($a->settings ?? [], 'notice.max_advance_days', '—') }}</div>
+
+                                <div><b>{{ tr('Allow retroactive') }}:</b> {{ data_get($a->settings ?? [], 'notice.allow_retroactive', false) ? tr('Yes') : tr('No') }}</div>
+                                <div><b>{{ tr('Note required') }}:</b> {{ data_get($a->settings ?? [], 'note.required', false) ? tr('Yes') : tr('No') }}</div>
+
+                                <div class="col-span-2">
+                                    <b>{{ tr('Attachment types') }}:</b>
+                                    @php $tA = data_get($a->settings ?? [], 'attachments.types', []); @endphp
+                                    {{ is_array($tA) ? implode(', ', $tA) : (string)$tA }}
+                                            </div>
+                                        </div>
+                                    @else
+                                        <div class="text-xs text-gray-400 italic">{{ tr('Not found') }}</div>
+                                    @endif
+                                </div>
+
+                                {{-- Year B Details --}}
+                                <div class="rounded-xl bg-white border border-gray-100 p-3">
+                                    <div class="text-[11px] font-black text-gray-500 mb-2">
+                                        {{ $yearB ? (string)$yearB : tr('Year') }}
+                                    </div>
+
+                                    @if($b)
+                                        <div class="grid grid-cols-2 gap-2 text-[12px]">
+                                            <div><b>{{ tr('Show in App') }}:</b> {{ $b->show_in_app ? tr('Yes') : tr('No') }}</div>
+                                            <div><b>{{ tr('Requires attachment') }}:</b> {{ $b->requires_attachment ? tr('Yes') : tr('No') }}</div>
+
+                                            <div><b>{{ tr('Accrual method') }}:</b> {{ data_get($b->settings ?? [], 'accrual.method', '—') }}</div>
+                                            <div><b>{{ tr('Monthly rate') }}:</b> {{ data_get($b->settings ?? [], 'accrual.monthly_rate', '—') }}</div>
+
+                                            <div><b>{{ tr('Max balance') }}:</b> {{ data_get($b->settings ?? [], 'accrual.max_balance', '—') }}</div>
+
+                                            <div><b>{{ tr('Carryover days') }}:</b> {{ data_get($b->settings ?? [], 'accrual.carryover_days', '—') }}</div>
+                                            <div><b>{{ tr('Weekend policy') }}:</b> {{ data_get($b->settings ?? [], 'weekend_policy', '—') }}</div>
+
+                                            <div><b>{{ tr('Deduction policy') }}:</b> {{ data_get($b->settings ?? [], 'deduction_policy', '—') }}</div>
+                                            <div><b>{{ tr('Duration unit') }}:</b> {{ data_get($b->settings ?? [], 'duration_unit', '—') }}</div>
+
+                                            <div><b>{{ tr('Notice min days') }}:</b> {{ data_get($b->settings ?? [], 'notice.min_days', '—') }}</div>
+                                            <div><b>{{ tr('Notice max days') }}:</b> {{ data_get($b->settings ?? [], 'notice.max_advance_days', '—') }}</div>
+
+                                            <div><b>{{ tr('Allow retroactive') }}:</b> {{ data_get($b->settings ?? [], 'notice.allow_retroactive', false) ? tr('Yes') : tr('No') }}</div>
+                                            <div><b>{{ tr('Note required') }}:</b> {{ data_get($b->settings ?? [], 'note.required', false) ? tr('Yes') : tr('No') }}</div>
+
+                                            <div class="col-span-2">
+                                                <b>{{ tr('Attachment types') }}:</b>
+                                                @php $tB = data_get($b->settings ?? [], 'attachments.types', []); @endphp
+                                                {{ is_array($tB) ? implode(', ', $tB) : (string)$tB }}
+                                            </div>
+                                        </div>
+                                    @else
+                                        <div class="text-xs text-gray-400 italic">{{ tr('Not found') }}</div>
+                                    @endif
+                                </div>
+                            </div>
+                        </div>
+                    </td>
+                </tr>
+            @endif
+
+            @empty
+
+                                        <td colspan="3" class="px-5 py-10 text-center text-sm text-gray-400">
                                             <div class="flex flex-col items-center">
                                                 <i class="fas fa-inbox text-2xl mb-2 text-gray-300"></i>
                                                 {{ tr('No comparison data available') }}

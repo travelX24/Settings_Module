@@ -9,6 +9,7 @@ use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Schema;
 use Illuminate\Support\Str;
 use Carbon\Carbon;
+use Illuminate\Validation\Rule;
 
 use Athka\SystemSettings\Models\LeavePolicyYear;
 use Athka\SystemSettings\Models\LeavePolicy;
@@ -39,7 +40,6 @@ class AttendanceLeaveSettings extends Component
     public bool $copyOpen = false;
 
     // Create/Edit fields
-    // Create/Edit fields
     public int $editingId = 0;
 
     // ✅ Default system policy (Annual) - name locked
@@ -57,14 +57,19 @@ class AttendanceLeaveSettings extends Component
     public string $description = '';
 
     // Advanced settings (stored into settings JSON)
-    public string $accrual_method = 'annual_grant'; // annual_grant|monthly|by_work_days
+    public string $accrual_method = 'annual_grant'; // annual_grant|monthly
     public string $monthly_accrual_rate = '2.5';
     public string $workday_accrual_rate = '0';
 
     public string $min_accrual = '0.5';
     public string $max_balance = '45';
+    public bool $allow_carryover = true;
+
     public string $carryover_days = '15';
-    public string $carryover_expire_months = '3';
+
+    // ✅ تم إلغاء (months) — نخليه 0 للتوافق فقط
+    public string $carryover_expire_months = '0';
+
 
     public string $weekend_policy = 'exclude'; // exclude|include|employee_choice
     public string $deduction_policy = 'balance_only'; // balance_only|salary_after_balance|not_allowed_after_balance
@@ -79,32 +84,19 @@ class AttendanceLeaveSettings extends Component
     public bool $note_ack_required = false;
 
     public array $attachment_types = ['pdf', 'jpg', 'png'];
-    public string $attachment_max_mb = '5';
-
-    public bool $blackout_enabled = false;
-    public string $blackout_from = '12-01'; // MM-DD
-    public string $blackout_to = '12-31';   // MM-DD
-    public bool $blackout_exception_requires_approval = false;
-
-    public bool $min_service_enabled = false;
-    public string $min_service_months = '3';
-
-    public bool $requires_presence_before_apply = false;
-
-    public bool $max_consecutive_enabled = false;
-    public string $max_consecutive_days = '30';
-
-    public bool $max_total_enabled = false;
-    public string $max_total_days = '45';
+    public string $attachment_max_mb = '2';
 
     // Year modal
     public string $newYear = '';
     public ?int $copyFromYearId = null;
 
-
     // Compare modal
     public ?int $compareYearAId = null;
     public ?int $compareYearBId = null;
+
+    // ✅ Compare details (expand row)
+    public array $compareExpanded = []; // ['key' => true]
+
 
     // Copy/Import modal
     public ?int $copyPoliciesSourceYearId = null;
@@ -160,7 +152,6 @@ class AttendanceLeaveSettings extends Component
     public function updatedFilterAttachments(): void { $this->resetPage(); }
     public function updatedFilterYearId(): void
     {
-        // If user chooses a year filter, we consider it a multi-year view scenario
         if ($this->filterYearId !== 'all') {
             $this->showAllYears = true;
         }
@@ -219,11 +210,9 @@ class AttendanceLeaveSettings extends Component
             $q->where('company_id', $companyId);
         }
 
-        // Year filter first (explicit)
         if ($this->filterYearId !== 'all' && is_numeric($this->filterYearId)) {
             $q->where('policy_year_id', (int) $this->filterYearId);
         } else {
-            // Default behavior: selected year unless showAllYears = true
             if (! $this->showAllYears && $this->selectedYearId) {
                 $q->where('policy_year_id', $this->selectedYearId);
             }
@@ -260,7 +249,6 @@ class AttendanceLeaveSettings extends Component
         $this->showAllYears = ! $this->showAllYears;
 
         if (! $this->showAllYears) {
-            // reset explicit year filter when going back to single-year view
             $this->filterYearId = 'all';
         }
 
@@ -272,6 +260,13 @@ class AttendanceLeaveSettings extends Component
         $this->selectedYearId = $id;
         $this->showAllYears = false;
         $this->filterYearId = 'all';
+
+        // ✅ ensure annual policy exists for ANY selected year
+        $companyId = $this->resolveCompanyId();
+        if ($companyId > 0) {
+            $this->ensureAnnualDefaultPolicy($companyId, (int) $id);
+        }
+
         $this->resetPage();
     }
 
@@ -304,6 +299,7 @@ class AttendanceLeaveSettings extends Component
 
         $this->resetValidation();
         $this->editingId = 0;
+        $this->editingNameLocked = false;
 
         $this->name = '';
         $this->leave_type = 'annual';
@@ -314,11 +310,10 @@ class AttendanceLeaveSettings extends Component
         $this->requires_attachment = false;
         $this->description = '';
 
-    $this->resetAdvancedDefaults();
-    $this->syncMonthlyAccrualRate();
+        $this->resetAdvancedDefaults();
+        $this->syncMonthlyAccrualRate();
 
-    $this->createOpen = true;
-
+        $this->createOpen = true;
     }
 
     public function closeCreate(): void
@@ -339,12 +334,13 @@ class AttendanceLeaveSettings extends Component
         if (! $this->selectedYearId) {
             session()->flash('error', tr('Please select a year first'));
             return;
-        }
+                }
+        $this->attachment_max_mb = '2';
 
-        $this->syncMonthlyAccrualRate(); // ✅ ensure latest value
+        $this->syncMonthlyAccrualRate();
         $data = $this->validate($this->policyRules());
-        $settings = $this->buildSettingsFromValidated($data);
 
+        $settings = $this->buildSettingsFromValidated($data);
 
         LeavePolicy::create([
             'company_id' => $companyId,
@@ -386,15 +382,11 @@ class AttendanceLeaveSettings extends Component
 
         $this->name = $this->editingNameLocked ? $this->annualDefaultName : (string) $row->name;
 
-        // keep for compatibility, but we force it later anyway
         $this->leave_type = 'annual';
-
-
-
 
         $this->days_per_year = (string) $row->days_per_year;
 
-        $this->gender = (string) $row->gender;
+        $this->gender = $this->editingNameLocked ? 'all' : (string) $row->gender;
         $this->is_active = (bool) $row->is_active;
         $this->show_in_app = (bool) $row->show_in_app;
         $this->requires_attachment = (bool) $row->requires_attachment;
@@ -402,11 +394,10 @@ class AttendanceLeaveSettings extends Component
         $this->description = (string) ($row->description ?? '');
 
         $this->hydrateAdvancedFromRow($row);
-        $this->syncMonthlyAccrualRate(); 
+        $this->syncMonthlyAccrualRate();
 
         $this->resetValidation();
         $this->editOpen = true;
-
     }
 
     public function closeEdit(): void
@@ -415,7 +406,6 @@ class AttendanceLeaveSettings extends Component
         $this->editingId = 0;
         $this->editingNameLocked = false;
     }
-
 
     public function saveEdit(): void
     {
@@ -429,17 +419,25 @@ class AttendanceLeaveSettings extends Component
             ->when($companyId > 0, fn ($q) => $q->where('company_id', $companyId))
             ->firstOrFail();
 
-        // ✅ If locked, force the name before validation & save
         if ($this->editingNameLocked) {
             $this->name = $this->annualDefaultName;
         }
+        if ($this->editingNameLocked) {
+            $this->gender = 'all';
+        }
 
-        $this->syncMonthlyAccrualRate(); // ✅ ensure latest value
+        if (! $this->allow_carryover) {
+            $this->carryover_days = '0';
+            $this->carryover_expire_months = '0';
+        }
+        $this->attachment_max_mb = '2';
+
+        $this->syncMonthlyAccrualRate();
         $data = $this->validate($this->policyRules());
+
+
         $settings = $this->buildSettingsFromValidated($data);
 
-
-        // ✅ ensure meta lock inside settings for the system policy
         if ($this->editingNameLocked) {
             data_set($settings, 'meta.system_key', 'annual_default');
             data_set($settings, 'meta.lock_name', true);
@@ -479,7 +477,6 @@ class AttendanceLeaveSettings extends Component
 
         $this->editingId = $id;
         $this->deleteOpen = true;
-
     }
 
     public function closeDelete(): void
@@ -520,7 +517,6 @@ class AttendanceLeaveSettings extends Component
         $this->yearsOpen = true;
     }
 
-
     public function closeYears(): void
     {
         $this->yearsOpen = false;
@@ -536,11 +532,10 @@ class AttendanceLeaveSettings extends Component
             return;
         }
 
-       $data = $this->validate([
+        $data = $this->validate([
             'newYear' => ['required', 'integer', 'min:2000', 'max:2100'],
             'copyFromYearId' => ['nullable', 'integer'],
         ]);
-
 
         $yearInt = (int) $data['newYear'];
 
@@ -555,7 +550,7 @@ class AttendanceLeaveSettings extends Component
         }
 
         $isCurrentYear = $yearInt === (int) now()->year;
- 
+
         DB::transaction(function () use ($companyId, $yearInt, $data, $isCurrentYear, &$year) {
             if ($isCurrentYear) {
                 LeavePolicyYear::query()
@@ -597,11 +592,10 @@ class AttendanceLeaveSettings extends Component
                         'settings' => $row->settings ?? [],
                     ]);
                 }
-
-
             }
-                            $this->ensureAnnualDefaultPolicy($companyId, (int) $year->id);
 
+            // ✅ ensure annual policy for the newly created year
+            $this->ensureAnnualDefaultPolicy($companyId, (int) $year->id);
         });
 
         session()->flash('success', tr('Saved successfully'));
@@ -642,7 +636,6 @@ class AttendanceLeaveSettings extends Component
 
         session()->flash('success', tr('Saved successfully'));
     }
-
 
     public function deleteYear(int $id): void
     {
@@ -695,26 +688,47 @@ class AttendanceLeaveSettings extends Component
 
         $this->resetValidation();
 
+        // ✅ reset expanded rows
+        $this->compareExpanded = [];
+
         $years = $this->years->values();
 
         $this->compareYearAId = $this->selectedYearId ?: ($years->first()?->id ?? null);
 
-        // pick another year (next in list)
-        $alt = null;
-        if ($this->compareYearAId) {
-            $idx = $years->search(fn ($y) => (int) $y->id === (int) $this->compareYearAId);
-            $alt = $idx !== false ? ($years->get($idx + 1) ?: $years->get($idx - 1)) : null;
-        }
-        $this->compareYearBId = $alt ? (int) $alt->id : ($years->get(1)?->id ?? null);
+                $alt = null;
+            if ($this->compareYearAId) {
+                $idx = $years->search(fn ($y) => (int) $y->id === (int) $this->compareYearAId);
+                $alt = $idx !== false ? ($years->get($idx + 1) ?: $years->get($idx - 1)) : null;
+            }
+            $this->compareYearBId = $alt ? (int) $alt->id : ($years->get(1)?->id ?? null);
 
-        $this->compareOpen = true;
-    }
+            $this->compareOpen = true;
+        }
+    public function updatedCompareYearAId(): void { $this->compareExpanded = []; }
+    public function updatedCompareYearBId(): void { $this->compareExpanded = []; }
 
     public function closeCompare(): void
     {
         $this->compareOpen = false;
         $this->compareYearAId = null;
         $this->compareYearBId = null;
+
+        // ✅ reset expanded rows
+        $this->compareExpanded = [];
+    }
+
+    public function toggleCompareDetails(string $key): void
+    {
+        if (isset($this->compareExpanded[$key])) {
+            unset($this->compareExpanded[$key]);
+            return;
+        }
+
+        // لو تبغى يسمح بواحد فقط مفتوح في نفس الوقت:
+        $this->compareExpanded = [$key => true];
+
+        // لو تبغى يسمح بعدة صفوف مفتوحة، بدل السطرين فوق بهذا:
+        // $this->compareExpanded[$key] = true;
     }
 
     public function getCompareRowsProperty()
@@ -895,36 +909,189 @@ class AttendanceLeaveSettings extends Component
             ->orderBy('name')
             ->get();
 
-        $payload = [
-            'meta' => [
-                'exported_at' => now()->toIso8601String(),
-                'company_id' => $companyId,
-                'policy_year_id' => $yearId,
-                'policy_year' => $year?->year,
-            ],
-            'policies' => $policies->map(function (LeavePolicy $p) {
-                return [
-                    'name' => $p->name,
-                    'leave_type' => $p->leave_type,
-                    'days_per_year' => (string) $p->days_per_year,
-                    'gender' => $p->gender,
-                    'is_active' => (bool) $p->is_active,
-                    'show_in_app' => (bool) $p->show_in_app,
-                    'requires_attachment' => (bool) $p->requires_attachment,
-                    'description' => $p->description,
-                    'settings' => $p->settings ?? [],
+        // ✅ Excel (CSV) export بدون أي packages إضافية
+        $csvSafe = function ($value): string {
+            if ($value === null) return '';
+            if (is_bool($value)) return $value ? '1' : '0';
+            if (is_array($value)) return json_encode($value, JSON_UNESCAPED_UNICODE);
+
+            $v = (string) $value;
+
+            // حماية من Excel Formula Injection (=, +, -, @)
+            $trim = ltrim($v);
+            if ($trim !== '' && preg_match('/^[=\-+@]/', $trim)) {
+                $v = "'" . $v;
+            }
+
+            return $v;
+        };
+
+        $filename = 'leave-policies-' . ($year?->year ?? $yearId) . '.csv';
+
+        // ✅ إذا عندك جهاز يفتح CSV كله في عمود واحد: خلها ';'
+        $delimiter = ',';
+
+        // =========================
+        // ✅ Dynamic flatten settings into columns
+        // =========================
+
+        // 1) Decode settings safely
+        $decodeSettings = function ($value): array {
+            if (is_array($value)) return $value;
+            if (is_string($value)) {
+                $d = json_decode($value, true);
+                return is_array($d) ? $d : [];
+            }
+            return [];
+        };
+
+        // 2) Normalize old/new formats:
+        // - if settings has ["annual" => [...]] use it as base
+        // - merge root keys (except annual) into base
+        $normalizeSettings = function (array $settings): array {
+            if (isset($settings['annual']) && is_array($settings['annual'])) {
+                $base = $settings['annual'];
+
+                foreach ($settings as $k => $v) {
+                    if ($k === 'annual') continue;
+
+                    // لو meta موجود في root نخليه داخل base.meta
+                    if ($k === 'meta' && is_array($v)) {
+                        $base['meta'] = $v;
+                        continue;
+                    }
+
+                    // أي مفاتيح أخرى على مستوى root ندمجها (لو احتجتها مستقبلاً)
+                    if (!array_key_exists($k, $base)) {
+                        $base[$k] = $v;
+                    }
+                }
+
+                return $base;
+            }
+
+            return $settings;
+        };
+
+        // 3) Flatten assoc arrays to dot keys, lists -> joined by |
+        $flatten = null;
+        $flatten = function (array $arr, string $prefix = '') use (&$flatten): array {
+            $out = [];
+
+            foreach ($arr as $k => $v) {
+                $k = (string) $k;
+                $key = $prefix === '' ? $k : ($prefix . '.' . $k);
+
+                if (is_array($v)) {
+                    // list -> single cell
+                    if (array_is_list($v)) {
+                        $out[$key] = implode('|', array_map(
+                            fn ($x) => (is_scalar($x) || $x === null) ? (string) $x : json_encode($x, JSON_UNESCAPED_UNICODE),
+                            $v
+                        ));
+                    } else {
+                        // assoc -> recurse
+                        $out = array_replace($out, $flatten($v, $key));
+                    }
+                } else {
+                    $out[$key] = $v;
+                }
+            }
+
+            return $out;
+        };
+
+        // 4) Build union of all keys across policies + cache flattened settings per policy
+        $flatSettingsById = [];
+        $settingsKeys = [];
+
+        foreach ($policies as $p) {
+            /** @var \Athka\SystemSettings\Models\LeavePolicy $p */
+            $s = $decodeSettings($p->settings ?? []);
+            $s = $normalizeSettings($s);
+            $flat = $flatten($s);
+
+            $flatSettingsById[(int) $p->id] = $flat;
+            $settingsKeys = array_values(array_unique(array_merge($settingsKeys, array_keys($flat))));
+        }
+
+        // stable order
+        sort($settingsKeys);
+
+        // header names: settings_meta_system_key instead of settings.meta.system_key
+        $settingsHeader = array_map(function ($k) {
+            return 'settings_' . str_replace(['.', '-'], '_', $k);
+        }, $settingsKeys);
+
+        // =========================
+        // ✅ Stream CSV
+        // =========================
+        return response()->streamDownload(function () use (
+            $policies,
+            $year,
+            $companyId,
+            $yearId,
+            $csvSafe,
+            $delimiter,
+            $settingsHeader,
+            $settingsKeys,
+            $flatSettingsById
+        ) {
+            $out = fopen('php://output', 'w');
+
+            // ✅ UTF-8 BOM عشان العربية تظهر صح في Excel Windows
+            fwrite($out, "\xEF\xBB\xBF");
+
+            // معلومات أعلى الملف (اختياري)
+            fputcsv($out, ['exported_at', now()->toIso8601String()], $delimiter);
+            fputcsv($out, ['company_id', (string) $companyId], $delimiter);
+            fputcsv($out, ['policy_year_id', (string) $yearId], $delimiter);
+            fputcsv($out, ['policy_year', (string) ($year?->year ?? '')], $delimiter);
+            fputcsv($out, [], $delimiter); // سطر فاضي
+
+            // Header
+            $baseHeader = [
+                'name',
+                'leave_type',
+                'days_per_year',
+                'gender',
+                'is_active',
+                'show_in_app',
+                'requires_attachment',
+                'description',
+            ];
+
+            fputcsv($out, array_merge($baseHeader, $settingsHeader), $delimiter);
+
+            foreach ($policies as $p) {
+                /** @var \Athka\SystemSettings\Models\LeavePolicy $p */
+
+                $row = [
+                    $csvSafe($p->name),
+                    $csvSafe($p->leave_type),
+                    $csvSafe($p->days_per_year),
+                    $csvSafe($p->gender),
+                    $csvSafe((bool) $p->is_active),
+                    $csvSafe((bool) $p->show_in_app),
+                    $csvSafe((bool) $p->requires_attachment),
+                    $csvSafe($p->description),
                 ];
-            })->values()->all(),
-        ];
 
-        $filename = 'leave-policies-' . ($year?->year ?? $yearId) . '.json';
+                $flat = $flatSettingsById[(int) $p->id] ?? [];
 
-        return response()->streamDownload(function () use ($payload) {
-            echo json_encode($payload, JSON_UNESCAPED_UNICODE | JSON_PRETTY_PRINT);
+                foreach ($settingsKeys as $k) {
+                    $row[] = $csvSafe($flat[$k] ?? '');
+                }
+
+                fputcsv($out, $row, $delimiter);
+            }
+
+            fclose($out);
         }, $filename, [
-            'Content-Type' => 'application/json; charset=UTF-8',
+            'Content-Type' => 'text/csv; charset=UTF-8',
         ]);
     }
+
 
     public function importPoliciesFromFile(): void
     {
@@ -1007,14 +1174,9 @@ class AttendanceLeaveSettings extends Component
     // ---------------------------
     // Helpers: rules + settings json
     // ---------------------------
-    // public string $leave_type = 'annual';
-
     protected function policyRules(): array
     {
         return [
-            // ✅ حذفنا leave_type من القواعد
-            // 'leave_type' => ['required', 'string', 'max:50'],
-
             'name' => ['required', 'string', 'max:255'],
             'days_per_year' => ['required', 'numeric', 'min:0', 'max:366'],
             'gender' => ['required', 'in:all,male,female'],
@@ -1029,8 +1191,18 @@ class AttendanceLeaveSettings extends Component
 
             'min_accrual' => ['required', 'numeric', 'min:0', 'max:366'],
             'max_balance' => ['required', 'numeric', 'min:0', 'max:999'],
-            'carryover_days' => ['required', 'numeric', 'min:0', 'max:999'],
-            'carryover_expire_months' => ['required', 'integer', 'min:0', 'max:60'],
+            'allow_carryover' => ['boolean'],
+
+            'carryover_days' => [
+                'nullable',
+                'numeric',
+                'min:0',
+                'max:999',
+                Rule::requiredIf(fn () => (bool) $this->allow_carryover),
+            ],
+
+            // ✅ تم إلغاء carryover_expire_months من التحقق (UI removed)
+
 
             'weekend_policy' => ['required', 'in:exclude,include,employee_choice'],
             'deduction_policy' => ['required', 'in:balance_only,salary_after_balance,not_allowed_after_balance'],
@@ -1046,38 +1218,28 @@ class AttendanceLeaveSettings extends Component
 
             'attachment_types' => ['array'],
             'attachment_types.*' => ['in:pdf,jpg,png'],
-            'attachment_max_mb' => ['required', 'numeric', 'min:0.5', 'max:100'],
-
-            'blackout_enabled' => ['boolean'],
-            'blackout_from' => ['nullable', 'regex:/^\d{2}-\d{2}$/'],
-            'blackout_to' => ['nullable', 'regex:/^\d{2}-\d{2}$/'],
-            'blackout_exception_requires_approval' => ['boolean'],
-
-            'min_service_enabled' => ['boolean'],
-            'min_service_months' => ['nullable', 'integer', 'min:0', 'max:240', 'required_if:min_service_enabled,1,true'],
-
-            'requires_presence_before_apply' => ['boolean'],
-
-            'max_consecutive_enabled' => ['boolean'],
-            'max_consecutive_days' => ['nullable', 'integer', 'min:1', 'max:999', 'required_if:max_consecutive_enabled,1,true'],
-
-            'max_total_enabled' => ['boolean'],
-            'max_total_days' => ['nullable', 'integer', 'min:1', 'max:999', 'required_if:max_total_enabled,1,true'],
+            'attachment_max_mb' => ['required', 'numeric', Rule::in([2, '2'])],
         ];
     }
 
-
     protected function buildSettingsFromValidated(array $data): array
     {
+        // ✅ General Constraints removed بالكامل
         return [
             'accrual' => [
                 'method' => $data['accrual_method'],
-                'monthly_rate' => $data['accrual_method'] === 'monthly' ? (float) ($data['monthly_accrual_rate'] ?? 0) : null,
-                // 'workday_rate' => $data['accrual_method'] === 'by_work_days' ? (float) ($data['workday_accrual_rate'] ?? 0) : null,
+                'monthly_rate' => $data['accrual_method'] === 'monthly'
+                    ? (float) ($data['monthly_accrual_rate'] ?? 0)
+                    : null,
                 'min_unit' => (float) $data['min_accrual'],
                 'max_balance' => (float) $data['max_balance'],
-                'carryover_days' => (float) $data['carryover_days'],
-                'carryover_expire_months' => (int) $data['carryover_expire_months'],
+                'carryover_days' => !empty($data['allow_carryover'])
+                    ? (float) ($data['carryover_days'] ?? 0)
+                    : 0.0,
+
+                // ✅ تم إلغاء (months) — نخليها 0 دائماً
+                'carryover_expire_months' => 0,
+
             ],
 
             'weekend_policy' => $data['weekend_policy'],
@@ -1096,32 +1258,11 @@ class AttendanceLeaveSettings extends Component
                 'ack_required' => (bool) $data['note_ack_required'],
             ],
 
-            'attachments' => [
+           'attachments' => [
                 'types' => array_values(is_array($data['attachment_types'] ?? null) ? $data['attachment_types'] : []),
-                'max_mb' => (float) $data['attachment_max_mb'],
+                'max_mb' => 2,
             ],
 
-            'constraints' => [
-                'blackout' => [
-                    'enabled' => (bool) $data['blackout_enabled'],
-                    'from' => !empty($data['blackout_enabled']) ? ($data['blackout_from'] ?? null) : null,
-                    'to' => !empty($data['blackout_enabled']) ? ($data['blackout_to'] ?? null) : null,
-                    'exception_requires_approval' => (bool) $data['blackout_exception_requires_approval'],
-                ],
-                'min_service' => [
-                    'enabled' => (bool) $data['min_service_enabled'],
-                    'months' => !empty($data['min_service_enabled']) ? (int) ($data['min_service_months'] ?? 0) : null,
-                ],
-                'requires_presence_before_apply' => (bool) $data['requires_presence_before_apply'],
-                'max_consecutive' => [
-                    'enabled' => (bool) $data['max_consecutive_enabled'],
-                    'days' => !empty($data['max_consecutive_enabled']) ? (int) ($data['max_consecutive_days'] ?? 0) : null,
-                ],
-                'max_total_per_year' => [
-                    'enabled' => (bool) $data['max_total_enabled'],
-                    'days' => !empty($data['max_total_enabled']) ? (int) ($data['max_total_days'] ?? 0) : null,
-                ],
-            ],
         ];
     }
 
@@ -1133,8 +1274,11 @@ class AttendanceLeaveSettings extends Component
 
         $this->min_accrual = '0.5';
         $this->max_balance = '45';
+        $this->allow_carryover = true;
+
         $this->carryover_days = '15';
-        $this->carryover_expire_months = '3';
+        $this->carryover_expire_months = '0';
+
 
         $this->weekend_policy = 'exclude';
         $this->deduction_policy = 'balance_only';
@@ -1149,23 +1293,7 @@ class AttendanceLeaveSettings extends Component
         $this->note_ack_required = false;
 
         $this->attachment_types = ['pdf', 'jpg', 'png'];
-        $this->attachment_max_mb = '5';
-
-        $this->blackout_enabled = false;
-        $this->blackout_from = '12-01';
-        $this->blackout_to = '12-31';
-        $this->blackout_exception_requires_approval = false;
-
-        $this->min_service_enabled = false;
-        $this->min_service_months = '3';
-
-        $this->requires_presence_before_apply = false;
-
-        $this->max_consecutive_enabled = false;
-        $this->max_consecutive_days = '30';
-
-        $this->max_total_enabled = false;
-        $this->max_total_days = '45';
+        $this->attachment_max_mb = '2';
     }
 
     protected function hydrateAdvancedFromRow(LeavePolicy $row): void
@@ -1179,7 +1307,18 @@ class AttendanceLeaveSettings extends Component
         $this->min_accrual = (string) data_get($s, 'accrual.min_unit', '0.5');
         $this->max_balance = (string) data_get($s, 'accrual.max_balance', '45');
         $this->carryover_days = (string) data_get($s, 'accrual.carryover_days', '15');
-        $this->carryover_expire_months = (string) data_get($s, 'accrual.carryover_expire_months', '3');
+
+        $this->allow_carryover = is_numeric($this->carryover_days)
+            ? ((float) $this->carryover_days > 0)
+            : false;
+
+        if (! $this->allow_carryover) {
+            $this->carryover_days = '0';
+        }
+
+        // ✅ تم إلغاء (months)
+        $this->carryover_expire_months = '0';
+
 
         $this->weekend_policy = (string) data_get($s, 'weekend_policy', 'exclude');
         $this->deduction_policy = (string) data_get($s, 'deduction_policy', 'balance_only');
@@ -1195,23 +1334,7 @@ class AttendanceLeaveSettings extends Component
 
         $types = data_get($s, 'attachments.types', ['pdf', 'jpg', 'png']);
         $this->attachment_types = is_array($types) ? $types : ['pdf', 'jpg', 'png'];
-        $this->attachment_max_mb = (string) data_get($s, 'attachments.max_mb', '5');
-
-        $this->blackout_enabled = (bool) data_get($s, 'constraints.blackout.enabled', false);
-        $this->blackout_from = (string) data_get($s, 'constraints.blackout.from', '12-01');
-        $this->blackout_to = (string) data_get($s, 'constraints.blackout.to', '12-31');
-        $this->blackout_exception_requires_approval = (bool) data_get($s, 'constraints.blackout.exception_requires_approval', false);
-
-        $this->min_service_enabled = (bool) data_get($s, 'constraints.min_service.enabled', false);
-        $this->min_service_months = (string) data_get($s, 'constraints.min_service.months', '3');
-
-        $this->requires_presence_before_apply = (bool) data_get($s, 'constraints.requires_presence_before_apply', false);
-
-        $this->max_consecutive_enabled = (bool) data_get($s, 'constraints.max_consecutive.enabled', false);
-        $this->max_consecutive_days = (string) data_get($s, 'constraints.max_consecutive.days', '30');
-
-        $this->max_total_enabled = (bool) data_get($s, 'constraints.max_total_per_year.enabled', false);
-        $this->max_total_days = (string) data_get($s, 'constraints.max_total_per_year.days', '45');
+        $this->attachment_max_mb = '2';
     }
 
     public function render()
@@ -1233,15 +1356,11 @@ class AttendanceLeaveSettings extends Component
         $this->syncMonthlyAccrualRate();
     }
 
-
     protected function syncMonthlyAccrualRate(): void
     {
         $days = is_numeric($this->days_per_year) ? (float) $this->days_per_year : 0.0;
-
         $rate = $days / 12;
-
         $formatted = rtrim(rtrim(number_format($rate, 2, '.', ''), '0'), '.');
-
         $this->monthly_accrual_rate = $formatted === '' ? '0' : $formatted;
     }
 
@@ -1258,6 +1377,7 @@ class AttendanceLeaveSettings extends Component
 
     protected function defaultAnnualSettings(): array
     {
+        // ✅ General Constraints removed بالكامل
         return [
             'meta' => [
                 'system_key' => 'annual_default',
@@ -1270,7 +1390,7 @@ class AttendanceLeaveSettings extends Component
                 'min_unit' => 0.5,
                 'max_balance' => 45,
                 'carryover_days' => 15,
-                'carryover_expire_months' => 3,
+                'carryover_expire_months' => 0,
             ],
 
             'weekend_policy' => 'exclude',
@@ -1289,32 +1409,11 @@ class AttendanceLeaveSettings extends Component
                 'ack_required' => false,
             ],
 
-            'attachments' => [
+          'attachments' => [
                 'types' => ['pdf', 'jpg', 'png'],
-                'max_mb' => 5,
+                'max_mb' => 2,
             ],
 
-            'constraints' => [
-                'blackout' => [
-                    'enabled' => false,
-                    'from' => null,
-                    'to' => null,
-                    'exception_requires_approval' => false,
-                ],
-                'min_service' => [
-                    'enabled' => false,
-                    'months' => null,
-                ],
-                'requires_presence_before_apply' => false,
-                'max_consecutive' => [
-                    'enabled' => false,
-                    'days' => null,
-                ],
-                'max_total_per_year' => [
-                    'enabled' => false,
-                    'days' => null,
-                ],
-            ],
         ];
     }
 
@@ -1354,16 +1453,40 @@ class AttendanceLeaveSettings extends Component
         ];
 
         if ($row) {
-            // update to ensure lock/meta exists + name is correct
+            // ✅ لا نمسح إعدادات المستخدم: نضمن فقط meta key + lock_name + name
+            $existing = is_array($row->settings ?? null) ? $row->settings : [];
+            $defaults = $this->defaultAnnualSettings();
+
+            $merged = array_replace_recursive($defaults, $existing);
+            data_set($merged, 'attachments.max_mb', 2);
+
+
+            data_set($merged, 'meta.system_key', 'annual_default');
+            data_set($merged, 'meta.lock_name', true);
+
             $row->update([
                 'name' => $payload['name'],
                 'leave_type' => $payload['leave_type'],
-                'settings' => $payload['settings'],
+                'settings' => $merged,
             ]);
             return;
         }
 
         LeavePolicy::create($payload);
+    }
+
+    public function updatedAllowCarryover($value = null): void
+    {
+        if (! $this->allow_carryover) {
+            $this->carryover_days = '0';
+            $this->carryover_expire_months = '0';
+            return;
+        }
+
+        // إذا رجّع التشغيل وكان الرقم صفر، نعطيه قيمة افتراضية
+        if (!is_numeric($this->carryover_days) || (float) $this->carryover_days <= 0) {
+            $this->carryover_days = '15';
+        }
     }
 
 }
