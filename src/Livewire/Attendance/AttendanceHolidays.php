@@ -29,6 +29,8 @@ class AttendanceHolidays extends Component
 
     public string $newName = '';
     public string $newCalendarType = 'gregorian';
+    public string $editCalendarType = 'gregorian';
+
     public string $newStartDate = '';
     public int $newDurationDays = 1;
 
@@ -284,7 +286,6 @@ class AttendanceHolidays extends Component
             return;
         }
 
-        $this->newCalendarType = $this->companyCalendarType;
 
         $this->syncCreateAutoDates();
 
@@ -353,7 +354,8 @@ class AttendanceHolidays extends Component
         $this->editStartDate = (string) ($row->start_date ?? '');
         $this->editDurationDays = (int) ($row->duration_days ?? 1);
 
-        $this->newCalendarType = $this->companyCalendarType;
+        $this->editCalendarType = (string) ($row->template?->calendar_type ?? $this->companyCalendarType);
+        $this->newCalendarType  = $this->companyCalendarType;
 
         $this->syncEditAutoDates();
     }
@@ -384,11 +386,13 @@ class AttendanceHolidays extends Component
 
         $this->syncEditAutoDates();
 
-        $data = $this->validate([
+            $data = $this->validate([
             'editName' => ['required', 'string', 'max:255'],
+            'editCalendarType' => ['required', 'in:hijri,gregorian'],
             'editStartDate' => ['required', 'date'],
             'editDurationDays' => ['required', 'integer', 'min:1', 'max:60'],
         ]);
+
 
         $companyId = $this->resolveCompanyId();
 
@@ -416,13 +420,14 @@ class AttendanceHolidays extends Component
             $start = Carbon::parse($data['editStartDate'])->startOfDay();
             $end = (clone $start)->addDays(((int) $data['editDurationDays']) - 1);
 
-            $template->update([
+         $template->update([
                 'name' => $data['editName'],
-                'calendar_type' => $this->companyCalendarType, 
+                'calendar_type' => $data['editCalendarType'],
                 'repeat_type' => 'once',
                 'once_start_date' => $start->toDateString(),
                 'duration_days' => (int) $data['editDurationDays'],
             ]);
+
 
             $displayHijri = $this->editDisplayHijriAuto ?: null;
 

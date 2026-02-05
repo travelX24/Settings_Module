@@ -268,13 +268,18 @@
                 </div>
 
                 <div>
-                    <x-ui.input
-                        label="{{ tr('Calendar Type') }}"
-                        value="{{ $companyCalendarType === 'hijri' ? tr('Hijri') : tr('Gregorian') }}"
-                        readonly
-                        class="!bg-gray-50"
-                        hint="{{ tr('From settings') }}"
+                   <x-ui.filter-select
+                        model="newCalendarType"
+                        :label="tr('Calendar Type')"
+                        :options="[
+                            ['value' => 'gregorian', 'label' => tr('Gregorian')],
+                            ['value' => 'hijri', 'label' => tr('Hijri')],
+                        ]"
+                        width="full"
+                        :defer="false"
+                        :applyOnChange="true"
                     />
+
                 </div>
 
                 <div>
@@ -288,14 +293,18 @@
                 </div>
 
                 <div>
-                    <x-ui.company-date-picker model="newStartDate" :label="tr('Start Date')" />
+                    <x-ui.company-date-picker
+                        model="newStartDate"
+                        :label="tr('Start Date')"
+                        :calendarType="$newCalendarType"
+                    />
                     @error('newStartDate') <div class="text-xs text-red-600 mt-1">{{ $message }}</div> @enderror
                 </div>
 
           <div>
             <x-ui.input
-                label="{{ $companyCalendarType === 'hijri' ? tr('Gregorian Date (auto)') : tr('Hijri Date (auto)') }}"
-                value="{{ $companyCalendarType === 'hijri' ? $newGregorianAuto : $newDisplayHijriAuto }}"
+             label="{{ $newCalendarType === 'hijri' ? tr('Gregorian Date (auto)') : tr('Hijri Date (auto)') }}"
+            value="{{ $newCalendarType === 'hijri' ? $newGregorianAuto : $newDisplayHijriAuto }}"
                 readonly
                 class="!bg-gray-50"
             />
@@ -345,13 +354,18 @@
                 </div>
 
                 <div>
-                    <x-ui.input
-                        label="{{ tr('Calendar Type') }}"
-                        value="{{ $companyCalendarType === 'hijri' ? tr('Hijri') : tr('Gregorian') }}"
-                        readonly
-                        class="!bg-gray-50"
-                        hint="{{ tr('From settings') }}"
+                  <x-ui.filter-select
+                        model="editCalendarType"
+                        :label="tr('Calendar Type')"
+                        :options="[
+                            ['value' => 'gregorian', 'label' => tr('Gregorian')],
+                            ['value' => 'hijri', 'label' => tr('Hijri')],
+                        ]"
+                        width="full"
+                        :defer="false"
+                        :applyOnChange="true"
                     />
+
                 </div>
 
                 <div>
@@ -365,14 +379,18 @@
                 </div>
 
                 <div>
-                    <x-ui.company-date-picker model="editStartDate" :label="tr('Start Date')" />
+                    <x-ui.company-date-picker
+                        model="editStartDate"
+                        :label="tr('Start Date')"
+                        :calendarType="$editCalendarType"
+                    />
                     @error('editStartDate') <div class="text-xs text-red-600 mt-1">{{ $message }}</div> @enderror
                 </div>
 
                <div>
                     <x-ui.input
-                        label="{{ $companyCalendarType === 'hijri' ? tr('Gregorian Date (auto)') : tr('Hijri Date (auto)') }}"
-                        value="{{ $companyCalendarType === 'hijri' ? $editGregorianAuto : $editDisplayHijriAuto }}"
+                    label="{{ $editCalendarType === 'hijri' ? tr('Gregorian Date (auto)') : tr('Hijri Date (auto)') }}"
+                    value="{{ $editCalendarType === 'hijri' ? $editGregorianAuto : $editDisplayHijriAuto }}"
                         readonly
                         class="!bg-gray-50"
                     />
