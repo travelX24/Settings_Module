@@ -306,8 +306,12 @@ class AttendanceSettings extends Component
             ->get()->toArray();
 
         // Load Branches
-        $this->branches = \Athka\SystemSettings\Models\Department::where('saas_company_id', $companyId)
-            ->get()->toArray();
+        // Temporarily disabled to hide departments appearing as branches
+        $this->branches = []; 
+        // \Athka\SystemSettings\Models\Department::where('saas_company_id', $companyId)
+        //     ->whereNull('parent_id')
+        //     ->where('id', '!=', $mainDeptId)
+        //     ->get()->toArray();
 
         // Already loading groups above, but let's make sure it's available for select
         $this->availableGroups = $this->groups;
