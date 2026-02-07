@@ -70,6 +70,9 @@ class CalendarSettings extends Component
             ]
         );
 
+        // ✅ مسح الكاش لضمان ظهور التغيير فوراً في جميع الواجهات
+        cache()->forget("company_{$companyId}_calendar_type");
+
         // Keep UI state in sync with DB (so user sees what is actually saved)
         $this->saved_calendar_type = $data['calendar_type'];
         $this->saved_updated_human = now()->diffForHumans();

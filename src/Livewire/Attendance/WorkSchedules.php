@@ -446,9 +446,19 @@ class WorkSchedules extends Component
 
     public function deleteSchedule($id)
     {
-        // Add check if linked to employees later
-        WorkSchedule::destroy($id);
-        $this->dispatch('toast', type: 'success', message: tr('Work schedule removed successfully.'));
+        $schedule = WorkSchedule::find($id);
+        if (!$schedule) {
+            $this->dispatch('toast', type: 'error', message: tr('Work schedule not found.'));
+            return;
+        }
+
+        if ($schedule->is_default) {
+            $this->dispatch('toast', type: 'error', message: tr('The default work schedule cannot be deleted. Please set another schedule as default first.'));
+            return;
+        }
+
+        $schedule->delete();
+        $this->dispatch('toast', type: 'success', message: tr('Work schedule has been moved to archive successfully.'));
     }
 
     public function toggleStatus($id)

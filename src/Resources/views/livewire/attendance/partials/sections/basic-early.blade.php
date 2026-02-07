@@ -11,7 +11,7 @@
         </div>
         <label class="flex items-center gap-3 cursor-pointer group bg-gray-50/50 px-4 py-2 rounded-xl border border-gray-100 hover:bg-white transition-all">
             <input type="checkbox" 
-                wire:model="basicEarlyPenalty.enabled"
+                wire:model.live="basicEarlyPenalty.enabled"
                 class="w-4 h-4 text-blue-600 rounded border-gray-300 focus:ring-blue-500"
             >
             <span class="text-xs font-bold text-gray-700 group-hover:text-blue-600 transition-colors">{{ tr('Activate Penalties') }}</span>
@@ -24,7 +24,7 @@
         <x-ui.input 
             label="{{ tr('Grace Period (min)') }}" 
             type="number" 
-            wire:model.defer="basicEarlyPenalty.grace_minutes" 
+            wire:model="basicEarlyPenalty.grace_minutes" 
             class="!py-3 !rounded-2xl"
         />
 
@@ -32,7 +32,7 @@
         <x-ui.input 
             label="{{ tr('After grace, for every (min)') }}" 
             type="number" 
-            wire:model.defer="basicEarlyPenalty.interval_minutes" 
+            wire:model="basicEarlyPenalty.interval_minutes" 
             hint="{{ tr('Deduction will trigger every X minutes.') }}"
             class="!py-3 !rounded-2xl"
         />
@@ -44,7 +44,7 @@
                     <x-ui.select 
                         wire:key="early-deduction-{{ $basicEarlyPenalty['deduction_type'] }}"
                         label="{{ tr('Deduction Type') }}"
-                        wire:model.defer="basicEarlyPenalty.deduction_type" 
+                        wire:model="basicEarlyPenalty.deduction_type" 
                         model="basicEarlyPenalty.deduction_type"
                     >
                         <option value="percentage" {{ $basicEarlyPenalty['deduction_type'] === 'percentage' ? 'selected' : '' }}>{{ tr('Percentage (%)') }}</option>
@@ -54,7 +54,7 @@
                 <div class="w-24">
                     <x-ui.input 
                         type="number" 
-                        wire:model.defer="basicEarlyPenalty.deduction_value" 
+                        wire:model="basicEarlyPenalty.deduction_value" 
                         class="!py-3 !rounded-2xl"
                     />
                 </div>

@@ -147,7 +147,7 @@
 
                 {{-- Clear Filters Button --}}
                 <div
-                    x-show="search.trim() !== '' || filterType !== 'all' || filterStatus !== 'all' || filterPeriod !== 'all' || filterDateStart !== '' || filterDateEnd !== ''"
+                    x-show="$wire.search.trim() !== '' || $wire.filterType !== 'all' || $wire.filterStatus !== 'all' || $wire.filterPeriod !== 'all' || $wire.filterDateStart !== '' || $wire.filterDateEnd !== ''"
                     x-transition
                     class="flex items-center justify-end"
                 >
@@ -322,7 +322,7 @@
     @include('systemsettings::livewire.attendance.partials.work-schedule-modal')
 
     <x-ui.confirm-dialog 
-        id="confirm-delete" 
+        id="delete" 
         confirmText="{{ tr('Yes, Delete') }}"
         cancelText="{{ tr('Cancel') }}"
         confirmAction="wire:deleteSchedule(__ID__)"

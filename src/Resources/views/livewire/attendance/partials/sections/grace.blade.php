@@ -12,7 +12,7 @@
             <x-ui.input 
                 label="{{ tr('Monthly Grace Period (min)') }}" 
                 type="number" 
-                wire:model.defer="gracePeriods.late_arrival" 
+                wire:model="gracePeriods.late_arrival" 
                 required 
                 hint="{{ tr('Monthly allowance for late arrival and early departure.') }}"
                 class="!py-2.5"
@@ -25,7 +25,7 @@
             <x-ui.input 
                 label="{{ tr('Max Auto-Checkout (hours)') }}" 
                 type="number" 
-                wire:model.defer="gracePeriods.auto_departure" 
+                wire:model="gracePeriods.auto_departure" 
                 required 
                 hint="{{ tr('System will auto-checkout employee after these hours.') }}"
                 class="!py-2.5"
@@ -37,8 +37,8 @@
     <div class="pt-4 border-t border-gray-50 flex items-center gap-4">
         <label class="flex items-center gap-2 cursor-pointer group">
             <input type="checkbox" 
-                id="auto_checkout_penalty_enabled"
-                wire:model="gracePeriods.auto_departure_penalty_enabled"
+                id="auto_departure_penalty_enabled"
+                wire:model.live="gracePeriods.auto_departure_penalty_enabled"
                 class="w-4 h-4 text-blue-600 rounded border-gray-300"
             >
             <span class="text-xs font-bold text-gray-700">{{ tr('Activate Auto-Checkout Penalties') }}</span>
@@ -49,7 +49,7 @@
             <x-ui.input 
                 placeholder="{{ tr('Deduction Amount') }}"
                 type="number"
-                wire:model.defer="gracePeriods.auto_departure_penalty_amount"
+                wire:model="gracePeriods.auto_departure_penalty_amount"
                 class="!py-1.5"
             />
         </div>

@@ -85,17 +85,7 @@
             </div>
             @endif
 
-            <div class="p-4 bg-gray-50/50 rounded-2xl border border-gray-100">
-                <label class="flex items-center gap-3 cursor-pointer group">
-                    <input type="checkbox" 
-                        wire:model="newPenalty.include_basic_penalty"
-                        class="w-4 h-4 text-purple-600 border-gray-300 rounded focus:ring-purple-500"
-                    >
-                    <span class="text-xs font-bold text-gray-600 group-hover:text-purple-700 transition-colors">
-                        {{ tr('Apply basic penalty deduction in addition to this penalty') }}
-                    </span>
-                </label>
-            </div>
+            {{-- Removed: include_basic_penalty checkbox as per user request (one violation = one penalty) --}}
         </div>
     </x-slot:content>
 

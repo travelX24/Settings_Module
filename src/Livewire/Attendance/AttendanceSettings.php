@@ -699,7 +699,6 @@ class AttendanceSettings extends Component
         'penalty_action' => 'deduction',
         'deduction_type' => 'percentage',
         'deduction_value' => 0,
-        'include_basic_penalty' => false,
         'notification_message' => '',
     ];
 
@@ -717,7 +716,6 @@ class AttendanceSettings extends Component
             'penalty_action' => 'deduction',
             'deduction_type' => 'percentage',
             'deduction_value' => 0,
-            'include_basic_penalty' => false,
             'notification_message' => '',
         ];
         $this->showPenaltyModal = true;
@@ -736,7 +734,6 @@ class AttendanceSettings extends Component
                 'penalty_action' => $penalty->penalty_action,
                 'deduction_type' => $penalty->deduction_type ?? 'percentage',
                 'deduction_value' => $penalty->deduction_value,
-                'include_basic_penalty' => $penalty->include_basic_penalty,
                 'notification_message' => $penalty->notification_message,
             ];
             $this->showPenaltyModal = true;
@@ -746,7 +743,39 @@ class AttendanceSettings extends Component
     public function savePenalty()
     {
         $companyId = auth()->user()->saas_company_id;
+
+        // 1. Validation to prevent duplicate recurrence count for the same violation type
+        if ($this->newPenalty['violation_type'] === 'unexcused_absence') {
+            $query = UnexcusedAbsencePolicy::where('policy_id', $this->defaultPolicy->id)
+                ->where('saas_company_id', $companyId)
+                ->where('absence_reason_type', 'repetitive')
+                ->where('recurrence_count', $this->newPenalty['recurrence_count']);
+            
+            if ($this->isEditingPenalty && str_contains($this->editingPenaltyId, 'abs_')) {
+                $query->where('id', '!=', str_replace('abs_', '', $this->editingPenaltyId));
+            }
+
+            if ($query->exists()) {
+                $this->dispatch('toast', type: 'error', message: tr('This recurrence level already exists for this violation type. You can only edit it from the list.'));
+                return;
+            }
+        } else {
+            $query = AttendancePenaltyPolicy::where('policy_id', $this->defaultPolicy->id)
+                ->where('saas_company_id', $companyId)
+                ->where('violation_type', $this->newPenalty['violation_type'])
+                ->where('recurrence_count', $this->newPenalty['recurrence_count']);
+
+            if ($this->isEditingPenalty && !str_contains($this->editingPenaltyId, 'abs_')) {
+                $query->where('id', '!=', $this->editingPenaltyId);
+            }
+
+            if ($query->exists()) {
+                $this->dispatch('toast', type: 'error', message: tr('This recurrence level already exists for this violation type. You can only edit it from the list.'));
+                return;
+            }
+        }
         
+        // 2. Save Data
         if ($this->newPenalty['violation_type'] === 'unexcused_absence') {
             $data = [
                 'policy_id' => $this->defaultPolicy->id,
@@ -776,6 +805,7 @@ class AttendanceSettings extends Component
                 'is_enabled' => true,
                 'minutes_from' => 0,
                 'minutes_to' => 0,
+                'include_basic_penalty' => false, // Recurrence penalties are independent, no basic penalty overlay
             ]);
 
             if ($this->isEditingPenalty && !str_contains($this->editingPenaltyId, 'abs_')) {

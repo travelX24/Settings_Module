@@ -230,138 +230,102 @@
             {{-- ✅ Table/List View --}}
             <div x-show="view === 'table'" x-cloak>
                 <x-ui.table
-    :headers="[]"
-    :perPage="10"
-    :enablePagination="true"
->
-
+                    :headers="[
+                        tr('Department Name'),
+                        tr('Code'),
+                        tr('Manager'),
+                        tr('Employees'),
+                        tr('Description'),
+                        tr('Status'),
+                        tr('Actions')
+                    ]"
+                    :perPage="10"
+                    :enablePagination="true"
+                >
                     @foreach($departments as $department)
                         <tr
-    wire:key="department-{{ $department->id }}"
-    class="hover:bg-gray-50 transition-colors border-b border-gray-200"
->
-    <td class="py-4 px-4 align-top">
-        <div class="space-y-1">
-            <div class="text-[11px] font-bold text-gray-400 uppercase tracking-widest">
-                {{ tr('Department Name') }}
-            </div>
+                            wire:key="department-{{ $department->id }}"
+                            class="hover:bg-gray-50 transition-colors border-b border-gray-200"
+                        >
+                            <td class="py-4 px-4 align-top">
+                                <div class="space-y-1">
+                                    <div class="text-sm font-bold text-gray-900">
+                                        {{ $department->name }}
+                                    </div>
 
-            <div class="text-sm font-bold text-gray-900">
-                {{ $department->name }}
-            </div>
+                                    @if($department->parent)
+                                        <div class="text-xs text-gray-500">
+                                            {{ tr('Sub of') }}: {{ $department->parent->name }}
+                                        </div>
+                                    @endif
+                                </div>
+                            </td>
 
-            @if($department->parent)
-                <div class="text-xs text-gray-500">
-                    {{ tr('Sub of') }}: {{ $department->parent->name }}
-                </div>
-            @endif
-        </div>
-    </td>
+                            <td class="py-4 px-6 align-top whitespace-nowrap">
+                                <div>
+                                    <span class="text-xs font-bold font-mono text-gray-500 px-2 py-0.5 bg-gray-50 border border-gray-100 rounded-lg">
+                                        {{ $department->code ?? '-' }}
+                                    </span>
+                                </div>
+                            </td>
 
-    <td class="py-4 px-4 align-top whitespace-nowrap">
-        <div class="space-y-1">
-            <div class="text-[11px] font-bold text-gray-400 uppercase tracking-widest">
-                {{ tr('Code') }}
-            </div>
+                            <td class="py-4 px-6 align-top whitespace-nowrap">
+                                <div class="text-sm text-gray-900">
+                                    {{ $department->manager ? ($department->manager->name_ar ?? $department->manager->name_en) : '-' }}
+                                </div>
+                            </td>
 
-            <div>
-                <span class="text-xs font-bold font-mono text-gray-500 px-2 py-0.5 bg-gray-50 border border-gray-100 rounded-lg">
-                    {{ $department->code ?? '-' }}
-                </span>
-            </div>
-        </div>
-    </td>
+                            <td class="py-4 px-6 align-top whitespace-nowrap">
+                                <button
+                                    wire:click="$dispatch('open-employees-modal', { type: 'department', id: {{ $department->id }} })"
+                                    class="text-sm font-semibold text-[color:var(--brand-via)] hover:text-[color:var(--brand-via)]/80 hover:underline cursor-pointer"
+                                >
+                                    {{ $department->employees_count_display ?? 0 }}
+                                </button>
+                            </td>
 
-    <td class="py-4 px-4 align-top whitespace-nowrap">
-        <div class="space-y-1">
-            <div class="text-[11px] font-bold text-gray-400 uppercase tracking-widest">
-                {{ tr('Manager') }}
-            </div>
+                            <td class="py-4 px-6 align-top">
+                                <div class="text-sm text-gray-500 max-w-xs line-clamp-2">
+                                    {{ $department->description ?? '-' }}
+                                </div>
+                            </td>
 
-            <div class="text-sm text-gray-900">
-                {{ $department->manager ? ($department->manager->name_ar ?? $department->manager->name_en) : '-' }}
-            </div>
-        </div>
-    </td>
+                            <td class="py-4 px-6 align-top whitespace-nowrap">
+                                <div>
+                                    <span class="px-2 py-1 text-xs font-semibold rounded-full {{ $department->is_active ? 'bg-green-100 text-green-800' : 'bg-gray-100 text-gray-800' }}">
+                                        {{ $department->is_active ? tr('Active') : tr('Inactive') }}
+                                    </span>
+                                </div>
+                            </td>
 
-    <td class="py-4 px-4 align-top whitespace-nowrap">
-        <div class="space-y-1">
-            <div class="text-[11px] font-bold text-gray-400 uppercase tracking-widest">
-                {{ tr('Employees') }}
-            </div>
+                            <td class="py-4 px-6 align-top whitespace-nowrap text-sm font-medium">
+                                <x-ui.actions-menu>
+                                    <x-ui.dropdown-item
+                                        wire:click="openEditModal({{ $department->id }})"
+                                        @click="$dispatch('close-actions-menu')"
+                                    >
+                                        <i class="fas fa-edit me-2"></i>
+                                        <span>{{ tr('Edit') }}</span>
+                                    </x-ui.dropdown-item>
 
-            <button
-                wire:click="$dispatch('open-employees-modal', { type: 'department', id: {{ $department->id }} })"
-                class="text-sm font-semibold text-[color:var(--brand-via)] hover:text-[color:var(--brand-via)]/80 hover:underline cursor-pointer"
-            >
-                {{ $department->employees_count_display ?? 0 }}
-            </button>
-        </div>
-    </td>
+                                    <x-ui.dropdown-item
+                                        wire:click="toggleActive({{ $department->id }})"
+                                        @click="$dispatch('close-actions-menu')"
+                                    >
+                                        <i class="fas fa-{{ $department->is_active ? 'eye-slash' : 'eye' }} me-2"></i>
+                                        <span>{{ $department->is_active ? tr('Deactivate') : tr('Activate') }}</span>
+                                    </x-ui.dropdown-item>
 
-    <td class="py-4 px-4 align-top">
-        <div class="space-y-1">
-            <div class="text-[11px] font-bold text-gray-400 uppercase tracking-widest">
-                {{ tr('Description') }}
-            </div>
-
-            <div class="text-sm text-gray-500 max-w-xs line-clamp-2">
-                {{ $department->description ?? '-' }}
-            </div>
-        </div>
-    </td>
-
-    <td class="py-4 px-4 align-top whitespace-nowrap">
-        <div class="space-y-1">
-            <div class="text-[11px] font-bold text-gray-400 uppercase tracking-widest">
-                {{ tr('Status') }}
-            </div>
-
-            <div>
-                <span class="px-2 py-1 text-xs font-semibold rounded-full {{ $department->is_active ? 'bg-green-100 text-green-800' : 'bg-gray-100 text-gray-800' }}">
-                    {{ $department->is_active ? tr('Active') : tr('Inactive') }}
-                </span>
-            </div>
-        </div>
-    </td>
-
-    <td class="py-4 px-4 align-top whitespace-nowrap text-sm font-medium">
-        <div class="space-y-1">
-            <div class="text-[11px] font-bold text-gray-400 uppercase tracking-widest">
-                {{ tr('Actions') }}
-            </div>
-
-            <div>
-                <x-ui.actions-menu>
-                    <x-ui.dropdown-item
-                        wire:click="openEditModal({{ $department->id }})"
-                        @click="$dispatch('close-actions-menu')"
-                    >
-                        <i class="fas fa-edit me-2"></i>
-                        <span>{{ tr('Edit') }}</span>
-                    </x-ui.dropdown-item>
-
-                    <x-ui.dropdown-item
-                        wire:click="toggleActive({{ $department->id }})"
-                        @click="$dispatch('close-actions-menu')"
-                    >
-                        <i class="fas fa-{{ $department->is_active ? 'eye-slash' : 'eye' }} me-2"></i>
-                        <span>{{ $department->is_active ? tr('Deactivate') : tr('Activate') }}</span>
-                    </x-ui.dropdown-item>
-
-                    <x-ui.dropdown-item
-                        @click="$dispatch('open-confirm-delete-department', { id: {{ $department->id }} }); $dispatch('close-actions-menu')"
-                        danger
-                    >
-                        <i class="fas fa-trash me-2"></i>
-                        <span>{{ tr('Delete') }}</span>
-                    </x-ui.dropdown-item>
-                </x-ui.actions-menu>
-            </div>
-        </div>
-    </td>
-</tr>
-
+                                    <x-ui.dropdown-item
+                                        @click="$dispatch('open-confirm-delete-department', { id: {{ $department->id }} }); $dispatch('close-actions-menu')"
+                                        danger
+                                    >
+                                        <i class="fas fa-trash me-2"></i>
+                                        <span>{{ tr('Delete') }}</span>
+                                    </x-ui.dropdown-item>
+                                </x-ui.actions-menu>
+                            </td>
+                        </tr>
                     @endforeach
                 </x-ui.table>
             </div>
