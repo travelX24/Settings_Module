@@ -5,13 +5,40 @@
 @endphp
 
 @section('topbar-left-content')
-    <x-ui.page-header
-        :title="tr('Leave Settings')"
-        :subtitle="tr('Define leave types, yearly policies, and rules')"
-        class="!flex-col {{ $isRtl ? '!items-end !text-right' : '!items-start !text-left' }} !justify-start !gap-1"
-        titleSize="xl"
-    />
+    <div class="flex flex-col gap-3 {{ $isRtl ? 'items-end text-right' : 'items-start text-left' }}">
+        <x-ui.page-header
+            :title="tr('Leave Settings')"
+            :subtitle="tr('Define leave types, yearly policies, and rules')"
+            class="!flex-col {{ $isRtl ? '!items-end !text-right' : '!items-start !text-left' }} !justify-start !gap-1"
+            titleSize="xl"
+        />
+
+        {{-- ✅ Tabs: Leave Settings | Permission Settings --}}
+        <div class="inline-flex rounded-2xl border border-gray-200 bg-white/70 p-1 shadow-sm">
+         <a
+                href="{{ request()->fullUrlWithQuery(['tab' => 'leaves']) }}"
+                class="px-4 py-2 text-xs font-black rounded-xl transition-all
+                    {{ ($tab ?? 'leaves') === 'leaves'
+                        ? 'text-white shadow-sm bg-[color:var(--brand-via)]'
+                        : 'text-gray-600 hover:text-gray-900' }}"
+            >
+                {{ tr('Leave Settings') }}
+            </a>
+
+            <a
+                href="{{ request()->fullUrlWithQuery(['tab' => 'permissions']) }}"
+                class="px-4 py-2 text-xs font-black rounded-xl transition-all
+                    {{ ($tab ?? 'leaves') === 'permissions'
+                        ? 'text-white shadow-sm bg-[color:var(--brand-via)]'
+                        : 'text-gray-600 hover:text-gray-900' }}"
+            >
+                {{ tr('Permission Settings') }}
+            </a>
+
+        </div>
+    </div>
 @endsection
+
 
 @section('topbar-actions')
     <x-ui.secondary-button
@@ -25,11 +52,13 @@
     </x-ui.secondary-button>
 @endsection
 
-<div class="space-y-6">
-    <x-ui.card>
-        <div class="space-y-4">
 
-            {{-- Year Selector --}}
+<div class="space-y-6">
+    @if(($tab ?? 'leaves') === 'leaves')
+        <x-ui.card>
+            <div class="space-y-4">
+
+                {{-- Year Selector --}}
             <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
                 <div class="flex items-center gap-2">
                     <x-ui.secondary-button :fullWidth="false" wire:click="prevYear">
@@ -1085,132 +1114,251 @@
                                     </tr>
                                </tr>
 
-{{-- ✅ Expanded Details Card --}}
-@if(!empty($compareExpanded[$r['key']] ?? false))
-    <tr class="bg-white">
-        <td colspan="3" class="px-5 py-4">
-            <div class="rounded-2xl border border-gray-100 bg-gray-50/40 p-4">
-                <div class="flex items-center justify-between gap-3 mb-3">
-                    <div class="text-sm font-black text-gray-900">
-                        <i class="fas fa-circle-info text-gray-400 me-2"></i>
-                        {{ tr('Leave Details') }} — {{ $r['name'] }}
-                    </div>
+        {{-- ✅ Expanded Details Card --}}
+        @if(!empty($compareExpanded[$r['key']] ?? false))
+            <tr class="bg-white">
+                <td colspan="3" class="px-5 py-4">
+                    <div class="rounded-2xl border border-gray-100 bg-gray-50/40 p-4">
+                        <div class="flex items-center justify-between gap-3 mb-3">
+                            <div class="text-sm font-black text-gray-900">
+                                <i class="fas fa-circle-info text-gray-400 me-2"></i>
+                                {{ tr('Leave Details') }} — {{ $r['name'] }}
+                            </div>
 
-                    <button type="button" wire:click="toggleCompareDetails('{{ $r['key'] }}')"
-                        class="text-xs font-black text-gray-500 hover:text-gray-900">
-                        {{ tr('Close') }}
-                    </button>
-                </div>
-
-                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    {{-- Year A Details --}}
-                    <div class="rounded-xl bg-white border border-gray-100 p-3">
-                        <div class="text-[11px] font-black text-gray-500 mb-2">
-                            {{ $yearA ? (string)$yearA : tr('Year') }}
+                            <button type="button" wire:click="toggleCompareDetails('{{ $r['key'] }}')"
+                                class="text-xs font-black text-gray-500 hover:text-gray-900">
+                                {{ tr('Close') }}
+                            </button>
                         </div>
 
-                        @if($a)
-                            <div class="grid grid-cols-2 gap-2 text-[12px]">
-                                <div><b>{{ tr('Show in App') }}:</b> {{ $a->show_in_app ? tr('Yes') : tr('No') }}</div>
-                                <div><b>{{ tr('Requires attachment') }}:</b> {{ $a->requires_attachment ? tr('Yes') : tr('No') }}</div>
-
-                                <div><b>{{ tr('Accrual method') }}:</b> {{ data_get($a->settings ?? [], 'accrual.method', '—') }}</div>
-                                <div><b>{{ tr('Monthly rate') }}:</b> {{ data_get($a->settings ?? [], 'accrual.monthly_rate', '—') }}</div>
-
-                                <div><b>{{ tr('Max balance') }}:</b> {{ data_get($a->settings ?? [], 'accrual.max_balance', '—') }}</div>
-
-                                <div><b>{{ tr('Carryover days') }}:</b> {{ data_get($a->settings ?? [], 'accrual.carryover_days', '—') }}</div>
-                                <div><b>{{ tr('Weekend policy') }}:</b> {{ data_get($a->settings ?? [], 'weekend_policy', '—') }}</div>
-
-                                <div><b>{{ tr('Deduction policy') }}:</b> {{ data_get($a->settings ?? [], 'deduction_policy', '—') }}</div>
-                                <div><b>{{ tr('Duration unit') }}:</b> {{ data_get($a->settings ?? [], 'duration_unit', '—') }}</div>
-
-                                <div><b>{{ tr('Notice min days') }}:</b> {{ data_get($a->settings ?? [], 'notice.min_days', '—') }}</div>
-                                <div><b>{{ tr('Notice max days') }}:</b> {{ data_get($a->settings ?? [], 'notice.max_advance_days', '—') }}</div>
-
-                                <div><b>{{ tr('Allow retroactive') }}:</b> {{ data_get($a->settings ?? [], 'notice.allow_retroactive', false) ? tr('Yes') : tr('No') }}</div>
-                                <div><b>{{ tr('Note required') }}:</b> {{ data_get($a->settings ?? [], 'note.required', false) ? tr('Yes') : tr('No') }}</div>
-
-                                <div class="col-span-2">
-                                    <b>{{ tr('Attachment types') }}:</b>
-                                    @php $tA = data_get($a->settings ?? [], 'attachments.types', []); @endphp
-                                    {{ is_array($tA) ? implode(', ', $tA) : (string)$tA }}
-                                            </div>
-                                        </div>
-                                    @else
-                                        <div class="text-xs text-gray-400 italic">{{ tr('Not found') }}</div>
-                                    @endif
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                            {{-- Year A Details --}}
+                            <div class="rounded-xl bg-white border border-gray-100 p-3">
+                                <div class="text-[11px] font-black text-gray-500 mb-2">
+                                    {{ $yearA ? (string)$yearA : tr('Year') }}
                                 </div>
 
-                                {{-- Year B Details --}}
-                                <div class="rounded-xl bg-white border border-gray-100 p-3">
-                                    <div class="text-[11px] font-black text-gray-500 mb-2">
-                                        {{ $yearB ? (string)$yearB : tr('Year') }}
-                                    </div>
+                                @if($a)
+                                    <div class="grid grid-cols-2 gap-2 text-[12px]">
+                                        <div><b>{{ tr('Show in App') }}:</b> {{ $a->show_in_app ? tr('Yes') : tr('No') }}</div>
+                                        <div><b>{{ tr('Requires attachment') }}:</b> {{ $a->requires_attachment ? tr('Yes') : tr('No') }}</div>
 
-                                    @if($b)
-                                        <div class="grid grid-cols-2 gap-2 text-[12px]">
-                                            <div><b>{{ tr('Show in App') }}:</b> {{ $b->show_in_app ? tr('Yes') : tr('No') }}</div>
-                                            <div><b>{{ tr('Requires attachment') }}:</b> {{ $b->requires_attachment ? tr('Yes') : tr('No') }}</div>
+                                        <div><b>{{ tr('Accrual method') }}:</b> {{ data_get($a->settings ?? [], 'accrual.method', '—') }}</div>
+                                        <div><b>{{ tr('Monthly rate') }}:</b> {{ data_get($a->settings ?? [], 'accrual.monthly_rate', '—') }}</div>
 
-                                            <div><b>{{ tr('Accrual method') }}:</b> {{ data_get($b->settings ?? [], 'accrual.method', '—') }}</div>
-                                            <div><b>{{ tr('Monthly rate') }}:</b> {{ data_get($b->settings ?? [], 'accrual.monthly_rate', '—') }}</div>
+                                        <div><b>{{ tr('Max balance') }}:</b> {{ data_get($a->settings ?? [], 'accrual.max_balance', '—') }}</div>
 
-                                            <div><b>{{ tr('Max balance') }}:</b> {{ data_get($b->settings ?? [], 'accrual.max_balance', '—') }}</div>
+                                        <div><b>{{ tr('Carryover days') }}:</b> {{ data_get($a->settings ?? [], 'accrual.carryover_days', '—') }}</div>
+                                        <div><b>{{ tr('Weekend policy') }}:</b> {{ data_get($a->settings ?? [], 'weekend_policy', '—') }}</div>
 
-                                            <div><b>{{ tr('Carryover days') }}:</b> {{ data_get($b->settings ?? [], 'accrual.carryover_days', '—') }}</div>
-                                            <div><b>{{ tr('Weekend policy') }}:</b> {{ data_get($b->settings ?? [], 'weekend_policy', '—') }}</div>
+                                        <div><b>{{ tr('Deduction policy') }}:</b> {{ data_get($a->settings ?? [], 'deduction_policy', '—') }}</div>
+                                        <div><b>{{ tr('Duration unit') }}:</b> {{ data_get($a->settings ?? [], 'duration_unit', '—') }}</div>
 
-                                            <div><b>{{ tr('Deduction policy') }}:</b> {{ data_get($b->settings ?? [], 'deduction_policy', '—') }}</div>
-                                            <div><b>{{ tr('Duration unit') }}:</b> {{ data_get($b->settings ?? [], 'duration_unit', '—') }}</div>
+                                        <div><b>{{ tr('Notice min days') }}:</b> {{ data_get($a->settings ?? [], 'notice.min_days', '—') }}</div>
+                                        <div><b>{{ tr('Notice max days') }}:</b> {{ data_get($a->settings ?? [], 'notice.max_advance_days', '—') }}</div>
 
-                                            <div><b>{{ tr('Notice min days') }}:</b> {{ data_get($b->settings ?? [], 'notice.min_days', '—') }}</div>
-                                            <div><b>{{ tr('Notice max days') }}:</b> {{ data_get($b->settings ?? [], 'notice.max_advance_days', '—') }}</div>
+                                        <div><b>{{ tr('Allow retroactive') }}:</b> {{ data_get($a->settings ?? [], 'notice.allow_retroactive', false) ? tr('Yes') : tr('No') }}</div>
+                                        <div><b>{{ tr('Note required') }}:</b> {{ data_get($a->settings ?? [], 'note.required', false) ? tr('Yes') : tr('No') }}</div>
 
-                                            <div><b>{{ tr('Allow retroactive') }}:</b> {{ data_get($b->settings ?? [], 'notice.allow_retroactive', false) ? tr('Yes') : tr('No') }}</div>
-                                            <div><b>{{ tr('Note required') }}:</b> {{ data_get($b->settings ?? [], 'note.required', false) ? tr('Yes') : tr('No') }}</div>
-
-                                            <div class="col-span-2">
-                                                <b>{{ tr('Attachment types') }}:</b>
-                                                @php $tB = data_get($b->settings ?? [], 'attachments.types', []); @endphp
-                                                {{ is_array($tB) ? implode(', ', $tB) : (string)$tB }}
-                                            </div>
+                                        <div class="col-span-2">
+                                            <b>{{ tr('Attachment types') }}:</b>
+                                            @php $tA = data_get($a->settings ?? [], 'attachments.types', []); @endphp
+                                            {{ is_array($tA) ? implode(', ', $tA) : (string)$tA }}
+                                                    </div>
+                                                </div>
+                                            @else
+                                                <div class="text-xs text-gray-400 italic">{{ tr('Not found') }}</div>
+                                            @endif
                                         </div>
-                                    @else
-                                        <div class="text-xs text-gray-400 italic">{{ tr('Not found') }}</div>
-                                    @endif
+
+                                        {{-- Year B Details --}}
+                                        <div class="rounded-xl bg-white border border-gray-100 p-3">
+                                            <div class="text-[11px] font-black text-gray-500 mb-2">
+                                                {{ $yearB ? (string)$yearB : tr('Year') }}
+                                            </div>
+
+                                            @if($b)
+                                                <div class="grid grid-cols-2 gap-2 text-[12px]">
+                                                    <div><b>{{ tr('Show in App') }}:</b> {{ $b->show_in_app ? tr('Yes') : tr('No') }}</div>
+                                                    <div><b>{{ tr('Requires attachment') }}:</b> {{ $b->requires_attachment ? tr('Yes') : tr('No') }}</div>
+
+                                                    <div><b>{{ tr('Accrual method') }}:</b> {{ data_get($b->settings ?? [], 'accrual.method', '—') }}</div>
+                                                    <div><b>{{ tr('Monthly rate') }}:</b> {{ data_get($b->settings ?? [], 'accrual.monthly_rate', '—') }}</div>
+
+                                                    <div><b>{{ tr('Max balance') }}:</b> {{ data_get($b->settings ?? [], 'accrual.max_balance', '—') }}</div>
+
+                                                    <div><b>{{ tr('Carryover days') }}:</b> {{ data_get($b->settings ?? [], 'accrual.carryover_days', '—') }}</div>
+                                                    <div><b>{{ tr('Weekend policy') }}:</b> {{ data_get($b->settings ?? [], 'weekend_policy', '—') }}</div>
+
+                                                    <div><b>{{ tr('Deduction policy') }}:</b> {{ data_get($b->settings ?? [], 'deduction_policy', '—') }}</div>
+                                                    <div><b>{{ tr('Duration unit') }}:</b> {{ data_get($b->settings ?? [], 'duration_unit', '—') }}</div>
+
+                                                    <div><b>{{ tr('Notice min days') }}:</b> {{ data_get($b->settings ?? [], 'notice.min_days', '—') }}</div>
+                                                    <div><b>{{ tr('Notice max days') }}:</b> {{ data_get($b->settings ?? [], 'notice.max_advance_days', '—') }}</div>
+
+                                                    <div><b>{{ tr('Allow retroactive') }}:</b> {{ data_get($b->settings ?? [], 'notice.allow_retroactive', false) ? tr('Yes') : tr('No') }}</div>
+                                                    <div><b>{{ tr('Note required') }}:</b> {{ data_get($b->settings ?? [], 'note.required', false) ? tr('Yes') : tr('No') }}</div>
+
+                                                    <div class="col-span-2">
+                                                        <b>{{ tr('Attachment types') }}:</b>
+                                                        @php $tB = data_get($b->settings ?? [], 'attachments.types', []); @endphp
+                                                        {{ is_array($tB) ? implode(', ', $tB) : (string)$tB }}
+                                                    </div>
+                                                </div>
+                                            @else
+                                                <div class="text-xs text-gray-400 italic">{{ tr('Not found') }}</div>
+                                            @endif
+                                        </div>
+                                    </div>
+                                </div>
+                            </td>
+                        </tr>
+                    @endif
+
+                    @empty
+
+                                                <td colspan="3" class="px-5 py-10 text-center text-sm text-gray-400">
+                                                    <div class="flex flex-col items-center">
+                                                        <i class="fas fa-inbox text-2xl mb-2 text-gray-300"></i>
+                                                        {{ tr('No comparison data available') }}
+                                                    </div>
+                                                </td>
+                                            </tr>
+                                        @endforelse
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+                    </div>
+                </x-slot:content>
+
+                <x-slot:footer>
+                    <div class="flex items-center justify-end gap-3 w-full">
+                        <x-ui.secondary-button wire:click="closeCompare" class="!px-6 !rounded-xl">
+                            {{ tr('Close') }}
+                        </x-ui.secondary-button>
+                    </div>
+                </x-slot:footer>
+            </x-ui.modal>
+
+
+        @else
+            <x-ui.card>
+                <div class="p-6 space-y-6">
+                    <div class="flex items-start justify-between gap-4">
+                        <div class="flex items-center gap-3">
+                            <div class="w-10 h-10 bg-amber-50 text-amber-700 rounded-xl flex items-center justify-center border border-amber-100">
+                                <i class="fas fa-user-clock"></i>
+                            </div>
+
+                            <div>
+                                <div class="text-base font-black text-gray-900">{{ tr('Permission Settings') }}</div>
+                                <div class="text-[11px] text-gray-500 font-semibold">
+                                    {{ tr('Configure approval, monthly hours limit, and deduction rules.') }}
                                 </div>
                             </div>
                         </div>
-                    </td>
-                </tr>
-            @endif
 
-            @empty
+                        @can('settings.attendance.manage')
+                            <x-ui.primary-button :arrow="false" :fullWidth="false" wire:click="savePermissionSettings" class="!rounded-xl">
+                                <i class="fas fa-save"></i>
+                                <span class="ms-2">{{ tr('Save') }}</span>
+                            </x-ui.primary-button>
+                        @endcan
+                    </div>
 
-                                        <td colspan="3" class="px-5 py-10 text-center text-sm text-gray-400">
-                                            <div class="flex flex-col items-center">
-                                                <i class="fas fa-inbox text-2xl mb-2 text-gray-300"></i>
-                                                {{ tr('No comparison data available') }}
-                                            </div>
-                                        </td>
-                                    </tr>
-                                @endforelse
-                            </tbody>
-                        </table>
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <div class="md:col-span-2 grid grid-cols-1 sm:grid-cols-3 gap-3">
+                            <label class="flex items-center gap-2 text-sm font-semibold text-gray-700">
+                                <input type="checkbox" wire:model.defer="perm_approval_required">
+                                <span>{{ tr('Approval required') }}</span>
+                            </label>
+
+                            <label class="flex items-center gap-2 text-sm font-semibold text-gray-700">
+                                <input type="checkbox" wire:model.defer="perm_show_in_app">
+                                <span>{{ tr('Show in App') }}</span>
+                            </label>
+
+                            <label class="flex items-center gap-2 text-sm font-semibold text-gray-700">
+                                <input type="checkbox" wire:model.defer="perm_requires_attachment">
+                                <span>{{ tr('Requires attachment') }}</span>
+                            </label>
+                        </div>
+
+                        <div>
+                            <label class="block text-[11px] font-black text-gray-500 mb-1">{{ tr('Monthly limit (hours)') }}</label>
+                            <input type="number" step="0.25" min="0" wire:model.defer="perm_monthly_limit_hours"
+                                class="w-full h-[40px] px-3 rounded-xl border border-gray-200 text-sm bg-gray-50/50 focus:bg-white focus:border-[color:var(--brand-via)] focus:ring-4 focus:ring-[color:var(--brand-via)]/10 transition-all"
+                                placeholder="0">
+                            <div class="text-[10px] text-gray-400 mt-1">{{ tr('0 means unlimited') }}</div>
+                            @error('perm_monthly_limit_hours') <div class="text-xs text-red-600 mt-1">{{ $message }}</div> @enderror
+                        </div>
+
+                        <div>
+                            <label class="block text-[11px] font-black text-gray-500 mb-1">{{ tr('Max per request (hours)') }}</label>
+                            <input type="number" step="0.25" min="0" wire:model.defer="perm_max_request_hours"
+                                class="w-full h-[40px] px-3 rounded-xl border border-gray-200 text-sm bg-gray-50/50 focus:bg-white focus:border-[color:var(--brand-via)] focus:ring-4 focus:ring-[color:var(--brand-via)]/10 transition-all"
+                                placeholder="0">
+                            <div class="text-[10px] text-gray-400 mt-1">{{ tr('0 means unlimited') }}</div>
+                            @error('perm_max_request_hours') <div class="text-xs text-red-600 mt-1">{{ $message }}</div> @enderror
+                        </div>
+
+                        <div class="md:col-span-2">
+                            <label class="block text-[11px] font-black text-gray-500 mb-1">{{ tr('Deduction policy') }}</label>
+                            <select wire:model.defer="perm_deduction_policy"
+                                class="w-full h-[40px] px-3 rounded-xl border border-gray-200 text-sm bg-gray-50/50">
+                                <option value="not_allowed_after_limit">{{ tr('Not allowed after limit') }}</option>
+                                <option value="salary_after_limit">{{ tr('Deduct from salary after limit') }}</option>
+                                <option value="allow_without_deduction">{{ tr('Allow without deduction') }}</option>
+                            </select>
+                            @error('perm_deduction_policy') <div class="text-xs text-red-600 mt-1">{{ $message }}</div> @enderror
+                        </div>
+
+                        {{-- Attachments section --}}
+                        <div class="md:col-span-2 pt-3 border-t border-gray-100">
+                            <div class="text-sm font-black text-gray-900 mb-2">{{ tr('Attachments Settings') }}</div>
+
+                            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                <div>
+                                    <label class="block text-[11px] font-black text-gray-500 mb-1">{{ tr('Allowed types') }}</label>
+
+                                    <div class="flex flex-wrap gap-3">
+                                        <label class="flex items-center gap-2 text-sm font-semibold text-gray-700">
+                                            <input type="checkbox" value="pdf" wire:model.defer="perm_attachment_types" @disabled(! $perm_requires_attachment)>
+                                            <span>PDF</span>
+                                        </label>
+                                        <label class="flex items-center gap-2 text-sm font-semibold text-gray-700">
+                                            <input type="checkbox" value="jpg" wire:model.defer="perm_attachment_types" @disabled(! $perm_requires_attachment)>
+                                            <span>JPG</span>
+                                        </label>
+                                        <label class="flex items-center gap-2 text-sm font-semibold text-gray-700">
+                                            <input type="checkbox" value="png" wire:model.defer="perm_attachment_types" @disabled(! $perm_requires_attachment)>
+                                            <span>PNG</span>
+                                        </label>
+                                    </div>
+
+                                    @error('perm_attachment_types') <div class="text-xs text-red-600 mt-1">{{ $message }}</div> @enderror
+                                    @error('perm_attachment_types.*') <div class="text-xs text-red-600 mt-1">{{ $message }}</div> @enderror
+                                </div>
+
+                                <div>
+                                    <label class="block text-[11px] font-black text-gray-500 mb-1">{{ tr('Max size (MB)') }}</label>
+                                    <input
+                                        type="text"
+                                        value="2 MB"
+                                        readonly
+                                        class="w-full h-[40px] px-3 rounded-xl border border-gray-200 text-sm bg-gray-100/70 text-gray-700 cursor-not-allowed"
+                                    >
+                                    <div class="text-[10px] text-gray-400 mt-1">
+                                        {{ tr('Fixed size for all permission attachments.') }}
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
                     </div>
                 </div>
-            </div>
-        </x-slot:content>
+            </x-ui.card>
+        @endif
 
-        <x-slot:footer>
-            <div class="flex items-center justify-end gap-3 w-full">
-                <x-ui.secondary-button wire:click="closeCompare" class="!px-6 !rounded-xl">
-                    {{ tr('Close') }}
-                </x-ui.secondary-button>
-            </div>
-        </x-slot:footer>
-    </x-ui.modal>
-
-
-</div> 
+</div>

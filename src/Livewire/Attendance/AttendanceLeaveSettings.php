@@ -13,6 +13,7 @@ use Illuminate\Validation\Rule;
 
 use Athka\SystemSettings\Models\LeavePolicyYear;
 use Athka\SystemSettings\Models\LeavePolicy;
+use Athka\SystemSettings\Models\PermissionPolicy;
 
 class AttendanceLeaveSettings extends Component
 {
@@ -38,8 +39,29 @@ class AttendanceLeaveSettings extends Component
 
     public bool $compareOpen = false;
     public bool $copyOpen = false;
+    // ✅ Tabs
+    public string $tab = 'leaves'; // leaves | permissions
 
-    // Create/Edit fields
+    // =======================
+    // Permission Settings
+    // =======================
+    public bool $perm_approval_required = true;
+    public string $perm_monthly_limit_hours = '0';  // 0 = unlimited
+    public string $perm_max_request_hours = '0';    // 0 = unlimited
+
+    public string $perm_deduction_policy = 'not_allowed_after_limit'; 
+    // not_allowed_after_limit | salary_after_limit | allow_without_deduction
+
+    public bool $perm_show_in_app = true;
+
+    public bool $perm_requires_attachment = false;
+    public array $perm_attachment_types = ['pdf', 'jpg', 'png'];
+    public string $perm_attachment_max_mb = '2'; // fixed
+
+    protected $queryString = [
+        'tab' => ['except' => 'leaves'],
+    ];
+        // Create/Edit fields
     public int $editingId = 0;
 
     // ✅ Default system policy (Annual) - name locked
@@ -138,11 +160,19 @@ class AttendanceLeaveSettings extends Component
                 ->where('id', $year->id)
                 ->update(['is_active' => true]);
         });
-
         $this->selectedYearId = (int) $year->id;
 
+        // ✅ normalize tab
+        $this->tab = in_array($this->tab, ['leaves', 'permissions'], true) ? $this->tab : 'leaves';
+
+        // ✅ Ensure default annual policy exists for the selected year
         // ✅ Ensure default annual policy exists for the selected year
         $this->ensureAnnualDefaultPolicy($companyId, (int) $this->selectedYearId);
+
+        // ✅ Ensure/load permission settings for selected year
+        $this->ensurePermissionPolicy($companyId, (int) $this->selectedYearId);
+        $this->loadPermissionSettings($companyId, (int) $this->selectedYearId);
+
     }
 
     public function updatingSearch(): void { $this->resetPage(); }
@@ -265,7 +295,11 @@ class AttendanceLeaveSettings extends Component
         $companyId = $this->resolveCompanyId();
         if ($companyId > 0) {
             $this->ensureAnnualDefaultPolicy($companyId, (int) $id);
+
+            $this->ensurePermissionPolicy($companyId, (int) $id);
+            $this->loadPermissionSettings($companyId, (int) $id);
         }
+
 
         $this->resetPage();
     }
@@ -288,6 +322,36 @@ class AttendanceLeaveSettings extends Component
 
         $prev = $years->get($idx - 1);
         if ($prev) $this->selectYear((int) $prev->id);
+    }
+
+    // ✅ Tabs
+    public function switchTab(string $tab): void
+    {
+        $tab = trim($tab);
+        $tab = in_array($tab, ['leaves', 'permissions'], true) ? $tab : 'leaves';
+
+        if ($this->tab === $tab) return;
+
+        $this->tab = $tab;
+
+        // ✅ close modals when switching tabs
+        $this->createOpen = false;
+        $this->editOpen = false;
+        $this->yearsOpen = false;
+        $this->deleteOpen = false;
+        $this->compareOpen = false;
+        $this->copyOpen = false;
+        $this->resetValidation();
+        $this->resetPage();
+
+        if ($this->tab === 'permissions') {
+            $companyId = $this->resolveCompanyId();
+            if ($companyId > 0 && $this->selectedYearId) {
+                $this->ensurePermissionPolicy($companyId, (int) $this->selectedYearId);
+                $this->loadPermissionSettings($companyId, (int) $this->selectedYearId);
+            }
+        }
+
     }
 
     // ---------------------------
@@ -1488,5 +1552,126 @@ class AttendanceLeaveSettings extends Component
             $this->carryover_days = '15';
         }
     }
+// =======================
+// Permission Settings Logic
+// =======================
+protected function permissionDefaults(): array
+{
+    return [
+        'approval_required' => true,
+        'monthly_limit_minutes' => 0,
+        'max_request_minutes' => 0,
+        'deduction_policy' => 'not_allowed_after_limit',
+        'show_in_app' => true,
+        'requires_attachment' => false,
+        'attachment_types' => ['pdf', 'jpg', 'png'],
+        'attachment_max_mb' => 2,
+        'settings' => [],
+    ];
+}
+
+protected function ensurePermissionPolicy(int $companyId, int $policyYearId): void
+{
+    PermissionPolicy::query()->firstOrCreate(
+        [
+            'company_id' => $companyId,
+            'policy_year_id' => $policyYearId,
+        ],
+        array_merge(
+            ['company_id' => $companyId, 'policy_year_id' => $policyYearId],
+            $this->permissionDefaults()
+        )
+    );
+}
+
+protected function loadPermissionSettings(int $companyId, int $policyYearId): void
+{
+    $row = PermissionPolicy::query()
+        ->where('company_id', $companyId)
+        ->where('policy_year_id', $policyYearId)
+        ->first();
+
+    if (! $row) {
+        $d = $this->permissionDefaults();
+        $this->perm_approval_required = (bool) $d['approval_required'];
+        $this->perm_monthly_limit_hours = '0';
+        $this->perm_max_request_hours = '0';
+        $this->perm_deduction_policy = (string) $d['deduction_policy'];
+        $this->perm_show_in_app = (bool) $d['show_in_app'];
+        $this->perm_requires_attachment = (bool) $d['requires_attachment'];
+        $this->perm_attachment_types = (array) $d['attachment_types'];
+        $this->perm_attachment_max_mb = '2';
+        return;
+    }
+
+    $this->perm_approval_required = (bool) $row->approval_required;
+    $this->perm_monthly_limit_hours = (string) rtrim(rtrim(number_format(($row->monthly_limit_minutes ?? 0) / 60, 2, '.', ''), '0'), '.');
+    $this->perm_max_request_hours = (string) rtrim(rtrim(number_format(($row->max_request_minutes ?? 0) / 60, 2, '.', ''), '0'), '.');
+
+    $this->perm_deduction_policy = (string) ($row->deduction_policy ?? 'not_allowed_after_limit');
+    $this->perm_show_in_app = (bool) $row->show_in_app;
+
+    $this->perm_requires_attachment = (bool) $row->requires_attachment;
+    $this->perm_attachment_types = is_array($row->attachment_types) ? $row->attachment_types : ['pdf', 'jpg', 'png'];
+    $this->perm_attachment_max_mb = '2';
+}
+
+protected function minutesFromHours($hours): int
+{
+    if (!is_numeric($hours)) return 0;
+    $h = (float) $hours;
+    if ($h <= 0) return 0;
+    return (int) round($h * 60);
+}
+
+public function savePermissionSettings(): void
+{
+    abort_unless(auth()->user()?->can('settings.attendance.manage'), 403);
+
+    $companyId = $this->resolveCompanyId();
+    if ($companyId <= 0) {
+        session()->flash('error', tr('Company context not found'));
+        return;
+    }
+
+    $yearId = (int) ($this->selectedYearId ?? 0);
+    if ($yearId <= 0) {
+        session()->flash('error', tr('Please select a year first'));
+        return;
+    }
+
+    $data = $this->validate([
+        'perm_approval_required' => ['boolean'],
+        'perm_monthly_limit_hours' => ['required', 'numeric', 'min:0', 'max:744'],
+        'perm_max_request_hours' => ['required', 'numeric', 'min:0', 'max:24'],
+        'perm_deduction_policy' => ['required', 'in:not_allowed_after_limit,salary_after_limit,allow_without_deduction'],
+        'perm_show_in_app' => ['boolean'],
+
+        'perm_requires_attachment' => ['boolean'],
+        'perm_attachment_types' => ['array'],
+        'perm_attachment_types.*' => ['in:pdf,jpg,png'],
+    ]);
+
+    $types = !empty($data['perm_requires_attachment'])
+        ? array_values($data['perm_attachment_types'] ?? [])
+        : [];
+
+    PermissionPolicy::query()->updateOrCreate(
+        ['company_id' => $companyId, 'policy_year_id' => $yearId],
+        [
+            'approval_required' => (bool) ($data['perm_approval_required'] ?? true),
+            'monthly_limit_minutes' => $this->minutesFromHours($data['perm_monthly_limit_hours']),
+            'max_request_minutes' => $this->minutesFromHours($data['perm_max_request_hours']),
+            'deduction_policy' => (string) $data['perm_deduction_policy'],
+            'show_in_app' => (bool) ($data['perm_show_in_app'] ?? true),
+
+            'requires_attachment' => (bool) ($data['perm_requires_attachment'] ?? false),
+            'attachment_types' => $types,
+            'attachment_max_mb' => 2,
+        ]
+    );
+
+    session()->flash('success', tr('Saved successfully'));
+}
 
 }
