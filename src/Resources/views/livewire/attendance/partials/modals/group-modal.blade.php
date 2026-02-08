@@ -52,7 +52,8 @@
                                     @foreach([
                                         'check_in_only' => ['icon' => 'fa-clock', 'title' => tr('Check-In Only')],
                                         'check_in_out' => ['icon' => 'fa-exchange-alt', 'title' => tr('In & Out')],
-                                        'manual' => ['icon' => 'fa-edit', 'title' => tr('Manual')]
+                                        'manual' => ['icon' => 'fa-edit', 'title' => tr('Manual')],
+                                        'automatic' => ['icon' => 'fa-magic', 'title' => tr('Automatic')]
                                     ] as $mKey => $meta)
                                         <div 
                                             wire:click="$set('newGroup.tracking_mode', '{{ $mKey }}')"

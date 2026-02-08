@@ -102,6 +102,7 @@ class AttendanceSettings extends Component
                 'auto_checkout_after_minutes' => 120,
                 'auto_checkout_penalty_enabled' => false,
                 'auto_checkout_penalty_amount' => 0,
+                'auto_checkout_deduction_type' => 'fixed',
                 'is_global_default' => true,
                 'saas_company_id' => $companyId,
             ]);
@@ -111,6 +112,7 @@ class AttendanceSettings extends Component
             'auto_departure' => $this->graceSettings->auto_checkout_after_minutes,
             'auto_departure_penalty_enabled' => $this->graceSettings->auto_checkout_penalty_enabled,
             'auto_departure_penalty_amount' => $this->graceSettings->auto_checkout_penalty_amount,
+            'auto_checkout_deduction_type' => $this->graceSettings->auto_checkout_deduction_type ?? 'fixed',
         ];
 
         // 3. Load Methods
@@ -123,6 +125,7 @@ class AttendanceSettings extends Component
             'check_in_only' => tr('Attendance Only'),
             'check_in_out' => tr('Attendance & Departure'),
             'manual' => tr('Manual Entry'),
+            'automatic' => tr('Automatic Tracking'),
         ];
     }
 
@@ -297,6 +300,7 @@ class AttendanceSettings extends Component
                     'employee_count' => $group->employees->count(),
                     'employee_names' => $group->employees->map(fn($e) => $locale == 'ar' ? $e->name_ar : ($e->name_en ?: $e->name_ar))->toArray(),
                     'methods' => $group->allowedMethods()->where('is_allowed', true)->pluck('method')->toArray(),
+                    'tracking_mode' => $group->appliedPolicy?->tracking_mode ?? 'check_in_out',
                 ];
             })->toArray();
 
@@ -341,6 +345,7 @@ class AttendanceSettings extends Component
             'auto_checkout_after_minutes' => $this->gracePeriods['auto_departure'],
             'auto_checkout_penalty_enabled' => $this->gracePeriods['auto_departure_penalty_enabled'],
             'auto_checkout_penalty_amount' => $this->gracePeriods['auto_departure_penalty_amount'],
+            'auto_checkout_deduction_type' => $this->gracePeriods['auto_checkout_deduction_type'],
         ]);
         $this->dispatch('toast', type: 'success', message: tr('Grace periods and auto-departure settings have been saved.'));
     }

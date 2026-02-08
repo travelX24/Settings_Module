@@ -3,8 +3,13 @@
         <span class="w-1 h-5 bg-[color:var(--brand-via)] rounded-full"></span>
         {{ tr('Attendance Tracking Policy') }}
     </h3>
-    <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
-        @foreach(['check_in_only' => ['icon' => 'fa-sign-in-alt', 'title' => tr('Attendance Only'), 'desc' => tr('Track check-in only.')], 'check_in_out' => ['icon' => 'fa-exchange-alt', 'title' => tr('Attendance & Departure'), 'desc' => tr('Track both check-in and check-out.')], 'manual' => ['icon' => 'fa-hand-paper', 'title' => tr('Manual Entry'), 'desc' => tr('Disable automated logging.')]] as $key => $opt)
+    <div class="grid grid-cols-1 md:grid-cols-4 gap-4">
+        @foreach([
+            'check_in_only' => ['icon' => 'fa-sign-in-alt', 'title' => tr('Attendance Only'), 'desc' => tr('Track check-in only.')], 
+            'check_in_out' => ['icon' => 'fa-exchange-alt', 'title' => tr('Attendance & Departure'), 'desc' => tr('Track both check-in and check-out.')], 
+            'manual' => ['icon' => 'fa-hand-paper', 'title' => tr('Manual Entry'), 'desc' => tr('Disable automated logging.')],
+            'automatic' => ['icon' => 'fa-magic', 'title' => tr('Automatic Tracking'), 'desc' => tr('Auto-generate present records based on schedule.')]
+        ] as $key => $opt)
         <div 
             @can('settings.attendance.manage')
             wire:click="setTrackingPolicy('{{ $key }}')" 

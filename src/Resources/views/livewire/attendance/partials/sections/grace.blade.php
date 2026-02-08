@@ -34,8 +34,8 @@
         </div>
     </div>
 
-    <div class="pt-4 border-t border-gray-50 flex items-center gap-4">
-        <label class="flex items-center gap-2 cursor-pointer group">
+    <div class="pt-4 border-t border-gray-50 space-y-4">
+        <label class="flex items-center gap-2 cursor-pointer group w-fit">
             <input type="checkbox" 
                 id="auto_departure_penalty_enabled"
                 wire:model.live="gracePeriods.auto_departure_penalty_enabled"
@@ -45,13 +45,32 @@
         </label>
         
         @if($gracePeriods['auto_departure_penalty_enabled'])
-        <div class="w-48">
-            <x-ui.input 
-                placeholder="{{ tr('Deduction Amount') }}"
-                type="number"
-                wire:model="gracePeriods.auto_departure_penalty_amount"
-                class="!py-1.5"
-            />
+        <div class="space-y-3 max-w-md animate-in fade-in slide-in-from-top-2 duration-300">
+            <div class="flex items-end gap-3">
+                <div class="flex-1">
+                    <x-ui.select 
+                        label="{{ tr('Deduction Type') }}"
+                        wire:model.live="gracePeriods.auto_checkout_deduction_type"
+                    >
+                        <option value="fixed">{{ tr('Fixed Amount') }}</option>
+                        <option value="daily">{{ tr('% of Daily Wage') }}</option>
+                    </x-ui.select>
+                </div>
+                <div class="w-32">
+                    <x-ui.input 
+                        type="number"
+                        wire:model="gracePeriods.auto_departure_penalty_amount"
+                        class="!py-3 !rounded-2xl"
+                    />
+                </div>
+            </div>
+             <p class="text-[10px] font-bold text-gray-400 italic px-1">
+                @if(($gracePeriods['auto_checkout_deduction_type'] ?? '') === 'daily')
+                    <i class="fas fa-info-circle me-1"></i> {{ tr('Percentage of daily wage.') }}
+                @else
+                    <i class="fas fa-info-circle me-1"></i> {{ tr('Fixed amount.') }}
+                @endif
+            </p>
         </div>
         @endif
     </div>

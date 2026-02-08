@@ -15,6 +15,9 @@ class AttendanceGraceSetting extends Model
         'auto_checkout_after_minutes',
         'is_global_default',
         'saas_company_id',
+        'auto_checkout_penalty_enabled',
+        'auto_checkout_penalty_amount',
+        'auto_checkout_deduction_type',
     ];
 
     protected $casts = [

@@ -84,20 +84,27 @@
                     </td>
                     <td class="px-6 py-4">
                         <div class="flex items-center justify-center gap-1">
-                            @foreach($group['methods'] as $m)
-                                @php
-                                    $methodMeta = match($m) {
-                                        'gps' => ['icon' => 'fa-map-pin', 'cls' => 'bg-blue-50 text-blue-600 border-blue-100', 'label' => 'GPS'],
-                                        'nfc' => ['icon' => 'fa-wifi', 'cls' => 'bg-purple-50 text-purple-600 border-purple-100', 'label' => 'NFC'],
-                                        'fingerprint' => ['icon' => 'fa-fingerprint', 'cls' => 'bg-indigo-50 text-indigo-600 border-indigo-100', 'label' => tr('Finger')],
-                                        default => ['icon' => 'fa-check', 'cls' => 'bg-gray-50 text-gray-600 border-gray-100', 'label' => $m]
-                                    };
-                                @endphp
-                                <div class="px-2 py-0.5 rounded-lg border {{ $methodMeta['cls'] }} flex items-center gap-1 text-[9px] font-black whitespace-nowrap">
-                                    <i class="fas {{ $methodMeta['icon'] }} scale-75"></i>
-                                    {{ $methodMeta['label'] }}
+                            @if(($group['tracking_mode'] ?? '') === 'automatic')
+                                <div class="px-2 py-0.5 rounded-lg border border-amber-100 bg-amber-50 text-amber-600 flex items-center gap-1 text-[9px] font-black whitespace-nowrap shadow-sm">
+                                    <i class="fas fa-magic scale-75"></i>
+                                    {{ tr('Auto Prep') }}
                                 </div>
-                            @endforeach
+                            @else
+                                @foreach($group['methods'] as $m)
+                                    @php
+                                        $methodMeta = match($m) {
+                                            'gps' => ['icon' => 'fa-map-pin', 'cls' => 'bg-blue-50 text-blue-600 border-blue-100', 'label' => 'GPS'],
+                                            'nfc' => ['icon' => 'fa-wifi', 'cls' => 'bg-purple-50 text-purple-600 border-purple-100', 'label' => 'NFC'],
+                                            'fingerprint' => ['icon' => 'fa-fingerprint', 'cls' => 'bg-indigo-50 text-indigo-600 border-indigo-100', 'label' => tr('Finger')],
+                                            default => ['icon' => 'fa-check', 'cls' => 'bg-gray-50 text-gray-600 border-gray-100', 'label' => $m]
+                                        };
+                                    @endphp
+                                    <div class="px-2 py-0.5 rounded-lg border {{ $methodMeta['cls'] }} flex items-center gap-1 text-[9px] font-black whitespace-nowrap">
+                                        <i class="fas {{ $methodMeta['icon'] }} scale-75"></i>
+                                        {{ $methodMeta['label'] }}
+                                    </div>
+                                @endforeach
+                            @endif
                         </div>
                     </td>
                     <td class="px-6 py-4 text-end">
