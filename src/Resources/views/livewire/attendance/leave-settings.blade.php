@@ -389,24 +389,24 @@
                     {{-- Deduction --}}
                     <div>
                         <label class="block text-[11px] font-black text-gray-500 mb-1">{{ tr('Deduction policy') }}</label>
-                        <select wire:model.defer="deduction_policy"
+                       <select wire:model.defer="deduction_policy"
                                 class="w-full h-[40px] px-3 rounded-xl border border-gray-200 text-sm bg-gray-50/50">
                             <option value="balance_only">{{ tr('Deduct from balance only') }}</option>
                             <option value="salary_after_balance">{{ tr('Deduct from salary after balance') }}</option>
-                            <option value="not_allowed_after_balance">{{ tr('Not allowed after balance') }}</option>
                         </select>
+
                         @error('deduction_policy') <div class="text-xs text-red-600 mt-1">{{ $message }}</div> @enderror
                     </div>
 
                     {{-- Duration --}}
                     <div>
                         <label class="block text-[11px] font-black text-gray-500 mb-1">{{ tr('Duration type') }}</label>
-                        <select wire:model.defer="duration_unit"
-                                class="w-full h-[40px] px-3 rounded-xl border border-gray-200 text-sm bg-gray-50/50">
-                            <option value="full_day">{{ tr('Full day only') }}</option>
-                            <option value="half_day">{{ tr('Full day or half day') }}</option>
-                            <option value="hours">{{ tr('By hours') }}</option>
-                        </select>
+                       <select wire:model.defer="duration_unit"
+                            class="w-full h-[40px] px-3 rounded-xl border border-gray-200 text-sm bg-gray-50/50">
+                        <option value="full_day">{{ tr('Full day only') }}</option>
+                        <option value="half_day">{{ tr('Full day or half day') }}</option>
+                    </select>
+
                         @error('duration_unit') <div class="text-xs text-red-600 mt-1">{{ $message }}</div> @enderror
                     </div>
 
@@ -723,24 +723,24 @@
                     {{-- Deduction --}}
                     <div>
                         <label class="block text-[11px] font-black text-gray-500 mb-1">{{ tr('Deduction policy') }}</label>
-                        <select wire:model.defer="deduction_policy"
+                     <select wire:model.defer="deduction_policy"
                                 class="w-full h-[40px] px-3 rounded-xl border border-gray-200 text-sm bg-gray-50/50">
                             <option value="balance_only">{{ tr('Deduct from balance only') }}</option>
                             <option value="salary_after_balance">{{ tr('Deduct from salary after balance') }}</option>
-                            <option value="not_allowed_after_balance">{{ tr('Not allowed after balance') }}</option>
                         </select>
+
                         @error('deduction_policy') <div class="text-xs text-red-600 mt-1">{{ $message }}</div> @enderror
                     </div>
 
                     {{-- Duration --}}
                     <div>
                         <label class="block text-[11px] font-black text-gray-500 mb-1">{{ tr('Duration type') }}</label>
-                        <select wire:model.defer="duration_unit"
+                      <select wire:model.defer="duration_unit"
                                 class="w-full h-[40px] px-3 rounded-xl border border-gray-200 text-sm bg-gray-50/50">
                             <option value="full_day">{{ tr('Full day only') }}</option>
                             <option value="half_day">{{ tr('Full day or half day') }}</option>
-                            <option value="hours">{{ tr('By hours') }}</option>
                         </select>
+
                         @error('duration_unit') <div class="text-xs text-red-600 mt-1">{{ $message }}</div> @enderror
                     </div>
 

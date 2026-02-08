@@ -746,7 +746,19 @@ class AttendanceSettings extends Component
 
     public function savePenalty()
     {
-        $companyId = auth()->user()->saas_company_id;
+            $companyId = auth()->user()->saas_company_id;
+
+            // ✅ Note required only for warnings
+            $penaltyAction = $this->newPenalty['penalty_action'] ?? '';
+            $isWarning = in_array($penaltyAction, ['warning_verbal','warning_written','warning_final'], true);
+
+            $this->validate([
+                'newPenalty.notification_message' => $isWarning ? 'required|string|max:1000' : 'nullable|string|max:1000',
+            ], [
+                'newPenalty.notification_message.required' => tr('Note is required for warning actions.'),
+            ]);
+
+            // 1. Validation to prevent duplicate recurrence count ...
 
         // 1. Validation to prevent duplicate recurrence count for the same violation type
         if ($this->newPenalty['violation_type'] === 'unexcused_absence') {

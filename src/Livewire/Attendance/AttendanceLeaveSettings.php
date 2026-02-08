@@ -94,8 +94,9 @@ class AttendanceLeaveSettings extends Component
 
 
     public string $weekend_policy = 'exclude'; // exclude|include|employee_choice
-    public string $deduction_policy = 'balance_only'; // balance_only|salary_after_balance|not_allowed_after_balance
-    public string $duration_unit = 'full_day'; // full_day|half_day|hours
+    public string $deduction_policy = 'balance_only'; // balance_only|salary_after_balance
+    public string $duration_unit = 'full_day'; // full_day|half_day
+
 
     public string $notice_min_days = '3';
     public string $notice_max_advance_days = '90';
@@ -1269,8 +1270,9 @@ class AttendanceLeaveSettings extends Component
 
 
             'weekend_policy' => ['required', 'in:exclude,include,employee_choice'],
-            'deduction_policy' => ['required', 'in:balance_only,salary_after_balance,not_allowed_after_balance'],
-            'duration_unit' => ['required', 'in:full_day,half_day,hours'],
+            'deduction_policy' => ['required', 'in:balance_only,salary_after_balance'],
+            'duration_unit' => ['required', 'in:full_day,half_day'],
+
 
             'notice_min_days' => ['required', 'integer', 'min:0', 'max:3650'],
             'notice_max_advance_days' => ['required', 'integer', 'min:0', 'max:3650'],
@@ -1384,9 +1386,18 @@ class AttendanceLeaveSettings extends Component
         $this->carryover_expire_months = '0';
 
 
-        $this->weekend_policy = (string) data_get($s, 'weekend_policy', 'exclude');
-        $this->deduction_policy = (string) data_get($s, 'deduction_policy', 'balance_only');
-        $this->duration_unit = (string) data_get($s, 'duration_unit', 'full_day');
+       $this->weekend_policy = (string) data_get($s, 'weekend_policy', 'exclude');
+
+        $ded = (string) data_get($s, 'deduction_policy', 'balance_only');
+        $this->deduction_policy = in_array($ded, ['balance_only', 'salary_after_balance'], true)
+            ? $ded
+            : 'balance_only';
+
+        $dur = (string) data_get($s, 'duration_unit', 'full_day');
+        $this->duration_unit = in_array($dur, ['full_day', 'half_day'], true)
+            ? $dur
+            : 'full_day';
+
 
         $this->notice_min_days = (string) data_get($s, 'notice.min_days', '3');
         $this->notice_max_advance_days = (string) data_get($s, 'notice.max_advance_days', '90');
@@ -1524,9 +1535,20 @@ class AttendanceLeaveSettings extends Component
             $merged = array_replace_recursive($defaults, $existing);
             data_set($merged, 'attachments.max_mb', 2);
 
+            // ✅ تطبيع القيم لو كانت قديمة/غير مسموحة
+            $ded = (string) data_get($merged, 'deduction_policy', 'balance_only');
+            if (!in_array($ded, ['balance_only', 'salary_after_balance'], true)) {
+                data_set($merged, 'deduction_policy', 'balance_only');
+            }
+
+            $dur = (string) data_get($merged, 'duration_unit', 'full_day');
+            if (!in_array($dur, ['full_day', 'half_day'], true)) {
+                data_set($merged, 'duration_unit', 'full_day');
+            }
 
             data_set($merged, 'meta.system_key', 'annual_default');
             data_set($merged, 'meta.lock_name', true);
+
 
             $row->update([
                 'name' => $payload['name'],

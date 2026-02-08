@@ -52,17 +52,33 @@
                 />
 
                 {{-- Penalty Action --}}
-                <x-ui.select 
-                    label="{{ tr('Penalty Action') }}"
-                    wire:model="newPenalty.penalty_action"
-                >
-                    <option value="deduction">{{ tr('Financial Deduction') }}</option>
-                    <option value="notification">{{ tr('System Notification') }}</option>
-                    <option value="warning_verbal">{{ tr('Verbal Warning') }}</option>
-                    <option value="warning_written">{{ tr('Written Warning') }}</option>
-                    <option value="warning_final">{{ tr('Final Warning') }}</option>
-                    <option value="termination">{{ tr('Termination') }}</option>
-                </x-ui.select>
+              <x-ui.select 
+                label="{{ tr('Penalty Action') }}"
+                wire:model="newPenalty.penalty_action"
+            >
+                <option value="deduction">{{ tr('Financial Deduction') }}</option>
+                <option value="notification">{{ tr('System Notification') }}</option>
+
+                <option value="warning_verbal">{{ app()->isLocale('ar') ? 'انذار لفظي' : tr('Verbal Warning') }}</option>
+                <option value="warning_written">{{ app()->isLocale('ar') ? 'كتابي اول' : tr('Written Warning') }}</option>
+                <option value="warning_final">{{ app()->isLocale('ar') ? 'كتابي ثاني' : tr('Second Written Warning') }}</option>
+
+                <option value="disciplinary_committee">{{ app()->isLocale('ar') ? 'لجنة تأديبية' : tr('Disciplinary Committee') }}</option>
+                <option value="suspension">{{ app()->isLocale('ar') ? 'ايقاف عن العمل' : tr('Suspension') }}</option>
+                <option value="termination">{{ app()->isLocale('ar') ? 'فصل' : tr('Termination') }}</option>
+            </x-ui.select>
+            
+            @if(in_array(($newPenalty['penalty_action'] ?? ''), ['warning_verbal','warning_written','warning_final'], true))
+                <div class="p-4 bg-amber-50/50 rounded-2xl border border-amber-100">
+                    <x-ui.input
+                        label="{{ app()->isLocale('ar') ? 'الملاحظة' : tr('Note') }}"
+                        wire:model.defer="newPenalty.notification_message"
+                        placeholder="{{ app()->isLocale('ar') ? 'اكتب الملاحظة الخاصة بالانذار...' : tr('Write the warning note...') }}"
+                        required
+                    />
+                </div>
+            @endif
+
             </div>
 
             @if($newPenalty['penalty_action'] === 'deduction')
