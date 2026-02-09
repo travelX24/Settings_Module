@@ -36,8 +36,9 @@ class SystemSettingsServiceProvider extends ServiceProvider
     {
         $this->loadViewsFrom(
             __DIR__ . '/Resources/views',
-            'systemsettings'
+            'system-settings'
         );
+
     }
 
     /**
@@ -167,6 +168,15 @@ class SystemSettingsServiceProvider extends ServiceProvider
                 \Athka\SystemSettings\Livewire\Calendar\CalendarSettings::class
             );
 
+            Livewire::component(
+                'athka.system-settings.livewire.approvals.approval-sequence-settings',
+                \Athka\SystemSettings\Livewire\Approvals\ApprovalSequenceSettings::class
+            );
+
+            Livewire::component(
+                'systemsettings.approvals.approval-sequence-settings',
+                \Athka\SystemSettings\Livewire\Approvals\ApprovalSequenceSettings::class
+            );
 
         }
     }

@@ -22,12 +22,12 @@
 
         {{-- Approval Sequence Settings --}}
         @can('settings.approval.manage')
-        <x-ui.settings-button
-            href="#"
-            icon="fa-tasks"
-            :title="tr('Approval Sequence Settings')"
-            :description="tr('Set up approval workflows and sequences')"
-        />
+       <x-ui.settings-button
+                href="{{ route('company-admin.settings.approval-sequences') }}"
+                icon="fa-tasks"
+                :title="tr('Approval Sequence Settings')"
+                :description="tr('Set up approval workflows and sequences')"
+            />
         @endcan
 
         {{-- Lists Settings --}}

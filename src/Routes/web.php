@@ -3,6 +3,7 @@
 use Illuminate\Support\Facades\Route;
 use Athka\SystemSettings\Http\Controllers\OrganizationalStructureController;
 use Athka\SystemSettings\Livewire\Calendar\CalendarSettings;
+use Athka\SystemSettings\Livewire\Approvals\ApprovalSequenceSettings;
 
 Route::get('/general', \Athka\SystemSettings\Livewire\GeneralSettings::class)->name('general');
 
@@ -32,3 +33,6 @@ Route::get('/user-access-control', \Athka\SystemSettings\Livewire\UserAccessCont
 
 Route::get('/calendar', CalendarSettings::class)
     ->name('calendar');
+
+Route::get('/approval-sequences', ApprovalSequenceSettings::class)
+    ->name('approval-sequences');
