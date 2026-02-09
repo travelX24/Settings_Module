@@ -34,12 +34,13 @@ class SystemSettingsServiceProvider extends ServiceProvider
      */
     protected function loadViews(): void
     {
-        $this->loadViewsFrom(
-            __DIR__ . '/Resources/views',
-            'system-settings'
-        );
+        // ✅ Primary namespace used by routes/views: systemsettings::
+        $this->loadViewsFrom(__DIR__ . '/Resources/views', 'systemsettings');
 
+        // ✅ Backward-compatible alias (if anything still uses system-settings::)
+        $this->loadViewsFrom(__DIR__ . '/Resources/views', 'system-settings');
     }
+
 
     /**
      * Load module migrations
