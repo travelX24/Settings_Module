@@ -55,6 +55,8 @@ class SystemSettingsServiceProvider extends ServiceProvider
      */
     protected function loadRoutes(): void
     {
+      $this->loadRoutesFrom(__DIR__ . '/Routes/api.php');
+
       Route::middleware([
                 'web',
                 'auth',
@@ -177,6 +179,10 @@ class SystemSettingsServiceProvider extends ServiceProvider
             Livewire::component(
                 'systemsettings.approvals.approval-sequence-settings',
                 \Athka\SystemSettings\Livewire\Approvals\ApprovalSequenceSettings::class
+            );
+            Livewire::component(
+                'systemsettings.currency.currencies-manager',
+                \Athka\SystemSettings\Livewire\Currency\CurrenciesManager::class
             );
 
         }

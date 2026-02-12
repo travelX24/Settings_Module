@@ -53,12 +53,13 @@
         {{-- Currencies --}}
         @can('settings.currencies.manage')
         <x-ui.settings-button
-            href="#"
+            href="{{ route('company-admin.settings.currencies') }}"
             icon="fa-coins"
             :title="tr('Currencies')"
             :description="tr('Manage currencies and exchange rates')"
         />
         @endcan
+
 
         {{-- Calendar --}}
         @can('settings.calendar.manage')

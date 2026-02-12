@@ -4,6 +4,7 @@ use Illuminate\Support\Facades\Route;
 use Athka\SystemSettings\Http\Controllers\OrganizationalStructureController;
 use Athka\SystemSettings\Livewire\Calendar\CalendarSettings;
 use Athka\SystemSettings\Livewire\Approvals\ApprovalSequenceSettings;
+use Athka\SystemSettings\Livewire\Currency\CurrenciesManager;
 
 Route::get('/general', \Athka\SystemSettings\Livewire\GeneralSettings::class)->name('general');
 
@@ -36,3 +37,7 @@ Route::get('/calendar', CalendarSettings::class)
 
 Route::get('/approval-sequences', ApprovalSequenceSettings::class)
     ->name('approval-sequences');
+
+Route::get('/currencies', CurrenciesManager::class)
+    ->middleware('can:settings.currencies.manage')
+    ->name('currencies');
