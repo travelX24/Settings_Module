@@ -57,11 +57,12 @@
 
         {{-- Exceptional Days --}}
         <x-ui.settings-button
-            href="#"
+            href="{{ route('company-admin.settings.attendance.exceptional-days') }}"
             icon="fa-star"
             :title="tr('Exceptional Days')"
             :description="tr('Set special working days and exceptions')"
         />
+
     </div>
 </div>
 

@@ -39,7 +39,11 @@ class SystemSettingsServiceProvider extends ServiceProvider
 
         // ✅ Backward-compatible alias (if anything still uses system-settings::)
         $this->loadViewsFrom(__DIR__ . '/Resources/views', 'system-settings');
+
+        // ✅ Alias for older code that references settings-module::
+        $this->loadViewsFrom(__DIR__ . '/Resources/views', 'settings-module');
     }
+
 
 
     /**
@@ -183,6 +187,10 @@ class SystemSettingsServiceProvider extends ServiceProvider
             Livewire::component(
                 'systemsettings.currency.currencies-manager',
                 \Athka\SystemSettings\Livewire\Currency\CurrenciesManager::class
+            );
+            Livewire::component(
+                'systemsettings.attendance.exceptional-days.index',
+                \Athka\SystemSettings\Livewire\Attendance\ExceptionalDays\ExceptionalDaysIndex::class
             );
 
         }

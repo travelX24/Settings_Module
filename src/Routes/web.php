@@ -5,6 +5,7 @@ use Athka\SystemSettings\Http\Controllers\OrganizationalStructureController;
 use Athka\SystemSettings\Livewire\Calendar\CalendarSettings;
 use Athka\SystemSettings\Livewire\Approvals\ApprovalSequenceSettings;
 use Athka\SystemSettings\Livewire\Currency\CurrenciesManager;
+use Athka\SystemSettings\Livewire\Attendance\ExceptionalDays\ExceptionalDaysIndex;
 
 Route::get('/general', \Athka\SystemSettings\Livewire\GeneralSettings::class)->name('general');
 
@@ -32,12 +33,11 @@ Route::get('/organizational-structure/job-titles/employees/{id}', [Organizationa
 
 Route::get('/user-access-control', \Athka\SystemSettings\Livewire\UserAccessControl\UserAccessControlIndex::class)->name('user-access-control');
 
-Route::get('/calendar', CalendarSettings::class)
-    ->name('calendar');
+Route::get('/calendar', CalendarSettings::class)->name('calendar');
 
-Route::get('/approval-sequences', ApprovalSequenceSettings::class)
-    ->name('approval-sequences');
+Route::get('/approval-sequences', ApprovalSequenceSettings::class)->name('approval-sequences');
 
-Route::get('/currencies', CurrenciesManager::class)
-    ->middleware('can:settings.currencies.manage')
-    ->name('currencies');
+Route::get('/currencies', CurrenciesManager::class)->name('currencies');
+
+Route::get('/attendance/exceptional-days', ExceptionalDaysIndex::class)
+    ->name('attendance.exceptional-days');
