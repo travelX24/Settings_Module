@@ -72,14 +72,43 @@ class DailyAttendanceController extends Controller
 
         $rows = $logsQ->get();
 
-        $days = $rows->map(function ($r) {
+        $days = $rows->map(function ($r) use ($schedule) {
+            $dateObj = Carbon::parse($r->attendance_date);
+            $dayKey = $this->dayKey($dateObj);
+            
+            $periodsOut = [];
+            // If it's a workday and we have a schedule, try to get the periods
+            if ($schedule && $r->scheduled_hours > 0) {
+                $workDays = is_array($schedule->work_days) ? $schedule->work_days : [];
+                $isWorkday = in_array($dayKey, $workDays, true);
+
+                $sourcePeriods = collect();
+                if ($schedule->periods) {
+                    $sourcePeriods = $schedule->periods
+                        ->sortBy('sort_order')
+                        ->values()
+                        ->map(fn ($p) => [
+                            'start_time' => substr((string) $p->start_time, 0, 5),
+                            'end_time' => substr((string) $p->end_time, 0, 5),
+                            'is_night_shift' => (bool) $p->is_night_shift,
+                        ]);
+                }
+                
+                foreach ($sourcePeriods as $p) {
+                    $periodsOut[] = $p['start_time'] . ' - ' . $p['end_time'];
+                }
+            }
+
             return [
                 'date' => (string) $r->attendance_date,
+                'day_key' => $dayKey,
                 'work_schedule_id' => $r->work_schedule_id ? (int) $r->work_schedule_id : null,
                 'scheduled_hours' => $r->scheduled_hours !== null ? (float) $r->scheduled_hours : null,
 
                 'scheduled_check_in' => $this->timeToHm($r->scheduled_check_in),
                 'scheduled_check_out' => $this->timeToHm($r->scheduled_check_out),
+                
+                'periods' => $periodsOut,
 
                 'check_in_time' => $this->timeToHm($r->check_in_time),
                 'check_out_time' => $this->timeToHm($r->check_out_time),
