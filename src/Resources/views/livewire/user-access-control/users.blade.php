@@ -14,15 +14,17 @@
     {{-- Users Table --}}
     <div class="overflow-hidden rounded-xl border border-gray-200 shadow-sm bg-white">
         <x-ui.table
-            :headers="[
+         :headers="[
                 tr('User'),
                 tr('Employee Name'),
+                tr('License'),
                 tr('Role'),
                 tr('Permissions'),
                 tr('Access Scope'),
                 tr('Status'),
                 tr('Actions')
             ]"
+
         >
             @forelse($users as $user)
                 <tr class="hover:bg-gray-50 transition-colors">
@@ -37,15 +39,18 @@
                             {{ $user->employee ? ($user->employee->name_ar ?? $user->employee->name_en) : '-' }}
                         </span>
                     </td>
-                    <td class="px-6 py-4 whitespace-nowrap">
-                        @if($user->roles->count() > 0)
-                            <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-800">
-                                {{ $user->roles->first()->name }}
+                  <td class="px-6 py-4 whitespace-nowrap">
+                        @if(($user->access_type ?? 'system_and_app') === 'hr_app_only')
+                            <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-slate-100 text-slate-700">
+                                {{ tr('HR App Only') }}
                             </span>
                         @else
-                            <span class="text-xs text-gray-400">{{ tr('No Role') }}</span>
+                            <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-indigo-100 text-indigo-800">
+                                {{ tr('System & App') }}
+                            </span>
                         @endif
                     </td>
+
                     <td class="px-6 py-4 whitespace-nowrap align-middle">
                         <div class="flex items-center" x-data="{ 
                             showTooltip: false,
@@ -266,19 +271,38 @@
                         required 
                     />
                     
-                    <div>
-                        <x-ui.select 
-                            label="{{ tr('Role') }}" 
-                            wire:model="role" 
-                            required
-                            :disabled="$is_locked_role"
-                        >
-                            <option value="">{{ tr('Select Role') }}</option>
-                            @foreach($roles as $r)
-                                <option value="{{ $r->name }}">{{ $r->name }}</option>
-                            @endforeach
-                        </x-ui.select>
-                    </div>
+           <div>
+                <x-ui.select
+                    label="{{ tr('User License') }}"
+                    wire:model="access_type"
+                    required
+                    :disabled="$is_locked_role"
+                >
+                    <option value="system_and_app">{{ tr('System & App User License') }}</option>
+                    <option value="hr_app_only">{{ tr('HR App Only') }}</option>
+                </x-ui.select>
+            </div>
+
+            @if($access_type === 'system_and_app')
+                <div>
+                    <x-ui.select 
+                        label="{{ tr('Role') }}" 
+                        wire:model="role" 
+                        required
+                        :disabled="$is_locked_role"
+                    >
+                        <option value="">{{ tr('Select Role') }}</option>
+                        @foreach($roles as $r)
+                            <option value="{{ $r->name }}">{{ $r->name }}</option>
+                        @endforeach
+                    </x-ui.select>
+                </div>
+            @else
+                <div class="rounded-lg border border-gray-100 bg-gray-50 px-3 py-2 text-xs text-gray-600">
+                    {{ tr('This user can access the HR mobile app only. No system role is required.') }}
+                </div>
+            @endif
+
 
                     <div>
                         <x-ui.select 

@@ -32,6 +32,7 @@ class Users extends Component
     public $email = '';
     public $role = '';
     public $access_scope = 'my_branch';
+    public $access_type = 'system_and_app'; // system_and_app | hr_app_only
     public $is_active = true;
     public $password = ''; // Only used if manual setting is ever needed, but requirement says send email
 
@@ -199,8 +200,10 @@ class Users extends Component
         $this->name = $user->name;
         $this->email = $user->email;
         $this->access_scope = $user->access_scope ?? 'my_branch';
+        $this->access_type  = $user->access_type ?? 'system_and_app';
         $this->is_active = $user->is_active ?? true;
-        
+
+                
         // Check if user needs employee link (e.g. company admin created initially)
         $this->needs_employee_link = is_null($user->employee_id);
 
@@ -211,6 +214,10 @@ class Users extends Component
         // Lock role ONLY if it's the primary account (the first user created for the company)
         $firstUser = User::where('saas_company_id', $this->getCompanyId())->orderBy('id', 'asc')->first();
         $this->is_locked_role = ($id === $firstUser->id);
+
+        if ($this->is_locked_role) {
+            $this->access_type = 'system_and_app';
+        }
 
         $this->showModal = true;
     }
@@ -231,8 +238,16 @@ class Users extends Component
                 'email', 
                 Rule::unique('users')->ignore($this->editingId)
             ],
-            'role' => $this->is_locked_role ? 'nullable' : ['required', 'exists:roles,name'],
+           'access_type' => ['required', 'in:system_and_app,hr_app_only'],
+
+            'role' => $this->is_locked_role
+                ? 'nullable'
+                : ($this->access_type === 'system_and_app'
+                    ? ['required', 'exists:roles,name']
+                    : ['nullable']),
+
             'access_scope' => ['required', 'in:my_branch,all_branches'],
+
         ], [
             'name.required' => tr('The username field is required.'),
             'name.unique' => tr('The username is already taken.'),
@@ -246,11 +261,13 @@ class Users extends Component
         if ($this->editingId) {
             $user = User::findOrFail($this->editingId);
             
-            $updateData = [
+          $updateData = [
                 'email' => $this->email,
                 'access_scope' => $this->access_scope,
+                'access_type'  => $this->access_type,
                 'is_active' => $this->is_active
             ];
+
 
             // If we are linking an employee for the first time (e.g. for company-admin)
             if ($this->needs_employee_link && $this->selectedEmployeeId) {
@@ -272,9 +289,14 @@ class Users extends Component
             $user->update($updateData);
             
             // Only sync roles if not locked
-            if (!$this->is_locked_role) {
-                $user->syncRoles([$this->role]);
+          if (! $this->is_locked_role) {
+                if ($this->access_type === 'hr_app_only') {
+                    $user->syncRoles([]); // تطبيق فقط = بدون أدوار للنظام
+                } else {
+                    $user->syncRoles([$this->role]);
+                }
             }
+
             
             $this->dispatch('toast', type: 'success', message: tr('User updated successfully'));
         } else {
@@ -288,10 +310,14 @@ class Users extends Component
                 'saas_company_id' => $companyId,
                 'employee_id' => $this->selectedEmployeeId,
                 'access_scope' => $this->access_scope,
+                'access_type'  => $this->access_type,
                 'is_active' => $this->is_active,
             ]);
 
-            $user->assignRole($this->role);
+            if ($this->access_type === 'system_and_app') {
+                $user->assignRole($this->role);
+            }
+
 
             // ارسال ايميل تعيين كلمة المرور فوراً
             if (method_exists($user, 'sendWithAuthKitPasswordReset')) {
@@ -311,6 +337,7 @@ class Users extends Component
         $this->email = '';
         $this->role = '';
         $this->access_scope = 'my_branch';
+        $this->access_type  = 'system_and_app';
         $this->selectedEmployeeId = null;
         $this->employeeSearch = '';
         $this->editingId = null;
@@ -371,6 +398,13 @@ class Users extends Component
             'roles' => $roles
         ]);
     }
+    public function updatedAccessType($value)
+    {
+        if ($value === 'hr_app_only') {
+            $this->role = '';
+        }
+    }
+
 }
 
 
