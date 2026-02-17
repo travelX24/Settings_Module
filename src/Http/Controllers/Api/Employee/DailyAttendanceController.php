@@ -28,6 +28,13 @@ class DailyAttendanceController extends Controller
             return response()->json(['ok' => false, 'message' => 'Employee not found'], 403);
         }
 
+        \Illuminate\Support\Facades\Log::info('Daily Attendance Request', [
+            'user_id' => $user->id,
+            'user_email' => $user->email,
+            'resolved_employee_id' => $employee->id,
+            'resolved_employee_name' => $employee->first_name . ' ' . $employee->last_name,
+        ]);
+
         $start  = $request->query('start');
         $end    = $request->query('end');
         $ensure = (int) ($request->query('ensure', 1)) === 1;
@@ -71,6 +78,11 @@ class DailyAttendanceController extends Controller
         }
 
         $rows = $logsQ->get();
+        
+        \Illuminate\Support\Facades\Log::info('Attendance Data Retrieved:', [
+            'count' => $rows->count(),
+            'first_row' => $rows->first(),
+        ]);
 
         $days = $rows->map(function ($r) use ($schedule) {
             $dateObj = Carbon::parse($r->attendance_date);
@@ -163,46 +175,85 @@ class DailyAttendanceController extends Controller
             'lng' => ['nullable', 'numeric'],
         ]);
 
+        // ✅ 1. Check if method is allowed for this employee
+        $prep = app(AttendancePrepController::class)->show($request)->getData();
+        if (!$prep->ok) {
+            return response()->json(['ok' => false, 'message' => 'Could not verify attendance settings'], 422);
+        }
+
+        $methodInfo = $prep->data->methods->{$data['method']} ?? null;
+        if (!$methodInfo || !$methodInfo->effective) {
+            return response()->json([
+                'ok' => false, 
+                'message' => 'هذه الطريقة ('. $data['method'] .') غير مفعلة لك حالياً.'
+            ], 403);
+        }
+
+        // ✅ 2. If GPS, check Geofence
+        if ($data['method'] === 'gps') {
+            if (!isset($data['lat']) || !isset($data['lng'])) {
+                return response()->json(['ok' => false, 'message' => 'Location coordinates are required for GPS attendance'], 422);
+            }
+
+            $allowedLocations = $prep->data->gps_locations ?? [];
+            $isInside = false;
+
+            foreach ($allowedLocations as $loc) {
+                // We use the model's logic to verify
+                $locModel = \Athka\SystemSettings\Models\AttendanceGpsLocation::find($loc->id);
+                if ($locModel && $locModel->isWithinGeofence((float)$data['lat'], (float)$data['lng'])) {
+                    $isInside = true;
+                    break;
+                }
+            }
+
+            if (!$isInside) {
+                return response()->json([
+                    'ok' => false, 
+                    'code' => 'geofence_error',
+                    'message' => 'أنت خارج النطاق الجغرافي المسموح به للتحضير.'
+                ], 403);
+            }
+        }
+
         $dateStr = now()->toDateString();
         $schedule = $this->getCompanySchedule($companyId);
         $holidays = $this->getHolidays($companyId, $dateStr, $dateStr);
 
         $log = $this->ensureLog($companyId, (int) $employee->id, $dateStr, $schedule, $holidays);
 
-        // ✅ لو الموظف على إجازة معتمدة
+        // ... existing logic ...
         if ((string) ($log->attendance_status ?? '') === 'on_leave' && (string) ($log->approval_status ?? '') === 'approved') {
             return response()->json(['ok' => false, 'code' => 'on_leave', 'message' => 'Employee is on leave'], 409);
         }
 
-        // ✅ لو اليوم مش يوم عمل (ما عنده ساعات مجدولة)
         if ($log->scheduled_hours === null) {
             return response()->json(['ok' => false, 'code' => 'not_workday', 'message' => 'Not a workday'], 409);
         }
 
         if (!empty($log->check_in_time)) {
-            return response()->json(['ok' => false, 'message' => 'Already checked in'], 409);
+            return response()->json([
+                'ok' => false, 
+                'code' => 'already_checked_in',
+                'message' => 'لقد قمت بتسجيل الحضور مسبقاً في هذه الفترة'
+            ], 409);
         }
 
         $nowTime = now()->format('H:i:s');
 
-        // grace
-        $grace = AttendanceGraceSetting::query()
-            ->where('saas_company_id', $companyId)
-            ->where('is_global_default', true)
-            ->first();
-
-        $lateGrace = (int) ($grace->late_grace_minutes ?? 15);
-
+        // ✅ Determine attendance status (present or late)
         $status = 'present';
-        if (!empty($log->scheduled_check_in)) {
-            $sched = Carbon::parse($dateStr . ' ' . substr((string) $log->scheduled_check_in, 0, 5) . ':00');
-            $threshold = (clone $sched)->addMinutes($lateGrace);
-
-            if (Carbon::parse($dateStr . ' ' . substr($nowTime, 0, 5) . ':00')->gt($threshold)) {
+        if (property_exists($log, 'scheduled_start_time') && !empty($log->scheduled_start_time)) {
+            $scheduledStart = \Carbon\Carbon::parse($log->scheduled_start_time);
+            $checkInTime = \Carbon\Carbon::parse($nowTime);
+            
+            // If check-in is more than 15 minutes after scheduled start, mark as late
+            if ($checkInTime->greaterThan($scheduledStart->addMinutes(15))) {
                 $status = 'late';
             }
         }
 
+        // ...
         DB::table('attendance_daily_logs')
             ->where('id', (int) $log->id)
             ->update([
@@ -253,6 +304,46 @@ class DailyAttendanceController extends Controller
             'lng' => ['nullable', 'numeric'],
         ]);
 
+        // ✅ 1. Check if method is allowed for this employee
+        $prep = app(AttendancePrepController::class)->show($request)->getData();
+        if (!$prep->ok) {
+            return response()->json(['ok' => false, 'message' => 'Could not verify attendance settings'], 422);
+        }
+
+        $methodInfo = $prep->data->methods->{$data['method']} ?? null;
+        if (!$methodInfo || !$methodInfo->effective) {
+            return response()->json([
+                'ok' => false, 
+                'message' => 'هذه الطريقة ('. $data['method'] .') غير مفعلة لك حالياً.'
+            ], 403);
+        }
+
+        // ✅ 2. If GPS, check Geofence
+        if ($data['method'] === 'gps') {
+            if (!isset($data['lat']) || !isset($data['lng'])) {
+                return response()->json(['ok' => false, 'message' => 'Location coordinates are required for GPS attendance'], 422);
+            }
+
+            $allowedLocations = $prep->data->gps_locations ?? [];
+            $isInside = false;
+
+            foreach ($allowedLocations as $loc) {
+                $locModel = \Athka\SystemSettings\Models\AttendanceGpsLocation::find($loc->id);
+                if ($locModel && $locModel->isWithinGeofence((float)$data['lat'], (float)$data['lng'])) {
+                    $isInside = true;
+                    break;
+                }
+            }
+
+            if (!$isInside) {
+                return response()->json([
+                    'ok' => false, 
+                    'code' => 'geofence_error',
+                    'message' => 'أنت خارج النطاق الجغرافي المسموح به للانصراف.'
+                ], 403);
+            }
+        }
+
         $dateStr = now()->toDateString();
 
         $log = DB::table('attendance_daily_logs')
@@ -268,11 +359,19 @@ class DailyAttendanceController extends Controller
         }
 
         if (empty($log->check_in_time)) {
-            return response()->json(['ok' => false, 'message' => 'Missing check-in'], 422);
+            return response()->json([
+                'ok' => false, 
+                'code' => 'no_check_in_record', 
+                'message' => 'لا يوجد سجل حضور لهذا اليوم'
+            ], 422);
         }
 
         if (!empty($log->check_out_time)) {
-            return response()->json(['ok' => false, 'message' => 'Already checked out'], 409);
+            return response()->json([
+                'ok' => false, 
+                'code' => 'already_checked_out', 
+                'message' => 'لقد قمت بتسجيل الانصراف مسبقاً في هذه الفترة'
+            ], 409);
         }
 
         $nowTime = now()->format('H:i:s');
