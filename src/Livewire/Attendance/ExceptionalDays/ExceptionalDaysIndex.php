@@ -17,30 +17,25 @@ class ExceptionalDaysIndex extends Component
     public int $year;
     public ?int $month = null;
 
-    public string $status = 'all'; // all|current|upcoming|ended
+    public string $status = 'all';
     public string $search = '';
 
-    // ✅ Filters
-    public string $deductionType = 'all'; // all|absence|late|without
-    public ?float $minMultiplier = null;  // MIN % (0..1000)
-    public ?float $maxMultiplier = null;  // MAX % (0..1000)
+    public string $deductionType = 'all'; 
+    public ?float $minMultiplier = null;  
+    public ?float $maxMultiplier = null; 
     public ?int $departmentId = null;
 
-    // ✅ Modal Create/Edit
     public bool $showModal = false;
     public ?int $editingId = null;
 
-    // ✅ Bulk actions
     public array $selected = [];
     public bool $selectPage = false;
 
-    // ✅ Compare/Copy from year
     public bool $showCopyModal = false;
     public int $copyFromYear;
     public int $copyToYear;
     public ?int $copyFromCount = null;
 
-    // ✅ Copy selection (inside modal)
     public array $copySelected = [];
     public bool $copySelectAll = false;
 
@@ -50,40 +45,32 @@ class ExceptionalDaysIndex extends Component
         'name' => '',
         'description' => null,
 
-        'period_type' => 'single', // single|range
+        'period_type' => 'single',
         'start_date' => null,
         'end_date' => null,
 
-        // ✅ apply: late/absence (NO "none" in UI)
-        'apply_on' => 'absence', // absence|late
+        'apply_on' => 'absence', 
 
-        // ✅ NEW: deduction mode
-        'deduction_mode' => 'with', // with|without
+        'deduction_mode' => 'with', 
 
-        // ✅ Percent (UI only -> will be mapped to multipliers)
-        'deduction_percent' => 100.0, // 0..1000 (%)
+        'deduction_percent' => 100.0, 
 
-        // ✅ stored factors (percent/100)
         'absence_multiplier' => 1.00,
         'late_multiplier' => 1.00,
 
-        // optional (used mainly for late)
         'grace_hours' => 0,
 
-        // ✅ Scope Type: all | departments | employees
-        'scope_type' => 'all', // all|departments|employees
+        'scope_type' => 'all', 
         'include' => [
             'departments' => [],
             'sections' => [],
             'employees' => [],
         ],
 
-        // ✅ Notification: AFTER deduction (not before)
-        'notify_policy' => 'none', // none|after_deduction
+        'notify_policy' => 'none',
         'notify_message' => null,
 
-        // ✅ kept for backward compatibility only (hidden in UI)
-        'retroactive' => 'from_created', // from_created|full_period
+        'retroactive' => 'from_created',
 
         'is_active' => true,
     ];
@@ -98,7 +85,6 @@ class ExceptionalDaysIndex extends Component
         $this->copyFromCount = null;
     }
 
-    // ✅ reset pagination when filters change
     public function updatingYear() { $this->resetPage(); }
     public function updatingMonth() { $this->resetPage(); }
     public function updatingStatus() { $this->resetPage(); }
@@ -130,7 +116,6 @@ class ExceptionalDaysIndex extends Component
     {
         $v = (string) $value;
 
-        // ✅ UI يسمح فقط absence/late
         if (!in_array($v, ['late', 'absence'], true)) {
             $v = 'absence';
             $this->form['apply_on'] = 'absence';
@@ -138,7 +123,6 @@ class ExceptionalDaysIndex extends Component
 
         $mode = (string) ($this->form['deduction_mode'] ?? 'with');
 
-        // ✅ Without deduction: لا نسبة ولا grace
         if ($mode === 'without') {
             $this->form['grace_hours'] = 0;
             $this->form['deduction_percent'] = 0.0;
@@ -146,13 +130,12 @@ class ExceptionalDaysIndex extends Component
             return;
         }
 
-        // ✅ With deduction
         if ($v === 'late') {
             $this->form['grace_hours'] = (int) ($this->form['grace_hours'] ?? 0);
             if (!isset($this->form['deduction_percent']) || $this->form['deduction_percent'] === null) {
                 $this->form['deduction_percent'] = 100.0;
             }
-        } else { // absence
+        } else { 
             $this->form['grace_hours'] = 0;
             if (!isset($this->form['deduction_percent']) || $this->form['deduction_percent'] === null) {
                 $this->form['deduction_percent'] = 100.0;
@@ -171,7 +154,6 @@ class ExceptionalDaysIndex extends Component
             return;
         }
 
-        // ✅ رجّع defaults عند with
         if (!isset($this->form['deduction_percent']) || $this->form['deduction_percent'] === null) {
             $this->form['deduction_percent'] = 100.0;
         }
@@ -183,7 +165,6 @@ class ExceptionalDaysIndex extends Component
     {
         $type = (string) $value;
 
-        // ✅ منع الخلط: كل نوع يصفّر الباقي (include فقط)
         if ($type === 'all') {
             $this->form['include'] = ['departments'=>[], 'sections'=>[], 'employees'=>[]];
             return;
@@ -220,10 +201,8 @@ class ExceptionalDaysIndex extends Component
                 'after_or_equal:form.start_date',
             ],
 
-            // ✅ apply: absence/late only (UI)
             'form.apply_on' => ['required', Rule::in(['absence', 'late'])],
 
-            // ✅ NEW
             'form.deduction_mode' => ['required', Rule::in(['with', 'without'])],
 
             'form.deduction_percent' => [
@@ -242,25 +221,26 @@ class ExceptionalDaysIndex extends Component
                 'max:24',
             ],
 
-            // ✅ Scope: all | departments | employees
             'form.scope_type' => ['required', Rule::in(['all', 'departments', 'employees'])],
             'form.include' => ['nullable', 'array'],
 
-            // ✅ إشعار بعد الخصم
             'form.notify_policy' => ['required', Rule::in(['none', 'after_deduction'])],
             'form.notify_message' => ['nullable', 'string', 'max:2000'],
 
-            // ✅ مخفي (توافق فقط)
             'form.retroactive' => ['nullable', Rule::in(['from_created', 'full_period'])],
 
             'form.is_active' => ['boolean'],
         ];
     }
-
     private function companyId(): int
     {
-        return (int) auth()->user()->company_id;
+        if (app()->bound('currentCompany') && app('currentCompany')) {
+            return (int) app('currentCompany')->id;
+        }
+
+        return (int) (auth()->user()->saas_company_id ?? auth()->user()->company_id ?? 0);
     }
+
 
     private function rowsQuery(int $companyId): Builder
     {
@@ -301,7 +281,6 @@ class ExceptionalDaysIndex extends Component
                     return;
                 }
 
-                // ✅ without deduction: multiplier = 0 OR legacy apply_on = none
                 if ($type === 'without') {
                     $qq->where(function ($w) {
                         $w->orWhere('apply_on', 'none')
@@ -659,8 +638,10 @@ class ExceptionalDaysIndex extends Component
     {
         if ($value) {
             $companyId = $this->companyId();
+            $page = (int) $this->getPage(); 
+
             $ids = $this->rowsQuery($companyId)
-                ->forPage($this->page, $this->perPage)
+                ->forPage($page, $this->perPage)
                 ->pluck('id')
                 ->toArray();
 
@@ -669,6 +650,7 @@ class ExceptionalDaysIndex extends Component
             $this->selected = [];
         }
     }
+
 
     public function deleteSelected(): void
     {
@@ -697,9 +679,6 @@ class ExceptionalDaysIndex extends Component
         $this->selectPage = false;
     }
 
-    // =========================
-    // Compare/Copy Year Modal
-    // =========================
 
     public function updatedCopyFromYear($value): void
     {
@@ -711,7 +690,6 @@ class ExceptionalDaysIndex extends Component
             ->whereYear('start_date', $from)
             ->count();
 
-        // reset selections on year change
         $this->copySelected = [];
         $this->copySelectAll = false;
     }
@@ -720,10 +698,8 @@ class ExceptionalDaysIndex extends Component
     {
         $this->resetValidation();
 
-        // ✅ To Year = السنة الحالية/المختارة في الفلتر
         $this->copyToYear = (int) $this->year;
 
-        // ✅ preload count
         $this->updatedCopyFromYear($this->copyFromYear);
 
         $this->showCopyModal = true;
@@ -766,7 +742,7 @@ class ExceptionalDaysIndex extends Component
         $companyId = $this->companyId();
 
         $from = (int) $this->copyFromYear;
-        $to   = (int) $this->year; // ✅ always copy to selected/current year
+        $to   = (int) $this->year; 
         $this->copyToYear = $to;
 
         if ($from < 2000 || $to < 2000) return;
@@ -795,7 +771,6 @@ class ExceptionalDaysIndex extends Component
             $newStart = $start->copy()->addYears($diffYears);
             $newEnd   = $end->copy()->addYears($diffYears);
 
-            // ✅ prevent overlaps in target year
             $overlap = AttendanceExceptionalDay::query()
                 ->where('company_id', $companyId)
                 ->where(function ($q) use ($newStart, $newEnd) {
@@ -837,7 +812,6 @@ class ExceptionalDaysIndex extends Component
                 'notify_message' => $r->notify_message,
                 'retroactive' => $r->retroactive,
 
-                // ✅ default disabled like before
                 'is_active' => false,
                 'created_by' => auth()->id(),
             ]);
@@ -851,15 +825,12 @@ class ExceptionalDaysIndex extends Component
         $this->showCopyModal = false;
         $this->resetPage();
 
-        // (اختياري) رسالة بسيطة
         if ($copied > 0 || $skipped > 0) {
             session()->flash('message', tr('Copied') . ": {$copied} | " . tr('Skipped') . ": {$skipped}");
         }
     }
 
-    // =========================
-    // Export
-    // =========================
+
 
     public function exportCsv()
     {
@@ -908,9 +879,7 @@ class ExceptionalDaysIndex extends Component
         }, $filename);
     }
 
-    // =========================
-    // Options (Departments/Sections/Employees)
-    // =========================
+
 
     private function companyColumnFor(string $table): ?string
     {
@@ -932,7 +901,6 @@ class ExceptionalDaysIndex extends Component
             }
         }
 
-        // always fallback to id (as string) to avoid null names
         $cols[] = "CAST({$idColumn} AS CHAR)";
 
         return 'COALESCE(' . implode(', ', $cols) . ')';
@@ -944,7 +912,6 @@ class ExceptionalDaysIndex extends Component
         $sections = [];
         $employees = [];
 
-        // departments
         if (Schema::hasTable('departments')) {
             $companyCol = $this->companyColumnFor('departments');
             $nameExpr = $this->coalesceNameExpr(
@@ -960,7 +927,6 @@ class ExceptionalDaysIndex extends Component
                 ->toArray();
         }
 
-        // sections
         if (Schema::hasTable('sections')) {
             $companyCol = $this->companyColumnFor('sections');
             $nameExpr = $this->coalesceNameExpr(
@@ -976,7 +942,6 @@ class ExceptionalDaysIndex extends Component
                 ->toArray();
         }
 
-        // employees ✅ (name_ar / name_en + saas_company_id)
         if (Schema::hasTable('employees')) {
             $companyCol = $this->companyColumnFor('employees');
 
@@ -1039,7 +1004,6 @@ class ExceptionalDaysIndex extends Component
 
         $opts = $this->loadScopeOptions($companyId);
 
-        // ✅ rows of selected "from year" inside modal
         $copyRows = collect();
         if ($this->showCopyModal) {
             $copyRows = AttendanceExceptionalDay::query()
@@ -1060,7 +1024,6 @@ class ExceptionalDaysIndex extends Component
 
             'createdByMap' => $createdByMap,
 
-            // copy modal
             'copyRows' => $copyRows,
         ])->layout('layouts.company-admin');
     }
