@@ -55,13 +55,14 @@ class DailyAttendanceController extends Controller
             $to = (clone $from)->addDays(62);
         }
 
-        $schedule = $this->getCompanySchedule($companyId);
+        $schedule = $this->getCompanySchedule($companyId, $employee);
         $holidays = $this->getHolidays($companyId, $from->toDateString(), $to->toDateString());
 
         if ($ensure) {
-            $cursor = (clone $from);
+            $cursor = $from->copy();
             while ($cursor->lte($to)) {
-                $this->ensureLog($companyId, (int) $employee->id, $cursor->toDateString(), $schedule, $holidays);
+                $dateStr = $cursor->toDateString();
+                $this->ensureLog($companyId, (int) $employee->id, $dateStr, $schedule, $holidays);
                 $cursor->addDay();
             }
         }
@@ -79,56 +80,72 @@ class DailyAttendanceController extends Controller
 
         $rows = $logsQ->get();
         
-        \Illuminate\Support\Facades\Log::info('Attendance Data Retrieved:', [
-            'count' => $rows->count(),
-            'first_row' => $rows->first(),
-        ]);
+        $logIds = $rows->pluck('id')->toArray();
+        $allDetails = DB::table('attendance_daily_details')
+            ->whereIn('daily_log_id', $logIds)
+            ->get()
+            ->groupBy('daily_log_id');
 
-        $days = $rows->map(function ($r) use ($schedule) {
+        $days = $rows->map(function ($r) use ($schedule, $allDetails) {
             $dateObj = Carbon::parse($r->attendance_date);
             $dayKey = $this->dayKey($dateObj);
             
             $periodsOut = [];
-            // If it's a workday and we have a schedule, try to get the periods
-            if ($schedule && $r->scheduled_hours > 0) {
-                $workDays = is_array($schedule->work_days) ? $schedule->work_days : [];
-                $isWorkday = in_array($dayKey, $workDays, true);
+            $workSchedulePeriods = collect();
 
-                $sourcePeriods = collect();
-                if ($schedule->periods) {
-                    $sourcePeriods = $schedule->periods
+            if ($schedule && $r->scheduled_hours > 0) {
+                // ✅ Handle Exceptions (e.g. Thursday 09:00-15:00 vs default split)
+                $dayExceptions = $schedule->exceptions
+                    ? $schedule->exceptions->filter(function ($e) use ($r, $dayKey) {
+                        if (!$e->is_active) return false;
+                        if ($e->specific_date) return (string) $e->specific_date === (string) $r->attendance_date;
+                        return (string) ($e->day_of_week ?? '') === $dayKey;
+                    })->values()
+                    : collect();
+
+                if ($dayExceptions->count() > 0) {
+                    $workSchedulePeriods = $dayExceptions->map(fn($e) => [
+                        'start_time' => substr((string) $e->start_time, 0, 5),
+                        'end_time' => substr((string) $e->end_time, 0, 5),
+                    ]);
+                } elseif ($schedule->periods) {
+                    $workSchedulePeriods = $schedule->periods
                         ->sortBy('sort_order')
                         ->values()
                         ->map(fn ($p) => [
                             'start_time' => substr((string) $p->start_time, 0, 5),
                             'end_time' => substr((string) $p->end_time, 0, 5),
-                            'is_night_shift' => (bool) $p->is_night_shift,
                         ]);
                 }
                 
-                foreach ($sourcePeriods as $p) {
+                foreach ($workSchedulePeriods as $p) {
                     $periodsOut[] = $p['start_time'] . ' - ' . $p['end_time'];
                 }
             }
+
+            $details = $allDetails->get($r->id, collect())->map(function($d) {
+                return [
+                    'check_in' => $this->timeToHm($d->check_in_time),
+                    'check_out' => $this->timeToHm($d->check_out_time),
+                    'status' => $d->attendance_status,
+                    'period_id' => $d->work_schedule_period_id,
+                ];
+            });
 
             return [
                 'date' => (string) $r->attendance_date,
                 'day_key' => $dayKey,
                 'work_schedule_id' => $r->work_schedule_id ? (int) $r->work_schedule_id : null,
                 'scheduled_hours' => $r->scheduled_hours !== null ? (float) $r->scheduled_hours : null,
-
-                'scheduled_check_in' => $this->timeToHm($r->scheduled_check_in),
-                'scheduled_check_out' => $this->timeToHm($r->scheduled_check_out),
-                
+                'scheduled_check_in' => $r->scheduled_check_in, // full time
+                'scheduled_check_out' => $r->scheduled_check_out, // full time
                 'periods' => $periodsOut,
-
                 'check_in_time' => $this->timeToHm($r->check_in_time),
                 'check_out_time' => $this->timeToHm($r->check_out_time),
-
                 'attendance_status' => (string) $r->attendance_status,
                 'approval_status' => (string) $r->approval_status,
                 'compliance_percentage' => $r->compliance_percentage !== null ? (float) $r->compliance_percentage : null,
-
+                'punches' => $details,
                 'is_edited' => (bool) $r->is_edited,
                 'source' => (string) $r->source,
             ];
@@ -217,70 +234,146 @@ class DailyAttendanceController extends Controller
         }
 
         $dateStr = now()->toDateString();
-        $schedule = $this->getCompanySchedule($companyId);
+        $schedule = $this->getCompanySchedule($companyId, $employee);
         $holidays = $this->getHolidays($companyId, $dateStr, $dateStr);
 
         $log = $this->ensureLog($companyId, (int) $employee->id, $dateStr, $schedule, $holidays);
 
-        // ... existing logic ...
         if ((string) ($log->attendance_status ?? '') === 'on_leave' && (string) ($log->approval_status ?? '') === 'approved') {
             return response()->json(['ok' => false, 'code' => 'on_leave', 'message' => 'Employee is on leave'], 409);
         }
 
         if ($log->scheduled_hours === null) {
-            return response()->json(['ok' => false, 'code' => 'not_workday', 'message' => 'Not a workday'], 409);
+            return response()->json(['ok' => false, 'code' => 'not_workday', 'message' => 'ليس يوم عمل'], 409);
         }
 
-        if (!empty($log->check_in_time)) {
+        // Check if there is an open session
+        $openSession = DB::table('attendance_daily_details')
+            ->where('daily_log_id', $log->id)
+            ->whereNull('check_out_time')
+            ->first();
+
+        if ($openSession) {
             return response()->json([
                 'ok' => false, 
                 'code' => 'already_checked_in',
-                'message' => 'لقد قمت بتسجيل الحضور مسبقاً في هذه الفترة'
+                'message' => 'لديك جلسة حضور مفتوحة بالفعل.'
             ], 409);
         }
 
         $nowTime = now()->format('H:i:s');
+        $nowCarbon = now();
 
-        // ✅ Determine attendance status (present or late)
+        // ✅ Smart Period Matching
+        $isWithinPeriod = false;
         $status = 'present';
-        if (property_exists($log, 'scheduled_start_time') && !empty($log->scheduled_start_time)) {
-            $scheduledStart = \Carbon\Carbon::parse($log->scheduled_start_time);
-            $checkInTime = \Carbon\Carbon::parse($nowTime);
-            
-            // If check-in is more than 15 minutes after scheduled start, mark as late
-            if ($checkInTime->greaterThan($scheduledStart->addMinutes(15))) {
-                $status = 'late';
-            }
-        }
 
-        // ...
-        DB::table('attendance_daily_logs')
-            ->where('id', (int) $log->id)
-            ->update([
+        if ($schedule && $schedule->periods) {
+            $matchedPeriod = null;
+            foreach ($schedule->periods as $p) {
+                // ✅ Update: Only allow 30 minutes before start
+                $pStartAllowed = Carbon::parse($dateStr . ' ' . $p->start_time)->subMinutes(30);
+                $pEnd = Carbon::parse($dateStr . ' ' . $p->end_time);
+                
+                if ($nowCarbon->between($pStartAllowed, $pEnd)) {
+                    $matchedPeriod = $p;
+                    $isWithinPeriod = true;
+                    
+                    // ❌ IMPROVED CHECK: Check if this period was already used (including legacy match)
+                    $pStart = $p->start_time;
+                    $pEnd = $p->end_time;
+
+                    $alreadyUsed = DB::table('attendance_daily_details')
+                        ->where('daily_log_id', $log->id)
+                        ->where(function($q) use ($p, $pStart, $pEnd) {
+                            $q->where('work_schedule_period_id', $p->id)
+                              ->orWhereBetween('check_in_time', [$pStart, $pEnd]);
+                        })
+                        ->exists();
+
+                    if ($alreadyUsed) {
+                        return response()->json([
+                            'ok' => false,
+                            'code' => 'period_already_completed',
+                            'message' => 'لقد قمت بإكمال تسجيل الحضور والانصراف لهذه الفترة مسبقاً.'
+                        ], 403);
+                    }
+
+                    // Reset to real start for delay calculation
+                    $graceMins = (int) ($prep->data->grace->late_grace_minutes ?? 15);
+                    $realStart = Carbon::parse($dateStr . ' ' . $p->start_time);
+                    if ($nowCarbon->greaterThan($realStart->addMinutes($graceMins))) {
+                        $status = 'late';
+                    }
+                    break;
+                }
+            }
+
+            if (!$isWithinPeriod) {
+                return response()->json([
+                    'ok' => false,
+                    'code' => 'too_early_for_checkin',
+                    'message' => 'لا يمكنك التحضير قبل بداية الفترة بأكثر من 30 دقيقة.'
+                ], 403);
+            }
+
+            // Create Detail Record with Period ID
+            DB::table('attendance_daily_details')->insert([
+                'daily_log_id' => $log->id,
+                'work_schedule_period_id' => $matchedPeriod->id, // ✅ Record the specific period
                 'check_in_time' => $nowTime,
                 'attendance_status' => $status,
-                'approval_status' => 'pending',
-                'source' => 'manual',
                 'meta_data' => json_encode([
-                    'check_in' => [
-                        'method' => $data['method'],
-                        'lat' => $data['lat'] ?? null,
-                        'lng' => $data['lng'] ?? null,
-                        'ip' => request()->ip(),
-                        'ua' => request()->userAgent(),
-                    ],
-                ], JSON_UNESCAPED_UNICODE),
+                    'method' => $data['method'],
+                    'lat' => $data['lat'] ?? null,
+                    'lng' => $data['lng'] ?? null,
+                ]),
+                'created_at' => now(),
                 'updated_at' => now(),
             ]);
+        } else {
+            // If no periods defined, use old logic but still into details
+            DB::table('attendance_daily_details')->insert([
+                'daily_log_id' => $log->id,
+                'check_in_time' => $nowTime,
+                'attendance_status' => $status,
+                'meta_data' => json_encode([
+                    'method' => $data['method'],
+                    'lat' => $data['lat'] ?? null,
+                    'lng' => $data['lng'] ?? null,
+                ]),
+                'created_at' => now(),
+                'updated_at' => now(),
+            ]);
+        }
 
-        $fresh = DB::table('attendance_daily_logs')->where('id', (int) $log->id)->first();
+        // Update Main Log with status precedence
+        $newStatus = $status;
+        $currentLogStatus = (string) ($log->attendance_status ?? 'absent');
+        
+        // Precedence: late wins over present
+        if ($currentLogStatus === 'late' || $status === 'late') {
+            $newStatus = 'late';
+        }
+
+        $updateData = [
+            'attendance_status' => $newStatus,
+            'updated_at' => now(),
+        ];
+        if (empty($log->check_in_time)) {
+            $updateData['check_in_time'] = $nowTime;
+        }
+
+        DB::table('attendance_daily_logs')
+            ->where('id', $log->id)
+            ->update($updateData);
 
         return response()->json([
             'ok' => true,
             'data' => [
                 'date' => $dateStr,
-                'check_in_time' => $this->timeToHm($fresh->check_in_time),
-                'attendance_status' => (string) $fresh->attendance_status,
+                'check_in_time' => $this->timeToHm($nowTime),
+                'attendance_status' => $status,
             ],
         ]);
     }
@@ -345,6 +438,7 @@ class DailyAttendanceController extends Controller
         }
 
         $dateStr = now()->toDateString();
+        $nowTime = now()->format('H:i:s');
 
         $log = DB::table('attendance_daily_logs')
             ->where('saas_company_id', $companyId)
@@ -352,99 +446,78 @@ class DailyAttendanceController extends Controller
             ->whereDate('attendance_date', $dateStr)
             ->first();
 
-        if (! $log) {
-            $schedule = $this->getCompanySchedule($companyId);
-            $holidays = $this->getHolidays($companyId, $dateStr, $dateStr);
-            $log = $this->ensureLog($companyId, (int) $employee->id, $dateStr, $schedule, $holidays);
+        if (!$log) {
+            return response()->json(['ok' => false, 'message' => 'لا يوجد سجل حضور اليوم.'], 422);
         }
 
-        if (empty($log->check_in_time)) {
-            return response()->json([
-                'ok' => false, 
-                'code' => 'no_check_in_record', 
-                'message' => 'لا يوجد سجل حضور لهذا اليوم'
-            ], 422);
-        }
-
-        if (!empty($log->check_out_time)) {
-            return response()->json([
-                'ok' => false, 
-                'code' => 'already_checked_out', 
-                'message' => 'لقد قمت بتسجيل الانصراف مسبقاً في هذه الفترة'
-            ], 409);
-        }
-
-        $nowTime = now()->format('H:i:s');
-
-        // ✅ compute actual minutes (FIXED)
-        $actualMinutes = $this->minutesBetweenTimes((string) $log->check_in_time, $nowTime);
-        $actualHours = round($actualMinutes / 60, 2);
-
-        // grace
-        $grace = AttendanceGraceSetting::query()
-            ->where('saas_company_id', $companyId)
-            ->where('is_global_default', true)
+        $openSession = DB::table('attendance_daily_details')
+            ->where('daily_log_id', $log->id)
+            ->whereNull('check_out_time')
+            ->orderByDesc('id')
             ->first();
 
-        $earlyGrace = (int) ($grace->early_leave_grace_minutes ?? 10);
-
-        $status = (string) ($log->attendance_status ?? 'present');
-        if (!in_array($status, ['late'], true)) {
-            $status = 'present';
-        }
-
-        if (!empty($log->scheduled_check_out)) {
-            $schedOut = Carbon::parse($dateStr . ' ' . substr((string) $log->scheduled_check_out, 0, 5) . ':00');
-            $threshold = (clone $schedOut)->subMinutes($earlyGrace);
-
-            if (Carbon::parse($dateStr . ' ' . substr($nowTime, 0, 5) . ':00')->lt($threshold)) {
-                $status = 'early_departure';
+        if (!$openSession) {
+            // Fallback: If we have a check_in_time in the main log but no detail record (legacy/transition)
+            if (!empty($log->check_in_time)) {
+                $detailId = DB::table('attendance_daily_details')->insertGetId([
+                    'daily_log_id' => $log->id,
+                    'check_in_time' => $log->check_in_time,
+                    'attendance_status' => $log->attendance_status ?? 'present',
+                    'meta_data' => json_encode(['note' => 'auto-created for legacy check-out']),
+                    'created_at' => now(),
+                    'updated_at' => now(),
+                ]);
+                $openSession = DB::table('attendance_daily_details')->find($detailId);
+            } else {
+                return response()->json([
+                    'ok' => false, 
+                    'code' => 'no_check_in_record', 
+                    'message' => 'لا يوجد سجل حضور مفتوح حالياً'
+                ], 422);
             }
         }
 
-        // ✅ compliance (FIX: guard negatives)
-        $scheduledMinutes = 0;
-        if (!is_null($log->scheduled_hours)) {
-            $scheduledMinutes = (int) round(max(0, (float) $log->scheduled_hours) * 60);
-        }
-
-        $compliance = null;
-        if ($scheduledMinutes > 0) {
-            $compliance = round(min(100, ($actualMinutes / $scheduledMinutes) * 100), 2);
-        }
-
-        DB::table('attendance_daily_logs')
-            ->where('id', (int) $log->id)
+        // Update Detail
+        DB::table('attendance_daily_details')
+            ->where('id', $openSession->id)
             ->update([
                 'check_out_time' => $nowTime,
-                'actual_hours' => $actualHours,
-                'attendance_status' => $status,
-                'approval_status' => 'pending',
-                'source' => 'manual',
-                'compliance_percentage' => $compliance,
-                'meta_data' => json_encode([
-                    'check_out' => [
-                        'method' => $data['method'],
-                        'lat' => $data['lat'] ?? null,
-                        'lng' => $data['lng'] ?? null,
-                        'ip' => request()->ip(),
-                        'ua' => request()->userAgent(),
-                    ],
-                ], JSON_UNESCAPED_UNICODE),
                 'updated_at' => now(),
             ]);
 
-        $fresh = DB::table('attendance_daily_logs')->where('id', (int) $log->id)->first();
+        // Recalculate Totals
+        $allDetails = DB::table('attendance_daily_details')
+            ->where('daily_log_id', $log->id)
+            ->whereNotNull('check_out_time')
+            ->get();
+
+        $totalMinutes = 0;
+        foreach ($allDetails as $session) {
+            $totalMinutes += $this->minutesBetweenTimes((string)$session->check_in_time, (string)$session->check_out_time);
+        }
+        $actualHours = round($totalMinutes / 60, 2);
+
+        // Compliance
+        $compliance = null;
+        if ($log->scheduled_hours > 0) {
+            $compliance = round(min(100, ($totalMinutes / ($log->scheduled_hours * 60)) * 100), 2);
+        }
+
+        DB::table('attendance_daily_logs')
+            ->where('id', $log->id)
+            ->update([
+                'check_out_time' => $nowTime,
+                'actual_hours' => $actualHours,
+                'compliance_percentage' => $compliance,
+                'updated_at' => now(),
+            ]);
 
         return response()->json([
             'ok' => true,
             'data' => [
                 'date' => $dateStr,
-                'check_in_time' => $this->timeToHm($fresh->check_in_time),
-                'check_out_time' => $this->timeToHm($fresh->check_out_time),
-                'attendance_status' => (string) $fresh->attendance_status,
-                'actual_hours' => $fresh->actual_hours !== null ? (float) $fresh->actual_hours : null,
-                'compliance_percentage' => $fresh->compliance_percentage !== null ? (float) $fresh->compliance_percentage : null,
+                'check_out_time' => $this->timeToHm($nowTime),
+                'actual_hours' => $actualHours,
             ],
         ]);
     }
@@ -470,22 +543,24 @@ class DailyAttendanceController extends Controller
         return $employee ?: null;
     }
 
-    protected function getCompanySchedule(int $companyId): ?WorkSchedule
+    protected function getCompanySchedule(int $companyId, ?Employee $employee = null): ?WorkSchedule
     {
+        // 1. Fallback to default company schedule
         $schedule = WorkSchedule::query()
             ->with(['periods', 'exceptions'])
             ->where('saas_company_id', $companyId)
             ->where('is_default', true)
             ->first();
-
-        if (! $schedule) {
-            $schedule = WorkSchedule::query()
-                ->with(['periods', 'exceptions'])
-                ->where('saas_company_id', $companyId)
-                ->orderByDesc('id')
-                ->first();
-        }
-
+        
+        if ($schedule) return $schedule;
+        
+        // 2. Fallback to latest schedule if no default
+        $schedule = WorkSchedule::query()
+            ->with(['periods', 'exceptions'])
+            ->where('saas_company_id', $companyId)
+            ->orderByDesc('id')
+            ->first();
+        
         return $schedule ?: null;
     }
 
@@ -707,7 +782,7 @@ class DailyAttendanceController extends Controller
             'scheduled_hours' => $scheduledHours,
             'scheduled_check_in' => $schedIn ? ($schedIn . ':00') : null,
             'scheduled_check_out' => $schedOut ? ($schedOut . ':00') : null,
-            'attendance_status' => 'absent',
+            'attendance_status' => ($scheduledHours === null) ? 'day_off' : 'absent',
             'approval_status' => 'pending',
             'source' => 'automatic',
             'meta_data' => json_encode([
