@@ -9,6 +9,27 @@
                 placeholder="{{ tr('Search roles...') }}"
             />
         </div>
+
+        @if(!empty($branches))
+            <div class="w-full sm:w-1/4">
+                <x-ui.select
+                    label="{{ tr('Branch') }}"
+                    wire:model.live="filterBranchId"
+                    :disabled="$lockBranchFilter"
+                >
+                    <option value="">{{ tr('All Branches') }}</option>
+                    @foreach($branches as $br)
+                        <option value="{{ $br['id'] }}">{{ $br['name'] }}</option>
+                    @endforeach
+                </x-ui.select>
+
+                @if($lockBranchFilter)
+                    <div class="text-[10px] text-gray-500 mt-1">
+                        {{ tr('Access scope is limited to your branch.') }}
+                    </div>
+                @endif
+            </div>
+        @endif
     </div>
 
     {{-- Roles Table --}}
@@ -126,8 +147,20 @@
                                                 {{ tr('Assigned Users') }}
                                             </h5>
                                             <div class="space-y-1.5 max-h-40 overflow-y-auto custom-scrollbar">
-                                                @php $roleUsers = \App\Models\User::role($role->name)->where('saas_company_id', auth()->user()->saas_company_id)->take(10)->get(); @endphp
-                                                @forelse($roleUsers as $u)
+                                                @php
+                                                    $roleUsersQ = \App\Models\User::role($role->name)
+                                                        ->where('saas_company_id', auth()->user()->saas_company_id);
+
+                                                    if(($filterBranchId ?? '') !== '' && ($employeeBranchCol ?? null)) {
+                                                        $bid = (int)$filterBranchId;
+                                                        $col = $employeeBranchCol;
+
+                                                        $roleUsersQ->whereHas('employee', fn($q) => $q->where($col, $bid));
+                                                    }
+
+                                                    $roleUsers = $roleUsersQ->take(10)->get();
+                                                @endphp      
+                                                                                          @forelse($roleUsers as $u)
                                                     <div class="text-[10px] text-gray-700 flex items-center gap-2">
                                                         <div class="w-1 h-1 rounded-full bg-slate-300"></div>
                                                         <span class="font-medium">{{ $u->name }}</span>

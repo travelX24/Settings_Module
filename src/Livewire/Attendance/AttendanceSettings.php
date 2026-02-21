@@ -13,7 +13,9 @@ use Athka\SystemSettings\Models\AttendancePenaltyPolicy;
 use Athka\SystemSettings\Models\UnexcusedAbsencePolicy;
 use Athka\SystemSettings\Models\EmployeeGroup;
 use Athka\Employees\Models\Employee;
-
+use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Schema;
 class AttendanceSettings extends Component
 {
     use WithPagination;
@@ -46,6 +48,13 @@ class AttendanceSettings extends Component
     public $availableGroups = []; 
     public $trackingModeLabels = [];
 
+    // Branch filter + options (for Groups tab)
+    public array $branchesOptions = [];
+    public array $branchesOptionsById = [];
+    public string $filterBranchId = '';
+    public ?string $employeeBranchCol = null;
+    public bool $lockBranchFilter = false;
+    public ?int $mainBranchId = null;
     // Modal Visibility States
     public $showGpsModal = false;
     public $showSavedLocationsModal = false;
@@ -115,9 +124,11 @@ class AttendanceSettings extends Component
             'auto_checkout_deduction_type' => $this->graceSettings->auto_checkout_deduction_type ?? 'fixed',
         ];
 
-        // 3. Load Methods
         $this->loadMethods();
-        
+
+        // ✅ branches + branch-scope lock
+        $this->loadBranchesOptions();
+        $this->initBranchFilterLock();
         // 4. Load initial data lists
         $this->refreshData();
 
@@ -128,7 +139,144 @@ class AttendanceSettings extends Component
             'automatic' => tr('Automatic Tracking'),
         ];
     }
+    private function getCompanyId(): int
+    {
+        return (int) (Auth::user()?->saas_company_id ?? 0);
+    }
 
+    private function groupsTable(): string
+    {
+        return (new EmployeeGroup())->getTable();
+    }
+
+    private function employeesTable(): string
+    {
+        return (new Employee())->getTable();
+    }
+
+    private function groupHasBranchColumn(): bool
+    {
+        $table = $this->groupsTable();
+        return Schema::hasTable($table) && Schema::hasColumn($table, 'branch_id');
+    }
+
+    private function loadBranchesOptions(): void
+    {
+        $this->branchesOptions = [];
+        $this->branchesOptionsById = [];
+        $this->mainBranchId = null;
+
+        // Detect employees.branch_id
+        $empTable = $this->employeesTable();
+        $this->employeeBranchCol = (Schema::hasTable($empTable) && Schema::hasColumn($empTable, 'branch_id'))
+            ? 'branch_id'
+            : null;
+
+        // Prefer real branches table
+        if (Schema::hasTable('branches')) {
+            $companyId = $this->getCompanyId();
+
+            // label column
+            $labelCol = 'name';
+            $locale = app()->getLocale();
+            $isRtl  = in_array(substr($locale, 0, 2), ['ar','fa','ur','he']);
+
+            if ($isRtl && Schema::hasColumn('branches', 'name_ar')) {
+                $labelCol = 'name_ar';
+            } elseif (!$isRtl && Schema::hasColumn('branches', 'name_en')) {
+                $labelCol = 'name_en';
+            } elseif (!Schema::hasColumn('branches', $labelCol)) {
+                $labelCol = Schema::hasColumn('branches', 'title') ? 'title' : 'id';
+            }
+
+            // detect company column
+            $companyCol = null;
+            foreach (['saas_company_id', 'company_id'] as $c) {
+                if (Schema::hasColumn('branches', $c)) { $companyCol = $c; break; }
+            }
+
+            // detect main branch column (optional)
+            $isMainCol = Schema::hasColumn('branches', 'is_main') ? 'is_main' : null;
+
+            $q = DB::table('branches')->select(['id', DB::raw("$labelCol as name")]);
+            if ($companyCol) $q->where($companyCol, $companyId);
+
+            $rows = $q->orderBy($labelCol)->get();
+
+            $this->branchesOptions = $rows->map(fn($r) => ['id' => (int)$r->id, 'name' => (string)$r->name])->all();
+            $this->branchesOptionsById = collect($this->branchesOptions)->pluck('name', 'id')->all();
+
+            if ($isMainCol) {
+                $main = DB::table('branches')->when($companyCol, fn($qq) => $qq->where($companyCol, $companyId))
+                    ->where($isMainCol, 1)
+                    ->value('id');
+                $this->mainBranchId = $main ? (int)$main : null;
+            }
+
+            if (!$this->mainBranchId && !empty($this->branchesOptions)) {
+                $this->mainBranchId = (int) $this->branchesOptions[0]['id'];
+            }
+
+            return;
+        }
+
+        // Fallback (optional): if you want departments as branches, enable later.
+        // Otherwise keep empty (no branch UI).
+    }
+
+    private function currentUserBranchId(): ?int
+    {
+        if (!$this->employeeBranchCol) return null;
+
+        $employeeId = Auth::user()?->employee_id;
+        if (!$employeeId) return null;
+
+        $bid = DB::table($this->employeesTable())->where('id', $employeeId)->value($this->employeeBranchCol);
+
+        return $bid ? (int)$bid : null;
+    }
+
+    private function initBranchFilterLock(): void
+    {
+        $scope = Auth::user()?->access_scope ?? 'all_branches';
+
+        if ($scope === 'my_branch') {
+            $bid = $this->currentUserBranchId();
+
+            // ✅ لا تقفل لو ما قدرنا نجيب فرع المستخدم
+            if ($bid) {
+                $this->lockBranchFilter = true;
+                $this->filterBranchId = (string) $bid;
+            } else {
+                $this->lockBranchFilter = false;
+                $this->filterBranchId = '';
+            }
+        }
+    }
+
+    private function effectiveBranchId(): ?int
+    {
+        if (($this->filterBranchId ?? '') === '') return null;
+        return (int) $this->filterBranchId;
+    }
+
+    public function updatedFilterBranchId(): void
+    {
+        if ($this->lockBranchFilter) {
+            $bid = $this->currentUserBranchId();
+            $this->filterBranchId = $bid ? (string)$bid : '';
+            return;
+        }
+
+        $this->refreshData();
+    }
+
+    private function normalizeBranchId(mixed $value): ?int
+    {
+        if ($value === null || $value === '') return null;
+        if ($value === 'main') return $this->mainBranchId; // optional
+        return is_numeric($value) ? (int)$value : null;
+    }
     public function loadMethods()
     {
         $companyId = auth()->user()->saas_company_id;
@@ -287,22 +435,46 @@ class AttendanceSettings extends Component
         }
 
         // Load Groups
-        $this->groups = EmployeeGroup::with(['appliedPolicy', 'employees'])
+       $branchIdFilter = $this->effectiveBranchId();
+
+        $groupsQuery = EmployeeGroup::with(['appliedPolicy', 'employees'])
             ->where('saas_company_id', $companyId)
-            ->active()
-            ->get()->transform(function($group) {
-                $locale = app()->getLocale();
-                return [
-                    'id' => $group->id,
-                    'name' => $group->name,
-                    'description' => $group->description,
-                    'policy' => $group->applied_policy_id == $this->defaultPolicy->id ? 'general' : 'special',
-                    'employee_count' => $group->employees->count(),
-                    'employee_names' => $group->employees->map(fn($e) => $locale == 'ar' ? $e->name_ar : ($e->name_en ?: $e->name_ar))->toArray(),
-                    'methods' => $group->allowedMethods()->where('is_allowed', true)->pluck('method')->toArray(),
-                    'tracking_mode' => $group->appliedPolicy?->tracking_mode ?? 'check_in_out',
-                ];
-            })->toArray();
+            ->active();
+
+        if ($branchIdFilter) {
+            if ($this->groupHasBranchColumn()) {
+                $groupsQuery->where('branch_id', $branchIdFilter);
+            } elseif ($this->employeeBranchCol) {
+                // fallback: filter by employees' branch
+                $groupsQuery->whereHas('employees', function ($q) use ($branchIdFilter) {
+                    $q->where($this->employeeBranchCol, $branchIdFilter);
+                });
+            }
+        }
+
+        $this->groups = $groupsQuery->get()->transform(function($group) {
+            $locale = app()->getLocale();
+
+            $branchName = tr('All Branches');
+            if ($this->groupHasBranchColumn() && $group->branch_id) {
+                $branchName = $this->branchesOptionsById[(int)$group->branch_id] ?? tr('N/A');
+            }
+
+            return [
+                'id' => $group->id,
+                'name' => $group->name,
+                'description' => $group->description,
+
+                // ✅ show branch in UI
+                'branch_name' => $branchName,
+
+                'policy' => $group->applied_policy_id == $this->defaultPolicy->id ? 'general' : 'special',
+                'employee_count' => $group->employees->count(),
+                'employee_names' => $group->employees->map(fn($e) => $locale == 'ar' ? $e->name_ar : ($e->name_en ?: $e->name_ar))->toArray(),
+                'methods' => $group->allowedMethods()->where('is_allowed', true)->pluck('method')->toArray(),
+                'tracking_mode' => $group->appliedPolicy?->tracking_mode ?? 'check_in_out',
+            ];
+        })->toArray();
 
         // Load All Available Policies
         $this->allPolicies = AttendancePolicy::active()
@@ -933,6 +1105,7 @@ class AttendanceSettings extends Component
         'policy' => 'general',
         'tracking_mode' => 'check_in_out',
         'methods' => [],
+        'branch_id' => '',
         'grace_periods_type' => 'general',
         'custom_grace_periods' => [
             'late_arrival' => 0,
@@ -949,12 +1122,18 @@ class AttendanceSettings extends Component
     {
         $this->isEditingGroup = false;
         $this->editingGroupId = null;
+
+        $defaultBranch = $this->lockBranchFilter
+            ? (string)($this->currentUserBranchId() ?? '')
+            : '';
+
         $this->newGroup = [
             'name' => '',
             'description' => '',
             'policy' => 'general',
             'tracking_mode' => $this->trackingPolicy,
             'methods' => [],
+            'branch_id' => $defaultBranch,
             'grace_periods_type' => 'general',
             'custom_grace_periods' => [
                 'late_arrival' => $this->gracePeriods['late_arrival'],
@@ -963,6 +1142,7 @@ class AttendanceSettings extends Component
             ],
             'employee_ids' => [],
         ];
+
         $this->showGroupModal = true;
     }
 
@@ -979,11 +1159,19 @@ class AttendanceSettings extends Component
                 'early_departure' => $group->graceSetting->early_leave_grace_minutes,
                 'auto_departure' => $group->graceSetting->auto_checkout_after_minutes,
             ] : ['late_arrival' => 15, 'early_departure' => 10, 'auto_departure' => 120];
+            $branchValue = '';
+            if ($this->groupHasBranchColumn()) {
+                $branchValue = (string) ($group->branch_id ?? '');
+            }
 
+            if ($this->lockBranchFilter) {
+                $branchValue = (string)($this->currentUserBranchId() ?? $branchValue);
+            }
             $this->newGroup = [
                 'name' => $group->name,
                 'description' => $group->description,
                 'policy' => $group->applied_policy_id == $this->defaultPolicy->id ? 'general' : 'special',
+                'branch_id' => $branchValue,
                 'tracking_mode' => $group->appliedPolicy ? $group->appliedPolicy->tracking_mode : 'check_in_out',
                 'methods' => $group->allowedMethods()->where('is_allowed', true)->pluck('method')->toArray(),
                 'grace_periods_type' => $graceType,
@@ -1032,7 +1220,7 @@ class AttendanceSettings extends Component
             $policyId = $policy->id;
         }
 
-        $groupData = [
+     $groupData = [
             'name' => $this->newGroup['name'],
             'description' => $this->newGroup['description'],
             'applied_policy_id' => $policyId,
@@ -1040,6 +1228,16 @@ class AttendanceSettings extends Component
             'grace_setting_id' => $graceId,
             'saas_company_id' => $companyId,
         ];
+
+        if ($this->groupHasBranchColumn()) {
+            $branchId = $this->normalizeBranchId($this->newGroup['branch_id'] ?? null);
+
+            if ($this->lockBranchFilter) {
+                $branchId = $this->currentUserBranchId() ?? $branchId;
+            }
+
+            $groupData['branch_id'] = $branchId;
+        }
 
         if ($this->isEditingGroup) {
             $group = EmployeeGroup::find($this->editingGroupId);

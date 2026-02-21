@@ -1,15 +1,39 @@
 <div class="space-y-6">
-    <div class="flex items-center justify-between px-1">
-        <h3 class="text-base font-bold text-gray-800 flex items-center gap-2">
-            <span class="w-1 h-5 bg-[color:var(--brand-via)] rounded-full"></span>
-            {{ tr('Employee Groups Management') }}
-        </h3>
-        @can('settings.attendance.manage')
-        <x-ui.primary-button wire:click="openGroupModal" class="!rounded-xl shadow-md">
-            <i class="fas fa-plus-circle me-1"></i> {{ tr('New Group') }}
-        </x-ui.primary-button>
-        @endcan
-    </div>
+    <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3 px-1">
+            <h3 class="text-base font-bold text-gray-800 flex items-center gap-2">
+                <span class="w-1 h-5 bg-[color:var(--brand-via)] rounded-full"></span>
+                {{ tr('Employee Groups Management') }}
+            </h3>
+
+            <div class="flex flex-col sm:flex-row sm:items-center gap-2">
+                @if(!empty($branchesOptions))
+                    <div class="min-w-[220px]">
+                        <x-ui.select
+                            label="{{ tr('Branch') }}"
+                            wire:model.live="filterBranchId"
+                            :disabled="$lockBranchFilter"
+                        >
+                            <option value="">{{ tr('All Branches') }}</option>
+                            @foreach($branchesOptions as $b)
+                                <option value="{{ $b['id'] }}">{{ $b['name'] }}</option>
+                            @endforeach
+                        </x-ui.select>
+
+                        @if($lockBranchFilter)
+                            <p class="mt-1 text-[10px] text-gray-400 font-bold">
+                                {{ tr('Access is limited to your branch.') }}
+                            </p>
+                        @endif
+                    </div>
+                @endif
+
+                @can('settings.attendance.manage')
+                    <x-ui.primary-button wire:click="openGroupModal" class="!rounded-xl shadow-md">
+                        <i class="fas fa-plus-circle me-1"></i> {{ tr('New Group') }}
+                    </x-ui.primary-button>
+                @endcan
+            </div>
+        </div>
 
     <div class="bg-white rounded-3xl shadow-sm border border-gray-100 mt-2"> {{-- Removed overflow-hidden --}}
         <table class="w-full text-start border-collapse">
@@ -17,8 +41,17 @@
                 <tr class="bg-gray-50/50 border-b border-gray-100">
                     <th class="px-6 py-4 text-[10px] font-black text-gray-400 border-b border-gray-100 uppercase tracking-widest text-center w-12">#</th>
                     <th class="px-6 py-4 text-[10px] font-black text-gray-400 border-b border-gray-100 uppercase tracking-widest text-start">{{ tr('Group Name') }}</th>
-                    <th class="px-6 py-4 text-[10px] font-black text-gray-400 border-b border-gray-100 uppercase tracking-widest text-start">{{ tr('Description') }}</th>
-                    <th class="px-6 py-4 text-[10px] font-black text-gray-400 border-b border-gray-100 uppercase tracking-widest text-center">{{ tr('Policy') }}</th>
+                    <th class="px-6 py-4 text-[10px] font-black text-gray-400 border-b border-gray-100 uppercase tracking-widest text-start">
+                        {{ tr('Description') }}
+                    </th>
+
+                    <th class="px-6 py-4 text-[10px] font-black text-gray-400 border-b border-gray-100 uppercase tracking-widest text-center">
+                        {{ tr('Branch') }}
+                    </th>
+
+                    <th class="px-6 py-4 text-[10px] font-black text-gray-400 border-b border-gray-100 uppercase tracking-widest text-center">
+                        {{ tr('Policy') }}
+                    </th>
                     <th class="px-6 py-4 text-[10px] font-black text-gray-400 border-b border-gray-100 uppercase tracking-widest text-center">{{ tr('Employees') }}</th>
                     <th class="px-6 py-4 text-[10px] font-black text-gray-400 border-b border-gray-100 uppercase tracking-widest text-center">{{ tr('Methods') }}</th>
                     <th class="px-6 py-4 text-[10px] font-black text-gray-400 border-b border-gray-100 uppercase tracking-widest text-end">{{ tr('Actions') }}</th>
@@ -41,9 +74,16 @@
                     <td class="px-6 py-4">
                         <p class="text-[11px] text-gray-500 line-clamp-2 leading-relaxed">{{ $group['description'] }}</p>
                     </td>
+
+                    <td class="px-6 py-4 text-center">
+                        <span class="px-3 py-1 rounded-full text-[10px] font-black border bg-gray-50 text-gray-600 border-gray-100">
+                            {{ $group['branch_name'] ?? '-' }}
+                        </span>
+                    </td>
+
                     <td class="px-6 py-4 text-center">
                         @php
-                            $policyLabel = $policyTypes[$group['policy']] ?? $group['policy'];
+                            $policyLabel  = $policyTypes[$group['policy']] ?? $group['policy'];
                             $policyCls = match($group['policy']) {
                                 'general' => 'bg-green-50 text-green-600 border-green-100',
                                 'special' => 'bg-blue-50 text-blue-600 border-blue-100',
@@ -124,7 +164,7 @@
                 </tr>
                 @empty
                 <tr>
-                    <td colspan="6" class="px-6 py-10 text-center">
+                    <td colspan="8" class="px-6 py-10 text-center">
                         <div class="flex flex-col items-center opacity-30">
                             <i class="fas fa-users-slash text-4xl mb-3"></i>
                             <p class="text-sm font-bold">{{ tr('No groups created yet.') }}</p>

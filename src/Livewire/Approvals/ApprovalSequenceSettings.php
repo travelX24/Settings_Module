@@ -19,6 +19,7 @@ class ApprovalSequenceSettings extends Component
     public string $search = '';
     public string $filterStatus = 'all'; // all|active|inactive
 
+    public string $filterBranchId = ''; // '' => all branches
     public bool $showModal = false;
     public ?int $editingId = null;
 
@@ -163,7 +164,12 @@ class ApprovalSequenceSettings extends Component
             ->all();
     }
 
-    public function updatedTab(): void
+   public function updatedTab(): void
+    {
+        $this->resetPage();
+    }
+
+    public function updatedFilterBranchId(): void
     {
         $this->resetPage();
     }
@@ -198,8 +204,13 @@ class ApprovalSequenceSettings extends Component
         $this->name = '';
         $this->is_active = true;
 
-        $this->scope_type = 'all';
-        $this->scope_ids = [];
+        if (($this->filterBranchId ?? '') !== '') {
+            $this->scope_type = 'branch';
+            $this->scope_ids  = [(int) $this->filterBranchId];
+        } else {
+            $this->scope_type = 'all';
+            $this->scope_ids = [];
+        }
 
         $this->resetSteps();
 
@@ -437,7 +448,7 @@ class ApprovalSequenceSettings extends Component
     {
         $companyId = $this->companyId();
 
-        $q = ApprovalPolicy::query()
+         $q = ApprovalPolicy::query()
             ->where('company_id', $companyId)
             ->where('operation_key', $this->tab);
 
@@ -449,6 +460,18 @@ class ApprovalSequenceSettings extends Component
             $q->where('is_active', true);
         } elseif ($this->filterStatus === 'inactive') {
             $q->where('is_active', false);
+        }
+
+        if (($this->filterBranchId ?? '') !== '') {
+            $bid = (int) $this->filterBranchId;
+
+            $q->where(function ($qq) use ($bid) {
+                $qq->where('scope_type', 'all')
+                ->orWhere(function ($bq) use ($bid) {
+                    $bq->where('scope_type', 'branch')
+                        ->whereHas('scopes', fn ($sq) => $sq->where('scope_id', $bid));
+                });
+            });
         }
 
         $policies = $q->withCount('steps')

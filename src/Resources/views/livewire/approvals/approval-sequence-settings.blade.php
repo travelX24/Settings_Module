@@ -91,8 +91,20 @@
                     />
                 </div>
 
+               <div class="w-full md:w-64">
+                    <x-ui.select
+                        wire:model.live="filterBranchId"
+                    >
+                        <option value="">{{ tr('All Branches') }}</option>
+                        @foreach(($branches ?? []) as $br)
+                            <option value="{{ $br['id'] }}">
+                                {{ $br['name'] ?? ('#'.$br['id']) }}
+                            </option>
+                        @endforeach
+                    </x-ui.select>
+                </div>
+
                 <div class="w-full md:w-64">
-                    {{-- ✅ بدون label + placeholder داخل الخيار الأول --}}
                     <x-ui.select
                         id="filter_status"
                         name="filterStatus"

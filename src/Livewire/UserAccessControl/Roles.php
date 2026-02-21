@@ -8,7 +8,7 @@ use Spatie\Permission\Models\Role;
 use Spatie\Permission\Models\Permission;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Auth;
-
+use Illuminate\Support\Facades\Schema;
 class Roles extends Component
 {
     use WithPagination;
@@ -16,7 +16,11 @@ class Roles extends Component
     public $search = '';
     public $showModal = false;
     public $editingId = null;
-
+    public array $branches = [];
+    public array $branchesById = [];
+    public string $filterBranchId = '';
+    public ?string $employeeBranchCol = null;
+    public bool $lockBranchFilter = false;
     // Form Fields
     public $name = '';
     public $description = '';
@@ -30,11 +34,106 @@ class Roles extends Component
         'open-add-role-modal' => 'openAddModal',
     ];
 
-    public function mount()
+   public function mount()
     {
         $this->loadPermissionGroups();
+        $this->loadBranches();
+        $this->initBranchFilterLock();
     }
 
+private function loadBranches(): void
+    {
+        $this->branches = [];
+        $this->branchesById = [];
+
+        $this->employeeBranchCol = (Schema::hasTable('employees') && Schema::hasColumn('employees', 'branch_id'))
+            ? 'branch_id'
+            : null;
+
+        if (!Schema::hasTable('branches')) {
+            return;
+        }
+
+        $companyId = $this->companyId();
+
+        // Prefer Arabic on RTL
+        $labelCol = 'name';
+        $locale = app()->getLocale();
+        $isRtl  = in_array(substr($locale, 0, 2), ['ar','fa','ur','he']);
+
+        if ($isRtl && Schema::hasColumn('branches', 'name_ar')) {
+            $labelCol = 'name_ar';
+        } elseif (!$isRtl && Schema::hasColumn('branches', 'name_en')) {
+            $labelCol = 'name_en';
+        } elseif (!Schema::hasColumn('branches', $labelCol)) {
+            // fallback
+            $labelCol = Schema::hasColumn('branches', 'title') ? 'title' : 'id';
+        }
+
+        // detect company col
+        $companyCol = null;
+        foreach (['saas_company_id', 'company_id'] as $c) {
+            if (Schema::hasColumn('branches', $c)) { $companyCol = $c; break; }
+        }
+
+        $q = DB::table('branches')->select(['id', DB::raw("$labelCol as name")]);
+
+        if ($companyCol) {
+            $q->where($companyCol, $companyId);
+        }
+
+        $rows = $q->orderBy($labelCol)->get();
+
+        $this->branches = $rows->map(fn($r) => ['id' => (int)$r->id, 'name' => (string)$r->name])->all();
+        $this->branchesById = collect($this->branches)->pluck('name', 'id')->all();
+    }
+    private function companyId(): int
+    {
+        if (app()->bound('currentCompany') && app('currentCompany')) {
+            return (int) app('currentCompany')->id;
+        }
+
+        return (int) (Auth::user()->saas_company_id ?? 0);
+    }
+    private function currentUserBranchId(): ?int
+    {
+        if (!$this->employeeBranchCol) return null;
+
+        $employeeId = Auth::user()?->employee_id;
+        if (!$employeeId) return null;
+
+        $bid = DB::table('employees')->where('id', $employeeId)->value($this->employeeBranchCol);
+
+        return $bid ? (int)$bid : null;
+    }
+
+    private function initBranchFilterLock(): void
+    {
+        $scope = Auth::user()?->access_scope ?? 'all_branches';
+
+        if ($scope === 'my_branch') {
+            $this->lockBranchFilter = true;
+            $bid = $this->currentUserBranchId();
+            $this->filterBranchId = $bid ? (string)$bid : '';
+        }
+    }
+
+    private function effectiveBranchId(): ?int
+    {
+        if (($this->filterBranchId ?? '') === '') return null;
+        return (int)$this->filterBranchId;
+    }
+
+    public function updatedFilterBranchId(): void
+    {
+        if ($this->lockBranchFilter) {
+            $bid = $this->currentUserBranchId();
+            $this->filterBranchId = $bid ? (string)$bid : '';
+            return;
+        }
+
+        $this->resetPage();
+    }
     public function loadPermissionGroups()
     {
         // Define system permissions and their groups based on UI modules
@@ -231,14 +330,23 @@ class Roles extends Component
 
     public function render()
     {
-        $roles = Role::where('name', '!=', 'saas-admin')
-            ->when($this->search, function($q) {
-                $q->where('name', 'like', '%' . $this->search . '%');
-            })
-            ->withCount(['users' => function($query) {
-                $query->where('saas_company_id', auth()->user()->saas_company_id);
-            }])
-            ->paginate(10);
+         $companyId = $this->companyId();
+                $branchId = $this->effectiveBranchId();
+
+                $roles = Role::where('name', '!=', 'saas-admin')
+                    ->when($this->search, function($q) {
+                        $q->where('name', 'like', '%' . $this->search . '%');
+                    })
+                    ->withCount(['users' => function($query) use ($companyId, $branchId) {
+                        $query->where('saas_company_id', $companyId);
+
+                        if ($branchId && $this->employeeBranchCol) {
+                            $query->whereHas('employee', function ($eq) use ($branchId) {
+                                $eq->where($this->employeeBranchCol, $branchId);
+                            });
+                        }
+                    }])
+                    ->paginate(10);
 
         return view('systemsettings::livewire.user-access-control.roles', [
             'roles' => $roles

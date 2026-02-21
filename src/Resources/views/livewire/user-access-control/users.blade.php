@@ -9,6 +9,27 @@
                 placeholder="{{ tr('Search by name or email...') }}"
             />
         </div>
+
+        @if(!empty($branches))
+            <div class="w-full sm:w-1/4">
+                <x-ui.select
+                    label="{{ tr('Branch') }}"
+                    wire:model.live="filterBranchId"
+                    :disabled="$lockBranchFilter"
+                >
+                    <option value="">{{ tr('All Branches') }}</option>
+                    @foreach($branches as $br)
+                        <option value="{{ $br['id'] }}">{{ $br['name'] }}</option>
+                    @endforeach
+                </x-ui.select>
+
+                @if($lockBranchFilter)
+                    <div class="text-[10px] text-gray-500 mt-1">
+                        {{ tr('Access scope is limited to your branch.') }}
+                    </div>
+                @endif
+            </div>
+        @endif
     </div>
 
     {{-- Users Table --}}
@@ -34,10 +55,21 @@
                             <span class="text-xs text-gray-500">{{ $user->email }}</span>
                         </div>
                     </td>
-                    <td class="px-6 py-4 whitespace-nowrap">
-                        <span class="text-sm text-gray-900">
-                            {{ $user->employee ? ($user->employee->name_ar ?? $user->employee->name_en) : '-' }}
-                        </span>
+                   <td class="px-6 py-4 whitespace-nowrap">
+                        <div class="flex flex-col">
+                            <span class="text-sm text-gray-900">
+                                {{ $user->employee ? ($user->employee->name_ar ?? $user->employee->name_en) : '-' }}
+                            </span>
+
+                            @php
+                                $bid = ($user->employee && $employeeBranchCol) ? ($user->employee->{$employeeBranchCol} ?? null) : null;
+                                $bname = $bid ? ($branchesById[$bid] ?? null) : null;
+                            @endphp
+
+                            @if($bname)
+                                <span class="text-[10px] text-gray-400">{{ $bname }}</span>
+                            @endif
+                        </div>
                     </td>
                   <td class="px-6 py-4 whitespace-nowrap">
                         @if(($user->access_type ?? 'system_and_app') === 'hr_app_only')

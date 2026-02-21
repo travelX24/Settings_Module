@@ -12,7 +12,7 @@ use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Validation\Rule;
 use Illuminate\Support\Str;
-
+use Illuminate\Support\Facades\Schema;
 class Users extends Component
 {
     use WithPagination;
@@ -46,6 +46,13 @@ class Users extends Component
     public $permissionGroups = [];
     public $permissionsMap = [];
 
+    // ✅ Branch filtering
+    public array $branches = [];
+    public array $branchesById = [];
+    public string $filterBranchId = ''; // '' => all
+    public ?string $employeeBranchCol = null; // usually 'branch_id'
+    public bool $lockBranchFilter = false; // if current user is my_branch
+
     protected $listeners = [
         'refreshUsers' => '$refresh',
         'open-add-user-modal' => 'openAddModal',
@@ -54,8 +61,95 @@ class Users extends Component
     public function mount()
     {
         $this->loadPermissionGroups();
+        $this->loadBranches();
+        $this->initBranchFilterLock();
+    }
+    private function loadBranches(): void
+    {
+        $this->branches = [];
+        $this->branchesById = [];
+
+        $this->employeeBranchCol = (Schema::hasTable('employees') && Schema::hasColumn('employees', 'branch_id'))
+            ? 'branch_id'
+            : null;
+
+        if (!Schema::hasTable('branches')) {
+            return;
+        }
+
+        $companyId = $this->getCompanyId();
+
+        // Prefer Arabic on RTL
+        $labelCol = 'name';
+        $locale = app()->getLocale();
+        $isRtl  = in_array(substr($locale, 0, 2), ['ar','fa','ur','he']);
+
+        if ($isRtl && Schema::hasColumn('branches', 'name_ar')) {
+            $labelCol = 'name_ar';
+        } elseif (!$isRtl && Schema::hasColumn('branches', 'name_en')) {
+            $labelCol = 'name_en';
+        } elseif (!Schema::hasColumn('branches', $labelCol)) {
+            // fallback
+            $labelCol = Schema::hasColumn('branches', 'title') ? 'title' : 'id';
+        }
+
+        // detect company col
+        $companyCol = null;
+        foreach (['saas_company_id', 'company_id'] as $c) {
+            if (Schema::hasColumn('branches', $c)) { $companyCol = $c; break; }
+        }
+
+        $q = DB::table('branches')->select(['id', DB::raw("$labelCol as name")]);
+
+        if ($companyCol) {
+            $q->where($companyCol, $companyId);
+        }
+
+        $rows = $q->orderBy($labelCol)->get();
+
+        $this->branches = $rows->map(fn($r) => ['id' => (int)$r->id, 'name' => (string)$r->name])->all();
+        $this->branchesById = collect($this->branches)->pluck('name', 'id')->all();
     }
 
+    private function currentUserBranchId(): ?int
+    {
+        if (!$this->employeeBranchCol) return null;
+
+        $employeeId = Auth::user()?->employee_id;
+        if (!$employeeId) return null;
+
+        $bid = DB::table('employees')->where('id', $employeeId)->value($this->employeeBranchCol);
+
+        return $bid ? (int)$bid : null;
+    }
+
+    private function initBranchFilterLock(): void
+    {
+        $scope = Auth::user()?->access_scope ?? 'all_branches';
+
+        if ($scope === 'my_branch') {
+            $this->lockBranchFilter = true;
+            $bid = $this->currentUserBranchId();
+            $this->filterBranchId = $bid ? (string)$bid : '';
+        }
+    }
+
+    private function effectiveBranchId(): ?int
+    {
+        if (($this->filterBranchId ?? '') === '') return null;
+        return (int)$this->filterBranchId;
+    }
+
+    public function updatedFilterBranchId(): void
+    {
+        if ($this->lockBranchFilter) {
+            $bid = $this->currentUserBranchId();
+            $this->filterBranchId = $bid ? (string)$bid : '';
+            return;
+        }
+
+        $this->resetPage();
+    }
     public function loadPermissionGroups()
     {
         $this->permissionGroups = [
@@ -136,6 +230,7 @@ class Users extends Component
             ->toArray();
 
          $this->foundEmployees = Employee::forCompany($this->getCompanyId())
+             ->with(['jobTitle', 'department']) 
             ->where(function($q) {
                 $q->where('name_ar', 'like', '%' . $this->employeeSearch . '%')
                   ->orWhere('name_en', 'like', '%' . $this->employeeSearch . '%')
@@ -148,7 +243,7 @@ class Users extends Component
 
     public function selectEmployee($employeeId)
     {
-        $employee = Employee::find($employeeId);
+        $employee = Employee::with(['department', 'jobTitle'])->find($employeeId);
         if (!$employee) return;
 
         // Check if this is the primary admin account
@@ -381,15 +476,25 @@ class Users extends Component
 
     public function render()
     {
-        $users = User::where('saas_company_id', $this->getCompanyId())
+       $users = User::where('saas_company_id', $this->getCompanyId())
             ->with(['roles', 'employee'])
             ->when($this->search, function($q) {
-                $q->where('name', 'like', '%'.$this->search.'%')
-                  ->orWhere('email', 'like', '%'.$this->search.'%');
-            })
-            ->paginate(10);
+                $q->where(function ($qq) {
+                    $qq->where('name', 'like', '%'.$this->search.'%')
+                    ->orWhere('email', 'like', '%'.$this->search.'%');
+                });
+            });
 
-        // ✅ Temporary fix: Fetch all roles but exclude 'saas-admin'
+        $branchId = $this->effectiveBranchId();
+        if ($branchId && $this->employeeBranchCol) {
+            $users->whereHas('employee', function ($q) use ($branchId) {
+                $q->where($this->employeeBranchCol, $branchId);
+            });
+        }
+
+        $users = $users->paginate(10);
+
+        //  Temporary fix: Fetch all roles but exclude 'saas-admin'
         // We might need to handle tenant-specific roles via team_id or adding the column later.
         $roles = Role::where('name', '!=', 'saas-admin')->get();
 
