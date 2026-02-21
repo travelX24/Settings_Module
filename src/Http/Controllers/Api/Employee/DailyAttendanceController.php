@@ -78,6 +78,38 @@ class DailyAttendanceController extends Controller
             $logsQ->where('attendance_status', (string) $request->query('status'));
         }
 
+        // ── Fetch approved leaves for this range to detect partial/full day leaves ──
+        $approvedLeaves = DB::table('attendance_leave_requests')
+            ->join('leave_policies', 'attendance_leave_requests.leave_policy_id', '=', 'leave_policies.id')
+            ->where('attendance_leave_requests.employee_id', (int) $employee->id)
+            ->where('attendance_leave_requests.status', 'approved')
+            ->where('attendance_leave_requests.start_date', '<=', $to->toDateString())
+            ->where('attendance_leave_requests.end_date',   '>=', $from->toDateString())
+            ->get([
+                'attendance_leave_requests.start_date',
+                'attendance_leave_requests.end_date',
+                'attendance_leave_requests.from_time',
+                'attendance_leave_requests.to_time',
+                'attendance_leave_requests.duration_unit',
+                'leave_policies.name as leave_name',
+            ]);
+
+        $leaveLookup = [];
+        foreach ($approvedLeaves as $leave) {
+            $lStart = Carbon::parse($leave->start_date);
+            $lEnd   = Carbon::parse($leave->end_date);
+            $c = $lStart->copy();
+            while ($c->lte($lEnd)) {
+                $leaveLookup[$c->toDateString()][] = [
+                    'name' => $leave->leave_name,
+                    'from' => $leave->from_time ? substr($leave->from_time, 0, 5) : null,
+                    'to'   => $leave->to_time ? substr($leave->to_time, 0, 5) : null,
+                    'is_full' => ($leave->duration_unit === 'full_day') || (!$leave->from_time && !$leave->to_time),
+                ];
+                $c->addDay();
+            }
+        }
+
         $rows = $logsQ->get();
         
         $logIds = $rows->pluck('id')->toArray();
@@ -86,15 +118,24 @@ class DailyAttendanceController extends Controller
             ->get()
             ->groupBy('daily_log_id');
 
-        $days = $rows->map(function ($r) use ($schedule, $allDetails) {
+        $toMins = fn($t) => (int)substr($t, 0, 2) * 60 + (int)substr($t, 3, 2);
+
+        $days = $rows->map(function ($r) use ($schedule, $allDetails, $leaveLookup, $toMins) {
             $dateObj = Carbon::parse($r->attendance_date);
-            $dayKey = $this->dayKey($dateObj);
+            $dateStr = $r->attendance_date;
+            $dayKey  = $this->dayKey($dateObj);
             
             $periodsOut = [];
             $workSchedulePeriods = collect();
 
-            if ($schedule && $r->scheduled_hours > 0) {
-                // ✅ Handle Exceptions (e.g. Thursday 09:00-15:00 vs default split)
+            $dayLeaves = $leaveLookup[$dateStr] ?? [];
+            $fullDayLeave = collect($dayLeaves)->firstWhere('is_full', true);
+            $hasPartialLeave = collect($dayLeaves)->where('is_full', false)->isNotEmpty();
+
+            // We show periods if (it's a workday) OR (there are partial leaves)
+            // Even if scheduled_hours <= 0 (sometimes happens after deduction)
+            if ($schedule && ($r->scheduled_hours != 0 || $hasPartialLeave || !empty($r->scheduled_check_in))) {
+                // ✅ Handle Exceptions
                 $dayExceptions = $schedule->exceptions
                     ? $schedule->exceptions->filter(function ($e) use ($r, $dayKey) {
                         if (!$e->is_active) return false;
@@ -119,7 +160,31 @@ class DailyAttendanceController extends Controller
                 }
                 
                 foreach ($workSchedulePeriods as $p) {
-                    $periodsOut[] = $p['start_time'] . ' - ' . $p['end_time'];
+                    $pFrom = $toMins($p['start_time']);
+                    $pTo   = $toMins($p['end_time']);
+                    if ($pTo <= $pFrom) $pTo += 1440;
+
+                    $leaveMatch = null;
+                    if (!$fullDayLeave) {
+                        foreach ($dayLeaves as $pl) {
+                            if ($pl['is_full'] || !$pl['from'] || !$pl['to']) continue;
+                            $lFrom = $toMins($pl['from']);
+                            $lTo   = $toMins($pl['to']);
+                            if ($lTo <= $lFrom) $lTo += 1440;
+                            if ($lFrom < $pTo && $lTo > $pFrom) {
+                                $leaveMatch = $pl;
+                                break;
+                            }
+                        }
+                    }
+
+                    if ($fullDayLeave) {
+                        $periodsOut[] = "إجازة: " . $fullDayLeave['name'];
+                    } elseif ($leaveMatch) {
+                        $periodsOut[] = $p['start_time'] . " - " . $p['end_time'] . " (إجازة: " . $leaveMatch['name'] . ")";
+                    } else {
+                        $periodsOut[] = $p['start_time'] . ' - ' . $p['end_time'];
+                    }
                 }
             }
 
@@ -132,22 +197,36 @@ class DailyAttendanceController extends Controller
                 ];
             });
 
+            // Status Logic: If full day leave -> on_leave. 
+            // If partial leave or has periods -> working (to show the periods).
+            // Else use database status.
+            $status = (string) $r->attendance_status;
+            if ($fullDayLeave) {
+                $status = 'on_leave';
+            } elseif ($hasPartialLeave || count($periodsOut) > 0) {
+                // If it's a partial leave or we have work periods, we must not show 'off'
+                if ($status === 'on_leave' || $status === 'day_off' || $status === 'absent') {
+                    $status = 'working'; 
+                }
+            }
+
             return [
                 'date' => (string) $r->attendance_date,
                 'day_key' => $dayKey,
                 'work_schedule_id' => $r->work_schedule_id ? (int) $r->work_schedule_id : null,
                 'scheduled_hours' => $r->scheduled_hours !== null ? (float) $r->scheduled_hours : null,
-                'scheduled_check_in' => $r->scheduled_check_in, // full time
-                'scheduled_check_out' => $r->scheduled_check_out, // full time
+                'scheduled_check_in' => $r->scheduled_check_in,
+                'scheduled_check_out' => $r->scheduled_check_out,
                 'periods' => $periodsOut,
                 'check_in_time' => $this->timeToHm($r->check_in_time),
                 'check_out_time' => $this->timeToHm($r->check_out_time),
-                'attendance_status' => (string) $r->attendance_status,
+                'attendance_status' => $status,
                 'approval_status' => (string) $r->approval_status,
                 'compliance_percentage' => $r->compliance_percentage !== null ? (float) $r->compliance_percentage : null,
                 'punches' => $details,
                 'is_edited' => (bool) $r->is_edited,
                 'source' => (string) $r->source,
+                'leave_name' => $fullDayLeave ? $fullDayLeave['name'] : (collect($dayLeaves)->first()['name'] ?? null),
             ];
         })->values();
 
@@ -239,8 +318,41 @@ class DailyAttendanceController extends Controller
 
         $log = $this->ensureLog($companyId, (int) $employee->id, $dateStr, $schedule, $holidays);
 
-        if ((string) ($log->attendance_status ?? '') === 'on_leave' && (string) ($log->approval_status ?? '') === 'approved') {
-            return response()->json(['ok' => false, 'code' => 'on_leave', 'message' => 'Employee is on leave'], 409);
+        // 🟢 Check for FULL DAY or PARTIAL LEAVE overlaps right now
+        $approvedLeaves = DB::table('attendance_leave_requests')
+            ->where('employee_id', (int) $employee->id)
+            ->where('status', 'approved')
+            ->whereDate('start_date', '<=', $dateStr)
+            ->whereDate('end_date', '>=', $dateStr)
+            ->get();
+
+        $nowTimeStr = now()->format('H:i');
+        $nowMins = (int)substr($nowTimeStr, 0, 2) * 60 + (int)substr($nowTimeStr, 3, 2);
+
+        foreach ($approvedLeaves as $leave) {
+            $isFull = ($leave->duration_unit === 'full_day') || (!$leave->from_time && !$leave->to_time);
+            if ($isFull) {
+                return response()->json([
+                    'ok' => false, 
+                    'code' => 'on_leave', 
+                    'message' => 'أنت في إجازة اليوم.'
+                ], 403);
+            }
+
+            // Partial leave
+            if ($leave->from_time && $leave->to_time) {
+                $lFrom = (int)substr($leave->from_time, 0, 2) * 60 + (int)substr($leave->from_time, 3, 2);
+                $lTo   = (int)substr($leave->to_time, 0, 2) * 60 + (int)substr($leave->to_time, 3, 2);
+                if ($lTo <= $lFrom) $lTo += 1440;
+
+                if ($nowMins >= $lFrom && $nowMins <= $lTo) {
+                    return response()->json([
+                        'ok' => false, 
+                        'code' => 'on_leave_period', 
+                        'message' => 'لا يمكنك تسجيل الحضور لأنك في فترة إجازة حالياً.'
+                    ], 403);
+                }
+            }
         }
 
         if ($log->scheduled_hours === null) {
