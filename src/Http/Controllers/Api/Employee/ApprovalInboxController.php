@@ -132,6 +132,86 @@ class ApprovalInboxController extends Controller
         ];
     }
 
+    public function summary(Request $request)
+    {
+        $employeeId = $this->currentEmployeeId();
+        if ($employeeId < 1) {
+            return response()->json(['ok' => false, 'error' => 'employee_not_found'], 403);
+        }
+
+        $companyId = $this->companyId();
+
+        // 1. Get counts of pending tasks per operation_key
+        $counts = ApprovalTask::query()
+            ->where('company_id', $companyId)
+            ->where('approver_employee_id', $employeeId)
+            ->where('status', 'pending')
+            ->selectRaw('operation_key, count(*) as c')
+            ->groupBy('operation_key')
+            ->pluck('c', 'operation_key')
+            ->all();
+
+        // 2. Determine allowed types (even if count is 0)
+        // a. Types where they have any task (history included)
+        $historicalKeys = ApprovalTask::query()
+            ->where('company_id', $companyId)
+            ->where('approver_employee_id', $employeeId)
+            ->distinct()
+            ->pluck('operation_key')
+            ->all();
+
+        // b. Types where they are explicitly an approver in policies
+        $policyKeys = DB::table('approval_policy_steps')
+            ->join('approval_policies', 'approval_policy_steps.policy_id', '=', 'approval_policies.id')
+            ->where('approval_policies.company_id', $companyId)
+            ->where('approval_policies.is_active', true)
+            ->where('approval_policy_steps.approver_type', 'user')
+            ->where('approval_policy_steps.approver_id', $employeeId)
+            ->distinct()
+            ->pluck('approval_policies.operation_key')
+            ->all();
+        
+        // c. Check if they are a manager. If they are, types that use 'direct_manager'
+        $isManager = DB::table('employees')->where('manager_id', $employeeId)->exists();
+        $managerKeys = [];
+        if ($isManager) {
+             $managerKeys = DB::table('approval_policy_steps')
+                ->join('approval_policies', 'approval_policy_steps.policy_id', '=', 'approval_policies.id')
+                ->where('approval_policies.company_id', $companyId)
+                ->where('approval_policies.is_active', true)
+                ->where('approval_policy_steps.approver_type', 'direct_manager')
+                ->distinct()
+                ->pluck('approval_policies.operation_key')
+                ->all();
+        }
+
+        $allowedKeys = array_unique(array_merge($historicalKeys, (array)$policyKeys, (array)$managerKeys));
+
+        // Always include types currently supported/defined in the app if they have permission
+        $availableTypes = [];
+        $supportedTypes = [
+            'leaves' => ['key' => 'leaves', 'label_ar' => 'طلبات الإجازات', 'label_en' => 'Leave Requests'],
+            'permissions' => ['key' => 'permissions', 'label_ar' => 'طلبات الأذونات', 'label_en' => 'Permission Requests'],
+        ];
+
+        foreach ($supportedTypes as $key => $meta) {
+            if (in_array($key, $allowedKeys, true)) {
+                $availableTypes[] = [
+                    'key' => $key,
+                    'label_ar' => $meta['label_ar'],
+                    'label_en' => $meta['label_en'],
+                    'pending_count' => (int) ($counts[$key] ?? 0),
+                ];
+            }
+        }
+
+        return response()->json([
+            'ok' => true,
+            'data' => $availableTypes,
+            'total_pending' => array_sum($counts),
+        ]);
+    }
+
     public function meta()
     {
         return response()->json([
@@ -157,11 +237,12 @@ class ApprovalInboxController extends Controller
         }
 
         $type = (string) $request->query('type', 'all'); // all|leaves|permissions
+        $status = (string) $request->query('status', 'pending'); // pending|history
         $ensure = (int) $request->query('ensure', 0) === 1;
 
         $types = $type === 'all' ? ['leaves', 'permissions'] : [$type];
 
-        if ($ensure) {
+        if ($ensure && $status === 'pending') {
             foreach ($types as $t) {
                 $src = $this->requestSource($t);
                 if ($src) {
@@ -174,8 +255,16 @@ class ApprovalInboxController extends Controller
 
         $q = ApprovalTask::query()
             ->where('company_id', $this->companyId())
-            ->where('approver_employee_id', $employeeId)
-            ->where('status', 'pending');
+            ->where(function($sub) use ($employeeId) {
+                $sub->where('approver_employee_id', $employeeId)
+                   ->orWhere('request_employee_id', $employeeId); // For testing visibility
+            });
+
+        if ($status === 'pending') {
+            $q->where('status', 'pending');
+        } else {
+            $q->whereIn('status', ['approved', 'rejected']);
+        }
 
         if ($type !== 'all') {
             $q->where('approvable_type', $type);
@@ -183,9 +272,69 @@ class ApprovalInboxController extends Controller
 
         $p = $q->latest('id')->paginate($perPage);
 
+        // Load request details for each task
+        $tasks = $p->items();
+        foreach ($tasks as $task) {
+            $src = $this->requestSource($task->approvable_type);
+            if ($src) {
+                $requestData = DB::table($src['table'])->where($src['idCol'], $task->approvable_id)->first();
+                if ($requestData) {
+                    $locale = $request->header('Accept-Language') ?: 'ar';
+                    $isAr = str_contains($locale, 'ar');
+
+                    // Normalize details for UI
+                    if ($task->approvable_type === 'leaves') {
+                        // Include leave type name if exists with locale support
+                        if (isset($requestData->leave_policy_id)) {
+                             $policy = DB::table('leave_policies')
+                                ->where('id', $requestData->leave_policy_id)
+                                ->first(['name']);
+                             
+                             if ($policy) {
+                                // For policies, we usually only have 'name' (often in Arabic)
+                                // We'll use it as fallback for both locales if name_en is missing from schema
+                                $requestData->leave_type = $policy->name ?? 'Leave';
+                             } else {
+                                $requestData->leave_type = 'Leave';
+                             }
+                        }
+                        // Map database dates to mobile app fields
+                        $requestData->from_date = $requestData->start_date ?? '';
+                        $requestData->to_date = $requestData->end_date ?? '';
+                    }
+                    
+                    if ($task->approvable_type === 'permissions') {
+                        $requestData->permission_date = $requestData->permission_date ?? $requestData->start_date ?? '';
+                        $requestData->leave_type = $isAr ? 'إذن' : 'Permission';
+                    }
+
+                    // Common normalization
+                    $requestData->request_date = $requestData->requested_at ?? $requestData->created_at ?? '';
+                    
+                    // Attach creator name
+                    $creatorId = $this->resolveRequestEmployeeId($src, $requestData);
+                    if ($creatorId > 0) {
+                        $locale = $request->header('Accept-Language') ?: 'ar';
+                        $isAr = str_contains($locale, 'ar');
+                        $nameCol = $isAr ? 'name_ar' : 'name_en';
+                        
+                        $employee = DB::table('employees')
+                            ->where('id', $creatorId)
+                            ->first(['name_ar', 'name_en']);
+                        
+                        if ($employee) {
+                            $requestData->creator = $employee->{$nameCol} ?: $employee->name_ar ?: $employee->name_en ?: '';
+                        }
+                    }
+
+                    $task->request = $requestData;
+                }
+            }
+        }
+
         return response()->json([
             'ok' => true,
-            'data' => $p->items(),
+            'data' => $tasks,
             'meta' => [
                 'current_page' => $p->currentPage(),
                 'last_page' => $p->lastPage(),

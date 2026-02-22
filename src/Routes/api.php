@@ -23,6 +23,7 @@ Route::middleware(['api', 'auth:sanctum'])
 
         Route::prefix('approvals')->group(function () {
             Route::get('meta', [ApprovalInboxController::class, 'meta']);
+            Route::get('summary', [ApprovalInboxController::class, 'summary']);
             Route::get('inbox', [ApprovalInboxController::class, 'inbox']);
 
             Route::post('{type}/{id}/approve', [ApprovalInboxController::class, 'approve']);
