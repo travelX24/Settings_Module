@@ -110,6 +110,39 @@ class DailyAttendanceController extends Controller
             }
         }
 
+        // ── Fetch approved PERMISSIONS for this range ──────────────────────────
+        $permissionLookup = []; // date => [{from_time, to_time, minutes}]
+        if (Schema::hasTable('attendance_permission_requests')) {
+            $permCols = Schema::getColumnListing('attendance_permission_requests');
+            // Detect employee key column
+            $pKeyCol = in_array('employee_id', $permCols, true) ? 'employee_id'
+                : (in_array('user_id', $permCols, true) ? 'user_id' : null);
+            // Detect date column
+            $pDateCol = in_array('permission_date', $permCols, true) ? 'permission_date'
+                : (in_array('date', $permCols, true) ? 'date' : null);
+
+            if ($pKeyCol && $pDateCol) {
+                $pKeyVal = ($pKeyCol === 'employee_id') ? (int) $employee->id : ($user->id ?? null);
+                if ($pKeyVal) {
+                    $approvedPerms = DB::table('attendance_permission_requests')
+                        ->where($pKeyCol, $pKeyVal)
+                        ->where('status', 'approved')
+                        ->whereBetween($pDateCol, [$from->toDateString(), $to->toDateString()])
+                        ->get([$pDateCol . ' as perm_date', 'from_time', 'to_time', 'minutes']);
+
+                    foreach ($approvedPerms as $perm) {
+                        $dk = substr((string)($perm->perm_date ?? ''), 0, 10);
+                        if (!$dk) continue;
+                        $permissionLookup[$dk][] = [
+                            'from_time' => substr((string)($perm->from_time ?? ''), 0, 5),
+                            'to_time'   => substr((string)($perm->to_time ?? ''), 0, 5),
+                            'minutes'   => (int)($perm->minutes ?? 0),
+                        ];
+                    }
+                }
+            }
+        }
+
         $rows = $logsQ->get();
         
         $logIds = $rows->pluck('id')->toArray();
@@ -120,7 +153,7 @@ class DailyAttendanceController extends Controller
 
         $toMins = fn($t) => (int)substr($t, 0, 2) * 60 + (int)substr($t, 3, 2);
 
-        $days = $rows->map(function ($r) use ($schedule, $allDetails, $leaveLookup, $toMins) {
+        $days = $rows->map(function ($r) use ($schedule, $allDetails, $leaveLookup, $permissionLookup, $toMins) {
             $dateObj = Carbon::parse($r->attendance_date);
             $dateStr = $r->attendance_date;
             $dayKey  = $this->dayKey($dateObj);
@@ -197,14 +230,11 @@ class DailyAttendanceController extends Controller
                 ];
             });
 
-            // Status Logic: If full day leave -> on_leave. 
-            // If partial leave or has periods -> working (to show the periods).
-            // Else use database status.
+            // Status Logic
             $status = (string) $r->attendance_status;
             if ($fullDayLeave) {
                 $status = 'on_leave';
             } elseif ($hasPartialLeave || count($periodsOut) > 0) {
-                // If it's a partial leave or we have work periods, we must not show 'off'
                 if ($status === 'on_leave' || $status === 'day_off' || $status === 'absent') {
                     $status = 'working'; 
                 }
@@ -227,6 +257,7 @@ class DailyAttendanceController extends Controller
                 'is_edited' => (bool) $r->is_edited,
                 'source' => (string) $r->source,
                 'leave_name' => $fullDayLeave ? $fullDayLeave['name'] : (collect($dayLeaves)->first()['name'] ?? null),
+                'permissions' => $permissionLookup[$dateStr] ?? [],
             ];
         })->values();
 
