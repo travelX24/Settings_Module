@@ -31,8 +31,8 @@ class Users extends Component
     public $name = '';
     public $email = '';
     public $role = '';
-    public $access_scope = 'my_branch';
-    public $access_type = 'system_and_app'; // system_and_app | hr_app_only
+    public $access_scope = 'my_branch'; 
+    public array $allowed_branch_ids = []; 
     public $is_active = true;
     public $password = ''; // Only used if manual setting is ever needed, but requirement says send email
 
@@ -52,7 +52,8 @@ class Users extends Component
     public string $filterBranchId = ''; // '' => all
     public ?string $employeeBranchCol = null; // usually 'branch_id'
     public bool $lockBranchFilter = false; // if current user is my_branch
-
+    // Form Fields
+    public string $access_type = 'system_and_app'; // ✅ system_and_app | hr_app_only
     protected $listeners = [
         'refreshUsers' => '$refresh',
         'open-add-user-modal' => 'openAddModal',
@@ -269,7 +270,14 @@ class Users extends Component
         
         // Branch/Department logic
         // Assuming Company is the branch context or we look at Sector/Department
-        $this->display_branch = tr('Main Branch'); // Placeholder until "Branch" concept is clearer
+        $empBranchId = (int) ($employee->branch_id ?? 0);
+        $this->display_branch = $empBranchId && isset($this->branchesById[$empBranchId])
+            ? $this->branchesById[$empBranchId]
+            : '—';
+
+        if ($this->access_scope === 'my_branch' && $empBranchId > 0) {
+            $this->allowed_branch_ids = [$empBranchId];
+        }
         $this->display_department = $employee->department->name ?? '-';
         $this->display_job_title = $employee->jobTitle->name ?? '-';
 
@@ -313,6 +321,16 @@ class Users extends Component
         if ($this->is_locked_role) {
             $this->access_type = 'system_and_app';
         }
+        $this->allowed_branch_ids = [];
+
+        if (($user->access_scope ?? 'all_branches') === 'selected_branches') {
+            if (method_exists($user, 'allowedBranches')) {
+                $this->allowed_branch_ids = $user->allowedBranches()->pluck('branches.id')->map(fn($v) => (int)$v)->all();
+            }
+        } elseif (($user->access_scope ?? '') === 'my_branch') {
+            $bid = (int) ($user->employee?->branch_id ?? 0);
+            if ($bid > 0) $this->allowed_branch_ids = [$bid];
+        }
 
         $this->showModal = true;
     }
@@ -341,8 +359,16 @@ class Users extends Component
                     ? ['required', 'exists:roles,name']
                     : ['nullable']),
 
-            'access_scope' => ['required', 'in:my_branch,all_branches'],
+            'access_scope' => ['required', 'in:my_branch,all_branches,selected_branches'],
 
+            'allowed_branch_ids' => $this->access_scope === 'selected_branches'
+                ? ['required', 'array', 'min:1']
+                : ['nullable', 'array'],
+
+            'allowed_branch_ids.*' => [
+                'integer',
+                Rule::exists('branches', 'id')->where('saas_company_id', $companyId),
+            ],
         ], [
             'name.required' => tr('The username field is required.'),
             'name.unique' => tr('The username is already taken.'),
@@ -382,7 +408,9 @@ class Users extends Component
             }
 
             $user->update($updateData);
-            
+
+            // ✅ Sync branches access
+            $this->syncUserAllowedBranches($user);            
             // Only sync roles if not locked
           if (! $this->is_locked_role) {
                 if ($this->access_type === 'hr_app_only') {
@@ -408,7 +436,7 @@ class Users extends Component
                 'access_type'  => $this->access_type,
                 'is_active' => $this->is_active,
             ]);
-
+            $this->syncUserAllowedBranches($user);
             if ($this->access_type === 'system_and_app') {
                 $user->assignRole($this->role);
             }
@@ -438,6 +466,7 @@ class Users extends Component
         $this->editingId = null;
         $this->is_locked_role = false;
         $this->needs_employee_link = false;
+        $this->allowed_branch_ids = [];
     }
 
     public function sendPasswordReset($id)
@@ -509,7 +538,57 @@ class Users extends Component
             $this->role = '';
         }
     }
+    private function syncUserAllowedBranches(User $user): void
+    {
+        if (!method_exists($user, 'allowedBranches')) {
+            return;
+        }
 
+        $companyId = $this->getCompanyId();
+        $scope = $this->access_scope ?? 'all_branches';
+
+        // all_branches => نخلي pivot فاضي (لأنه غير محتاج)
+        if ($scope === 'all_branches') {
+            $user->allowedBranches()->sync([]);
+            return;
+        }
+
+        $ids = [];
+
+        // my_branch => ناخذ فرع الموظف المرتبط
+        if ($scope === 'my_branch') {
+            $bid = (int) ($user->employee?->branch_id ?? 0);
+
+            // لو لسه ما ارتبط employee داخل نفس الحفظ
+            if ($bid <= 0 && $this->selectedEmployeeId) {
+                $bid = (int) DB::table('employees')->where('id', $this->selectedEmployeeId)->value('branch_id');
+            }
+
+            if ($bid > 0) $ids = [$bid];
+        }
+
+        // selected_branches => من الفورم
+        if ($scope === 'selected_branches') {
+            $ids = array_values(array_unique(array_map('intval', $this->allowed_branch_ids)));
+        }
+
+        // تأكد أنها فروع لنفس الشركة
+        if (!empty($ids)) {
+            $ids = DB::table('branches')
+                ->where('saas_company_id', $companyId)
+                ->whereIn('id', $ids)
+                ->pluck('id')
+                ->map(fn($v) => (int)$v)
+                ->all();
+        }
+
+        $syncData = [];
+        foreach ($ids as $id) {
+            $syncData[(int) $id] = ['saas_company_id' => $companyId];
+        }
+
+        $user->allowedBranches()->sync($syncData);
+    }
 }
 
 
