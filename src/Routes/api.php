@@ -6,11 +6,13 @@ use Athka\SystemSettings\Http\Controllers\Api\Employee\WorkScheduleController;
 use Athka\SystemSettings\Http\Controllers\Api\Employee\DailyAttendanceController;
 use Athka\SystemSettings\Http\Controllers\Api\Company\ApprovalPolicyController;
 use Athka\SystemSettings\Http\Controllers\Api\Employee\ApprovalInboxController;
+use Athka\SystemSettings\Http\Controllers\Api\Employee\BranchController;
 
 Route::middleware(['api', 'auth:sanctum'])
     ->prefix('api/employee')
     ->group(function () {
 
+        Route::get('branches', [BranchController::class, 'index']);
         Route::get('attendance/prep', [AttendancePrepController::class, 'show']);
 
         Route::get('work-schedule', [WorkScheduleController::class, 'index']);
