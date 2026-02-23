@@ -942,7 +942,7 @@ class ExceptionalDaysIndex extends Component
                 ->toArray();
         }
 
-        if (Schema::hasTable('employees')) {
+               if (Schema::hasTable('employees')) {
             $companyCol = $this->companyColumnFor('employees');
 
             $nameExpr = $this->coalesceNameExpr(
@@ -952,8 +952,16 @@ class ExceptionalDaysIndex extends Component
                     : ['name_en', 'name', 'full_name', 'name_ar', 'employee_no']
             );
 
+            $allowedBranchIds = $this->currentUserAllowedBranchIds($companyId);
+            $branchCol = $this->employeeBranchColumn();
+
             $employees = DB::table('employees')
                 ->when($companyCol, fn ($q) => $q->where($companyCol, $companyId))
+                ->when($allowedBranchIds !== null, function ($q) use ($allowedBranchIds, $branchCol) {
+                    if (!$branchCol) { $q->whereRaw('1=0'); return; }
+
+                    $q->whereIn($branchCol, $allowedBranchIds);
+                })
                 ->select('id', DB::raw("{$nameExpr} as name"))
                 ->orderByRaw("{$nameExpr} asc")
                 ->limit(300)
@@ -1027,4 +1035,92 @@ class ExceptionalDaysIndex extends Component
             'copyRows' => $copyRows,
         ])->layout('layouts.company-admin');
     }
+
+  
+
+    private function employeeBranchColumn(): ?string
+    {
+        if (!Schema::hasTable('employees')) return null;
+
+        foreach (['branch_id'] as $c) {
+            if (Schema::hasColumn('employees', $c)) return $c;
+        }
+
+        return null;
+    }
+
+    // ✅ فروع المستخدم الحالي حسب access_scope
+    // ترجع:
+    // - null  => بدون تقييد (all_branches)
+    // - []    => لا يوجد فروع مسموحة (يظهر صفر موظفين)
+    // - [..]  => IDs الفروع المسموحة
+    private function currentUserAllowedBranchIds(int $companyId): ?array
+    {
+        $user = auth()->user();
+        if (!$user) return [];
+
+        $scope = (string) ($user->access_scope ?? 'all_branches');
+        if (!in_array($scope, ['all_branches', 'my_branch', 'selected_branches'], true)) {
+            $scope = 'all_branches';
+        }
+
+        if ($scope === 'all_branches') {
+            return null; // ✅ no restriction
+        }
+
+        // company column on branches
+        $branchesCompanyCol = null;
+        if (Schema::hasTable('branches')) {
+            foreach (['saas_company_id', 'company_id'] as $c) {
+                if (Schema::hasColumn('branches', $c)) { $branchesCompanyCol = $c; break; }
+            }
+        }
+
+        // my_branch => فرع الموظف المرتبط بالمستخدم
+        if ($scope === 'my_branch') {
+            $branchCol = $this->employeeBranchColumn();
+            if (!$branchCol) return [];
+
+            $bid = (int) ($user->employee?->{$branchCol} ?? 0);
+
+            if ($bid <= 0 && Schema::hasTable('employees') && !empty($user->employee_id)) {
+                $bid = (int) DB::table('employees')->where('id', (int) $user->employee_id)->value($branchCol);
+            }
+
+            return $bid > 0 ? [$bid] : [];
+        }
+
+        // selected_branches => من pivot عبر allowedBranches()
+        if ($scope === 'selected_branches') {
+            if (!method_exists($user, 'allowedBranches')) {
+                return []; // ✅ امنياً: ما نعرض شيء إذا العلاقة غير موجودة
+            }
+
+            $ids = $user->allowedBranches()
+                ->pluck('branches.id')
+                ->map(fn ($v) => (int) $v)
+                ->filter()
+                ->unique()
+                ->values()
+                ->all();
+
+            if (empty($ids)) return [];
+
+            // تأكيد أنها لنفس الشركة (لو branches فيها company col)
+            if ($branchesCompanyCol) {
+                $ids = DB::table('branches')
+                    ->where($branchesCompanyCol, $companyId)
+                    ->whereIn('id', $ids)
+                    ->pluck('id')
+                    ->map(fn ($v) => (int) $v)
+                    ->all();
+            }
+
+            return $ids;
+        }
+
+        return null;
+    }
+
+  
 }

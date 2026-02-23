@@ -31,7 +31,7 @@ class Users extends Component
     public $name = '';
     public $email = '';
     public $role = '';
-    public $access_scope = 'my_branch'; 
+    public $access_scope = 'all_branches'; 
     public array $allowed_branch_ids = []; 
     public $is_active = true;
     public $password = ''; // Only used if manual setting is ever needed, but requirement says send email
@@ -459,7 +459,7 @@ class Users extends Component
         $this->name = '';
         $this->email = '';
         $this->role = '';
-        $this->access_scope = 'my_branch';
+        $this->access_scope = 'all_branches';
         $this->access_type  = 'system_and_app';
         $this->selectedEmployeeId = null;
         $this->employeeSearch = '';
