@@ -310,26 +310,100 @@
                                     </button>
                                 </td>
 
+                                {{-- ✅ FIXED Actions: Teleport dropdown خارج الجدول (بدون حاوية داخل حاوية) --}}
                                 <td class="p-3 text-right">
-                                    <x-ui.actions-menu>
-                                        <x-ui.dropdown-menu>
+                                    <div
+                                        class="inline-flex"
+                                        x-data="{
+                                            open: false,
+                                            top: 0,
+                                            left: 0,
+                                            toggle() {
+                                                this.open = !this.open;
+                                                if (this.open) this.$nextTick(() => this.reposition());
+                                            },
+                                            close() { this.open = false; },
+                                            reposition() {
+                                                const btn = this.$refs.btn;
+                                                const menu = this.$refs.menu;
+                                                if (!btn || !menu) return;
 
-                                            <x-ui.dropdown-item type="button" wire:click="openEdit({{ $row->id }})">
-                                                <i class="fas fa-pen text-xs opacity-80"></i>
-                                                <span>{{ tr('Edit') }}</span>
-                                            </x-ui.dropdown-item>
+                                                const r = btn.getBoundingClientRect();
+                                                const gap = 8;
 
-                                            <x-ui.dropdown-item
-                                                type="button"
-                                                onclick="window.dispatchEvent(new CustomEvent('open-confirm-exceptional-day-delete', { detail: { id: {{ $row->id }} } }));"
-                                                class="!text-red-600"
+                                                const mw = menu.offsetWidth || 200;
+                                                const mh = menu.offsetHeight || 160;
+
+                                                let left = r.right - mw;
+
+                                                left = Math.max(8, Math.min(left, window.innerWidth - mw - 8));
+
+                                                let top = r.bottom + gap;
+
+                                                if (top + mh > window.innerHeight - 8) {
+                                                    top = Math.max(8, r.top - mh - gap);
+                                                }
+
+                                                this.left = Math.round(left);
+                                                this.top  = Math.round(top);
+                                            },
+                                        }"
+                                        @keydown.escape.window="close()"
+                                        @scroll.window="open && reposition()"
+                                        @resize.window="open && reposition()"
+                                        @click.window="
+                                            if (!open) return;
+                                            const t = $event.target;
+                                            if ($refs.btn && $refs.btn.contains(t)) return;
+                                            if ($refs.menu && $refs.menu.contains(t)) return;
+                                            close();
+                                        "
+                                    >
+                                        {{-- زر النقاط --}}
+                                        <button
+                                            type="button"
+                                            x-ref="btn"
+                                            @click="toggle()"
+                                            class="inline-flex items-center justify-center w-9 h-9 rounded-xl border border-gray-200 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-purple-200"
+                                            aria-label="{{ tr('Actions') }}"
+                                        >
+                                            <i class="fas fa-ellipsis-v text-sm opacity-80"></i>
+                                        </button>
+
+                                        {{-- القائمة (Teleported) --}}
+                                        <template x-teleport="body">
+                                            <div
+                                                x-cloak
+                                                x-show="open"
+                                                x-transition.origin.top.right
+                                                x-ref="menu"
+                                                class="fixed z-[9999] min-w-[180px] rounded-xl border border-gray-200 bg-white shadow-lg overflow-hidden"
+                                                :style="`top:${top}px; left:${left}px;`"
+                                                role="menu"
+                                                aria-label="{{ tr('Actions') }}"
                                             >
-                                                <i class="fas fa-trash text-xs opacity-80"></i>
-                                                <span>{{ tr('Delete') }}</span>
-                                            </x-ui.dropdown-item>
+                                                <button
+                                                    type="button"
+                                                    role="menuitem"
+                                                    class="w-full flex items-center gap-2 px-3 py-2 text-sm hover:bg-gray-50"
+                                                    @click="close(); $wire.openEdit({{ $row->id }})"
+                                                >
+                                                    <i class="fas fa-pen text-xs opacity-80"></i>
+                                                    <span>{{ tr('Edit') }}</span>
+                                                </button>
 
-                                        </x-ui.dropdown-menu>
-                                    </x-ui.actions-menu>
+                                                <button
+                                                    type="button"
+                                                    role="menuitem"
+                                                    class="w-full flex items-center gap-2 px-3 py-2 text-sm text-red-600 hover:bg-red-50"
+                                                    @click="close(); window.dispatchEvent(new CustomEvent('open-confirm-exceptional-day-delete', { detail: { id: {{ $row->id }} } }));"
+                                                >
+                                                    <i class="fas fa-trash text-xs opacity-80"></i>
+                                                    <span>{{ tr('Delete') }}</span>
+                                                </button>
+                                            </div>
+                                        </template>
+                                    </div>
                                 </td>
                             </tr>
                         @empty
