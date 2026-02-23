@@ -19,6 +19,18 @@
     />
 @endsection
 
+@section('topbar-actions')
+    <x-ui.secondary-button
+        href="{{ route('company-admin.settings.general') }}"
+        :arrow="false"
+        :fullWidth="false"
+        class="!px-4 !py-2 !text-sm !rounded-xl !gap-2"
+    >
+        <i class="fas {{ $isRtl ? 'fa-arrow-right' : 'fa-arrow-left' }} text-xs"></i>
+        <span>{{ tr('Back') }}</span>
+    </x-ui.secondary-button>
+@endsection
+
 <div class="space-y-6">
     {{-- Toast component (required) --}}
     <x-ui.toast />

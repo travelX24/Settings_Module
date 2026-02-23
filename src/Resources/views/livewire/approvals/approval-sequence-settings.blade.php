@@ -32,9 +32,20 @@
     <x-ui.page-header
         :title="tr('Approval Sequence Settings')"
         :subtitle="tr('Set up approval workflows and sequences')"
-        class="!flex-col !items-start !justify-start !gap-1"
+        class="!flex-col {{ $isRtl ? '!items-end !text-right' : '!items-start !text-left' }} !justify-start !gap-1"
         titleSize="xl"
     />
+@endsection
+@section('topbar-actions')
+    <x-ui.secondary-button
+        href="{{ route('company-admin.settings.general') }}"
+        :arrow="false"
+        :fullWidth="false"
+        class="!px-4 !py-2 !text-sm !rounded-xl !gap-2"
+    >
+        <i class="fas {{ $isRtl ? 'fa-arrow-right' : 'fa-arrow-left' }} text-xs"></i>
+        <span>{{ tr('Back') }}</span>
+    </x-ui.secondary-button>
 @endsection
 
 <div class="space-y-6 p-4 sm:p-6" dir="{{ $dir }}">

@@ -1,12 +1,27 @@
+@php
+    $locale = app()->getLocale();
+    $isRtl  = in_array(substr($locale, 0, 2), ['ar','fa','ur','he']);
+@endphp
+
 @section('topbar-left-content')
     <x-ui.page-header
         :title="tr('Currencies')"
         :subtitle="tr('Manage currencies and exchange rates')"
-        class="!flex-col !items-start !justify-start !gap-1"
+        class="!flex-col {{ $isRtl ? '!items-end !text-right' : '!items-start !text-left' }} !justify-start !gap-1"
         titleSize="xl"
     />
 @endsection
-
+@section('topbar-actions')
+    <x-ui.secondary-button
+        href="{{ route('company-admin.settings.general') }}"
+        :arrow="false"
+        :fullWidth="false"
+        class="!px-4 !py-2 !text-sm !rounded-xl !gap-2"
+    >
+        <i class="fas {{ $isRtl ? 'fa-arrow-right' : 'fa-arrow-left' }} text-xs"></i>
+        <span>{{ tr('Back') }}</span>
+    </x-ui.secondary-button>
+@endsection
 @php
     $catalog = $catalog ?? [];
     $codeDisabled = ($mode === 'edit' && $codeLocked);
