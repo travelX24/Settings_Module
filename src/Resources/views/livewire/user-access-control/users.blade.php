@@ -82,7 +82,19 @@
                             </span>
                         @endif
                     </td>
+                    <td class="px-6 py-4 whitespace-nowrap">
+                        @php
+                            $roleNames = $user->roles?->pluck('name')->filter()->values() ?? collect();
+                        @endphp
 
+                        @if(($user->access_type ?? 'system_and_app') === 'hr_app_only')
+                            <span class="text-xs text-gray-400">—</span>
+                        @elseif($roleNames->isNotEmpty())
+                            <span class="text-sm font-medium text-gray-900">{{ $roleNames->join(', ') }}</span>
+                        @else
+                            <span class="text-xs text-gray-400">—</span>
+                        @endif
+                    </td>
                     <td class="px-6 py-4 whitespace-nowrap align-middle">
                         <div class="flex items-center" x-data="{ 
                             showTooltip: false,
@@ -141,18 +153,18 @@
                         </div>
                     </td>
                    <td class="px-6 py-4 whitespace-nowrap">
-                        <span class="text-sm text-gray-700">
-                            @php($scope = $user->access_scope ?? 'all_branches')
+                    <span class="text-sm text-gray-700">
+                        @php($scope = $user->access_scope ?? 'all_branches')
 
-                            @if($scope === 'all_branches')
-                                {{ tr('All Branches') }}
-                            @elseif($scope === 'selected_branches')
-                                {{ tr('Selected Branches') }}
-                            @else
-                                {{ tr('My Branch') }}
-                            @endif
-                        </span>
-                    </td>
+                        @if($scope === 'all_branches')
+                            {{ tr('All Branches') }}
+                        @elseif($scope === 'selected_branches')
+                            {{ tr('Selected Branches') }}
+                        @else
+                            {{ tr('My Branch') }}
+                        @endif
+                    </span>
+                </td>
                     <td class="px-6 py-4 whitespace-nowrap">
                         <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium {{ $user->is_active ?? true ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800' }}">
                             {{ ($user->is_active ?? true) ? tr('Active') : tr('Inactive') }}
@@ -323,7 +335,7 @@
                 </x-ui.select>
             </div>
 
-            @if(($access_type ?? 'system_and_app') === 'system_and_app')
+            @if($access_type === 'system_and_app')
                 <div>
                     <x-ui.select 
                         label="{{ tr('Role') }}" 
