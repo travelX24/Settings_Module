@@ -60,10 +60,13 @@ class AttendancePenaltyPolicy extends Model
     /**
      * Scopes
      */
-    public function scopeActive($query)
-    {
-        return $query->where('is_active', true);
-    }
+  public function scopeActive($query)
+{
+    return $query->where(function ($q) {
+        $q->where('is_enabled', true)
+          ->orWhere('is_active', true);
+    });
+}
 
     public function scopeForViolation($query, string $violationType)
     {
@@ -73,13 +76,19 @@ class AttendancePenaltyPolicy extends Model
     public function scopeInMinutesRange($query, int $minutes)
     {
         return $query->where('minutes_from', '<=', $minutes)
-            ->where('minutes_to', '>=', $minutes);
+            ->where(function ($q) use ($minutes) {
+                $q->whereNull('minutes_to')
+                ->orWhere('minutes_to', '>=', $minutes);
+            });
     }
 
-    public function scopeInRecurrenceRange($query, int $count)
+   public function scopeInRecurrenceRange($query, int $count)
     {
         return $query->where('recurrence_from', '<=', $count)
-            ->where('recurrence_to', '>=', $count);
+            ->where(function ($q) use ($count) {
+                $q->whereNull('recurrence_to')
+                ->orWhere('recurrence_to', '>=', $count);
+            });
     }
 
     /**
