@@ -249,40 +249,30 @@
                     <div class="mb-3 p-3 bg-gray-50 rounded-lg border border-gray-100">
                         <h3 class="text-xs font-semibold text-gray-900 mb-2">{{ tr('Select Employee') }}</h3>
                         
-                        <div class="relative">
-                            <x-ui.input 
-                                wire:model.live.debounce.300ms="employeeSearch" 
-                                type="text" 
-                                icon="fa-search" 
-                                placeholder="{{ tr('Search by name or number...') }}" 
-                                class="!py-2 !text-sm"
-                            />
-                            
-                            @if(!empty($foundEmployees))
-                                <div class="absolute z-10 mt-1 w-full bg-white shadow-xl rounded-xl border border-gray-100 py-2 max-h-60 overflow-auto custom-scrollbar">
-                                    @foreach($foundEmployees as $emp)
-                                        <button 
-                                            type="button" 
-                                            wire:click="selectEmployee({{ $emp->id }})"
-                                            class="w-full text-start px-4 py-2 text-sm text-gray-700 hover:bg-gray-50 hover:text-[color:var(--brand-via)] transition-colors flex justify-between items-center group border-b border-gray-50 last:border-0"
-                                        >
-                                            <div class="flex flex-col">
-                                                <span class="font-bold text-gray-800 group-hover:text-[color:var(--brand-via)] transition-colors">{{ $emp->name_ar ?? $emp->name_en }}</span>
-                                                <span class="text-xs text-gray-500">{{ $emp->jobTitle->name ?? '-' }}</span>
-                                            </div>
-                                            <span class="px-2 py-1 bg-gray-100 text-xs font-medium text-gray-500 rounded-md group-hover:bg-[color:var(--brand-via)]/10 group-hover:text-[color:var(--brand-via)] transition-colors">
-                                                {{ $emp->employee_no }}
-                                            </span>
-                                        </button>
-                                    @endforeach
-                                </div>
-                            @elseif(strlen($employeeSearch) >= 2 && $selectedEmployeeId === null)
-                                <div class="absolute z-10 mt-1 w-full bg-white shadow-lg rounded-md border border-gray-200 py-2 px-4 text-sm text-gray-500">
-                                    {{ tr('No available employees found without accounts.') }}
-                                </div>
-                            @endif
-                        </div>
+                   <div>
+                    <label class="block text-xs font-semibold text-gray-700 mb-2">
+                        {{ tr('Employee') }}
+                    </label>
 
+                    <select
+                        wire:change="selectEmployee($event.target.value)"
+                        class="w-full rounded-xl border border-gray-200 bg-white px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[color:var(--brand-from)]/30"
+                    >
+                        <option value="">{{ tr('Select Employee') }}</option>
+
+                        @foreach($foundEmployees as $emp)
+                            <option value="{{ $emp->id }}" @selected((int) $selectedEmployeeId === (int) $emp->id)>
+                                {{ $emp->name_ar ?? $emp->name_en }} - {{ $emp->employee_no }}
+                            </option>
+                        @endforeach
+                    </select>
+
+                    @if(count($foundEmployees) === 0)
+                        <div class="mt-2 text-sm text-gray-500">
+                            {{ tr('No available employees found without accounts.') }}
+                        </div>
+                    @endif
+                </div>
                         @if($selectedEmployeeId)
                             <div class="mt-2 grid grid-cols-2 gap-2 text-xs">
                                 <div>

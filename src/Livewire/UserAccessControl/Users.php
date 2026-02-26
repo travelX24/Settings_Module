@@ -217,35 +217,37 @@ class Users extends Component
             }
         }
     }
+public function loadAvailableEmployees(): void
+{
+    $takenEmployeeIds = User::where('saas_company_id', $this->getCompanyId())
+        ->whereNotNull('employee_id')
+        ->pluck('employee_id')
+        ->map(fn ($id) => (int) $id)
+        ->all();
 
-    public function updatedEmployeeSearch()
-    {
-        if (strlen($this->employeeSearch) < 2) {
-            $this->foundEmployees = [];
-            return;
-        }
-
-        $takenEmployeeIds = User::where('saas_company_id', $this->getCompanyId())
-            ->whereNotNull('employee_id')
-            ->pluck('employee_id')
-            ->toArray();
-
-         $this->foundEmployees = Employee::forCompany($this->getCompanyId())
-             ->with(['jobTitle', 'department']) 
-            ->where(function($q) {
-                $q->where('name_ar', 'like', '%' . $this->employeeSearch . '%')
-                  ->orWhere('name_en', 'like', '%' . $this->employeeSearch . '%')
-                  ->orWhere('employee_no', 'like', '%' . $this->employeeSearch . '%');
-            })
-            ->whereNotIn('id', $takenEmployeeIds)
-            ->take(5)
-            ->get();
+    $this->foundEmployees = Employee::forCompany($this->getCompanyId())
+        ->with(['jobTitle', 'department'])
+        ->when(!empty($takenEmployeeIds), function ($q) use ($takenEmployeeIds) {
+            $q->whereNotIn('id', $takenEmployeeIds);
+        })
+        ->orderBy('name_ar')
+        ->orderBy('name_en')
+        ->get();
+}
+  public function selectEmployee($employeeId)
+{
+    if (!$employeeId) {
+        $this->selectedEmployeeId = null;
+        $this->display_name = '';
+        $this->display_phone = '';
+        $this->display_branch = '';
+        $this->display_department = '';
+        $this->display_job_title = '';
+        return;
     }
 
-    public function selectEmployee($employeeId)
-    {
-        $employee = Employee::with(['department', 'jobTitle'])->find($employeeId);
-        if (!$employee) return;
+    $employee = Employee::with(['department', 'jobTitle'])->find($employeeId);
+    if (!$employee) return;
 
         // Check if this is the primary admin account
         $firstUser = User::where('saas_company_id', $this->getCompanyId())->orderBy('id', 'asc')->first();
@@ -281,14 +283,15 @@ class Users extends Component
         $this->display_department = $employee->department->name ?? '-';
         $this->display_job_title = $employee->jobTitle->name ?? '-';
 
-        $this->foundEmployees = [];
+        // $this->foundEmployees = [];
     }
 
-    public function openAddModal()
-    {
-        $this->resetForm();
-        $this->showModal = true;
-    }
+public function openAddModal()
+{
+    $this->resetForm();
+    $this->loadAvailableEmployees();
+    $this->showModal = true;
+}
 
     public $needs_employee_link = false;
     public $is_locked_role = false;
@@ -310,6 +313,9 @@ class Users extends Component
         // Check if user needs employee link (e.g. company admin created initially)
         $this->needs_employee_link = is_null($user->employee_id);
 
+        if ($this->needs_employee_link) {
+            $this->loadAvailableEmployees();
+        }
         // Load Role
         $roleName = $user->roles->first()?->name ?? '';
         $this->role = $roleName;
@@ -466,7 +472,7 @@ class Users extends Component
         $this->editingId = null;
         $this->is_locked_role = false;
         $this->needs_employee_link = false;
-        $this->allowed_branch_ids = [];
+        // $this->allowed_branch_ids = [];
     }
 
     public function sendPasswordReset($id)
