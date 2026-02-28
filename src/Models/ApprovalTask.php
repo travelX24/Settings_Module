@@ -25,4 +25,9 @@ class ApprovalTask extends Model
     protected $casts = [
         'acted_at' => 'datetime',
     ];
+
+    public function approver()
+    {
+        return $this->belongsTo(\Athka\Employees\Models\Employee::class, 'approver_employee_id');
+    }
 }
