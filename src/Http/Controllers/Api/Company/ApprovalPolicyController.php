@@ -89,6 +89,7 @@ class ApprovalPolicyController extends Controller
                 'compensations' => tr('Compensations'),
                 'advances'      => tr('Advances'),
                 'terminations'  => tr('Employee Terminations'),
+                'missions'      => tr('Mission Requests'),
             ],
         ]);
     }

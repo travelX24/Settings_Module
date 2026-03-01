@@ -91,6 +91,12 @@ class ApprovalInboxController extends Controller
                 ],
                 'operation_key' => 'permissions',
             ],
+            'missions' => [
+                'tables' => [
+                    'attendance_mission_requests',
+                ],
+                'operation_key' => 'missions',
+            ],
         ];
 
 
@@ -192,6 +198,7 @@ class ApprovalInboxController extends Controller
         $supportedTypes = [
             'leaves' => ['key' => 'leaves', 'label_ar' => 'طلبات الإجازات', 'label_en' => 'Leave Requests'],
             'permissions' => ['key' => 'permissions', 'label_ar' => 'طلبات الأذونات', 'label_en' => 'Permission Requests'],
+            'missions' => ['key' => 'missions', 'label_ar' => 'مهام العمل', 'label_en' => 'Work Missions'],
         ];
 
         foreach ($supportedTypes as $key => $meta) {
@@ -223,6 +230,7 @@ class ApprovalInboxController extends Controller
                 'sources' => [
                     'leaves' => $this->requestSource('leaves'),
                     'permissions' => $this->requestSource('permissions'),
+                    'missions' => $this->requestSource('missions'),
                 ],
                 'note' => 'If approvalStatusCol is null, approve/reject will not update request status; only tasks will be updated.',
             ],
@@ -240,7 +248,7 @@ class ApprovalInboxController extends Controller
         $status = (string) $request->query('status', 'pending'); // pending|history
         $ensure = (int) $request->query('ensure', 0) === 1;
 
-        $types = $type === 'all' ? ['leaves', 'permissions'] : [$type];
+        $types = $type === 'all' ? ['leaves', 'permissions', 'missions'] : [$type];
 
         if ($ensure && $status === 'pending') {
             foreach ($types as $t) {
@@ -308,8 +316,16 @@ class ApprovalInboxController extends Controller
                         $requestData->leave_type = $isAr ? 'إذن' : 'Permission';
                     }
 
+                    if ($task->approvable_type === 'missions') {
+                        $requestData->leave_type = $isAr ? 'مهمة عمل' : 'Work Mission';
+                        $requestData->from_date = $requestData->start_date ?? '';
+                        $requestData->to_date = $requestData->end_date ?? $requestData->start_date ?? '';
+                        $requestData->requested_at = $requestData->requested_at ?? $requestData->created_at ?? '';
+                    }
+
                     // Common normalization
                     $requestData->request_date = $requestData->requested_at ?? $requestData->created_at ?? '';
+                    $requestData->requested_at = $requestData->requested_at ?? $requestData->created_at ?? '';
                     
                     // Attach creator name
                     $creatorId = $this->resolveRequestEmployeeId($src, $requestData);
