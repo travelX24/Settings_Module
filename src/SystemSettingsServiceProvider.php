@@ -71,7 +71,7 @@ class SystemSettingsServiceProvider extends ServiceProvider
                 \Athka\Saas\Http\Middleware\SetCompanyTimezone::class,
             ])
 
-            ->prefix('company-admin/settings')
+            ->prefix('settings')
             ->name('company-admin.settings.')
             ->group(function () {
                 require __DIR__ . '/Routes/web.php';
