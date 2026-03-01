@@ -481,13 +481,8 @@ class AttendanceSettings extends Component
             ->where('saas_company_id', $companyId)
             ->get()->toArray();
 
-        // Load Branches
-        // Temporarily disabled to hide departments appearing as branches
-        $this->branches = []; 
-        // \Athka\SystemSettings\Models\Department::where('saas_company_id', $companyId)
-        //     ->whereNull('parent_id')
-        //     ->where('id', '!=', $mainDeptId)
-        //     ->get()->toArray();
+        // Load Branches from branches table
+        $this->branches = $this->branchesOptions;
 
         // Already loading groups above, but let's make sure it's available for select
         $this->availableGroups = $this->groups;
@@ -725,7 +720,9 @@ class AttendanceSettings extends Component
 
         if ($this->gpsTarget === 'branch') {
             if ($this->selectedBranch === 'main' || empty($this->selectedBranch)) {
-                $branchId = \Athka\SystemSettings\Models\Department::where('saas_company_id', $companyId)->first()?->id;
+                // Use the first/main branch from the branches table
+                $branchId = $this->mainBranchId
+                    ?? DB::table('branches')->where('saas_company_id', $companyId)->value('id');
             } else {
                 $branchId = $this->selectedBranch;
             }
