@@ -257,6 +257,7 @@
                     <select
                         wire:change="selectEmployee($event.target.value)"
                         class="w-full rounded-xl border border-gray-200 bg-white px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[color:var(--brand-from)]/30"
+                        @cannot('uac.users.manage') disabled @endcannot
                     >
                         <option value="">{{ tr('Select Employee') }}</option>
 
@@ -302,7 +303,7 @@
                         label="{{ tr('Username / Name') }}" 
                         wire:model="name" 
                         required 
-                        :disabled="$editingId && true"
+                        :disabled="$editingId || !auth()->user()->can('uac.users.manage')"
                         readonly="{{ $editingId ? 'readonly' : '' }}"
                     />
                     
@@ -311,6 +312,7 @@
                         wire:model="email" 
                         type="email" 
                         required 
+                        :disabled="!auth()->user()->can('uac.users.manage')"
                     />
                     
            <div>
@@ -318,7 +320,7 @@
                     label="{{ tr('User License') }}"
                     wire:model="access_type"
                     required
-                    :disabled="$is_locked_role"
+                    :disabled="$is_locked_role || !auth()->user()->can('uac.users.manage')"
                 >
                     <option value="system_and_app">{{ tr('System & App User License') }}</option>
                     <option value="hr_app_only">{{ tr('HR App Only') }}</option>
@@ -331,7 +333,7 @@
                         label="{{ tr('Role') }}" 
                         wire:model="role" 
                         required
-                        :disabled="$is_locked_role"
+                        :disabled="$is_locked_role || !auth()->user()->can('uac.users.manage')"
                     >
                         <option value="">{{ tr('Select Role') }}</option>
                         @foreach($roles as $r)
@@ -351,6 +353,7 @@
                             label="{{ tr('Access Scope') }}" 
                             wire:model="access_scope" 
                             required
+                            :disabled="!auth()->user()->can('uac.users.manage')"
                         >
                             <option value="my_branch">{{ tr('My Branch Only') }}</option>
                             <option value="all_branches">{{ tr('All Branches') }}</option>
@@ -368,6 +371,7 @@
                             multiple
                             wire:model="allowed_branch_ids"
                             class="w-full rounded-xl border border-gray-200 bg-white px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[color:var(--brand-from)]/30"
+                            @cannot('uac.users.manage') disabled @endcannot
                         >
                             @foreach($branches as $br)
                                 <option value="{{ $br['id'] }}">{{ $br['name'] }}</option>
@@ -395,6 +399,7 @@
                         {{ tr('Cancel') }}
                     </x-ui.secondary-button>
                     
+                    @can('uac.users.manage')
                     <x-ui.primary-button type="submit" wire:loading.attr="disabled">
                         <span wire:loading.remove>{{ tr('Save') }}</span>
                         <span wire:loading>
@@ -402,6 +407,7 @@
                             {{ tr('Saving...') }}
                         </span>
                     </x-ui.primary-button>
+                    @endcan
                 </div>
             </form>
         </x-slot>

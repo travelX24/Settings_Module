@@ -9,6 +9,11 @@ use Livewire\Component;
 
 class LocationSettings extends Component
 {
+    public function mount()
+    {
+        $this->authorize('locations.view');
+    }
+
     public function render()
     {
         return view('systemsettings::livewire.location-settings')

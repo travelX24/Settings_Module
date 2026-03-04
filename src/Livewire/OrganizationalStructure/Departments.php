@@ -42,6 +42,8 @@ class Departments extends Component
 
     public function mount()
     {
+        $this->authorize('settings.organizational.view');
+
         // ✅ Default ALWAYS: List/Table
         $this->viewMode = 'table';
     
@@ -122,12 +124,14 @@ class Departments extends Component
 
     public function openAddModal()
     {
+        $this->authorize('settings.organizational.manage');
         $this->resetForm();
         $this->showModal = true;
     }
 
     public function openEditModal($id)
     {
+        $this->authorize('settings.organizational.manage');
         $department = Department::forCompany($this->getCompanyId())->findOrFail($id);
 
         $this->editingId = $department->id;
@@ -159,6 +163,7 @@ class Departments extends Component
 
     public function save()
     {
+        $this->authorize('settings.organizational.manage');
         $companyId = $this->getCompanyId();
 
         $rules = [
@@ -225,6 +230,7 @@ class Departments extends Component
 
     public function delete($id)
     {
+        $this->authorize('settings.organizational.manage');
         $department = Department::forCompany($this->getCompanyId())->findOrFail($id);
 
         if (! $department->canDelete()) {
@@ -272,6 +278,7 @@ class Departments extends Component
 
     public function toggleActive($id)
     {
+        $this->authorize('settings.organizational.manage');
         $department = Department::forCompany($this->getCompanyId())->findOrFail($id);
         $department->update(['is_active' => ! $department->is_active]);
 

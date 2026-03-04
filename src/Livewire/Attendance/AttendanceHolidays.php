@@ -55,6 +55,7 @@ class AttendanceHolidays extends Component
 
     public function mount(): void
     {
+        $this->authorize('settings.attendance.view');
         $type = (string) config('company.calendar_type', 'gregorian');
         $this->companyCalendarType = in_array($type, ['hijri', 'gregorian'], true) ? $type : 'gregorian';
 
@@ -255,6 +256,7 @@ class AttendanceHolidays extends Component
 
     public function openCreate(): void
     {
+        $this->authorize('settings.attendance.manage');
         $this->resetValidation();
         $this->createOpen = true;
 
@@ -278,6 +280,7 @@ class AttendanceHolidays extends Component
 
     public function saveNewHoliday(): void
     {
+        $this->authorize('settings.attendance.manage');
         abort_unless(auth()->user()?->can('settings.attendance.manage'), 403);
 
         $companyId = $this->resolveCompanyId();
@@ -332,6 +335,7 @@ class AttendanceHolidays extends Component
 
     public function openEdit(int $occurrenceId): void
     {
+        $this->authorize('settings.attendance.manage');
         abort_unless(auth()->user()?->can('settings.attendance.manage'), 403);
 
         $this->resetValidation();
@@ -377,6 +381,7 @@ class AttendanceHolidays extends Component
 
     public function saveEditHoliday(): void
     {
+        $this->authorize('settings.attendance.manage');
         abort_unless(auth()->user()?->can('settings.attendance.manage'), 403);
 
         if ($this->editOccurrenceId <= 0 || $this->editTemplateId <= 0) {
@@ -447,6 +452,7 @@ class AttendanceHolidays extends Component
 
     public function confirmDelete(int $occurrenceId): void
     {
+        $this->authorize('settings.attendance.manage');
         abort_unless(auth()->user()?->can('settings.attendance.manage'), 403);
 
         $row = OfficialHolidayOccurrence::query()
@@ -472,6 +478,7 @@ class AttendanceHolidays extends Component
 
     public function deleteHoliday(): void
     {
+        $this->authorize('settings.attendance.manage');
         abort_unless(auth()->user()?->can('settings.attendance.manage'), 403);
 
         if ($this->deleteOccurrenceId <= 0) {

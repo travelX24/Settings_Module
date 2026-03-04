@@ -223,12 +223,13 @@
                             :label="tr('Policy Name')"
                             wire:model.defer="name"
                             :required="true"
+                            :disabled="!auth()->user()->can('settings.approval.manage')"
                         />
                     </div>
 
                     <div class="flex items-center gap-2 md:pt-8">
                         <label class="inline-flex items-center gap-2 text-sm font-semibold text-gray-700">
-                            <input type="checkbox" wire:model.defer="is_active" class="rounded border-gray-300">
+                            <input type="checkbox" wire:model.defer="is_active" class="rounded border-gray-300" @cannot('settings.approval.manage') disabled @endcannot>
                             {{ tr('Active') }}
                         </label>
                     </div>
@@ -250,6 +251,7 @@
                                 :label="tr('Scope Type')"
                                 wire:model.live="scope_type"
                                 :required="true"
+                                :disabled="!auth()->user()->can('settings.approval.manage')"
                             >
                                 <option value="all">{{ tr('All Employees') }}</option>
                                 <option value="department">{{ tr('Department') }}</option>
@@ -277,6 +279,7 @@
                                            focus:outline-none focus:ring-2 focus:ring-[color:var(--brand-via)]/20
                                            focus:border-[color:var(--brand-via)] transition
                                            min-h-[110px]"
+                                    @cannot('settings.approval.manage') disabled @endcannot
                                 >
                                     @foreach($list as $item)
                                         <option value="{{ $item['id'] }}">{{ $item['name'] }}</option>
@@ -293,11 +296,13 @@
 
                 {{-- ✅ Steps: فقط زر إضافة موافق --}}
                 <x-ui.card class="!p-4">
+                    @can('settings.approval.manage')
                     <div class="flex justify-end mb-3">
                         <x-ui.secondary-button type="button" wire:click="addStep" class="!w-auto">
                             + {{ tr('Add Approver') }}
                         </x-ui.secondary-button>
                     </div>
+                    @endcan
 
                     <div class="space-y-2">
                         @foreach($steps as $i => $s)
@@ -313,7 +318,7 @@
                                     </div>
 
                                     <div class="shrink-0 md:w-64">
-                                        <x-ui.select wire:model.defer="steps.{{ $i }}.approver_type">
+                                        <x-ui.select wire:model.defer="steps.{{ $i }}.approver_type" :disabled="!auth()->user()->can('settings.approval.manage')">
                                             <option value="direct_manager">{{ tr('Direct Manager') }}</option>
                                             <option value="user">{{ tr('Specific User') }}</option>
                                         </x-ui.select>
@@ -321,7 +326,7 @@
 
                                     <div class="flex-1 min-w-0">
                                         @if($t === 'user')
-                                            <x-ui.select wire:model.defer="steps.{{ $i }}.approver_id">
+                                            <x-ui.select wire:model.defer="steps.{{ $i }}.approver_id" :disabled="!auth()->user()->can('settings.approval.manage')">
                                                 <option value="0">—</option>
                                                 @foreach($employees as $e)
                                                     <option value="{{ $e['id'] }}">{{ $e['name'] }}</option>
@@ -382,9 +387,11 @@
                 {{ tr('Cancel') }}
             </x-ui.secondary-button>
 
+            @can('settings.approval.manage')
             <x-ui.primary-button type="button" wire:click="save">
                 {{ tr('Save Policy') }}
             </x-ui.primary-button>
+            @endcan
         </x-slot:footer>
     </x-ui.modal>
 

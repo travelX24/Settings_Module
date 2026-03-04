@@ -45,6 +45,7 @@ class WorkSchedules extends Component
 
     public function mount()
     {
+        $this->authorize('settings.attendance.view');
         $this->daysOfWeek = [
             'saturday' => tr('Saturday'),
             'sunday' => tr('Sunday'),
@@ -75,6 +76,7 @@ class WorkSchedules extends Component
 
     public function copySchedule($id)
     {
+        $this->authorize('settings.attendance.manage');
         $schedule = WorkSchedule::with(['periods', 'exceptions'])->find($id);
         if ($schedule) {
             $this->openScheduleModal(); // Reset to fresh state
@@ -302,6 +304,7 @@ class WorkSchedules extends Component
 
     public function openScheduleModal($id = null)
     {
+        $this->authorize('settings.attendance.manage');
         $this->resetValidation();
         if ($id) {
             $this->isEditing = true;
@@ -352,6 +355,7 @@ class WorkSchedules extends Component
 
     public function saveSchedule()
     {
+        $this->authorize('settings.attendance.manage');
         $this->validate([
             'scheduleData.name' => 'required|min:3',
             'scheduleData.periods' => 'required|array|min:1|max:4',
@@ -446,6 +450,7 @@ class WorkSchedules extends Component
 
     public function deleteSchedule($id)
     {
+        $this->authorize('settings.attendance.manage');
         $schedule = WorkSchedule::find($id);
         if (!$schedule) {
             $this->dispatch('toast', type: 'error', message: tr('Work schedule not found.'));
@@ -463,6 +468,7 @@ class WorkSchedules extends Component
 
     public function toggleStatus($id)
     {
+        $this->authorize('settings.attendance.manage');
         $schedule = WorkSchedule::find($id);
         if ($schedule) {
             $schedule->is_active = !$schedule->is_active;

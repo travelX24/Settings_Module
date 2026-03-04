@@ -140,7 +140,7 @@
                 </div>
 
                 <div>
-                    <x-ui.select wire:model.live="calendar_type" class="w-full">
+                    <x-ui.select wire:model.live="calendar_type" class="w-full" :disabled="!auth()->user()->can('settings.calendar.manage')">
                         <option value="hijri">{{ tr('Hijri calendar') }}</option>
                         <option value="gregorian">{{ tr('Gregorian calendar') }}</option>
                     </x-ui.select>
@@ -156,6 +156,7 @@
             </div>
 
             {{-- Actions --}}
+            @can('settings.calendar.manage')
             <div class="flex flex-col sm:flex-row items-stretch sm:items-center justify-end gap-2">
                 @if ($isDirty)
                     <x-ui.secondary-button type="button" wire:click="resetToSaved" wire:loading.attr="disabled">
@@ -168,6 +169,7 @@
                     <span wire:loading wire:target="save">{{ tr('Saving...') }}</span>
                 </x-ui.primary-button>
             </div>
+            @endcan
         </div>
     </x-ui.card>
 </div>

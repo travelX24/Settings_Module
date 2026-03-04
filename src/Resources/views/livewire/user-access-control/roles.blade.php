@@ -278,6 +278,7 @@
                         placeholder="{{ tr('e.g. Sales Manager...') }}"
                         class="!bg-white"
                         error="name"
+                        :disabled="!auth()->user()->can('uac.roles.manage')"
                     />
                 </div>
 
@@ -324,6 +325,7 @@
                                                     $allSelected = count(array_intersect($groupKeys, $selectedPermissions)) === count($groupKeys);
                                                 @endphp
                                                 {{ $allSelected ? 'checked' : '' }}
+                                                @cannot('uac.roles.manage') disabled @endcannot
                                             >
                                         </div>
                                         <span class="text-xs font-bold text-gray-800 group-hover:text-[color:var(--brand-via)] transition-colors">{{ tr($groupName) }}</span>
@@ -352,6 +354,7 @@
                                                 wire:model="selectedPermissions" 
                                                 value="{{ $permKey }}"
                                                 class="w-3.5 h-3.5 rounded border-gray-300 text-[color:var(--brand-via)] focus:ring-[color:var(--brand-via)] cursor-pointer"
+                                                @cannot('uac.roles.manage') disabled @endcannot
                                             >
                                             <div class="flex flex-col min-w-0 overflow-hidden">
                                                 <span class="text-[11px] font-semibold text-gray-700 group-hover/item:text-[color:var(--brand-via)] transition-colors break-words leading-tight">{{ tr($permLabel) }}</span>
@@ -380,6 +383,7 @@
                         {{ tr('Cancel') }}
                     </x-ui.secondary-button>
                     
+                    @can('uac.roles.manage')
                     <x-ui.primary-button type="button" wire:click="save" wire:loading.attr="disabled" :arrow="false" class="!px-8">
                         <span wire:loading.remove class="flex items-center gap-2">
                             <i class="fas fa-check-circle"></i>
@@ -390,6 +394,7 @@
                             {{ tr('Saving...') }}
                         </span>
                     </x-ui.primary-button>
+                    @endcan
                 </div>
             </div>
         </x-slot>

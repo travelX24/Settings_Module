@@ -9,6 +9,11 @@ use Livewire\Component;
 
 class GeneralSettings extends Component
 {
+    public function mount()
+    {
+        $this->authorize('settings.general.view');
+    }
+
     public function render()
     {
         return view('systemsettings::livewire.general-settings')

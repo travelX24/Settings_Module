@@ -36,6 +36,7 @@ class CurrenciesManager extends Component
 
     public function mount(): void
     {
+        $this->authorize('settings.currencies.manage');
         $this->catalog = $this->buildCurrencyCatalog();
     }
 
@@ -97,6 +98,7 @@ class CurrenciesManager extends Component
 
     public function openCreate(): void
     {
+        $this->authorize('settings.currencies.manage');
         $this->resetForm();
         $this->mode = 'create';
         $this->modalOpen = true;
@@ -104,6 +106,7 @@ class CurrenciesManager extends Component
 
     public function openEdit(int $id): void
     {
+        $this->authorize('settings.currencies.manage');
         $c = $this->baseQuery()->findOrFail($id);
 
         $this->mode = 'edit';
@@ -138,6 +141,7 @@ class CurrenciesManager extends Component
 
     public function save(): void
     {
+        $this->authorize('settings.currencies.manage');
         $this->ensureCatalogLoaded();
 
         if ($this->mode === 'edit' && $this->codeLocked) {
@@ -195,6 +199,7 @@ class CurrenciesManager extends Component
 
     public function setDefault(int $id): void
     {
+        $this->authorize('settings.currencies.manage');
         DB::transaction(function () use ($id) {
             $this->baseQuery()->update(['is_default' => false]);
             $this->baseQuery()->whereKey($id)->update(['is_default' => true]);
@@ -205,6 +210,7 @@ class CurrenciesManager extends Component
 
     public function confirmDelete(int $id): void
     {
+        $this->authorize('settings.currencies.manage');
         $this->deletingId = $id;
         $this->deleteConfirmOpen = true;
 
@@ -221,6 +227,7 @@ class CurrenciesManager extends Component
 
     public function delete(): void
     {
+        $this->authorize('settings.currencies.manage');
         $id = $this->deletingId;
         if (!$id) return;
 

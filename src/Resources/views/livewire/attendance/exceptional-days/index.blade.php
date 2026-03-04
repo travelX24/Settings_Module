@@ -35,6 +35,7 @@
             <div class="flex flex-col md:flex-row md:items-center md:justify-between gap-3">
 
                 <div class="flex items-center gap-2">
+                    @can('settings.attendance.manage')
                     <x-ui.brand-button
                         type="button"
                         wire:click="openCreate"
@@ -57,6 +58,7 @@
                         <i class="fas fa-copy text-xs"></i>
                         <span>{{ tr('Compare Years') }}</span>
                     </x-ui.secondary-button>
+                    @endcan
 
                     <x-ui.secondary-button
                         type="button"
@@ -71,6 +73,7 @@
                 </div>
 
                 @if(!empty($selected))
+                    @can('settings.attendance.manage')
                     <div class="flex items-center gap-2 justify-end">
                         <div class="text-xs text-gray-600">
                             {{ tr('Selected') }}: <span class="font-bold">{{ count($selected) }}</span>
@@ -109,6 +112,7 @@
                             <span>{{ tr('Delete Selected') }}</span>
                         </x-ui.secondary-button>
                     </div>
+                    @endcan
                 @endif
 
             </div>
@@ -299,6 +303,7 @@
                                 </td>
 
                                 <td class="p-3">
+                                    @can('settings.attendance.manage')
                                     <button
                                         type="button"
                                         wire:click="toggleActive({{ $row->id }})"
@@ -308,10 +313,19 @@
                                         <span class="w-1.5 h-1.5 rounded-full {{ $row->is_active ? 'bg-green-500' : 'bg-gray-400' }}"></span>
                                         {{ $row->is_active ? tr('Enabled') : tr('Disabled') }}
                                     </button>
+                                    @else
+                                    <span class="inline-flex items-center gap-2 px-3 py-1 rounded-full text-xs border
+                                            {{ $row->is_active ? 'bg-green-50 border-green-200 text-green-700' : 'bg-gray-50 border-gray-200 text-gray-700' }}"
+                                    >
+                                        <span class="w-1.5 h-1.5 rounded-full {{ $row->is_active ? 'bg-green-500' : 'bg-gray-400' }}"></span>
+                                        {{ $row->is_active ? tr('Enabled') : tr('Disabled') }}
+                                    </span>
+                                    @endcan
                                 </td>
 
                                 {{-- ✅ FIXED Actions: Teleport dropdown خارج الجدول (بدون حاوية داخل حاوية) --}}
                                 <td class="p-3 text-right">
+                                    @can('settings.attendance.manage')
                                     <div
                                         class="inline-flex"
                                         x-data="{
@@ -404,6 +418,7 @@
                                             </div>
                                         </template>
                                     </div>
+                                    @endcan
                                 </td>
                             </tr>
                         @empty
@@ -437,13 +452,13 @@
 
                             <div class="md:col-span-2">
                                 <div class="text-xs text-gray-600 mb-1">{{ tr('Name') }}</div>
-                                <x-ui.input wire:model.defer="form.name" />
+                                <x-ui.input wire:model.defer="form.name" :disabled="!auth()->user()->can('settings.attendance.manage')" />
                                 @error('form.name') <div class="text-xs text-red-600 mt-1">{{ $message }}</div> @enderror
                             </div>
 
                             <div>
                                 <div class="text-xs text-gray-600 mb-1">{{ tr('Period') }}</div>
-                                <x-ui.select wire:model.live="form.period_type">
+                                <x-ui.select wire:model.live="form.period_type" :disabled="!auth()->user()->can('settings.attendance.manage')">
                                     <option value="single">{{ tr('Single Day') }}</option>
                                     <option value="range">{{ tr('Date Range') }}</option>
                                 </x-ui.select>
@@ -480,7 +495,7 @@
 
                             <div>
                                 <div class="text-xs text-gray-600 mb-1">{{ tr('Apply') }}</div>
-                                <x-ui.select wire:model.live="form.apply_on">
+                                <x-ui.select wire:model.live="form.apply_on" :disabled="!auth()->user()->can('settings.attendance.manage')">
                                     <option value="absence">{{ tr('Absence') }}</option>
                                     <option value="late">{{ tr('Late') }}</option>
                                 </x-ui.select>
@@ -510,6 +525,7 @@
                                         min="0"
                                         max="1000"
                                         wire:model.defer="form.deduction_percent"
+                                        :disabled="!auth()->user()->can('settings.attendance.manage')"
                                     />
                                     @error('form.deduction_percent') <div class="text-xs text-red-600 mt-1">{{ $message }}</div> @enderror
 
@@ -593,7 +609,7 @@
 
                             <div class="md:col-span-2">
                                 <div class="text-xs text-gray-600 mb-1">{{ tr('Employee Alert Message') }}</div>
-                                <x-ui.textarea rows="2" wire:model.defer="form.notify_message" />
+                                <x-ui.textarea rows="2" wire:model.defer="form.notify_message" :disabled="!auth()->user()->can('settings.attendance.manage')" />
                                 @error('form.notify_message') <div class="text-xs text-red-600 mt-1">{{ $message }}</div> @enderror
                             </div>
 
@@ -618,9 +634,11 @@
                     {{ tr('Cancel') }}
                 </x-ui.secondary-button>
 
+                @can('settings.attendance.manage')
                 <x-ui.primary-button type="button" wire:click="save">
                     {{ tr('Save') }}
                 </x-ui.primary-button>
+                @endcan
             </x-slot>
         </x-ui.modal>
 
@@ -655,6 +673,7 @@
                                     <div class="text-xs text-red-600 mb-2">{{ $message }}</div>
                                 @enderror
 
+                                @can('settings.attendance.manage')
                                 <x-ui.primary-button
                                     type="button"
                                     wire:click="copySelectedDays"
@@ -663,6 +682,7 @@
                                     <i class="fas fa-copy text-xs"></i>
                                     <span>{{ tr('Copy Selected') }}</span>
                                 </x-ui.primary-button>
+                                @endcan
 
                                 <div class="mt-2 text-xs text-gray-500">
                                     {{ tr('Copied days will be created as Disabled by default.') }}

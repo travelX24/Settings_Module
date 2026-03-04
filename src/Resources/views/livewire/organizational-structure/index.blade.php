@@ -55,31 +55,33 @@
                 </div>
                 {{-- Add Button --}}
                 <div class="px-4">
-                    @if($activeTab === 'departments')
-                        <button
-                            type="button"
-                            @click="$dispatch('open-add-department-modal')"
-                            class="cursor-pointer group relative overflow-hidden rounded-xl px-4 py-2 text-sm font-semibold text-white shadow-md bg-gradient-to-r from-[color:var(--brand-from)] via-[color:var(--brand-via)] to-[color:var(--brand-to)] hover:shadow-lg active:scale-[0.98] transition-all duration-300 focus:outline-none focus:ring-2 focus:ring-[color:var(--brand-from)]/30"
-                        >
-                            <span class="absolute inset-0 bg-gradient-to-r from-transparent via-white/20 to-transparent -translate-x-full group-hover:translate-x-full transition-transform duration-1000"></span>
-                            <span class="relative flex items-center gap-2">
-                                <i class="fas fa-plus text-xs"></i>
-                                <span>{{ tr('Add Department') }}</span>
-                            </span>
-                        </button>
-                    @elseif($activeTab === 'job-titles')
-                        <button
-                            type="button"
-                            @click="$dispatch('open-add-job-title-modal')"
-                            class="cursor-pointer group relative overflow-hidden rounded-xl px-4 py-2 text-sm font-semibold text-white shadow-md bg-gradient-to-r from-[color:var(--brand-from)] via-[color:var(--brand-via)] to-[color:var(--brand-to)] hover:shadow-lg active:scale-[0.98] transition-all duration-300 focus:outline-none focus:ring-2 focus:ring-[color:var(--brand-from)]/30"
-                        >
-                            <span class="absolute inset-0 bg-gradient-to-r from-transparent via-white/20 to-transparent -translate-x-full group-hover:translate-x-full transition-transform duration-1000"></span>
-                            <span class="relative flex items-center gap-2">
-                                <i class="fas fa-plus text-xs"></i>
-                                <span>{{ tr('Add Job Title') }}</span>
-                            </span>
-                        </button>
-                    @endif
+                    @can('settings.organizational.manage')
+                        @if($activeTab === 'departments')
+                            <button
+                                type="button"
+                                @click="$dispatch('open-add-department-modal')"
+                                class="cursor-pointer group relative overflow-hidden rounded-xl px-4 py-2 text-sm font-semibold text-white shadow-md bg-gradient-to-r from-[color:var(--brand-from)] via-[color:var(--brand-via)] to-[color:var(--brand-to)] hover:shadow-lg active:scale-[0.98] transition-all duration-300 focus:outline-none focus:ring-2 focus:ring-[color:var(--brand-from)]/30"
+                            >
+                                <span class="absolute inset-0 bg-gradient-to-r from-transparent via-white/20 to-transparent -translate-x-full group-hover:translate-x-full transition-transform duration-1000"></span>
+                                <span class="relative flex items-center gap-2">
+                                    <i class="fas fa-plus text-xs"></i>
+                                    <span>{{ tr('Add Department') }}</span>
+                                </span>
+                            </button>
+                        @elseif($activeTab === 'job-titles')
+                            <button
+                                type="button"
+                                @click="$dispatch('open-add-job-title-modal')"
+                                class="cursor-pointer group relative overflow-hidden rounded-xl px-4 py-2 text-sm font-semibold text-white shadow-md bg-gradient-to-r from-[color:var(--brand-from)] via-[color:var(--brand-via)] to-[color:var(--brand-to)] hover:shadow-lg active:scale-[0.98] transition-all duration-300 focus:outline-none focus:ring-2 focus:ring-[color:var(--brand-from)]/30"
+                            >
+                                <span class="absolute inset-0 bg-gradient-to-r from-transparent via-white/20 to-transparent -translate-x-full group-hover:translate-x-full transition-transform duration-1000"></span>
+                                <span class="relative flex items-center gap-2">
+                                    <i class="fas fa-plus text-xs"></i>
+                                    <span>{{ tr('Add Job Title') }}</span>
+                                </span>
+                            </button>
+                        @endif
+                    @endcan
                 </div>
             </div>
         </div>

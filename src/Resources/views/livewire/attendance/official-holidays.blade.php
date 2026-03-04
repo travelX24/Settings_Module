@@ -203,6 +203,7 @@
                         </td>
 
                         <td class="px-6 py-4 text-end">
+                            @can('settings.attendance.manage')
                             <x-ui.actions-menu>
                                 <x-ui.dropdown-item wire:click.stop="openEdit({{ (int) $row->id }})">
                                     <i class="fas fa-edit me-2 text-blue-500"></i> {{ tr('Edit') }}
@@ -212,6 +213,7 @@
                                     <i class="fas fa-trash-alt me-2 text-red-500"></i> {{ tr('Delete') }}
                                 </x-ui.dropdown-item>
                             </x-ui.actions-menu>
+                            @endcan
                         </td>
                     </tr>
                 @empty
@@ -264,6 +266,7 @@
                         wire:model.defer="newName"
                         placeholder="{{ tr('Holiday name...') }}"
                         required
+                        :disabled="!auth()->user()->can('settings.attendance.manage')"
                     />
                 </div>
 
@@ -289,6 +292,7 @@
                         label="{{ tr('Duration (days)') }}"
                         wire:model.defer="newDurationDays"
                         required
+                        :disabled="!auth()->user()->can('settings.attendance.manage')"
                     />
                 </div>
 
@@ -318,10 +322,12 @@
                 <x-ui.secondary-button wire:click="closeCreate" class="!px-6 !rounded-xl">
                     {{ tr('Cancel') }}
                 </x-ui.secondary-button>
+                @can('settings.attendance.manage')
                 <x-ui.primary-button wire:click="saveNewHoliday" class="!px-6 !rounded-xl shadow-lg">
                     <i class="fas fa-save me-2"></i>
                     {{ tr('Save') }}
                 </x-ui.primary-button>
+                @endcan
             </div>
         </x-slot:footer>
     </x-ui.modal>
@@ -350,6 +356,7 @@
                         label="{{ tr('Name') }}"
                         wire:model.defer="editName"
                         required
+                        :disabled="!auth()->user()->can('settings.attendance.manage')"
                     />
                 </div>
 
@@ -375,6 +382,7 @@
                         label="{{ tr('Duration (days)') }}"
                         wire:model.defer="editDurationDays"
                         required
+                        :disabled="!auth()->user()->can('settings.attendance.manage')"
                     />
                 </div>
 
@@ -404,10 +412,12 @@
                 <x-ui.secondary-button wire:click="closeEdit" class="!px-6 !rounded-xl">
                     {{ tr('Cancel') }}
                 </x-ui.secondary-button>
+                @can('settings.attendance.manage')
                 <x-ui.primary-button wire:click="saveEditHoliday" class="!px-6 !rounded-xl shadow-lg">
                     <i class="fas fa-save me-2"></i>
                     {{ tr('Update') }}
                 </x-ui.primary-button>
+                @endcan
             </div>
         </x-slot:footer>
     </x-ui.modal>
@@ -449,6 +459,7 @@
                     {{ tr('Cancel') }}
                 </x-ui.secondary-button>
 
+                @can('settings.attendance.manage')
                 <x-ui.primary-button
                     wire:click="deleteHoliday"
                     class="!bg-red-600 hover:!bg-red-700 !px-6 !rounded-xl shadow-lg shadow-red-200"
@@ -456,6 +467,7 @@
                     <i class="fas fa-trash me-2"></i>
                     {{ tr('Delete') }}
                 </x-ui.primary-button>
+                @endcan
             </div>
         </x-slot:footer>
     </x-ui.modal>

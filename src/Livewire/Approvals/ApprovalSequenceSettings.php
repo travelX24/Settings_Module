@@ -48,6 +48,7 @@ class ApprovalSequenceSettings extends Component
 
     public function mount(): void
     {
+        $this->authorize('settings.approval.manage');
         $this->loadLookups();
         $this->resetSteps();
     }
@@ -200,6 +201,7 @@ class ApprovalSequenceSettings extends Component
 
     public function openCreate(): void
     {
+        $this->authorize('settings.approval.manage');
         $this->editingId = null;
         $this->name = '';
         $this->is_active = true;
@@ -219,6 +221,7 @@ class ApprovalSequenceSettings extends Component
 
     public function openEdit(int $id): void
     {
+        $this->authorize('settings.approval.manage');
         $p = ApprovalPolicy::query()
             ->where('company_id', $this->companyId())
             ->where('operation_key', $this->tab)
@@ -307,6 +310,7 @@ class ApprovalSequenceSettings extends Component
 
     public function save(): void
     {
+        $this->authorize('settings.approval.manage');
         $companyId = $this->companyId();
 
         // normalize steps first (direct_manager => approver_id=0)
@@ -403,6 +407,7 @@ class ApprovalSequenceSettings extends Component
 
     public function deletePolicy(int $id): void
     {
+        $this->authorize('settings.approval.manage');
         $p = ApprovalPolicy::query()
             ->where('company_id', $this->companyId())
             ->where('operation_key', $this->tab)

@@ -15,6 +15,13 @@ class UserAccessControlIndex extends Component
         'activeTab' => ['except' => 'users'],
     ];
 
+    public function mount()
+    {
+        if (!auth()->user()->can('uac.users.view') && !auth()->user()->can('uac.roles.view')) {
+            abort(403);
+        }
+    }
+
     public function setActiveTab($tab)
     {
         $this->activeTab = $tab;

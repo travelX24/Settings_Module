@@ -154,34 +154,36 @@
                                         {{ $department->code ?? '-' }}
                                     </span>
 
-                                    <x-ui.actions-menu>
-                                        <x-ui.dropdown-item
-                                        class="cursor-pointer"
-                                            wire:click="openEditModal({{ $department->id }})"
-                                            @click="$dispatch('close-actions-menu')"
-                                        >
-                                            <i class="fas fa-edit me-2"></i>
-                                            <span>{{ tr('Edit') }}</span>
-                                        </x-ui.dropdown-item>
-
-                                        <x-ui.dropdown-item
+                                    @can('settings.organizational.manage')
+                                        <x-ui.actions-menu>
+                                            <x-ui.dropdown-item
                                             class="cursor-pointer"
-                                            wire:click="toggleActive({{ $department->id }})"
-                                            @click="$dispatch('close-actions-menu')"
-                                        >
-                                            <i class="fas fa-{{ $department->is_active ? 'eye-slash' : 'eye' }} me-2"></i>
-                                            <span>{{ $department->is_active ? tr('Deactivate') : tr('Activate') }}</span>
-                                        </x-ui.dropdown-item>
+                                                wire:click="openEditModal({{ $department->id }})"
+                                                @click="$dispatch('close-actions-menu')"
+                                            >
+                                                <i class="fas fa-edit me-2"></i>
+                                                <span>{{ tr('Edit') }}</span>
+                                            </x-ui.dropdown-item>
 
-                                        <x-ui.dropdown-item
-                                            class="cursor-pointer"
-                                            @click="$dispatch('open-confirm-delete-department', { id: {{ $department->id }} }); $dispatch('close-actions-menu')"
-                                            danger
-                                        >
-                                            <i class="fas fa-trash me-2"></i>
-                                            <span>{{ tr('Delete') }}</span>
-                                        </x-ui.dropdown-item>
-                                    </x-ui.actions-menu>
+                                            <x-ui.dropdown-item
+                                                class="cursor-pointer"
+                                                wire:click="toggleActive({{ $department->id }})"
+                                                @click="$dispatch('close-actions-menu')"
+                                            >
+                                                <i class="fas fa-{{ $department->is_active ? 'eye-slash' : 'eye' }} me-2"></i>
+                                                <span>{{ $department->is_active ? tr('Deactivate') : tr('Activate') }}</span>
+                                            </x-ui.dropdown-item>
+
+                                            <x-ui.dropdown-item
+                                                class="cursor-pointer"
+                                                @click="$dispatch('open-confirm-delete-department', { id: {{ $department->id }} }); $dispatch('close-actions-menu')"
+                                                danger
+                                            >
+                                                <i class="fas fa-trash me-2"></i>
+                                                <span>{{ tr('Delete') }}</span>
+                                            </x-ui.dropdown-item>
+                                        </x-ui.actions-menu>
+                                    @endcan
                                 </div>
                             </div>
 
@@ -299,31 +301,33 @@
                             </td>
 
                             <td class="py-4 px-6 align-top whitespace-nowrap text-sm font-medium">
-                                <x-ui.actions-menu>
-                                    <x-ui.dropdown-item
-                                        wire:click="openEditModal({{ $department->id }})"
-                                        @click="$dispatch('close-actions-menu')"
-                                    >
-                                        <i class="fas fa-edit me-2"></i>
-                                        <span>{{ tr('Edit') }}</span>
-                                    </x-ui.dropdown-item>
+                                @can('settings.organizational.manage')
+                                    <x-ui.actions-menu>
+                                        <x-ui.dropdown-item
+                                            wire:click="openEditModal({{ $department->id }})"
+                                            @click="$dispatch('close-actions-menu')"
+                                        >
+                                            <i class="fas fa-edit me-2"></i>
+                                            <span>{{ tr('Edit') }}</span>
+                                        </x-ui.dropdown-item>
 
-                                    <x-ui.dropdown-item
-                                        wire:click="toggleActive({{ $department->id }})"
-                                        @click="$dispatch('close-actions-menu')"
-                                    >
-                                        <i class="fas fa-{{ $department->is_active ? 'eye-slash' : 'eye' }} me-2"></i>
-                                        <span>{{ $department->is_active ? tr('Deactivate') : tr('Activate') }}</span>
-                                    </x-ui.dropdown-item>
+                                        <x-ui.dropdown-item
+                                            wire:click="toggleActive({{ $department->id }})"
+                                            @click="$dispatch('close-actions-menu')"
+                                        >
+                                            <i class="fas fa-{{ $department->is_active ? 'eye-slash' : 'eye' }} me-2"></i>
+                                            <span>{{ $department->is_active ? tr('Deactivate') : tr('Activate') }}</span>
+                                        </x-ui.dropdown-item>
 
-                                    <x-ui.dropdown-item
-                                        @click="$dispatch('open-confirm-delete-department', { id: {{ $department->id }} }); $dispatch('close-actions-menu')"
-                                        danger
-                                    >
-                                        <i class="fas fa-trash me-2"></i>
-                                        <span>{{ tr('Delete') }}</span>
-                                    </x-ui.dropdown-item>
-                                </x-ui.actions-menu>
+                                        <x-ui.dropdown-item
+                                            @click="$dispatch('open-confirm-delete-department', { id: {{ $department->id }} }); $dispatch('close-actions-menu')"
+                                            danger
+                                        >
+                                            <i class="fas fa-trash me-2"></i>
+                                            <span>{{ tr('Delete') }}</span>
+                                        </x-ui.dropdown-item>
+                                    </x-ui.actions-menu>
+                                @endcan
                             </td>
                         </tr>
                     @endforeach
@@ -404,6 +408,7 @@
                                     wire:model="name"
                                     placeholder="{{ tr('Enter department name') }}"
                                     required
+                                    :disabled="!auth()->user()->can('settings.organizational.manage')"
                                 />
 
                                 {{-- Code --}}
@@ -414,6 +419,7 @@
                                     placeholder="{{ tr('e.g., MKT') }}"
                                     hint="{{ tr('Optional') }}"
                                     maxlength="10"
+                                    :disabled="!auth()->user()->can('settings.organizational.manage')"
                                 />
 
                                 {{-- Manager (Searchable Dropdown) --}}
@@ -438,7 +444,8 @@
                                             @click="toggle()"
                                             class="w-full rounded-xl border border-gray-200 bg-white px-4 py-3 text-sm shadow-sm
                                                    focus:outline-none focus:ring-2 focus:ring-[color:var(--brand-via)]/20 focus:border-[color:var(--brand-via)]
-                                                   transition flex items-center justify-between"
+                                                   transition flex items-center justify-between disabled:opacity-50 disabled:cursor-not-allowed"
+                                            @cannot('settings.organizational.manage') disabled @endcannot
                                         >
                                             <span
                                                 class="truncate"
@@ -535,7 +542,8 @@
                                             @click="toggle()"
                                             class="w-full rounded-xl border border-gray-200 bg-white px-4 py-3 text-sm shadow-sm
                                                    focus:outline-none focus:ring-2 focus:ring-[color:var(--brand-via)]/20 focus:border-[color:var(--brand-via)]
-                                                   transition flex items-center justify-between"
+                                                   transition flex items-center justify-between disabled:opacity-50 disabled:cursor-not-allowed"
+                                            @cannot('settings.organizational.manage') disabled @endcannot
                                         >
                                             <span
                                                 class="truncate"
@@ -618,6 +626,7 @@
                                     placeholder="{{ tr('Enter department description') }}"
                                     hint="{{ tr('Optional') }}"
                                     :rows="8"
+                                    :disabled="!auth()->user()->can('settings.organizational.manage')"
                                 />
 
                                 {{-- Is Active --}}
@@ -626,7 +635,8 @@
                                         type="checkbox"
                                         wire:model="is_active"
                                         id="is_active"
-                                        class="w-5 h-5 text-[color:var(--brand-via)] border-gray-300 rounded focus:ring-[color:var(--brand-via)] focus:ring-2"
+                                        class="w-5 h-5 text-[color:var(--brand-via)] border-gray-300 rounded focus:ring-[color:var(--brand-via)] focus:ring-2 disabled:opacity-50"
+                                        @cannot('settings.organizational.manage') disabled @endcannot
                                     />
                                     <label for="is_active" class="text-sm font-semibold text-gray-700 cursor-pointer">
                                         {{ tr('Active') }}
@@ -644,10 +654,12 @@
                                 {{ tr('Cancel') }}
                             </x-ui.secondary-button>
 
+                            @can('settings.organizational.manage')
                             <x-ui.primary-button type="submit" :fullWidth="false" class="cursor-pointer">
                                 <i class="fas fa-save me-2"></i>
                                 {{ tr('Save') }}
                             </x-ui.primary-button>
+                            @endcan
                         </div>
                     </div>
                 </form>

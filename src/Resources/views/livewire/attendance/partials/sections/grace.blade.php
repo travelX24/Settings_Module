@@ -40,6 +40,7 @@
                 id="auto_departure_penalty_enabled"
                 wire:model.live="gracePeriods.auto_departure_penalty_enabled"
                 class="w-4 h-4 text-blue-600 rounded border-gray-300"
+                @cannot('settings.attendance.manage') disabled @endcannot
             >
             <span class="text-xs font-bold text-gray-700">{{ tr('Activate Auto-Checkout Penalties') }}</span>
         </label>
@@ -51,6 +52,7 @@
                     <x-ui.select 
                         label="{{ tr('Deduction Type') }}"
                         wire:model.live="gracePeriods.auto_checkout_deduction_type"
+                        :disabled="!auth()->user()->can('settings.attendance.manage')"
                     >
                         <option value="fixed">{{ tr('Fixed Amount') }}</option>
                         <option value="daily">{{ tr('% of Daily Wage') }}</option>
@@ -61,6 +63,7 @@
                         type="number"
                         wire:model="gracePeriods.auto_departure_penalty_amount"
                         class="!py-3 !rounded-2xl"
+                        :disabled="!auth()->user()->can('settings.attendance.manage')"
                     />
                 </div>
             </div>
@@ -75,6 +78,7 @@
         @endif
     </div>
 
+    @can('settings.attendance.manage')
     <div class="flex justify-end pt-2">
         <x-ui.primary-button 
             wire:click="saveGracePeriods"
@@ -87,6 +91,7 @@
             {{ tr('Save Basic Settings') }}
         </x-ui.primary-button>
     </div>
+    @endcan
 </x-ui.card>
 
 

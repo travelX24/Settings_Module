@@ -129,6 +129,7 @@ class AttendanceLeaveSettings extends Component
 
     public function mount(): void
     {
+        $this->authorize('settings.attendance.view');
         $companyId = $this->resolveCompanyId();
         if ($companyId <= 0) return;
 
@@ -360,6 +361,7 @@ class AttendanceLeaveSettings extends Component
     // ---------------------------
     public function openCreate(): void
     {
+        $this->authorize('settings.attendance.manage');
         abort_unless(auth()->user()?->can('settings.attendance.manage'), 403);
 
         $this->resetValidation();
@@ -388,6 +390,7 @@ class AttendanceLeaveSettings extends Component
 
     public function saveCreate(): void
     {
+        $this->authorize('settings.attendance.manage');
         abort_unless(auth()->user()?->can('settings.attendance.manage'), 403);
 
         $companyId = $this->resolveCompanyId();
@@ -431,6 +434,7 @@ class AttendanceLeaveSettings extends Component
 
     public function openEdit(int $id): void
     {
+        $this->authorize('settings.attendance.manage');
         abort_unless(auth()->user()?->can('settings.attendance.manage'), 403);
 
         $companyId = $this->resolveCompanyId();
@@ -474,6 +478,7 @@ class AttendanceLeaveSettings extends Component
 
     public function saveEdit(): void
     {
+        $this->authorize('settings.attendance.manage');
         abort_unless(auth()->user()?->can('settings.attendance.manage'), 403);
 
         $companyId = $this->resolveCompanyId();
@@ -527,6 +532,7 @@ class AttendanceLeaveSettings extends Component
 
     public function confirmDelete(int $id): void
     {
+        $this->authorize('settings.attendance.manage');
         abort_unless(auth()->user()?->can('settings.attendance.manage'), 403);
         $companyId = $this->resolveCompanyId();
 
@@ -552,6 +558,7 @@ class AttendanceLeaveSettings extends Component
 
     public function deleteNow(): void
     {
+        $this->authorize('settings.attendance.manage');
         abort_unless(auth()->user()?->can('settings.attendance.manage'), 403);
 
         $companyId = $this->resolveCompanyId();
@@ -573,6 +580,7 @@ class AttendanceLeaveSettings extends Component
     // ---------------------------
     public function openYears(): void
     {
+        $this->authorize('settings.attendance.manage');
         abort_unless(auth()->user()?->can('settings.attendance.manage'), 403);
 
         $this->resetValidation();
@@ -589,6 +597,7 @@ class AttendanceLeaveSettings extends Component
 
     public function saveYear(): void
     {
+        $this->authorize('settings.attendance.manage');
         abort_unless(auth()->user()?->can('settings.attendance.manage'), 403);
 
         $companyId = $this->resolveCompanyId();
@@ -671,6 +680,7 @@ class AttendanceLeaveSettings extends Component
 
     public function setYearActive(int $id): void
     {
+        $this->authorize('settings.attendance.manage');
         abort_unless(auth()->user()?->can('settings.attendance.manage'), 403);
 
         $companyId = $this->resolveCompanyId();
@@ -704,6 +714,7 @@ class AttendanceLeaveSettings extends Component
 
     public function deleteYear(int $id): void
     {
+        $this->authorize('settings.attendance.manage');
         abort_unless(auth()->user()?->can('settings.attendance.manage'), 403);
 
         $companyId = $this->resolveCompanyId();
@@ -749,6 +760,7 @@ class AttendanceLeaveSettings extends Component
     // ---------------------------
     public function openCompare(): void
     {
+        $this->authorize('settings.attendance.manage');
         abort_unless(auth()->user()?->can('settings.attendance.manage'), 403);
 
         $this->resetValidation();

@@ -23,45 +23,55 @@
     {{-- Settings Buttons Grid --}}
     <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
         {{-- Attendance Configuration --}}
+        @can('settings.attendance.view')
         <x-ui.settings-button
             href="{{ route('company-admin.settings.attendance.settings') }}"
             icon="fa-clock"
             :title="tr('Attendance Configuration')"
             :description="tr('Set up attendance rules, check-in/check-out times, and schedules')"
         />
+        @endcan
 
         {{-- Work Schedules --}}
+        @can('settings.attendance.view')
         <x-ui.settings-button
             href="{{ route('company-admin.settings.attendance.schedules') }}"
             icon="fa-calendar-alt"
             :title="tr('Work Schedules')"
             :description="tr('Define and manage working hour templates and shifts')"
         />
+        @endcan
 
         {{-- Leave Settings --}}
+        @can('settings.attendance.view')
         <x-ui.settings-button
             href="{{ route('company-admin.settings.attendance.leaves') }}"
             icon="fa-calendar-check"
             :title="tr('Leave Settings')"
             :description="tr('Configure leave types, balances, and approval processes')"
         />
+        @endcan
 
 
         {{-- Official Holidays --}}
+        @can('settings.attendance.view')
         <x-ui.settings-button
             href="{{ route('company-admin.settings.attendance.holidays') }}"
             icon="fa-calendar-times"
             :title="tr('Official Holidays')"
             :description="tr('Manage official holidays and non-working days')"
         />
+        @endcan
 
         {{-- Exceptional Days --}}
+        @can('settings.attendance.view')
         <x-ui.settings-button
             href="{{ route('company-admin.settings.attendance.exceptional-days') }}"
             icon="fa-star"
             :title="tr('Exceptional Days')"
             :description="tr('Set special working days and exceptions')"
         />
+        @endcan
 
     </div>
 </div>

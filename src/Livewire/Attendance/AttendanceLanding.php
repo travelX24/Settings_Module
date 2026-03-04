@@ -9,6 +9,11 @@ use Livewire\Component;
 
 class AttendanceLanding extends Component
 {
+    public function mount()
+    {
+        $this->authorize('settings.attendance.view');
+    }
+
     public function render()
     {
         return view('systemsettings::livewire.attendance-landing')

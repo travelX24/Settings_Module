@@ -15,6 +15,11 @@ class OrganizationalStructureIndex extends Component
         'activeTab' => ['except' => 'departments'],
     ];
 
+    public function mount()
+    {
+        $this->authorize('settings.organizational.view');
+    }
+
     public function setActiveTab($tab)
     {
         $this->activeTab = $tab;

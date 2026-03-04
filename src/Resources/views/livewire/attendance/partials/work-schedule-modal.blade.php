@@ -71,6 +71,7 @@
                             placeholder="{{ tr('e.g. Morning Shift') }}"
                             class="!py-2 !text-xs"
                             required
+                            :disabled="!auth()->user()->can('settings.attendance.manage')"
                         />
                     </div>
                     <div class="col-span-1">
@@ -79,6 +80,7 @@
                             wire:model.defer="scheduleData.description"
                             placeholder="{{ tr('Optional...') }}"
                             class="!py-2 !text-xs"
+                            :disabled="!auth()->user()->can('settings.attendance.manage')"
                         />
                     </div>
                 </div>
@@ -90,6 +92,7 @@
                             label="{{ tr('Week Start') }}"
                             wire:model="scheduleData.week_start_day"
                             class="!bg-white shadow-sm !py-1.5 !text-xs"
+                            :disabled="!auth()->user()->can('settings.attendance.manage')"
                         >
                             @foreach($daysOfWeek as $val => $lbl)
                                 <option value="{{ $val }}">{{ $lbl }}</option>
@@ -100,6 +103,7 @@
                             label="{{ tr('Week End') }}"
                             wire:model="scheduleData.week_end_day"
                             class="!bg-white shadow-sm !py-1.5 !text-xs"
+                            :disabled="!auth()->user()->can('settings.attendance.manage')"
                         >
                             @foreach($daysOfWeek as $val => $lbl)
                                 <option value="{{ $val }}">{{ $lbl }}</option>
@@ -380,8 +384,10 @@
             {{ tr('Discard') }}
         </x-ui.secondary-button>
 
+        @can('settings.attendance.manage')
         <x-ui.brand-button wire:click="saveSchedule" class="!px-12 !rounded-xl shadow-lg shadow-[color:var(--brand-via)]/20">
             <i class="fas fa-save me-2"></i> {{ tr('Save Schedule') }}
         </x-ui.brand-button>
+        @endcan
     </x-slot:footer>
 </x-ui.modal>

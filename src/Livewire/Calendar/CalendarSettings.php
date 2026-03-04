@@ -27,6 +27,7 @@ class CalendarSettings extends Component
 
     public function mount(): void
     {
+        $this->authorize('settings.calendar.manage');
         $companyId = $this->resolveCompanyId();
 
         if ($companyId <= 0) {
@@ -50,6 +51,7 @@ class CalendarSettings extends Component
 
     public function save(): void
     {
+        $this->authorize('settings.calendar.manage');
         $companyId = $this->resolveCompanyId();
 
         if ($companyId <= 0) {

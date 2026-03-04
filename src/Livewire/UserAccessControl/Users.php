@@ -61,6 +61,7 @@ class Users extends Component
 
     public function mount()
     {
+        $this->authorize('uac.users.view');
         $this->loadPermissionGroups();
         $this->loadBranches();
         $this->initBranchFilterLock();
@@ -288,6 +289,7 @@ public function loadAvailableEmployees(): void
 
 public function openAddModal()
 {
+    $this->authorize('uac.users.manage');
     $this->resetForm();
     $this->loadAvailableEmployees();
     $this->showModal = true;
@@ -300,6 +302,7 @@ public function openAddModal()
 
     public function openEditModal($id)
     {
+        $this->authorize('uac.users.manage');
         $user = User::where('saas_company_id', $this->getCompanyId())->findOrFail($id);
         
         $this->editingId = $user->id;
@@ -343,6 +346,7 @@ public function openAddModal()
 
     public function save()
     {
+        $this->authorize('uac.users.manage');
         $companyId = $this->getCompanyId();
         
         $this->validate([
@@ -477,6 +481,7 @@ public function openAddModal()
 
     public function sendPasswordReset($id)
     {
+        $this->authorize('uac.users.manage');
         $user = User::where('saas_company_id', $this->getCompanyId())->findOrFail($id);
         
         // التحقق من وجود الدالة وإرسال الإيميل
@@ -494,6 +499,7 @@ public function openAddModal()
 
     public function toggleStatus($id)
     {
+        $this->authorize('uac.users.manage');
         $user = User::where('saas_company_id', $this->getCompanyId())->findOrFail($id);
         
         $user->is_active = ! $user->is_active;

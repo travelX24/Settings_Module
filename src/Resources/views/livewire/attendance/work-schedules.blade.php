@@ -275,12 +275,19 @@
                     </td>
                     <td class="px-6 py-4 text-center">
                         <div class="flex justify-center">
+                            @can('settings.attendance.manage')
                             <button wire:click="toggleStatus({{ $schedule->id }})" class="w-9 h-4.5 rounded-full p-1 transition-all relative {{ $schedule->is_active ? 'bg-green-500' : 'bg-gray-200' }}">
                                 <div class="w-2.5 h-2.5 bg-white rounded-full shadow-sm transition-all {{ $schedule->is_active ? ($isRtl ? 'mr-4.5' : 'ml-4.5') : '' }}"></div>
                             </button>
+                            @else
+                            <button disabled class="w-9 h-4.5 rounded-full p-1 transition-all relative cursor-not-allowed opacity-50 {{ $schedule->is_active ? 'bg-green-500' : 'bg-gray-200' }}">
+                                <div class="w-2.5 h-2.5 bg-white rounded-full shadow-sm {{ $schedule->is_active ? ($isRtl ? 'mr-4.5' : 'ml-4.5') : '' }}"></div>
+                            </button>
+                            @endcan
                         </div>
                     </td>
                     <td class="px-6 py-4 text-end">
+                        @can('settings.attendance.manage')
                         <x-ui.actions-menu>
                             <x-ui.dropdown-item wire:click="copySchedule({{ $schedule->id }})">
                                 <i class="fas fa-copy me-2 text-amber-500"></i> {{ tr('Duplicate') }}
@@ -295,6 +302,7 @@
                                 <i class="fas fa-trash-alt me-2 text-red-500"></i> {{ tr('Delete Permanently') }}
                             </x-ui.dropdown-item>
                         </x-ui.actions-menu>
+                        @endcan
                     </td>
                 </tr>
                 @empty

@@ -25,6 +25,7 @@
                 <x-ui.select 
                     label="{{ tr('Violation Type') }}"
                     wire:model="newPenalty.violation_type"
+                    :disabled="!auth()->user()->can('settings.attendance.manage')"
                 >
                     <option value="late_arrival">{{ tr('Late Arrival') }}</option>
                     <option value="early_departure">{{ tr('Early Departure') }}</option>
@@ -35,6 +36,7 @@
                 <x-ui.select 
                     label="{{ tr('Recurrence Count') }}"
                     wire:model="newPenalty.recurrence_count"
+                    :disabled="!auth()->user()->can('settings.attendance.manage')"
                 >
                     <option value="2">2 {{ tr('Times') }}</option>
                     <option value="3">3 {{ tr('Times') }}</option>
@@ -49,12 +51,14 @@
                     type="number" 
                     wire:model.defer="newPenalty.threshold_minutes"
                     hint="{{ tr('Should be more than the basic grace period.') }}"
+                    :disabled="!auth()->user()->can('settings.attendance.manage')"
                 />
 
                 {{-- Penalty Action --}}
               <x-ui.select 
                 label="{{ tr('Penalty Action') }}"
                 wire:model="newPenalty.penalty_action"
+                :disabled="!auth()->user()->can('settings.attendance.manage')"
             >
                 <option value="deduction">{{ tr('Financial Deduction') }}</option>
                 <option value="notification">{{ tr('System Notification') }}</option>
@@ -75,6 +79,7 @@
                         wire:model.defer="newPenalty.notification_message"
                         placeholder="{{ app()->isLocale('ar') ? 'اكتب الملاحظة الخاصة بالانذار...' : tr('Write the warning note...') }}"
                         required
+                        :disabled="!auth()->user()->can('settings.attendance.manage')"
                     />
                 </div>
             @endif
@@ -87,6 +92,7 @@
                     <x-ui.select 
                         label="{{ tr('Deduction Type') }}"
                         wire:model="newPenalty.deduction_type"
+                        :disabled="!auth()->user()->can('settings.attendance.manage')"
                     >
                         <option value="percentage">{{ tr('Percentage (%)') }}</option>
                         <option value="fixed">{{ tr('Fixed Amount') }}</option>
@@ -96,6 +102,7 @@
                         label="{{ tr('Deduction Value') }}"
                         type="number" 
                         wire:model.defer="newPenalty.deduction_value"
+                        :disabled="!auth()->user()->can('settings.attendance.manage')"
                     />
                 </div>
             </div>
@@ -110,10 +117,12 @@
             <x-ui.secondary-button @click="$wire.set('showPenaltyModal', false)" class="!text-xs !py-3 !px-6 !rounded-2xl">
                 {{ tr('Cancel') }}
             </x-ui.secondary-button>
+            @can('settings.attendance.manage')
             <x-ui.primary-button wire:click="savePenalty" class="!bg-purple-600 hover:!bg-purple-700 !text-xs !py-3 !px-10 !rounded-2xl shadow-xl">
                 <i class="fas fa-save me-2"></i>
                 {{ tr('Save Policy') }}
             </x-ui.primary-button>
+            @endcan
         </div>
     </x-slot:footer>
 </x-ui.modal>

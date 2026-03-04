@@ -77,6 +77,7 @@ class ExceptionalDaysIndex extends Component
 
     public function mount(): void
     {
+        $this->authorize('settings.attendance.view');
         $this->year = (int) now()->year;
         $this->month = (int) now()->month;
 
@@ -433,6 +434,7 @@ class ExceptionalDaysIndex extends Component
 
     public function openCreate(): void
     {
+        $this->authorize('settings.attendance.manage');
         $this->resetValidation();
         $this->editingId = null;
 
@@ -468,6 +470,7 @@ class ExceptionalDaysIndex extends Component
 
     public function openEdit(int $id): void
     {
+        $this->authorize('settings.attendance.manage');
         $this->resetValidation();
         $this->editingId = $id;
 
@@ -552,6 +555,7 @@ class ExceptionalDaysIndex extends Component
 
     public function save(): void
     {
+        $this->authorize('settings.attendance.manage');
         $this->validate();
 
         if (($this->form['period_type'] ?? 'single') === 'single') {
@@ -617,6 +621,7 @@ class ExceptionalDaysIndex extends Component
 
     public function toggleActive(int $id): void
     {
+        $this->authorize('settings.attendance.manage');
         $row = AttendanceExceptionalDay::query()
             ->where('company_id', $this->companyId())
             ->findOrFail($id);
@@ -626,6 +631,7 @@ class ExceptionalDaysIndex extends Component
 
     public function deleteRow(int $id): void
     {
+        $this->authorize('settings.attendance.manage');
         AttendanceExceptionalDay::query()
             ->where('company_id', $this->companyId())
             ->where('id', $id)
@@ -654,6 +660,7 @@ class ExceptionalDaysIndex extends Component
 
     public function deleteSelected(): void
     {
+        $this->authorize('settings.attendance.manage');
         if (empty($this->selected)) return;
 
         AttendanceExceptionalDay::query()
@@ -668,6 +675,7 @@ class ExceptionalDaysIndex extends Component
 
     public function setSelectedActive(bool $active): void
     {
+        $this->authorize('settings.attendance.manage');
         if (empty($this->selected)) return;
 
         AttendanceExceptionalDay::query()
@@ -696,6 +704,7 @@ class ExceptionalDaysIndex extends Component
 
     public function openCopyModal(): void
     {
+        $this->authorize('settings.attendance.manage');
         $this->resetValidation();
 
         $this->copyToYear = (int) $this->year;
@@ -739,6 +748,7 @@ class ExceptionalDaysIndex extends Component
 
     public function copySelectedDays(): void
     {
+        $this->authorize('settings.attendance.manage');
         $companyId = $this->companyId();
 
         $from = (int) $this->copyFromYear;

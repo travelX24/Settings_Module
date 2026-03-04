@@ -93,6 +93,7 @@ class AttendanceSettings extends Component
 
     public function mount()
     {
+        $this->authorize('settings.attendance.view');
         $companyId = auth()->user()->saas_company_id;
 
         // 1. Load Default Policy (or create per company)
@@ -499,6 +500,7 @@ class AttendanceSettings extends Component
 
     public function setTrackingPolicy($value)
     {
+        $this->authorize('settings.attendance.manage');
         $this->trackingPolicy = $value;
         $this->defaultPolicy->update(['tracking_mode' => $value]);
         $this->dispatch('toast', type: 'success', message: tr('Attendance tracking mode (Check-in/Out) has been updated successfully.'));
@@ -506,6 +508,7 @@ class AttendanceSettings extends Component
 
     public function saveGracePeriods()
     {
+        $this->authorize('settings.attendance.manage');
         $this->graceSettings->update([
             'late_grace_minutes' => $this->gracePeriods['late_arrival'],
             'early_leave_grace_minutes' => $this->gracePeriods['early_departure'],
@@ -519,6 +522,7 @@ class AttendanceSettings extends Component
 
     public function saveBasicLatePenalty()
     {
+        $this->authorize('settings.attendance.manage');
         $companyId = auth()->user()->saas_company_id;
         AttendancePenaltyPolicy::updateOrCreate(
             [
@@ -545,6 +549,7 @@ class AttendanceSettings extends Component
 
     public function saveBasicEarlyPenalty()
     {
+        $this->authorize('settings.attendance.manage');
         $companyId = auth()->user()->saas_company_id;
         AttendancePenaltyPolicy::updateOrCreate(
             [
@@ -571,6 +576,7 @@ class AttendanceSettings extends Component
 
     public function saveBasicAbsencePenalty()
     {
+        $this->authorize('settings.attendance.manage');
         $companyId = auth()->user()->saas_company_id;
         UnexcusedAbsencePolicy::updateOrCreate(
             [
@@ -597,6 +603,7 @@ class AttendanceSettings extends Component
 
     public function togglePrepMethod($method)
     {
+        $this->authorize('settings.attendance.manage');
         $companyId = auth()->user()->saas_company_id;
         $methodModel = AttendanceMethod::where('method', $method)
             ->where('saas_company_id', $companyId)
@@ -646,6 +653,7 @@ class AttendanceSettings extends Component
 
     public function openGpsModal()
     {
+        $this->authorize('settings.attendance.manage');
         $this->isEditing = false;
         $this->editingLocationId = null;
         $this->reset(['locationName']);
@@ -671,6 +679,7 @@ class AttendanceSettings extends Component
 
     public function editGpsLocation($id)
     {
+        $this->authorize('settings.attendance.manage');
         $location = AttendanceGpsLocation::find($id);
         if ($location) {
             $this->isEditing = true;
@@ -694,6 +703,7 @@ class AttendanceSettings extends Component
 
     public function deleteGpsLocation($id)
     {
+        $this->authorize('settings.attendance.manage');
         AttendanceGpsLocation::destroy($id);
         $this->refreshData();
         $this->dispatch('toast', type: 'success', message: tr('Geographic location has been permanently removed from the system.'));
@@ -701,6 +711,7 @@ class AttendanceSettings extends Component
 
     public function saveGpsLocation()
     {
+        $this->authorize('settings.attendance.manage');
         $this->validate([
             'locationName' => 'required|string|max:255',
             'gpsTarget' => 'required|in:branch,groups',

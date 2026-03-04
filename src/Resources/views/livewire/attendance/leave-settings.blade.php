@@ -263,6 +263,7 @@
                         @endphp
 
                         <td class="px-6 py-4 text-end">
+                            @can('settings.attendance.manage')
                             <x-ui.actions-menu>
                                 <x-ui.dropdown-item wire:click="openEdit({{ (int) $row->id }})">
                                     <i class="fas fa-edit me-2 text-blue-500"></i> {{ tr('Edit') }}
@@ -274,6 +275,7 @@
                                     </x-ui.dropdown-item>
                                 @endif
                             </x-ui.actions-menu>
+                            @endcan
                         </td>
                     </tr>
                 @empty
@@ -327,7 +329,8 @@
                         <label class="block text-[11px] font-black text-gray-500 mb-1">{{ tr('Name') }}</label>
                         <input type="text" wire:model.defer="name"
                             class="w-full h-[40px] px-3 rounded-xl border border-gray-200 text-sm bg-gray-50/50 focus:bg-white focus:border-[color:var(--brand-via)] focus:ring-4 focus:ring-[color:var(--brand-via)]/10 transition-all"
-                            placeholder="{{ tr('Leave name...') }}">
+                            placeholder="{{ tr('Leave name...') }}"
+                            @cannot('settings.attendance.manage') disabled @endcannot>
                         @error('name') <div class="text-xs text-red-600 mt-1">{{ $message }}</div> @enderror
                     </div>
 
@@ -337,6 +340,8 @@
                             <input type="text" wire:model.defer="description"
                                 class="w-full h-[40px] px-3 rounded-xl border border-gray-200 text-sm bg-gray-50/50 focus:bg-white focus:border-[color:var(--brand-via)] focus:ring-4 focus:ring-[color:var(--brand-via)]/10 transition-all"
                                 placeholder="{{ tr('Optional description...') }}">
+                                placeholder="{{ tr('Optional description...') }}"
+                                @cannot('settings.attendance.manage') disabled @endcannot>
                             @error('description') <div class="text-xs text-red-600 mt-1">{{ $message }}</div> @enderror
                         </div>
 
@@ -344,14 +349,16 @@
                         <div>
                             <label class="block text-[11px] font-black text-gray-500 mb-1">{{ tr('Days per year') }}</label>
                             <input type="number" step="0.5" min="0" wire:model.defer="days_per_year"
-                                class="w-full h-[40px] px-3 rounded-xl border border-gray-200 text-sm bg-gray-50/50 focus:bg-white focus:border-[color:var(--brand-via)] focus:ring-4 focus:ring-[color:var(--brand-via)]/10 transition-all">
+                                class="w-full h-[40px] px-3 rounded-xl border border-gray-200 text-sm bg-gray-50/50 focus:bg-white focus:border-[color:var(--brand-via)] focus:ring-4 focus:ring-[color:var(--brand-via)]/10 transition-all"
+                                @cannot('settings.attendance.manage') disabled @endcannot>
                             @error('days_per_year') <div class="text-xs text-red-600 mt-1">{{ $message }}</div> @enderror
                         </div>
 
                         <div>
                             <label class="block text-[11px] font-black text-gray-500 mb-1">{{ tr('Gender') }}</label>
                             <select wire:model.defer="gender"
-                                    class="w-full h-[40px] px-3 rounded-xl border border-gray-200 text-sm bg-gray-50/50 focus:bg-white focus:border-[color:var(--brand-via)] focus:ring-4 focus:ring-[color:var(--brand-via)]/10 transition-all">
+                                    class="w-full h-[40px] px-3 rounded-xl border border-gray-200 text-sm bg-gray-50/50 focus:bg-white focus:border-[color:var(--brand-via)] focus:ring-4 focus:ring-[color:var(--brand-via)]/10 transition-all"
+                                    @cannot('settings.attendance.manage') disabled @endcannot>
                                 <option value="all">{{ tr('All') }}</option>
                                 <option value="male">{{ tr('Male') }}</option>
                                 <option value="female">{{ tr('Female') }}</option>
@@ -362,17 +369,17 @@
 
                     <div class="md:col-span-2 grid grid-cols-1 sm:grid-cols-3 gap-3">
                         <label class="flex items-center gap-2 text-sm font-semibold text-gray-700">
-                            <input type="checkbox" wire:model.defer="is_active">
+                            <input type="checkbox" wire:model.defer="is_active" @cannot('settings.attendance.manage') disabled @endcannot>
                             <span>{{ tr('Active') }}</span>
                         </label>
 
                         <label class="flex items-center gap-2 text-sm font-semibold text-gray-700">
-                            <input type="checkbox" wire:model.defer="show_in_app">
+                            <input type="checkbox" wire:model.defer="show_in_app" @cannot('settings.attendance.manage') disabled @endcannot>
                             <span>{{ tr('Show in App') }}</span>
                         </label>
 
                         <label class="flex items-center gap-2 text-sm font-semibold text-gray-700">
-                            <input type="checkbox" wire:model.defer="requires_attachment">
+                            <input type="checkbox" wire:model.defer="requires_attachment" @cannot('settings.attendance.manage') disabled @endcannot>
                             <span>{{ tr('Requires attachment') }}</span>
                         </label>
                     </div>
@@ -390,7 +397,8 @@
                     <div>
                         <label class="block text-[11px] font-black text-gray-500 mb-1">{{ tr('Deduction policy') }}</label>
                        <select wire:model.defer="deduction_policy"
-                                class="w-full h-[40px] px-3 rounded-xl border border-gray-200 text-sm bg-gray-50/50">
+                                class="w-full h-[40px] px-3 rounded-xl border border-gray-200 text-sm bg-gray-50/50"
+                                @cannot('settings.attendance.manage') disabled @endcannot>
                             <option value="balance_only">{{ tr('Deduct from balance only') }}</option>
                             <option value="salary_after_balance">{{ tr('Deduct from salary after balance') }}</option>
                         </select>
@@ -402,7 +410,8 @@
                     <div>
                         <label class="block text-[11px] font-black text-gray-500 mb-1">{{ tr('Duration type') }}</label>
                        <select wire:model.defer="duration_unit"
-                            class="w-full h-[40px] px-3 rounded-xl border border-gray-200 text-sm bg-gray-50/50">
+                            class="w-full h-[40px] px-3 rounded-xl border border-gray-200 text-sm bg-gray-50/50"
+                            @cannot('settings.attendance.manage') disabled @endcannot>
                         <option value="full_day">{{ tr('Full day only') }}</option>
                         <option value="half_day">{{ tr('Full day or half day') }}</option>
                     </select>
@@ -414,20 +423,22 @@
                     <div>
                         <label class="block text-[11px] font-black text-gray-500 mb-1">{{ tr('Min notice (days)') }}</label>
                         <input type="number" min="0" wire:model.defer="notice_min_days"
-                            class="w-full h-[40px] px-3 rounded-xl border border-gray-200 text-sm bg-gray-50/50">
+                            class="w-full h-[40px] px-3 rounded-xl border border-gray-200 text-sm bg-gray-50/50"
+                            @cannot('settings.attendance.manage') disabled @endcannot>
                         @error('notice_min_days') <div class="text-xs text-red-600 mt-1">{{ $message }}</div> @enderror
                     </div>
 
                     <div>
                         <label class="block text-[11px] font-black text-gray-500 mb-1">{{ tr('Max advance (days)') }}</label>
                         <input type="number" min="0" wire:model.defer="notice_max_advance_days"
-                            class="w-full h-[40px] px-3 rounded-xl border border-gray-200 text-sm bg-gray-50/50">
+                            class="w-full h-[40px] px-3 rounded-xl border border-gray-200 text-sm bg-gray-50/50"
+                            @cannot('settings.attendance.manage') disabled @endcannot>
                         @error('notice_max_advance_days') <div class="text-xs text-red-600 mt-1">{{ $message }}</div> @enderror
                     </div>
 
                     <div class="md:col-span-2">
                         <label class="flex items-center gap-2 text-sm font-semibold text-gray-700">
-                            <input type="checkbox" wire:model.defer="allow_retroactive">
+                            <input type="checkbox" wire:model.defer="allow_retroactive" @cannot('settings.attendance.manage') disabled @endcannot>
                             <span>{{ tr('Allow retroactive requests') }}</span>
                         </label>
                         @error('allow_retroactive') <div class="text-xs text-red-600 mt-1">{{ $message }}</div> @enderror
@@ -438,7 +449,7 @@
                         <div class="text-sm font-black text-gray-900 mb-2">{{ tr('Notes') }}</div>
 
                         <label class="flex items-center gap-2 text-sm font-semibold text-gray-700">
-                            <input type="checkbox" wire:model.defer="note_required">
+                            <input type="checkbox" wire:model.defer="note_required" @cannot('settings.attendance.manage') disabled @endcannot>
                             <span>{{ tr('Mandatory note') }}</span>
                         </label>
                         @error('note_required') <div class="text-xs text-red-600 mt-1">{{ $message }}</div> @enderror
@@ -446,12 +457,13 @@
                         <div class="mt-3">
                             <label class="block text-[11px] font-black text-gray-500 mb-1">{{ tr('Note text') }}</label>
                             <textarea wire:model.defer="note_text" rows="2"
-                                    class="w-full px-3 py-2 rounded-xl border border-gray-200 text-sm bg-gray-50/50"></textarea>
+                                    class="w-full px-3 py-2 rounded-xl border border-gray-200 text-sm bg-gray-50/50"
+                                    @cannot('settings.attendance.manage') disabled @endcannot></textarea>
                             @error('note_text') <div class="text-xs text-red-600 mt-1">{{ $message }}</div> @enderror
                         </div>
 
                         <label class="flex items-center gap-2 text-sm font-semibold text-gray-700 mt-2">
-                            <input type="checkbox" wire:model.defer="note_ack_required">
+                            <input type="checkbox" wire:model.defer="note_ack_required" @cannot('settings.attendance.manage') disabled @endcannot>
                             <span>{{ tr('Require acknowledgment of the note') }}</span>
                         </label>
                         @error('note_ack_required') <div class="text-xs text-red-600 mt-1">{{ $message }}</div> @enderror
@@ -466,15 +478,15 @@
                                 <label class="block text-[11px] font-black text-gray-500 mb-1">{{ tr('Allowed types') }}</label>
                                 <div class="flex flex-wrap gap-3">
                                     <label class="flex items-center gap-2 text-sm font-semibold text-gray-700">
-                                        <input type="checkbox" value="pdf" wire:model.defer="attachment_types">
+                                        <input type="checkbox" value="pdf" wire:model.defer="attachment_types" @cannot('settings.attendance.manage') disabled @endcannot>
                                         <span>PDF</span>
                                     </label>
                                     <label class="flex items-center gap-2 text-sm font-semibold text-gray-700">
-                                        <input type="checkbox" value="jpg" wire:model.defer="attachment_types">
+                                        <input type="checkbox" value="jpg" wire:model.defer="attachment_types" @cannot('settings.attendance.manage') disabled @endcannot>
                                         <span>JPG</span>
                                     </label>
                                     <label class="flex items-center gap-2 text-sm font-semibold text-gray-700">
-                                        <input type="checkbox" value="png" wire:model.defer="attachment_types">
+                                        <input type="checkbox" value="png" wire:model.defer="attachment_types" @cannot('settings.attendance.manage') disabled @endcannot>
                                         <span>PNG</span>
                                     </label>
                                 </div>
@@ -508,10 +520,12 @@
                 <x-ui.secondary-button wire:click="closeCreate" class="!px-6 !rounded-xl">
                     {{ tr('Cancel') }}
                 </x-ui.secondary-button>
+                @can('settings.attendance.manage')
                 <x-ui.primary-button wire:click="saveCreate" class="!px-6 !rounded-xl shadow-lg">
                     <i class="fas fa-save me-2"></i>
                     {{ tr('Save Policy') }}
                 </x-ui.primary-button>
+                @endcan
             </div>
         </x-slot:footer>
     </x-ui.modal>
@@ -548,6 +562,7 @@
                             class="w-full h-[40px] px-3 rounded-xl border border-gray-200 text-sm
                                 {{ $editingNameLocked ? 'bg-gray-100/70 text-gray-700 cursor-not-allowed' : 'bg-gray-50/50 focus:bg-white focus:border-[color:var(--brand-via)] focus:ring-4 focus:ring-[color:var(--brand-via)]/10 transition-all' }}"
                             placeholder="{{ tr('Leave name...') }}"
+                            @cannot('settings.attendance.manage') disabled @endcannot
                         >
 
                         @if($editingNameLocked)
@@ -564,7 +579,8 @@
                             <label class="block text-[11px] font-black text-gray-500 mb-1">{{ tr('Description') }}</label>
                             <input type="text" wire:model.defer="description"
                                 class="w-full h-[40px] px-3 rounded-xl border border-gray-200 text-sm bg-gray-50/50 focus:bg-white focus:border-[color:var(--brand-via)] focus:ring-4 focus:ring-[color:var(--brand-via)]/10 transition-all"
-                                placeholder="{{ tr('Optional description...') }}">
+                                placeholder="{{ tr('Optional description...') }}"
+                                @cannot('settings.attendance.manage') disabled @endcannot>
                             @error('description') <div class="text-xs text-red-600 mt-1">{{ $message }}</div> @enderror
                         </div>
 
@@ -573,7 +589,8 @@
                             <div>
                                 <label class="block text-[11px] font-black text-gray-500 mb-1">{{ tr('Days per year') }}</label>
                                 <input type="number" step="0.5" min="0" wire:model.defer="days_per_year"
-                                    class="w-full h-[40px] px-3 rounded-xl border border-gray-200 text-sm bg-gray-50/50 focus:bg-white focus:border-[color:var(--brand-via)] focus:ring-4 focus:ring-[color:var(--brand-via)]/10 transition-all">
+                                    class="w-full h-[40px] px-3 rounded-xl border border-gray-200 text-sm bg-gray-50/50 focus:bg-white focus:border-[color:var(--brand-via)] focus:ring-4 focus:ring-[color:var(--brand-via)]/10 transition-all"
+                                    @cannot('settings.attendance.manage') disabled @endcannot>
                                 @error('days_per_year') <div class="text-xs text-red-600 mt-1">{{ $message }}</div> @enderror
                             </div>
                         @endif
@@ -582,7 +599,8 @@
                         <div>
                             <label class="block text-[11px] font-black text-gray-500 mb-1">{{ tr('Gender') }}</label>
                             <select wire:model.defer="gender"
-                                    class="w-full h-[40px] px-3 rounded-xl border border-gray-200 text-sm bg-gray-50/50 focus:bg-white focus:border-[color:var(--brand-via)] focus:ring-4 focus:ring-[color:var(--brand-via)]/10 transition-all">
+                                    class="w-full h-[40px] px-3 rounded-xl border border-gray-200 text-sm bg-gray-50/50 focus:bg-white focus:border-[color:var(--brand-via)] focus:ring-4 focus:ring-[color:var(--brand-via)]/10 transition-all"
+                                    @cannot('settings.attendance.manage') disabled @endcannot>
                                 <option value="all">{{ tr('All') }}</option>
                                 <option value="male">{{ tr('Male') }}</option>
                                 <option value="female">{{ tr('Female') }}</option>
@@ -609,17 +627,17 @@
 
                     <div class="md:col-span-2 grid grid-cols-1 sm:grid-cols-3 gap-3">
                         <label class="flex items-center gap-2 text-sm font-semibold text-gray-700">
-                            <input type="checkbox" wire:model.defer="is_active">
+                            <input type="checkbox" wire:model.defer="is_active" @cannot('settings.attendance.manage') disabled @endcannot>
                             <span>{{ tr('Active') }}</span>
                         </label>
 
                         <label class="flex items-center gap-2 text-sm font-semibold text-gray-700">
-                            <input type="checkbox" wire:model.defer="show_in_app">
+                            <input type="checkbox" wire:model.defer="show_in_app" @cannot('settings.attendance.manage') disabled @endcannot>
                             <span>{{ tr('Show in App') }}</span>
                         </label>
 
                         <label class="flex items-center gap-2 text-sm font-semibold text-gray-700">
-                            <input type="checkbox" wire:model.defer="requires_attachment">
+                            <input type="checkbox" wire:model.defer="requires_attachment" @cannot('settings.attendance.manage') disabled @endcannot>
                             <span>{{ tr('Requires attachment') }}</span>
                         </label>
                     </div>
@@ -637,14 +655,16 @@
                         <div>
                             <label class="block text-[11px] font-black text-gray-500 mb-1">{{ tr('Days per year') }}</label>
                             <input type="number" step="0.5" min="0" wire:model.live.debounce.150ms="days_per_year"
-                                class="w-full h-[40px] px-3 rounded-xl border border-gray-200 text-sm bg-gray-50/50 focus:bg-white focus:border-[color:var(--brand-via)] focus:ring-4 focus:ring-[color:var(--brand-via)]/10 transition-all">
+                                class="w-full h-[40px] px-3 rounded-xl border border-gray-200 text-sm bg-gray-50/50 focus:bg-white focus:border-[color:var(--brand-via)] focus:ring-4 focus:ring-[color:var(--brand-via)]/10 transition-all"
+                                @cannot('settings.attendance.manage') disabled @endcannot>
                             @error('days_per_year') <div class="text-xs text-red-600 mt-1">{{ $message }}</div> @enderror
                         </div>
 
                         <div>
                             <label class="block text-[11px] font-black text-gray-500 mb-1">{{ tr('Accrual method') }}</label>
                             <select wire:model.live="accrual_method"
-                                    class="w-full h-[40px] px-3 rounded-xl border border-gray-200 text-sm bg-gray-50/50">
+                                    class="w-full h-[40px] px-3 rounded-xl border border-gray-200 text-sm bg-gray-50/50"
+                                    @cannot('settings.attendance.manage') disabled @endcannot>
                                 <option value="annual_grant">{{ tr('Annual full grant') }}</option>
                                 <option value="monthly">{{ tr('Monthly accrual') }}</option>
                             </select>
@@ -668,12 +688,13 @@
                         <div>
                             <label class="block text-[11px] font-black text-gray-500 mb-1">{{ tr('Max balance') }}</label>
                             <input type="number" step="0.5" min="0" wire:model.defer="max_balance"
-                                class="w-full h-[40px] px-3 rounded-xl border border-gray-200 text-sm bg-gray-50/50">
+                                class="w-full h-[40px] px-3 rounded-xl border border-gray-200 text-sm bg-gray-50/50"
+                                @cannot('settings.attendance.manage') disabled @endcannot>
                             @error('max_balance') <div class="text-xs text-red-600 mt-1">{{ $message }}</div> @enderror
                         </div>
                       <div>
                     <label class="flex items-center gap-2 text-sm font-semibold text-gray-700 mb-2">
-                        <input type="checkbox" wire:model.live="allow_carryover">
+                        <input type="checkbox" wire:model.live="allow_carryover" @cannot('settings.attendance.manage') disabled @endcannot>
                         <span>{{ tr('Allow carryover') }}</span>
                     </label>
                     @error('allow_carryover') <div class="text-xs text-red-600 mt-1">{{ $message }}</div> @enderror
@@ -690,6 +711,7 @@
                                 ? 'bg-gray-50/50 focus:bg-white focus:border-[color:var(--brand-via)] focus:ring-4 focus:ring-[color:var(--brand-via)]/10 transition-all'
                                 : 'bg-gray-100/70 text-gray-700 cursor-not-allowed'
                             }}"
+                            @cannot('settings.attendance.manage') disabled @endcannot
                     >
                     @error('carryover_days') <div class="text-xs text-red-600 mt-1">{{ $message }}</div> @enderror
 
@@ -702,7 +724,8 @@
                         <div class="md:col-span-2">
                             <label class="block text-[11px] font-black text-gray-500 mb-1">{{ tr('Weekend days') }}</label>
                             <select wire:model.defer="weekend_policy"
-                                    class="w-full h-[40px] px-3 rounded-xl border border-gray-200 text-sm bg-gray-50/50">
+                                    class="w-full h-[40px] px-3 rounded-xl border border-gray-200 text-sm bg-gray-50/50"
+                                    @cannot('settings.attendance.manage') disabled @endcannot>
                                 <option value="exclude">{{ tr('Auto exclude') }}</option>
                                 <option value="include">{{ tr('Auto include') }}</option>
                                 <option value="employee_choice">{{ tr('Employee choice') }}</option>
@@ -724,7 +747,8 @@
                     <div>
                         <label class="block text-[11px] font-black text-gray-500 mb-1">{{ tr('Deduction policy') }}</label>
                      <select wire:model.defer="deduction_policy"
-                                class="w-full h-[40px] px-3 rounded-xl border border-gray-200 text-sm bg-gray-50/50">
+                                class="w-full h-[40px] px-3 rounded-xl border border-gray-200 text-sm bg-gray-50/50"
+                                @cannot('settings.attendance.manage') disabled @endcannot>
                             <option value="balance_only">{{ tr('Deduct from balance only') }}</option>
                             <option value="salary_after_balance">{{ tr('Deduct from salary after balance') }}</option>
                         </select>
@@ -736,7 +760,8 @@
                     <div>
                         <label class="block text-[11px] font-black text-gray-500 mb-1">{{ tr('Duration type') }}</label>
                       <select wire:model.defer="duration_unit"
-                                class="w-full h-[40px] px-3 rounded-xl border border-gray-200 text-sm bg-gray-50/50">
+                                class="w-full h-[40px] px-3 rounded-xl border border-gray-200 text-sm bg-gray-50/50"
+                                @cannot('settings.attendance.manage') disabled @endcannot>
                             <option value="full_day">{{ tr('Full day only') }}</option>
                             <option value="half_day">{{ tr('Full day or half day') }}</option>
                         </select>
@@ -748,20 +773,22 @@
                     <div>
                         <label class="block text-[11px] font-black text-gray-500 mb-1">{{ tr('Min notice (days)') }}</label>
                         <input type="number" min="0" wire:model.defer="notice_min_days"
-                            class="w-full h-[40px] px-3 rounded-xl border border-gray-200 text-sm bg-gray-50/50">
+                            class="w-full h-[40px] px-3 rounded-xl border border-gray-200 text-sm bg-gray-50/50"
+                            @cannot('settings.attendance.manage') disabled @endcannot>
                         @error('notice_min_days') <div class="text-xs text-red-600 mt-1">{{ $message }}</div> @enderror
                     </div>
 
                     <div>
                         <label class="block text-[11px] font-black text-gray-500 mb-1">{{ tr('Max advance (days)') }}</label>
                         <input type="number" min="0" wire:model.defer="notice_max_advance_days"
-                            class="w-full h-[40px] px-3 rounded-xl border border-gray-200 text-sm bg-gray-50/50">
+                            class="w-full h-[40px] px-3 rounded-xl border border-gray-200 text-sm bg-gray-50/50"
+                            @cannot('settings.attendance.manage') disabled @endcannot>
                         @error('notice_max_advance_days') <div class="text-xs text-red-600 mt-1">{{ $message }}</div> @enderror
                     </div>
 
                     <div class="md:col-span-2">
                         <label class="flex items-center gap-2 text-sm font-semibold text-gray-700">
-                            <input type="checkbox" wire:model.defer="allow_retroactive">
+                            <input type="checkbox" wire:model.defer="allow_retroactive" @cannot('settings.attendance.manage') disabled @endcannot>
                             <span>{{ tr('Allow retroactive requests') }}</span>
                         </label>
                         @error('allow_retroactive') <div class="text-xs text-red-600 mt-1">{{ $message }}</div> @enderror
@@ -772,7 +799,7 @@
                         <div class="text-sm font-black text-gray-900 mb-2">{{ tr('Notes') }}</div>
 
                         <label class="flex items-center gap-2 text-sm font-semibold text-gray-700">
-                            <input type="checkbox" wire:model.defer="note_required">
+                            <input type="checkbox" wire:model.defer="note_required" @cannot('settings.attendance.manage') disabled @endcannot>
                             <span>{{ tr('Mandatory note') }}</span>
                         </label>
                         @error('note_required') <div class="text-xs text-red-600 mt-1">{{ $message }}</div> @enderror
@@ -780,12 +807,13 @@
                         <div class="mt-3">
                             <label class="block text-[11px] font-black text-gray-500 mb-1">{{ tr('Note text') }}</label>
                             <textarea wire:model.defer="note_text" rows="2"
-                                    class="w-full px-3 py-2 rounded-xl border border-gray-200 text-sm bg-gray-50/50"></textarea>
+                                    class="w-full px-3 py-2 rounded-xl border border-gray-200 text-sm bg-gray-50/50"
+                                    @cannot('settings.attendance.manage') disabled @endcannot></textarea>
                             @error('note_text') <div class="text-xs text-red-600 mt-1">{{ $message }}</div> @enderror
                         </div>
 
                         <label class="flex items-center gap-2 text-sm font-semibold text-gray-700 mt-2">
-                            <input type="checkbox" wire:model.defer="note_ack_required">
+                            <input type="checkbox" wire:model.defer="note_ack_required" @cannot('settings.attendance.manage') disabled @endcannot>
                             <span>{{ tr('Require acknowledgment of the note') }}</span>
                         </label>
                         @error('note_ack_required') <div class="text-xs text-red-600 mt-1">{{ $message }}</div> @enderror
@@ -800,15 +828,15 @@
                                 <label class="block text-[11px] font-black text-gray-500 mb-1">{{ tr('Allowed types') }}</label>
                                 <div class="flex flex-wrap gap-3">
                                     <label class="flex items-center gap-2 text-sm font-semibold text-gray-700">
-                                        <input type="checkbox" value="pdf" wire:model.defer="attachment_types">
+                                        <input type="checkbox" value="pdf" wire:model.defer="attachment_types" @cannot('settings.attendance.manage') disabled @endcannot>
                                         <span>PDF</span>
                                     </label>
                                     <label class="flex items-center gap-2 text-sm font-semibold text-gray-700">
-                                        <input type="checkbox" value="jpg" wire:model.defer="attachment_types">
+                                        <input type="checkbox" value="jpg" wire:model.defer="attachment_types" @cannot('settings.attendance.manage') disabled @endcannot>
                                         <span>JPG</span>
                                     </label>
                                     <label class="flex items-center gap-2 text-sm font-semibold text-gray-700">
-                                        <input type="checkbox" value="png" wire:model.defer="attachment_types">
+                                        <input type="checkbox" value="png" wire:model.defer="attachment_types" @cannot('settings.attendance.manage') disabled @endcannot>
                                         <span>PNG</span>
                                     </label>
                                 </div>
@@ -842,10 +870,12 @@
                 <x-ui.secondary-button wire:click="closeEdit" class="!px-6 !rounded-xl">
                     {{ tr('Cancel') }}
                 </x-ui.secondary-button>
+                @can('settings.attendance.manage')
                 <x-ui.primary-button wire:click="saveEdit" class="!px-6 !rounded-xl shadow-lg">
                     <i class="fas fa-save me-2"></i>
                     {{ tr('Update') }}
                 </x-ui.primary-button>
+                @endcan
             </div>
         </x-slot:footer>
     </x-ui.modal>
@@ -877,6 +907,7 @@
                     {{ tr('Cancel') }}
                 </x-ui.secondary-button>
 
+                @can('settings.attendance.manage')
                 <x-ui.primary-button
                     wire:click="deleteNow"
                     class="!bg-red-600 hover:!bg-red-700 !px-6 !rounded-xl shadow-lg shadow-red-200"
@@ -884,6 +915,7 @@
                     <i class="fas fa-trash me-2"></i>
                     {{ tr('Delete') }}
                 </x-ui.primary-button>
+                @endcan
             </div>
         </x-slot:footer>
     </x-ui.modal>
@@ -935,8 +967,9 @@
                                @if(!$y->is_active && (int) $y->year === (int) now()->year)
                                     <button 
                                         wire:click="setYearActive({{ (int)$y->id }})"
-                                        class="w-8 h-8 rounded-xl bg-gray-50 text-gray-400 hover:bg-emerald-50 hover:text-emerald-600 border border-gray-100 transition-all flex items-center justify-center"
+                                        class="w-8 h-8 rounded-xl bg-gray-50 text-gray-400 hover:bg-emerald-50 hover:text-emerald-600 border border-gray-100 transition-all flex items-center justify-center disabled:opacity-50"
                                         title="{{ tr('Set Active') }}"
+                                        @cannot('settings.attendance.manage') disabled @endcannot
                                     >
                                         <i class="fas fa-bolt text-xs"></i>
                                     </button>
@@ -945,8 +978,9 @@
 
                                     <button 
                                         wire:click="deleteYear({{ (int)$y->id }})"
-                                        class="w-8 h-8 rounded-xl bg-gray-50 text-gray-400 hover:bg-red-50 hover:text-red-600 border border-gray-100 transition-all flex items-center justify-center"
+                                        class="w-8 h-8 rounded-xl bg-gray-50 text-gray-400 hover:bg-red-50 hover:text-red-600 border border-gray-100 transition-all flex items-center justify-center disabled:opacity-50"
                                         title="{{ tr('Delete') }}"
+                                        @cannot('settings.attendance.manage') disabled @endcannot
                                     >
                                         <i class="fas fa-trash text-xs"></i>
                                     </button>
@@ -968,9 +1002,10 @@
                             type="number" min="2000" max="2100" 
                             label="{{ tr('Year') }}" 
                             wire:model.defer="newYear" 
+                            :disabled="!auth()->user()->can('settings.attendance.manage')"
                         />
 
-                        <x-ui.select label="{{ tr('Copy from year (optional)') }}" wire:model.defer="copyFromYearId">
+                        <x-ui.select label="{{ tr('Copy from year (optional)') }}" wire:model.defer="copyFromYearId" :disabled="!auth()->user()->can('settings.attendance.manage')">
                              <option value="">{{ tr('Do not copy') }}</option>
                              @foreach($years as $y)
                                  <option value="{{ (int) $y->id }}">{{ $y->year }}</option>
@@ -992,10 +1027,12 @@
                     {{ tr('Cancel') }}
                 </x-ui.secondary-button>
 
+                @can('settings.attendance.manage')
                 <x-ui.primary-button wire:click="saveYear" class="!px-6 !rounded-xl shadow-lg">
                     <i class="fas fa-save me-2"></i>
                     {{ tr('Save') }}
                 </x-ui.primary-button>
+                @endcan
             </div>
         </x-slot:footer>
     </x-ui.modal>
@@ -1023,14 +1060,14 @@
             <div class="space-y-4 py-2">
 
                 <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-                     <x-ui.select label="{{ tr('Year A') }}" wire:model="compareYearAId">
+                     <x-ui.select label="{{ tr('Year A') }}" wire:model="compareYearAId" @cannot('settings.attendance.manage') disabled @endcannot>
                         <option value="">{{ tr('Select year') }}</option>
                         @foreach($years as $y)
                             <option value="{{ (int)$y->id }}">{{ $y->year }}</option>
                         @endforeach
                     </x-ui.select>
                     
-                    <x-ui.select label="{{ tr('Year B') }}" wire:model="compareYearBId">
+                    <x-ui.select label="{{ tr('Year B') }}" wire:model="compareYearBId" @cannot('settings.attendance.manage') disabled @endcannot>
                         <option value="">{{ tr('Select year') }}</option>
                         @foreach($years as $y)
                             <option value="{{ (int)$y->id }}">{{ $y->year }}</option>
@@ -1101,6 +1138,7 @@
                                                 wire:click="toggleCompareDetails('{{ $r['key'] }}')"
                                                 class="px-2 py-1 bg-white rounded-md border border-gray-200 hover:bg-gray-50 text-gray-700 inline-flex items-center gap-2"
                                                 title="{{ tr('View details') }}"
+                                                @cannot('settings.attendance.manage') disabled @endcannot
                                             >
                                                 <i class="fas fa-eye text-[11px]"></i>
                                                 <span class="text-[11px] font-bold">{{ tr('Details') }}</span>
@@ -1126,7 +1164,8 @@
                             </div>
 
                             <button type="button" wire:click="toggleCompareDetails('{{ $r['key'] }}')"
-                                class="text-xs font-black text-gray-500 hover:text-gray-900">
+                                class="text-xs font-black text-gray-500 hover:text-gray-900"
+                                @cannot('settings.attendance.manage') disabled @endcannot>
                                 {{ tr('Close') }}
                             </button>
                         </div>
@@ -1270,17 +1309,17 @@
                     <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
                         <div class="md:col-span-2 grid grid-cols-1 sm:grid-cols-3 gap-3">
                             <label class="flex items-center gap-2 text-sm font-semibold text-gray-700">
-                                <input type="checkbox" wire:model.defer="perm_approval_required">
+                                <input type="checkbox" wire:model.defer="perm_approval_required" @cannot('settings.attendance.manage') disabled @endcannot>
                                 <span>{{ tr('Approval required') }}</span>
                             </label>
 
                             <label class="flex items-center gap-2 text-sm font-semibold text-gray-700">
-                                <input type="checkbox" wire:model.defer="perm_show_in_app">
+                                <input type="checkbox" wire:model.defer="perm_show_in_app" @cannot('settings.attendance.manage') disabled @endcannot>
                                 <span>{{ tr('Show in App') }}</span>
                             </label>
 
                             <label class="flex items-center gap-2 text-sm font-semibold text-gray-700">
-                                <input type="checkbox" wire:model.defer="perm_requires_attachment">
+                                <input type="checkbox" wire:model.defer="perm_requires_attachment" @cannot('settings.attendance.manage') disabled @endcannot>
                                 <span>{{ tr('Requires attachment') }}</span>
                             </label>
                         </div>
@@ -1289,7 +1328,8 @@
                             <label class="block text-[11px] font-black text-gray-500 mb-1">{{ tr('Monthly limit (hours)') }}</label>
                             <input type="number" step="0.25" min="0" wire:model.defer="perm_monthly_limit_hours"
                                 class="w-full h-[40px] px-3 rounded-xl border border-gray-200 text-sm bg-gray-50/50 focus:bg-white focus:border-[color:var(--brand-via)] focus:ring-4 focus:ring-[color:var(--brand-via)]/10 transition-all"
-                                placeholder="0">
+                                placeholder="0"
+                                @cannot('settings.attendance.manage') disabled @endcannot>
                             <div class="text-[10px] text-gray-400 mt-1">{{ tr('0 means unlimited') }}</div>
                             @error('perm_monthly_limit_hours') <div class="text-xs text-red-600 mt-1">{{ $message }}</div> @enderror
                         </div>
@@ -1298,7 +1338,8 @@
                             <label class="block text-[11px] font-black text-gray-500 mb-1">{{ tr('Max per request (hours)') }}</label>
                             <input type="number" step="0.25" min="0" wire:model.defer="perm_max_request_hours"
                                 class="w-full h-[40px] px-3 rounded-xl border border-gray-200 text-sm bg-gray-50/50 focus:bg-white focus:border-[color:var(--brand-via)] focus:ring-4 focus:ring-[color:var(--brand-via)]/10 transition-all"
-                                placeholder="0">
+                                placeholder="0"
+                                @cannot('settings.attendance.manage') disabled @endcannot>
                             <div class="text-[10px] text-gray-400 mt-1">{{ tr('0 means unlimited') }}</div>
                             @error('perm_max_request_hours') <div class="text-xs text-red-600 mt-1">{{ $message }}</div> @enderror
                         </div>
@@ -1306,7 +1347,8 @@
                         <div class="md:col-span-2">
                             <label class="block text-[11px] font-black text-gray-500 mb-1">{{ tr('Deduction policy') }}</label>
                             <select wire:model.defer="perm_deduction_policy"
-                                class="w-full h-[40px] px-3 rounded-xl border border-gray-200 text-sm bg-gray-50/50">
+                                class="w-full h-[40px] px-3 rounded-xl border border-gray-200 text-sm bg-gray-50/50"
+                                @cannot('settings.attendance.manage') disabled @endcannot>
                                 <option value="not_allowed_after_limit">{{ tr('Not allowed after limit') }}</option>
                                 <option value="salary_after_limit">{{ tr('Deduct from salary after limit') }}</option>
                                 <option value="allow_without_deduction">{{ tr('Allow without deduction') }}</option>
@@ -1324,15 +1366,15 @@
 
                                     <div class="flex flex-wrap gap-3">
                                         <label class="flex items-center gap-2 text-sm font-semibold text-gray-700">
-                                            <input type="checkbox" value="pdf" wire:model.defer="perm_attachment_types" @disabled(! $perm_requires_attachment)>
+                                            <input type="checkbox" value="pdf" wire:model.defer="perm_attachment_types" @disabled(! $perm_requires_attachment || !auth()->user()->can('settings.attendance.manage'))>
                                             <span>PDF</span>
                                         </label>
                                         <label class="flex items-center gap-2 text-sm font-semibold text-gray-700">
-                                            <input type="checkbox" value="jpg" wire:model.defer="perm_attachment_types" @disabled(! $perm_requires_attachment)>
+                                            <input type="checkbox" value="jpg" wire:model.defer="perm_attachment_types" @disabled(! $perm_requires_attachment || !auth()->user()->can('settings.attendance.manage'))>
                                             <span>JPG</span>
                                         </label>
                                         <label class="flex items-center gap-2 text-sm font-semibold text-gray-700">
-                                            <input type="checkbox" value="png" wire:model.defer="perm_attachment_types" @disabled(! $perm_requires_attachment)>
+                                            <input type="checkbox" value="png" wire:model.defer="perm_attachment_types" @disabled(! $perm_requires_attachment || !auth()->user()->can('settings.attendance.manage'))>
                                             <span>PNG</span>
                                         </label>
                                     </div>

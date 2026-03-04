@@ -36,6 +36,7 @@ class Roles extends Component
 
    public function mount()
     {
+        $this->authorize('uac.roles.view');
         $this->loadPermissionGroups();
         $this->loadBranches();
         $this->initBranchFilterLock();
@@ -143,16 +144,38 @@ private function loadBranches(): void
                 'dashboard.reports' => 'Access Reports Dashboard',
             ],
             'Employee Management' => [
-                'employees.view' => 'View Employees List',
+                'employees.view' => 'View Employees',
                 'employees.create' => 'Add New Employee',
                 'employees.edit' => 'Edit Employee Details',
-                'employees.delete' => 'Delete Employee',
+                'employees.delete' => 'Delete / Archive Employee',
                 'employees.export' => 'Export Employee Data',
+                'employees.import' => 'Import Employees from CSV',
+                'employees.status.manage' => 'Activate / Deactivate Status',
                 'employees.documents.manage' => 'Manage Employee Documents',
             ],
             'Attendance & Shifts' => [
-                'attendance.view' => 'View Daily Attendance',
-                'attendance.manage' => 'Manage Manual Entry & Corrections',
+                'attendance.dashboard.view' => 'View Attendance Dashboard',
+                'attendance.daily.view' => 'View Daily Attendance (All)',
+                'attendance.daily.view-subordinates' => 'View Daily Attendance (Subordinates Only)',
+                'attendance.daily.manage' => 'Manage Daily Attendance (Edit/Approve)',
+                'attendance.daily.manual-entry' => 'Manual Attendance Entry',
+                
+                'attendance.penalties.view' => 'View Daily Penalties (All)',
+                'attendance.penalties.view-subordinates' => 'View Daily Penalties (Subordinates Only)',
+                'attendance.penalties.manage' => 'Manage Penalties (Confirm/Delete)',
+                'attendance.penalties.waive' => 'Waive/Exempt Penalties',
+
+                'attendance.leaves.view' => 'View Leaves & Permissions (All)',
+                'attendance.leaves.view-subordinates' => 'View Leaves & Permissions (Subordinates Only)',
+                'attendance.leaves.manage' => 'Manage Leaves (Create/Edit)',
+                'attendance.leaves.approve' => 'Approve/Reject Requests',
+                'attendance.missions.manage' => 'Manage Business Missions',
+
+                'attendance.schedules.view' => 'View Work Schedules (All)',
+                'attendance.schedules.view-subordinates' => 'View Work Schedules (Subordinates Only)',
+                'attendance.schedules.manage' => 'Manage Schedules Assignment',
+                'attendance.schedules.bulk-assign' => 'Bulk Schedule Assignment',
+
                 'shifts.view' => 'View Shifts Schedule',
                 'shifts.manage' => 'Manage Shifts & Rotation Rules',
                 'holidays.manage' => 'Manage Official Holidays',
@@ -163,7 +186,11 @@ private function loadBranches(): void
                 'settings.organizational.view' => 'View Organizational Structure',
                 'settings.organizational.manage' => 'Manage Departments & Job Titles',
                 'settings.attendance.view' => 'View Attendance Settings',
-                'settings.attendance.manage' => 'Manage Shifts & Rules',
+                'settings.attendance.manage' => 'Manage Attendance General Rules',
+                'settings.attendance.holidays.manage' => 'Manage Attendance Holidays',
+                'settings.attendance.schedules.manage' => 'Manage Work Schedule Settings',
+                'settings.attendance.leaves.manage' => 'Manage Leave Policy Settings',
+                'settings.attendance.exceptional.manage' => 'Manage Exceptional Days Settings',
             ],
             'Locations & Geofencing' => [
                 'locations.view' => 'View Company Locations',
@@ -177,6 +204,7 @@ private function loadBranches(): void
                 'uac.roles.manage' => 'Create/Edit Roles & Permissions',
             ],
             'System Management' => [
+                'settings.approval.view' => 'View Approval Workflows',
                 'settings.approval.manage' => 'Manage Approval Workflows',
                 'settings.lists.manage' => 'Manage System Lists',
                 'settings.currencies.manage' => 'Manage Currencies',
@@ -208,12 +236,14 @@ private function loadBranches(): void
 
     public function openAddModal()
     {
+        $this->authorize('uac.roles.manage');
         $this->resetForm();
         $this->showModal = true;
     }
 
     public function openEditModal($id)
     {
+        $this->authorize('uac.roles.manage');
         $role = Role::findOrFail($id);
         
         // Prevent editing system roles if needed, but for now let's follow requirements
@@ -231,6 +261,7 @@ private function loadBranches(): void
 
     public function save()
     {
+        $this->authorize('uac.roles.manage');
         $this->validate([
             'name' => 'required|string|max:255|unique:roles,name,' . $this->editingId,
             'selectedPermissions' => 'array',
@@ -266,6 +297,7 @@ private function loadBranches(): void
 
     public function deleteRole($id)
     {
+        $this->authorize('uac.roles.manage');
         $role = Role::findOrFail($id);
         
         if ($role->name === 'company-admin' || $role->name === 'saas-admin') {
@@ -281,7 +313,7 @@ private function loadBranches(): void
         if ($usersCount > 0) {
             $this->dispatch('toast', [
                 'type' => 'error',
-                'message' => tr('Cannot delete role. It is assigned to :count users.', ['count' => $usersCount])
+                'message' => str_replace(':count', $usersCount, tr('Cannot delete role. It is assigned to :count users.'))
             ]);
             return;
         }
@@ -295,6 +327,7 @@ private function loadBranches(): void
 
     public function copyRole($id)
     {
+        $this->authorize('uac.roles.manage');
         $role = Role::findOrFail($id);
         $this->name = $role->name . ' (Copy)';
         $this->selectedPermissions = $role->permissions->pluck('name')->toArray();

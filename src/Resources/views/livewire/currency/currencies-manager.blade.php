@@ -49,9 +49,11 @@
                     <option value="50">50</option>
                 </x-ui.select>
 
+                @can('settings.currencies.manage')
                 <x-ui.primary-button type="button" wire:click="openCreate">
                     {{ tr('Add Currency') }}
                 </x-ui.primary-button>
+                @endcan
             </div>
         </div>
     </x-ui.card>
@@ -67,7 +69,9 @@
                         <th class="px-4 py-3 text-start">{{ tr('Symbol') }}</th>
                         <th class="px-4 py-3 text-start">{{ tr('Code') }}</th>
                         <th class="px-4 py-3 text-start">{{ tr('Default') }}</th>
+                        @can('settings.currencies.manage')
                         <th class="px-4 py-3 text-end">{{ tr('Actions') }}</th>
+                        @endcan
                     </tr>
                 </x-slot>
 
@@ -84,6 +88,7 @@
                                         {{ tr('Default') }}
                                     </x-ui.badge>
                                 @else
+                                    @can('settings.currencies.manage')
                                     <x-ui.secondary-button
                                         type="button"
                                         wire:click="setDefault({{ $c->id }})"
@@ -91,9 +96,11 @@
                                     >
                                         {{ tr('Set as default') }}
                                     </x-ui.secondary-button>
+                                    @endcan
                                 @endif
                             </td>
 
+                            @can('settings.currencies.manage')
                             <td class="px-4 py-3">
                                 <div class="flex items-center justify-end gap-2">
                                     <x-ui.secondary-button type="button" wire:click="openEdit({{ $c->id }})">
@@ -121,6 +128,7 @@
 
                                 </div>
                             </td>
+                            @endcan
                         </tr>
                     @empty
                         <tr>
@@ -176,7 +184,7 @@
                 <x-ui.input :label="tr('Code')" wire:model="code" disabled />
 
                 <label class="flex items-center gap-2 text-sm text-gray-700">
-                    <input type="checkbox" wire:model.defer="is_default" class="rounded border-gray-300" />
+                    <input type="checkbox" wire:model.defer="is_default" class="rounded border-gray-300" @cannot('settings.currencies.manage') disabled @endcannot />
                     <span>{{ tr('Set as default') }}</span>
                 </label>
             </div>
@@ -188,9 +196,11 @@
                     {{ tr('Cancel') }}
                 </x-ui.secondary-button>
 
+                @can('settings.currencies.manage')
                 <x-ui.primary-button type="button" wire:click="save">
                     {{ tr('Save') }}
                 </x-ui.primary-button>
+                @endcan
             </div>
         </x-slot>
     </x-ui.modal>
