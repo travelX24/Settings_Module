@@ -339,7 +339,6 @@
                             <label class="block text-[11px] font-black text-gray-500 mb-1">{{ tr('Description') }}</label>
                             <input type="text" wire:model.defer="description"
                                 class="w-full h-[40px] px-3 rounded-xl border border-gray-200 text-sm bg-gray-50/50 focus:bg-white focus:border-[color:var(--brand-via)] focus:ring-4 focus:ring-[color:var(--brand-via)]/10 transition-all"
-                                placeholder="{{ tr('Optional description...') }}">
                                 placeholder="{{ tr('Optional description...') }}"
                                 @cannot('settings.attendance.manage') disabled @endcannot>
                             @error('description') <div class="text-xs text-red-600 mt-1">{{ $message }}</div> @enderror
@@ -1084,7 +1083,7 @@
                                     <th class="w-[35%] px-5 py-3 text-[10px] font-black text-gray-400 uppercase tracking-widest text-center"> {{ $yearA ? (string) $yearA : tr('Year') }}</th>
                                     <th class="w-[35%] px-5 py-3 text-[10px] font-black text-gray-400 uppercase tracking-widest text-center">  {{ $yearB ? (string) $yearB : tr('Year') }}</th>
                                 </tr>
-                            </thead
+                            </thead>
                             <tbody class="divide-y divide-gray-50">
                                 @forelse($compareRows as $r)
                                     @php
@@ -1150,120 +1149,72 @@
                                 </td>
 
                                     </tr>
-                               </tr>
 
-        {{-- ✅ Expanded Details Card --}}
-        @if(!empty($compareExpanded[$r['key']] ?? false))
-            <tr class="bg-white">
-                <td colspan="3" class="px-5 py-4">
-                    <div class="rounded-2xl border border-gray-100 bg-gray-50/40 p-4">
-                        <div class="flex items-center justify-between gap-3 mb-3">
-                            <div class="text-sm font-black text-gray-900">
-                                <i class="fas fa-circle-info text-gray-400 me-2"></i>
-                                {{ tr('Leave Details') }} — {{ $r['name'] }}
-                            </div>
-
-                            <button type="button" wire:click="toggleCompareDetails('{{ $r['key'] }}')"
-                                class="text-xs font-black text-gray-500 hover:text-gray-900"
-                                @cannot('settings.attendance.manage') disabled @endcannot>
-                                {{ tr('Close') }}
-                            </button>
-                        </div>
-
-                        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-                            {{-- Year A Details --}}
-                            <div class="rounded-xl bg-white border border-gray-100 p-3">
-                                <div class="text-[11px] font-black text-gray-500 mb-2">
-                                    {{ $yearA ? (string)$yearA : tr('Year') }}
-                                </div>
-
-                                @if($a)
-                                    <div class="grid grid-cols-2 gap-2 text-[12px]">
-                                        <div><b>{{ tr('Show in App') }}:</b> {{ $a->show_in_app ? tr('Yes') : tr('No') }}</div>
-                                        <div><b>{{ tr('Requires attachment') }}:</b> {{ $a->requires_attachment ? tr('Yes') : tr('No') }}</div>
-
-                                        <div><b>{{ tr('Accrual method') }}:</b> {{ data_get($a->settings ?? [], 'accrual.method', '—') }}</div>
-                                        <div><b>{{ tr('Monthly rate') }}:</b> {{ data_get($a->settings ?? [], 'accrual.monthly_rate', '—') }}</div>
-
-                                        <div><b>{{ tr('Max balance') }}:</b> {{ data_get($a->settings ?? [], 'accrual.max_balance', '—') }}</div>
-
-                                        <div><b>{{ tr('Carryover days') }}:</b> {{ data_get($a->settings ?? [], 'accrual.carryover_days', '—') }}</div>
-                                        <div><b>{{ tr('Weekend policy') }}:</b> {{ data_get($a->settings ?? [], 'weekend_policy', '—') }}</div>
-
-                                        <div><b>{{ tr('Deduction policy') }}:</b> {{ data_get($a->settings ?? [], 'deduction_policy', '—') }}</div>
-                                        <div><b>{{ tr('Duration unit') }}:</b> {{ data_get($a->settings ?? [], 'duration_unit', '—') }}</div>
-
-                                        <div><b>{{ tr('Notice min days') }}:</b> {{ data_get($a->settings ?? [], 'notice.min_days', '—') }}</div>
-                                        <div><b>{{ tr('Notice max days') }}:</b> {{ data_get($a->settings ?? [], 'notice.max_advance_days', '—') }}</div>
-
-                                        <div><b>{{ tr('Allow retroactive') }}:</b> {{ data_get($a->settings ?? [], 'notice.allow_retroactive', false) ? tr('Yes') : tr('No') }}</div>
-                                        <div><b>{{ tr('Note required') }}:</b> {{ data_get($a->settings ?? [], 'note.required', false) ? tr('Yes') : tr('No') }}</div>
-
-                                        <div class="col-span-2">
-                                            <b>{{ tr('Attachment types') }}:</b>
-                                            @php $tA = data_get($a->settings ?? [], 'attachments.types', []); @endphp
-                                            {{ is_array($tA) ? implode(', ', $tA) : (string)$tA }}
-                                                    </div>
-                                                </div>
-                                            @else
-                                                <div class="text-xs text-gray-400 italic">{{ tr('Not found') }}</div>
-                                            @endif
-                                        </div>
-
-                                        {{-- Year B Details --}}
-                                        <div class="rounded-xl bg-white border border-gray-100 p-3">
-                                            <div class="text-[11px] font-black text-gray-500 mb-2">
-                                                {{ $yearB ? (string)$yearB : tr('Year') }}
+                        @if(!empty($compareExpanded[$r['key']] ?? false))
+                            <tr class="bg-white">
+                                <td colspan="3" class="px-5 py-4">
+                                    <div class="rounded-2xl border border-gray-100 bg-gray-50/40 p-4">
+                                        {{-- ... expanded content ... --}}
+                                        <div class="flex items-center justify-between gap-3 mb-3">
+                                            <div class="text-sm font-black text-gray-900">
+                                                <i class="fas fa-circle-info text-gray-400 me-2"></i>
+                                                {{ tr('Leave Details') }} — {{ $r['name'] }}
                                             </div>
-
-                                            @if($b)
-                                                <div class="grid grid-cols-2 gap-2 text-[12px]">
-                                                    <div><b>{{ tr('Show in App') }}:</b> {{ $b->show_in_app ? tr('Yes') : tr('No') }}</div>
-                                                    <div><b>{{ tr('Requires attachment') }}:</b> {{ $b->requires_attachment ? tr('Yes') : tr('No') }}</div>
-
-                                                    <div><b>{{ tr('Accrual method') }}:</b> {{ data_get($b->settings ?? [], 'accrual.method', '—') }}</div>
-                                                    <div><b>{{ tr('Monthly rate') }}:</b> {{ data_get($b->settings ?? [], 'accrual.monthly_rate', '—') }}</div>
-
-                                                    <div><b>{{ tr('Max balance') }}:</b> {{ data_get($b->settings ?? [], 'accrual.max_balance', '—') }}</div>
-
-                                                    <div><b>{{ tr('Carryover days') }}:</b> {{ data_get($b->settings ?? [], 'accrual.carryover_days', '—') }}</div>
-                                                    <div><b>{{ tr('Weekend policy') }}:</b> {{ data_get($b->settings ?? [], 'weekend_policy', '—') }}</div>
-
-                                                    <div><b>{{ tr('Deduction policy') }}:</b> {{ data_get($b->settings ?? [], 'deduction_policy', '—') }}</div>
-                                                    <div><b>{{ tr('Duration unit') }}:</b> {{ data_get($b->settings ?? [], 'duration_unit', '—') }}</div>
-
-                                                    <div><b>{{ tr('Notice min days') }}:</b> {{ data_get($b->settings ?? [], 'notice.min_days', '—') }}</div>
-                                                    <div><b>{{ tr('Notice max days') }}:</b> {{ data_get($b->settings ?? [], 'notice.max_advance_days', '—') }}</div>
-
-                                                    <div><b>{{ tr('Allow retroactive') }}:</b> {{ data_get($b->settings ?? [], 'notice.allow_retroactive', false) ? tr('Yes') : tr('No') }}</div>
-                                                    <div><b>{{ tr('Note required') }}:</b> {{ data_get($b->settings ?? [], 'note.required', false) ? tr('Yes') : tr('No') }}</div>
-
-                                                    <div class="col-span-2">
-                                                        <b>{{ tr('Attachment types') }}:</b>
-                                                        @php $tB = data_get($b->settings ?? [], 'attachments.types', []); @endphp
-                                                        {{ is_array($tB) ? implode(', ', $tB) : (string)$tB }}
+                                            <button type="button" wire:click="toggleCompareDetails('{{ $r['key'] }}')"
+                                                class="text-xs font-black text-gray-500 hover:text-gray-900"
+                                                @cannot('settings.attendance.manage') disabled @endcannot>
+                                                {{ tr('Close') }}
+                                            </button>
+                                        </div>
+                                        {{-- Details Grid --}}
+                                        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                            <div class="rounded-xl bg-white border border-gray-100 p-3">
+                                                <div class="text-[11px] font-black text-gray-500 mb-2">{{ $yearA ? (string)$yearA : tr('Year') }}</div>
+                                                @if($a)
+                                                    <div class="grid grid-cols-2 gap-2 text-[12px]">
+                                                        <div><b>{{ tr('Show in App') }}:</b> {{ $a->show_in_app ? tr('Yes') : tr('No') }}</div>
+                                                        <div><b>{{ tr('Requires attachment') }}:</b> {{ $a->requires_attachment ? tr('Yes') : tr('No') }}</div>
+                                                        <div class="col-span-2">
+                                                            <b>{{ tr('Attachment types') }}:</b>
+                                                            @php $tA = data_get($a->settings ?? [], 'attachments.types', []); @endphp
+                                                            {{ is_array($tA) ? implode(', ', $tA) : (string)$tA }}
+                                                        </div>
                                                     </div>
-                                                </div>
-                                            @else
-                                                <div class="text-xs text-gray-400 italic">{{ tr('Not found') }}</div>
-                                            @endif
+                                                @else
+                                                    <div class="text-xs text-gray-400 italic">{{ tr('Not found') }}</div>
+                                                @endif
+                                            </div>
+                                            <div class="rounded-xl bg-white border border-gray-100 p-3">
+                                                <div class="text-[11px] font-black text-gray-500 mb-2">{{ $yearB ? (string)$yearB : tr('Year') }}</div>
+                                                @if($b)
+                                                    <div class="grid grid-cols-2 gap-2 text-[12px]">
+                                                        <div><b>{{ tr('Show in App') }}:</b> {{ $b->show_in_app ? tr('Yes') : tr('No') }}</div>
+                                                        <div><b>{{ tr('Requires attachment') }}:</b> {{ $b->requires_attachment ? tr('Yes') : tr('No') }}</div>
+                                                        <div class="col-span-2">
+                                                            <b>{{ tr('Attachment types') }}:</b>
+                                                            @php $tB = data_get($b->settings ?? [], 'attachments.types', []); @endphp
+                                                            {{ is_array($tB) ? implode(', ', $tB) : (string)$tB }}
+                                                        </div>
+                                                    </div>
+                                                @else
+                                                    <div class="text-xs text-gray-400 italic">{{ tr('Not found') }}</div>
+                                                @endif
+                                            </div>
                                         </div>
                                     </div>
+                                </td>
+                            </tr>
+                        @endif
+                    @empty
+                        <tr>
+                            <td colspan="3" class="px-5 py-10 text-center text-sm text-gray-400">
+                                <div class="flex flex-col items-center">
+                                    <i class="fas fa-inbox text-2xl mb-2 text-gray-300"></i>
+                                    {{ tr('No comparison data available') }}
                                 </div>
                             </td>
                         </tr>
-                    @endif
-
-                    @empty
-
-                                                <td colspan="3" class="px-5 py-10 text-center text-sm text-gray-400">
-                                                    <div class="flex flex-col items-center">
-                                                        <i class="fas fa-inbox text-2xl mb-2 text-gray-300"></i>
-                                                        {{ tr('No comparison data available') }}
-                                                    </div>
-                                                </td>
-                                            </tr>
-                                        @endforelse
+                    @endforelse
                                     </tbody>
                                 </table>
                             </div>
