@@ -1059,17 +1059,25 @@
             <div class="space-y-4 py-2">
 
                 <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-                     <x-ui.select label="{{ tr('Year A') }}" wire:model="compareYearAId" @cannot('settings.attendance.manage') disabled @endcannot>
+                     <x-ui.select
+                        label="{{ tr('Year A') }}"
+                        wire:model="compareYearAId"
+                        :disabled="!auth()->user()->can('settings.attendance.manage')"
+                    >
                         <option value="">{{ tr('Select year') }}</option>
                         @foreach($years as $y)
-                            <option value="{{ (int)$y->id }}">{{ $y->year }}</option>
+                            <option value="{{ (int) $y->id }}">{{ $y->year }}</option>
                         @endforeach
                     </x-ui.select>
-                    
-                    <x-ui.select label="{{ tr('Year B') }}" wire:model="compareYearBId" @cannot('settings.attendance.manage') disabled @endcannot>
+
+                    <x-ui.select
+                        label="{{ tr('Year B') }}"
+                        wire:model="compareYearBId"
+                        :disabled="!auth()->user()->can('settings.attendance.manage')"
+                    >
                         <option value="">{{ tr('Select year') }}</option>
                         @foreach($years as $y)
-                            <option value="{{ (int)$y->id }}">{{ $y->year }}</option>
+                            <option value="{{ (int) $y->id }}">{{ $y->year }}</option>
                         @endforeach
                     </x-ui.select>
                 </div>

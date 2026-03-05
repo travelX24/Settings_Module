@@ -179,6 +179,7 @@ class DailyAttendanceController extends Controller
 
                 if ($dayExceptions->count() > 0) {
                     $workSchedulePeriods = $dayExceptions->map(fn($e) => [
+                        'id' => $e->id,
                         'start_time' => substr((string) $e->start_time, 0, 5),
                         'end_time' => substr((string) $e->end_time, 0, 5),
                     ]);
@@ -187,6 +188,7 @@ class DailyAttendanceController extends Controller
                         ->sortBy('sort_order')
                         ->values()
                         ->map(fn ($p) => [
+                            'id' => $p->id,
                             'start_time' => substr((string) $p->start_time, 0, 5),
                             'end_time' => substr((string) $p->end_time, 0, 5),
                         ]);
@@ -221,14 +223,38 @@ class DailyAttendanceController extends Controller
                 }
             }
 
-            $details = $allDetails->get($r->id, collect())->map(function($d) {
-                return [
+            $dayDetails = $allDetails->get($r->id, collect());
+            $punchesAligned = [];
+
+            if ($workSchedulePeriods->isNotEmpty()) {
+                foreach ($workSchedulePeriods as $p) {
+                    $pId = $p['id'] ?? null;
+                    $matched = $dayDetails->first(fn($d) => $pId && $d->work_schedule_period_id == $pId);
+                    
+                    if ($matched) {
+                        $punchesAligned[] = [
+                            'check_in' => $this->timeToHm($matched->check_in_time),
+                            'check_out' => $this->timeToHm($matched->check_out_time),
+                            'status' => $matched->attendance_status,
+                            'period_id' => $matched->work_schedule_period_id,
+                        ];
+                    } else {
+                        $punchesAligned[] = [
+                            'check_in' => null,
+                            'check_out' => null,
+                            'status' => null,
+                            'period_id' => $pId,
+                        ];
+                    }
+                }
+            } else {
+                $punchesAligned = $dayDetails->map(fn($d) => [
                     'check_in' => $this->timeToHm($d->check_in_time),
                     'check_out' => $this->timeToHm($d->check_out_time),
                     'status' => $d->attendance_status,
                     'period_id' => $d->work_schedule_period_id,
-                ];
-            });
+                ])->all();
+            }
 
             // Status Logic
             $status = (string) $r->attendance_status;
@@ -253,7 +279,7 @@ class DailyAttendanceController extends Controller
                 'attendance_status' => $status,
                 'approval_status' => (string) $r->approval_status,
                 'compliance_percentage' => $r->compliance_percentage !== null ? (float) $r->compliance_percentage : null,
-                'punches' => $details,
+                'punches' => $punchesAligned,
                 'is_edited' => (bool) $r->is_edited,
                 'source' => (string) $r->source,
                 'leave_name' => $fullDayLeave ? $fullDayLeave['name'] : (collect($dayLeaves)->first()['name'] ?? null),
