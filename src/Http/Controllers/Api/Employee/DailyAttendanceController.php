@@ -227,33 +227,89 @@ class DailyAttendanceController extends Controller
             $punchesAligned = [];
 
             if ($workSchedulePeriods->isNotEmpty()) {
+                $matchedDetailIds = [];
+
                 foreach ($workSchedulePeriods as $p) {
                     $pId = $p['id'] ?? null;
+
+                    // 1) Try exact match by work_schedule_period_id
                     $matched = $dayDetails->first(fn($d) => $pId && $d->work_schedule_period_id == $pId);
-                    
+
+                    // 2) If no exact match, try matching by time overlap
+                    if (!$matched && isset($p['start_time'], $p['end_time'])) {
+                        $pStart = $toMins($p['start_time']);
+                        $pEnd   = $toMins($p['end_time']);
+                        if ($pEnd <= $pStart) $pEnd += 1440;
+
+                        $matched = $dayDetails->first(function ($d) use ($pStart, $pEnd, $matchedDetailIds, $toMins) {
+                            if (in_array($d->id, $matchedDetailIds)) return false;
+                            if (!$d->check_in_time) return false;
+                            $ciMins = $toMins(substr((string) $d->check_in_time, 0, 5));
+                            // Allow 60 min before period start
+                            return $ciMins >= ($pStart - 60) && $ciMins <= $pEnd;
+                        });
+                    }
+
                     if ($matched) {
+                        $matchedDetailIds[] = $matched->id;
                         $punchesAligned[] = [
-                            'check_in' => $this->timeToHm($matched->check_in_time),
+                            'check_in'  => $this->timeToHm($matched->check_in_time),
                             'check_out' => $this->timeToHm($matched->check_out_time),
-                            'status' => $matched->attendance_status,
-                            'period_id' => $matched->work_schedule_period_id,
+                            'status'    => $matched->attendance_status,
+                            'period_id' => $matched->work_schedule_period_id ?? $pId,
                         ];
                     } else {
                         $punchesAligned[] = [
-                            'check_in' => null,
+                            'check_in'  => null,
                             'check_out' => null,
-                            'status' => null,
+                            'status'    => null,
                             'period_id' => $pId,
                         ];
                     }
                 }
+
+                // 3) Append any unmatched details (e.g. details with NULL period_id)
+                foreach ($dayDetails as $d) {
+                    if (!in_array($d->id, $matchedDetailIds) && $d->check_in_time) {
+                        $punchesAligned[] = [
+                            'check_in'  => $this->timeToHm($d->check_in_time),
+                            'check_out' => $this->timeToHm($d->check_out_time),
+                            'status'    => $d->attendance_status,
+                            'period_id' => $d->work_schedule_period_id,
+                        ];
+                    }
+                }
+
+                // 4) Fallback: if no details at all but main log has check-in, use it
+                if ($dayDetails->isEmpty() && $r->check_in_time) {
+                    // Replace the first period's null punch with the main log's time
+                    if (!empty($punchesAligned)) {
+                        $punchesAligned[0] = [
+                            'check_in'  => $this->timeToHm($r->check_in_time),
+                            'check_out' => $this->timeToHm($r->check_out_time),
+                            'status'    => $r->attendance_status,
+                            'period_id' => $punchesAligned[0]['period_id'] ?? null,
+                        ];
+                    }
+                }
             } else {
+                // No periods: show all details as-is
                 $punchesAligned = $dayDetails->map(fn($d) => [
-                    'check_in' => $this->timeToHm($d->check_in_time),
+                    'check_in'  => $this->timeToHm($d->check_in_time),
                     'check_out' => $this->timeToHm($d->check_out_time),
-                    'status' => $d->attendance_status,
+                    'status'    => $d->attendance_status,
                     'period_id' => $d->work_schedule_period_id,
                 ])->all();
+
+                // Fallback: if no details but main log has check-in
+                if (empty($punchesAligned) && $r->check_in_time) {
+                    $punchesAligned[] = [
+                        'check_in'  => $this->timeToHm($r->check_in_time),
+                        'check_out' => $this->timeToHm($r->check_out_time),
+                        'status'    => $r->attendance_status,
+                        'period_id' => null,
+                    ];
+                }
             }
 
             // Status Logic
