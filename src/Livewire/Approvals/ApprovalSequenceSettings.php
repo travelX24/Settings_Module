@@ -260,7 +260,8 @@ class ApprovalSequenceSettings extends Component
               return $this->makeStep(
                     $type,
                     (int) ($s->approver_id ?? 0),
-                    'db-' . (int) $s->id
+                    'db-' . (int) $s->id,
+                    (bool) ($s->follow_standard ?? false)
                 );
 
 
@@ -397,6 +398,7 @@ class ApprovalSequenceSettings extends Component
                     'position' => $pos++,
                     'approver_type' => $type,
                     'approver_id'   => ($type === 'direct_manager') ? 0 : (int) ($s['approver_id'] ?? 0),
+                    'follow_standard' => (bool) ($s['follow_standard'] ?? false),
                 ]);
             }
         });
@@ -428,12 +430,13 @@ class ApprovalSequenceSettings extends Component
 
         $this->resetPage();
     }
-    private function makeStep(string $type = 'direct_manager', int $id = 0, ?string $key = null): array
+    private function makeStep(string $type = 'direct_manager', int $id = 0, ?string $key = null, bool $followStandard = false): array
     {
         return [
             '_key' => $key ?: (string) Str::uuid(),
             'approver_type' => $type,
             'approver_id' => $id,
+            'follow_standard' => $followStandard,
         ];
     }
 
@@ -441,12 +444,13 @@ class ApprovalSequenceSettings extends Component
     public function getTabsProperty(): array
     {
         return [
-            'leaves'         => tr('Leaves'),
-            'overtime'       => tr('Overtime'),
-            'compensations'  => tr('Compensations'),
-            'advances'       => tr('Advances'),
-            'terminations'   => tr('Employee Terminations'),
-            'missions'       => tr('Mission Requests'),
+            'leaves'           => tr('Leaves'),
+            'leave_exceptions' => tr('Leave Exceptions'),
+            'overtime'         => tr('Overtime'),
+            'compensations'    => tr('Compensations'),
+            'advances'         => tr('Advances'),
+            'terminations'     => tr('Employee Terminations'),
+            'missions'         => tr('Mission Requests'),
         ];
     }
 

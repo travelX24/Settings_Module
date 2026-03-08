@@ -14,6 +14,7 @@ class ApprovalPolicyStep extends Model
         'position',
         'approver_type',
         'approver_id',
+        'follow_standard',
     ];
 
     public function policy(): BelongsTo

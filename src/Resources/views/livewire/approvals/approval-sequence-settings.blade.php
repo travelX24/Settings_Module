@@ -311,61 +311,78 @@
                             <div class="border border-gray-200 rounded-xl p-3" wire:key="step-{{ $steps[$i]['_key'] ?? $i }}">
 
                                 {{-- ✅ صف واحد مرتب + الأسهم فوق/تحت --}}
-                                <div class="flex flex-col md:flex-row md:items-center gap-2">
-
-                                    <div class="shrink-0 md:w-10 text-sm font-bold text-gray-700">
-                                        {{ $i + 1 }}
-                                    </div>
-
-                                    <div class="shrink-0 md:w-64">
-                                        <x-ui.select wire:model.defer="steps.{{ $i }}.approver_type" :disabled="!auth()->user()->can('settings.approval.manage')">
-                                            <option value="direct_manager">{{ tr('Direct Manager') }}</option>
-                                            <option value="user">{{ tr('Specific User') }}</option>
-                                        </x-ui.select>
-                                    </div>
-
-                                    <div class="flex-1 min-w-0">
-                                        @if($t === 'user')
-                                            <x-ui.select wire:model.defer="steps.{{ $i }}.approver_id" :disabled="!auth()->user()->can('settings.approval.manage')">
-                                                <option value="0">—</option>
-                                                @foreach($employees as $e)
-                                                    <option value="{{ $e['id'] }}">{{ $e['name'] }}</option>
-                                                @endforeach
-                                            </x-ui.select>
-                                        @else
-                                            <div class="w-full rounded-xl border border-gray-200 bg-gray-50 px-4 py-2.5 text-sm text-gray-700">
-                                                {{ tr('Direct Manager') }}
-                                            </div>
-                                        @endif
-                                    </div>
-
-                                    <div class="shrink-0 md:w-[170px] flex items-center justify-end gap-2 flex-nowrap">
-                                            <div class="inline-flex items-center gap-2 flex-nowrap">
-                                                <x-ui.secondary-button
-                                                    type="button"
-                                                    wire:click="moveStepUp({{ $i }})"
-                                                    class="!w-10 !h-10 !p-0 !rounded-full"
-                                                    title="{{ tr('Move Up') }}"
-                                                >↑</x-ui.secondary-button>
-
-                                                <x-ui.secondary-button
-                                                    type="button"
-                                                    wire:click="moveStepDown({{ $i }})"
-                                                    class="!w-10 !h-10 !p-0 !rounded-full"
-                                                    title="{{ tr('Move Down') }}"
-                                                >↓</x-ui.secondary-button>
-                                            </div>
-
-                                            <x-ui.secondary-button
-                                                type="button"
-                                                wire:click="removeStep({{ $i }})"
-                                                class="!w-10 !h-10 !p-0 !rounded-full !border-red-200 !text-red-700 hover:!bg-red-50"
-                                                title="{{ tr('Remove') }}"
-                                            >✕</x-ui.secondary-button>
+                                    <div class="flex flex-col lg:flex-row lg:items-center gap-3">
+                                        {{-- Step Number --}}
+                                        <div class="flex items-center gap-2 shrink-0 lg:w-8">
+                                            <span class="flex items-center justify-center w-6 h-6 rounded-full bg-gray-100 text-[10px] font-black text-gray-500 border border-gray-200">
+                                                {{ $i + 1 }}
+                                            </span>
                                         </div>
 
+                                        {{-- Approver Type --}}
+                                        <div class="shrink-0 lg:w-44">
+                                            <x-ui.select wire:model.defer="steps.{{ $i }}.approver_type" :disabled="!auth()->user()->can('settings.approval.manage')">
+                                                <option value="direct_manager">{{ tr('Direct Manager') }}</option>
+                                                <option value="user">{{ tr('Specific User') }}</option>
+                                            </x-ui.select>
+                                        </div>
 
-                                </div>
+                                        {{-- Approver Target --}}
+                                        <div class="flex-1 min-w-[200px]">
+                                            @if($t === 'user')
+                                                <x-ui.select wire:model.defer="steps.{{ $i }}.approver_id" :disabled="!auth()->user()->can('settings.approval.manage')">
+                                                    <option value="0">—</option>
+                                                    @foreach($employees as $e)
+                                                        <option value="{{ $e['id'] }}">{{ $e['name'] }}</option>
+                                                    @endforeach
+                                                </x-ui.select>
+                                            @else
+                                                <div class="w-full flex items-center h-[42px] rounded-xl border border-dashed border-gray-300 bg-gray-50/50 px-4 text-sm text-gray-500 italic">
+                                                    <i class="fas fa-user-tie mr-2 opacity-30"></i>
+                                                    {{ tr('Direct Manager') }}
+                                                </div>
+                                            @endif
+                                        </div>
+
+                                        {{-- Features & Actions --}}
+                                        <div class="shrink-0 flex items-center justify-between lg:justify-end gap-3 p-1 bg-gray-50/50 lg:bg-transparent rounded-lg border border-gray-100 lg:border-0">
+                                            @if($tab === 'leave_exceptions')
+                                                <div class="flex items-center">
+                                                    <label class="group relative flex items-center gap-2 px-3 py-1.5 rounded-full bg-white border border-gray-200 shadow-sm cursor-pointer hover:border-indigo-300 hover:bg-indigo-50/30 transition-all duration-200">
+                                                        <input type="checkbox" wire:model.defer="steps.{{ $i }}.follow_standard" class="w-4 h-4 rounded border-gray-300 text-indigo-600 focus:ring-indigo-500/20 transition-all">
+                                                        <span class="text-[10px] font-bold text-gray-600 group-hover:text-indigo-700 whitespace-nowrap">{{ tr('Follow Standard') }}</span>
+                                                    </label>
+                                                </div>
+                                            @endif
+
+                                            <div class="flex items-center gap-1.5">
+                                                <div class="flex items-center bg-white border border-gray-200 rounded-lg p-0.5 shadow-sm">
+                                                    <button
+                                                        type="button"
+                                                        wire:click="moveStepUp({{ $i }})"
+                                                        class="w-8 h-8 flex items-center justify-center rounded-md text-gray-400 hover:text-indigo-600 hover:bg-indigo-50 transition-all"
+                                                        title="{{ tr('Move Up') }}"
+                                                    ><i class="fas fa-chevron-up text-xs"></i></button>
+
+                                                    <div class="w-px h-4 bg-gray-100 mx-0.5"></div>
+
+                                                    <button
+                                                        type="button"
+                                                        wire:click="moveStepDown({{ $i }})"
+                                                        class="w-8 h-8 flex items-center justify-center rounded-md text-gray-400 hover:text-indigo-600 hover:bg-indigo-50 transition-all"
+                                                        title="{{ tr('Move Down') }}"
+                                                    ><i class="fas fa-chevron-down text-xs"></i></button>
+                                                </div>
+
+                                                <button
+                                                    type="button"
+                                                    wire:click="removeStep({{ $i }})"
+                                                    class="w-9 h-9 flex items-center justify-center rounded-lg border border-red-100 bg-white text-red-500 hover:bg-red-500 hover:text-white hover:border-red-500 shadow-sm transition-all duration-200"
+                                                    title="{{ tr('Remove') }}"
+                                                ><i class="fas fa-times text-xs"></i></button>
+                                            </div>
+                                        </div>
+                                    </div>
 
                                 @error("steps.$i.approver_type")
                                     <div class="text-xs text-red-600 mt-2">{{ $message }}</div>

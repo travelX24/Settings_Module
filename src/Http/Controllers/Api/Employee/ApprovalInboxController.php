@@ -71,7 +71,7 @@ class ApprovalInboxController extends Controller
         return null;
     }
 
-    private function requestSource(string $type): ?array
+    public function requestSource(string $type): ?array
     {
       $map = [
             'leaves' => [
@@ -263,10 +263,7 @@ class ApprovalInboxController extends Controller
 
         $q = ApprovalTask::query()
             ->where('company_id', $this->companyId())
-            ->where(function($sub) use ($employeeId) {
-                $sub->where('approver_employee_id', $employeeId)
-                   ->orWhere('request_employee_id', $employeeId); // For testing visibility
-            });
+            ->where('approver_employee_id', $employeeId);
 
         if ($status === 'pending') {
             $q->where('status', 'pending');
@@ -494,7 +491,7 @@ class ApprovalInboxController extends Controller
         return response()->json(['ok' => true, 'data' => $tasks]);
     }
 
-    private function ensureTasksForPendingRequests(array $src): void
+    public function ensureTasksForPendingRequests(array $src): void
     {
         $pendingCol = $src['approvalStatusCol'] ?: $src['statusCol'];
         if (!$pendingCol) return;
@@ -515,7 +512,7 @@ class ApprovalInboxController extends Controller
         }
     }
 
-    private function ensureTasksForRequest(array $src, int $requestId): void
+    public function ensureTasksForRequest(array $src, int $requestId): void
     {
         $exists = ApprovalTask::query()
             ->where('company_id', $this->companyId())
@@ -531,14 +528,42 @@ class ApprovalInboxController extends Controller
         $requestEmployeeId = $this->resolveRequestEmployeeId($src, $req);
         if ($requestEmployeeId < 1) return;
 
-        $policy = $this->resolvePolicyForEmployee($src['operation_key'], $requestEmployeeId);
-        if (!$policy) return;
+        $allSteps = collect();
 
-        $steps = $policy->steps()->orderBy('position')->get();
+        if ($src['type'] === 'leaves' && isset($req->is_exception) && $req->is_exception) {
+            $exceptionPolicy = $this->resolvePolicyForEmployee('leaves_exceptions', $requestEmployeeId);
+            if ($exceptionPolicy) {
+                $exceptionSteps = $exceptionPolicy->steps()->orderBy('position')->get();
+                foreach ($exceptionSteps as $s) {
+                    $s->_operation_key = 'leaves_exceptions';
+                    $allSteps->push($s);
+                    if ($s->follow_standard) break; // الانتقال للمسار العادي فوراً
+                }
+            } else {
+                $allSteps->push((object)[
+                    '_operation_key' => 'leaves_exceptions',
+                    'approver_type' => 'user',
+                    'approver_id' => null, 
+                ]);
+            }
+        }
+
+        // نضيف المسار العادي لو لم يتم تعبئته أو لو كان هناك استثناء وانتهى بـ follow_standard
+        // حالياً في الكود أعلاه، إذا كان استثناء سيمسح كل شيء ويضيف الاستثناءات. 
+        // الأفضل جعل المنطق تراكمي:
+        $normalPolicy = $this->resolvePolicyForEmployee($src['operation_key'], $requestEmployeeId);
+        if ($normalPolicy) {
+            $normalSteps = $normalPolicy->steps()->orderBy('position')->get();
+            foreach ($normalSteps as $s) {
+                $s->_operation_key = $src['operation_key'];
+                $allSteps->push($s);
+            }
+        }
 
         $firstPendingAssigned = false;
+        $globalPosition = 1;
 
-        foreach ($steps as $s) {
+        foreach ($allSteps as $s) {
             $type = (string) $s->approver_type;
             $approverId = 0;
 
@@ -552,25 +577,30 @@ class ApprovalInboxController extends Controller
 
             if ($approverId < 1) {
                 $status = 'skipped';
-            } elseif (!$firstPendingAssigned) {
+                if ($s->_operation_key === 'leaves_exceptions' && $approverId === 0) {
+                    $status = 'waiting';
+                }
+            }
+
+            if ($status !== 'skipped' && !$firstPendingAssigned) {
                 $status = 'pending';
                 $firstPendingAssigned = true;
             }
 
             ApprovalTask::create([
                 'company_id' => $this->companyId(),
-                'operation_key' => $src['operation_key'],
+                'operation_key' => $s->_operation_key ?? $src['operation_key'],
                 'approvable_type' => $src['type'],
                 'approvable_id' => $requestId,
                 'request_employee_id' => $requestEmployeeId,
-                'position' => (int) ($s->position ?? 1),
+                'position' => $globalPosition++,
                 'approver_employee_id' => $approverId > 0 ? $approverId : null,
                 'status' => $status,
+                'approver_name' => ($s->_operation_key === 'leaves_exceptions' && $approverId === 0) ? 'Human Resources' : null,
             ]);
         }
-
-        // لو كل الخطوات skipped (مثلا لا يوجد مدير) نخليه pending = false، ما نغير حالة الطلب
     }
+
 
     private function resolveRequestEmployeeId(array $src, object $req): int
     {
@@ -608,8 +638,8 @@ class ApprovalInboxController extends Controller
             ->latest('id')
             ->get();
 
-        // fallback: permissions تستخدم leaves إذا ما لها policy
-        if ($policies->count() === 0 && $operationKey === 'permissions') {
+        // fallback: permissions & missions تستخدم leaves إذا ما لها policy
+        if ($policies->count() === 0 && in_array($operationKey, ['permissions', 'missions'], true)) {
             $policies = ApprovalPolicy::query()
                 ->where('company_id', $companyId)
                 ->where('operation_key', 'leaves')
