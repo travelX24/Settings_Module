@@ -97,6 +97,12 @@ class ApprovalInboxController extends Controller
                 ],
                 'operation_key' => 'missions',
             ],
+            'replacements' => [
+                'tables' => [
+                    'attendance_leave_requests',
+                ],
+                'operation_key' => 'replacements',
+            ],
         ];
 
 
@@ -147,6 +153,14 @@ class ApprovalInboxController extends Controller
 
         $companyId = $this->companyId();
 
+        // ✅ NEW: Ensure tasks exist before calculating counts
+        foreach (['leaves', 'permissions', 'missions'] as $t) {
+            $src = $this->requestSource($t);
+            if ($src) {
+                $this->ensureTasksForPendingRequests($src);
+            }
+        }
+
         // 1. Get counts of pending tasks per operation_key
         $counts = ApprovalTask::query()
             ->where('company_id', $companyId)
@@ -190,13 +204,26 @@ class ApprovalInboxController extends Controller
                 ->pluck('approval_policies.operation_key')
                 ->all();
         }
+        
+        // d. Check if they are a replacement in any pending request
+        $replacementKeys = [];
+        if (Schema::hasTable('attendance_leave_requests') && Schema::hasColumn('attendance_leave_requests', 'replacement_employee_id')) {
+            $isReplacement = DB::table('attendance_leave_requests')
+                ->where('replacement_employee_id', $employeeId)
+                ->where('replacement_status', 'pending')
+                ->exists();
+            if ($isReplacement) {
+                $replacementKeys[] = 'leaves';
+            }
+        }
 
-        $allowedKeys = array_unique(array_merge($historicalKeys, (array)$policyKeys, (array)$managerKeys));
+        $allowedKeys = array_unique(array_merge($historicalKeys, (array)$policyKeys, (array)$managerKeys, $replacementKeys));
 
         // Always include types currently supported/defined in the app if they have permission
         $availableTypes = [];
         $supportedTypes = [
             'leaves' => ['key' => 'leaves', 'label_ar' => 'طلبات الإجازات', 'label_en' => 'Leave Requests'],
+            'replacements' => ['key' => 'replacements', 'label_ar' => 'تحمل أعباء (بديل)', 'label_en' => 'Replacement Requests'],
             'permissions' => ['key' => 'permissions', 'label_ar' => 'طلبات الأذونات', 'label_en' => 'Permission Requests'],
             'missions' => ['key' => 'missions', 'label_ar' => 'مهام العمل', 'label_en' => 'Work Missions'],
         ];
@@ -231,6 +258,7 @@ class ApprovalInboxController extends Controller
                     'leaves' => $this->requestSource('leaves'),
                     'permissions' => $this->requestSource('permissions'),
                     'missions' => $this->requestSource('missions'),
+                    'replacements' => $this->requestSource('replacements'),
                 ],
                 'note' => 'If approvalStatusCol is null, approve/reject will not update request status; only tasks will be updated.',
             ],
@@ -248,7 +276,7 @@ class ApprovalInboxController extends Controller
         $status = (string) $request->query('status', 'pending'); // pending|history
         $ensure = (int) $request->query('ensure', 0) === 1;
 
-        $types = $type === 'all' ? ['leaves', 'permissions', 'missions'] : [$type];
+        $types = $type === 'all' ? ['leaves', 'replacements', 'permissions', 'missions'] : [$type];
 
         if ($ensure && $status === 'pending') {
             foreach ($types as $t) {
@@ -272,7 +300,7 @@ class ApprovalInboxController extends Controller
         }
 
         if ($type !== 'all') {
-            $q->where('approvable_type', $type);
+            $q->where('operation_key', $type);
         }
 
         $p = $q->latest('id')->paginate($perPage);
@@ -295,13 +323,17 @@ class ApprovalInboxController extends Controller
                                 ->where('id', $requestData->leave_policy_id)
                                 ->first(['name']);
                              
-                             if ($policy) {
-                                // For policies, we usually only have 'name' (often in Arabic)
-                                // We'll use it as fallback for both locales if name_en is missing from schema
-                                $requestData->leave_type = $policy->name ?? 'Leave';
-                             } else {
-                                $requestData->leave_type = 'Leave';
-                             }
+                              
+                              if ($policy) {
+                                 $typeName = $policy->name ?? 'Leave';
+                                 if ($task->operation_key === 'replacements') {
+                                     $requestData->leave_type = ($isAr ? 'موافقة كبديل (تغطية): ' : 'Replacement for: ') . $typeName;
+                                 } else {
+                                     $requestData->leave_type = $typeName;
+                                 }
+                              } else {
+                                 $requestData->leave_type = ($task->operation_key === 'replacements') ? ($isAr ? 'موافقة كبديل' : 'Replacement Approval') : 'Leave';
+                              }
                         }
                         // Map database dates to mobile app fields
                         $requestData->from_date = $requestData->start_date ?? '';
@@ -420,6 +452,14 @@ class ApprovalInboxController extends Controller
 
             // no more steps -> mark request approved (only if approval_status exists)
             $this->updateRequestApprovalStatus($src, $id, 'approved');
+
+            // ✅ Sync replacement_status if this was a replacement approving
+            if ($type === 'leaves' && Schema::hasColumn($src['table'], 'replacement_status')) {
+                $req = DB::table($src['table'])->where($src['idCol'], $id)->first();
+                if ($req && !empty($req->replacement_employee_id) && $req->replacement_employee_id == $employeeId && $req->replacement_status === 'pending') {
+                    DB::table($src['table'])->where($src['idCol'], $id)->update(['replacement_status' => 'approved']);
+                }
+            }
         });
 
         return response()->json(['ok' => true]);
@@ -471,6 +511,14 @@ class ApprovalInboxController extends Controller
                 ->update(['status' => 'canceled']);
 
             $this->updateRequestApprovalStatus($src, $id, 'rejected');
+
+            // ✅ Sync replacement_status if this was a replacement rejecting
+            if ($type === 'leaves' && Schema::hasColumn($src['table'], 'replacement_status')) {
+                $req = DB::table($src['table'])->where($src['idCol'], $id)->first();
+                if ($req && !empty($req->replacement_employee_id) && $req->replacement_employee_id == $employeeId) {
+                    DB::table($src['table'])->where($src['idCol'], $id)->update(['replacement_status' => 'rejected']);
+                }
+            }
         });
 
         return response()->json(['ok' => true]);
@@ -514,13 +562,23 @@ class ApprovalInboxController extends Controller
 
     public function ensureTasksForRequest(array $src, int $requestId): void
     {
-        $exists = ApprovalTask::query()
+        $existing = ApprovalTask::query()
             ->where('company_id', $this->companyId())
             ->where('approvable_type', $src['type'])
             ->where('approvable_id', $requestId)
-            ->exists();
+            ->get();
 
-        if ($exists) return;
+        if ($existing->isNotEmpty()) {
+            // ✅ If anyone already approved/rejected, we DON'T touch it.
+            $hasAction = $existing->contains(fn($t) => in_array($t->status, ['approved', 'rejected', 'canceled']));
+            if ($hasAction) return;
+
+            // ✅ If no action taken yet, we delete and recreate to apply the newest logic (like replacement step)
+            ApprovalTask::query()
+                ->where('approvable_type', $src['type'])
+                ->where('approvable_id', $requestId)
+                ->delete();
+        }
 
         $req = DB::table($src['table'])->where($src['idCol'], $requestId)->first();
         if (!$req) return;
@@ -529,6 +587,16 @@ class ApprovalInboxController extends Controller
         if ($requestEmployeeId < 1) return;
 
         $allSteps = collect();
+
+        // ✅ NEW: Replacement Step (If it is a leave request and has a replacement employee)
+        // This must be the VERY FIRST step.
+        if ($src['type'] === 'leaves' && !empty($req->replacement_employee_id) && ($req->replacement_status ?? 'pending') === 'pending') {
+            $allSteps->push((object)[
+                'approver_type' => 'user',
+                'approver_id' => $req->replacement_employee_id,
+                '_operation_key' => 'replacements', // 🔥 Clearly separated
+            ]);
+        }
 
         if ($src['type'] === 'leaves' && isset($req->is_exception) && $req->is_exception) {
             $exceptionPolicy = $this->resolvePolicyForEmployee('leaves_exceptions', $requestEmployeeId);
