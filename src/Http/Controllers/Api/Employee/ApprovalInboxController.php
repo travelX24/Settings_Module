@@ -229,7 +229,8 @@ class ApprovalInboxController extends Controller
         ];
 
         foreach ($supportedTypes as $key => $meta) {
-            if (in_array($key, $allowedKeys, true)) {
+            // Include if they have pending tasks OR if they are an allowed approver for this type
+            if (in_array($key, $allowedKeys, true) || (int)($counts[$key] ?? 0) > 0) {
                 $availableTypes[] = [
                     'key' => $key,
                     'label_ar' => $meta['label_ar'],
