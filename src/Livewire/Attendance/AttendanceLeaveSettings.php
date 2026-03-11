@@ -109,6 +109,10 @@ class AttendanceLeaveSettings extends Component
     public array $attachment_types = ['pdf', 'jpg', 'png'];
     public string $attachment_max_mb = '2';
 
+    // ✅ Excluded Contract Types
+    public array $excluded_contract_types = [];
+    public array $selected_leave_excluded_contract_types = [];
+
     // Year modal
     public string $newYear = '';
     public ?int $copyFromYearId = null;
@@ -175,6 +179,8 @@ class AttendanceLeaveSettings extends Component
         $this->ensurePermissionPolicy($companyId, (int) $this->selectedYearId);
         $this->loadPermissionSettings($companyId, (int) $this->selectedYearId);
 
+        // ✅ Load excluded contract types
+        $this->loadExcludedContractSettings($companyId);
     }
 
     public function updatingSearch(): void { $this->resetPage(); }
@@ -380,6 +386,8 @@ class AttendanceLeaveSettings extends Component
         $this->resetAdvancedDefaults();
         $this->syncMonthlyAccrualRate();
 
+        $this->selected_leave_excluded_contract_types = [];
+
         $this->createOpen = true;
     }
 
@@ -425,6 +433,7 @@ class AttendanceLeaveSettings extends Component
 
             'description' => $data['description'] ?? null,
             'settings' => $settings,
+            'excluded_contract_types' => $this->selected_leave_excluded_contract_types,
         ]);
 
         session()->flash('success', tr('Saved successfully'));
@@ -464,6 +473,8 @@ class AttendanceLeaveSettings extends Component
 
         $this->hydrateAdvancedFromRow($row);
         $this->syncMonthlyAccrualRate();
+
+        $this->selected_leave_excluded_contract_types = (array) ($row->excluded_contract_types ?? []);
 
         $this->resetValidation();
         $this->editOpen = true;
@@ -523,6 +534,7 @@ class AttendanceLeaveSettings extends Component
             'requires_attachment' => (bool) $data['requires_attachment'],
             'description' => $data['description'] ?? null,
             'settings' => $settings,
+            'excluded_contract_types' => $this->selected_leave_excluded_contract_types,
         ]);
 
         session()->flash('success', tr('Saved successfully'));
@@ -1706,6 +1718,27 @@ public function savePermissionSettings(): void
     );
 
     session()->flash('success', tr('Saved successfully'));
+}
+
+protected function loadExcludedContractSettings(int $companyId): void
+{
+    $settings = \Athka\Saas\Models\SaasCompanyOtherinfo::where('company_id', $companyId)->first();
+    $this->excluded_contract_types = (array) ($settings->excluded_leave_contract_types ?? []);
+}
+
+public function saveExcludedContracts(): void
+{
+    $this->authorize('settings.attendance.manage');
+    $companyId = $this->resolveCompanyId();
+    if ($companyId <= 0) return;
+
+    $settings = \Athka\Saas\Models\SaasCompanyOtherinfo::where('company_id', $companyId)->first();
+    if ($settings) {
+        $settings->update([
+            'excluded_leave_contract_types' => $this->excluded_contract_types,
+        ]);
+        session()->flash('success', tr('Saved successfully'));
+    }
 }
 
 }

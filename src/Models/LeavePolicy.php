@@ -24,6 +24,7 @@ class LeavePolicy extends Model
 
         'description',
         'settings', // json for advanced rules
+        'excluded_contract_types',
     ];
 
     protected $casts = [
@@ -32,6 +33,7 @@ class LeavePolicy extends Model
         'show_in_app' => 'boolean',
         'requires_attachment' => 'boolean',
         'settings' => 'array',
+        'excluded_contract_types' => 'array',
     ];
 
     public function year(): BelongsTo

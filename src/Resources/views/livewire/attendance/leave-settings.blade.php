@@ -2,6 +2,15 @@
     $locale = app()->getLocale();
     $isRtl  = in_array(substr($locale, 0, 2), ['ar','fa','ur','he']);
     $selectedYear = $years->firstWhere('id', $selectedYearId);
+
+    $contractList = [
+        'permanent'  => tr('Permanent'),
+        'temporary'  => tr('Temporary'),
+        'probation'  => tr('Probation'),
+        'contractor' => tr('Contractor'),
+        'training'   => tr('Training'),
+        'freelancer_remote' => tr('Freelancer (Remote)'),
+    ];
 @endphp
 
 @section('topbar-left-content')
@@ -303,6 +312,8 @@
         @endif
     </div>
 
+
+
     {{-- Create Modal --}}
     <x-ui.modal wire:model="createOpen" maxWidth="4xl">
         <x-slot:title>
@@ -441,6 +452,26 @@
                             <span>{{ tr('Allow retroactive requests') }}</span>
                         </label>
                         @error('allow_retroactive') <div class="text-xs text-red-600 mt-1">{{ $message }}</div> @enderror
+                    </div>
+
+                    {{-- Contract Exclusions --}}
+                    <div class="md:col-span-2 pt-3 border-t border-gray-100">
+                        <div class="text-sm font-black text-gray-900 mb-2">{{ tr('Contract Type Exclusions') }}</div>
+                        <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-3">
+                            @foreach($contractList as $value => $label)
+                                <label class="flex items-center gap-2 p-2 bg-gray-50/50 rounded-xl border border-gray-100 cursor-pointer hover:bg-gray-100 transition-all select-none">
+                                    <input type="checkbox" 
+                                           value="{{ $value }}" 
+                                           wire:model.defer="selected_leave_excluded_contract_types"
+                                           class="w-4 h-4 text-[color:var(--brand-via)] rounded border-gray-300 focus:ring-[color:var(--brand-via)]"
+                                           @cannot('settings.attendance.manage') disabled @endcannot>
+                                    <span class="text-xs font-bold text-gray-700">{{ $label }}</span>
+                                </label>
+                            @endforeach
+                        </div>
+                        <div class="text-[10px] text-gray-400 mt-2 italic">
+                            {{ tr('Selected contract types will not be able to request this leave type and will have 0 balance.') }}
+                        </div>
                     </div>
 
                     {{-- Notes --}}
@@ -791,6 +822,26 @@
                             <span>{{ tr('Allow retroactive requests') }}</span>
                         </label>
                         @error('allow_retroactive') <div class="text-xs text-red-600 mt-1">{{ $message }}</div> @enderror
+                    </div>
+
+                    {{-- Contract Exclusions --}}
+                    <div class="md:col-span-2 pt-3 border-t border-gray-100">
+                        <div class="text-sm font-black text-gray-900 mb-2">{{ tr('Contract Type Exclusions') }}</div>
+                        <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-3">
+                            @foreach($contractList as $value => $label)
+                                <label class="flex items-center gap-2 p-2 bg-gray-50/50 rounded-xl border border-gray-100 cursor-pointer hover:bg-gray-100 transition-all select-none">
+                                    <input type="checkbox" 
+                                           value="{{ $value }}" 
+                                           wire:model.defer="selected_leave_excluded_contract_types"
+                                           class="w-4 h-4 text-[color:var(--brand-via)] rounded border-gray-300 focus:ring-[color:var(--brand-via)]"
+                                           @cannot('settings.attendance.manage') disabled @endcannot>
+                                    <span class="text-xs font-bold text-gray-700">{{ $label }}</span>
+                                </label>
+                            @endforeach
+                        </div>
+                        <div class="text-[10px] text-gray-400 mt-2 italic">
+                            {{ tr('Selected contract types will not be able to request this leave type and will have 0 balance.') }}
+                        </div>
                     </div>
 
                     {{-- Notes --}}
