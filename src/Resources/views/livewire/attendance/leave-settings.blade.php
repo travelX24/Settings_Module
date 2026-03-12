@@ -1336,21 +1336,21 @@
 
                         <div>
                             <label class="block text-[11px] font-black text-gray-500 mb-1">{{ tr('Monthly limit (hours)') }}</label>
-                            <input type="number" step="0.25" min="0" wire:model.defer="perm_monthly_limit_hours"
+                            <input type="number" step="0.25" min="1" wire:model.defer="perm_monthly_limit_hours"
                                 class="w-full h-[40px] px-3 rounded-xl border border-gray-200 text-sm bg-gray-50/50 focus:bg-white focus:border-[color:var(--brand-via)] focus:ring-4 focus:ring-[color:var(--brand-via)]/10 transition-all"
-                                placeholder="0"
+                                placeholder="1"
                                 @cannot('settings.attendance.manage') disabled @endcannot>
-                            <div class="text-[10px] text-gray-400 mt-1">{{ tr('0 means unlimited') }}</div>
+                            <div class="text-[10px] text-gray-400 mt-1">{{ tr('Value must be at least 1 hour') }}</div>
                             @error('perm_monthly_limit_hours') <div class="text-xs text-red-600 mt-1">{{ $message }}</div> @enderror
                         </div>
 
                         <div>
                             <label class="block text-[11px] font-black text-gray-500 mb-1">{{ tr('Max per request (hours)') }}</label>
-                            <input type="number" step="0.25" min="0" wire:model.defer="perm_max_request_hours"
+                            <input type="number" step="0.25" min="1" wire:model.defer="perm_max_request_hours"
                                 class="w-full h-[40px] px-3 rounded-xl border border-gray-200 text-sm bg-gray-50/50 focus:bg-white focus:border-[color:var(--brand-via)] focus:ring-4 focus:ring-[color:var(--brand-via)]/10 transition-all"
-                                placeholder="0"
+                                placeholder="1"
                                 @cannot('settings.attendance.manage') disabled @endcannot>
-                            <div class="text-[10px] text-gray-400 mt-1">{{ tr('0 means unlimited') }}</div>
+                            <div class="text-[10px] text-gray-400 mt-1">{{ tr('Value must be at least 1 hour') }}</div>
                             @error('perm_max_request_hours') <div class="text-xs text-red-600 mt-1">{{ $message }}</div> @enderror
                         </div>
 

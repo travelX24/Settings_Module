@@ -24,6 +24,8 @@ class ExceptionalDaysIndex extends Component
     public ?float $minMultiplier = null;  
     public ?float $maxMultiplier = null; 
     public ?int $departmentId = null;
+    public ?int $branchId = null;
+    public ?string $contractType = null;
 
     public bool $showModal = false;
     public ?int $editingId = null;
@@ -64,6 +66,8 @@ class ExceptionalDaysIndex extends Component
         'include' => [
             'departments' => [],
             'sections' => [],
+            'branches' => [],
+            'contract_types' => [],
             'employees' => [],
         ],
 
@@ -94,6 +98,8 @@ class ExceptionalDaysIndex extends Component
     public function updatingMinMultiplier() { $this->resetPage(); }
     public function updatingMaxMultiplier() { $this->resetPage(); }
     public function updatingDepartmentId() { $this->resetPage(); }
+    public function updatingBranchId() { $this->resetPage(); }
+    public function updatingContractType() { $this->resetPage(); }
 
     public function updatedFormPeriodType($value): void
     {
@@ -171,14 +177,30 @@ class ExceptionalDaysIndex extends Component
             return;
         }
 
-        if ($type === 'departments') {
-            $this->form['include']['employees'] = [];
+        if ($type === 'departments' || $type === 'branches' || $type === 'contract_types') {
+            if ($type === 'departments') {
+                $this->form['include']['branches'] = [];
+                $this->form['include']['contract_types'] = [];
+                $this->form['include']['employees'] = [];
+            } elseif ($type === 'branches') {
+                $this->form['include']['departments'] = [];
+                $this->form['include']['sections'] = [];
+                $this->form['include']['contract_types'] = [];
+                $this->form['include']['employees'] = [];
+            } elseif ($type === 'contract_types') {
+                $this->form['include']['departments'] = [];
+                $this->form['include']['sections'] = [];
+                $this->form['include']['branches'] = [];
+                $this->form['include']['employees'] = [];
+            }
             return;
         }
 
         if ($type === 'employees') {
             $this->form['include']['departments'] = [];
             $this->form['include']['sections'] = [];
+            $this->form['include']['branches'] = [];
+            $this->form['include']['contract_types'] = [];
             return;
         }
     }
@@ -222,7 +244,7 @@ class ExceptionalDaysIndex extends Component
                 'max:24',
             ],
 
-            'form.scope_type' => ['required', Rule::in(['all', 'departments', 'employees'])],
+            'form.scope_type' => ['required', Rule::in(['all', 'departments', 'employees', 'branches', 'contract_types'])],
             'form.include' => ['nullable', 'array'],
 
             'form.notify_policy' => ['required', Rule::in(['none', 'after_deduction'])],
@@ -325,6 +347,26 @@ class ExceptionalDaysIndex extends Component
                         });
                 });
             })
+            ->when($this->branchId, function ($qq) {
+                $bid = (int) $this->branchId;
+                $qq->where(function ($q2) use ($bid) {
+                    $q2->where('scope_type', 'all')
+                        ->orWhere(function ($q3) use ($bid) {
+                            $q3->where('scope_type', 'branches')
+                                ->whereJsonContains('include->branches', $bid);
+                        });
+                });
+            })
+            ->when($this->contractType, function ($qq) {
+                $type = $this->contractType;
+                $qq->where(function ($q2) use ($type) {
+                    $q2->where('scope_type', 'all')
+                        ->orWhere(function ($q3) use ($type) {
+                            $q3->where('scope_type', 'contract_types')
+                                ->whereJsonContains('include->contract_types', $type);
+                        });
+                });
+            })
             ->orderBy('start_date', 'desc');
 
         return $q;
@@ -343,6 +385,22 @@ class ExceptionalDaysIndex extends Component
             $hasAny = !empty($inc['departments']) || !empty($inc['sections']);
             if (!$hasAny) {
                 $this->addError('form.include.departments', tr('Please select at least one department or sub department.'));
+                return false;
+            }
+            return true;
+        }
+
+        if ($type === 'branches') {
+            if (empty($inc['branches'])) {
+                $this->addError('form.include.branches', tr('Please select at least one branch.'));
+                return false;
+            }
+            return true;
+        }
+
+        if ($type === 'contract_types') {
+            if (empty($inc['contract_types'])) {
+                $this->addError('form.include.contract_types', tr('Please select at least one contract type.'));
                 return false;
             }
             return true;
@@ -420,7 +478,7 @@ class ExceptionalDaysIndex extends Component
             'grace_hours' => (int) ($this->form['grace_hours'] ?? 0),
 
             'scope_type' => $this->form['scope_type'] ?? 'all',
-            'include' => $this->form['include'] ?? ['departments'=>[], 'sections'=>[], 'employees'=>[]],
+            'include' => $this->form['include'] ?? ['departments'=>[], 'sections'=>[], 'branches'=>[], 'contract_types'=>[], 'employees'=>[]],
 
             'notify_policy' => $this->form['notify_policy'] ?? 'none',
             'notify_message' => $this->form['notify_message'] ?? null,
@@ -455,7 +513,7 @@ class ExceptionalDaysIndex extends Component
             'grace_hours' => 0,
 
             'scope_type' => 'all',
-            'include' => ['departments'=>[], 'sections'=>[], 'employees'=>[]],
+            'include' => ['departments'=>[], 'sections'=>[], 'branches'=>[], 'contract_types'=>[], 'employees'=>[]],
 
             'notify_policy' => 'none',
             'notify_message' => null,
@@ -505,9 +563,13 @@ class ExceptionalDaysIndex extends Component
         $include = $row->include ?? ['departments'=>[], 'sections'=>[], 'employees'=>[]];
         $scopeType = (string) ($row->scope_type ?? 'all');
 
-        if (!in_array($scopeType, ['all', 'departments', 'employees'], true)) {
+        if (!in_array($scopeType, ['all', 'departments', 'employees', 'branches', 'contract_types'], true)) {
             if (!empty($include['employees'])) {
                 $scopeType = 'employees';
+            } elseif (!empty($include['branches'])) {
+                $scopeType = 'branches';
+            } elseif (!empty($include['contract_types'])) {
+                $scopeType = 'contract_types';
             } elseif (!empty($include['departments']) || !empty($include['sections'])) {
                 $scopeType = 'departments';
             } else {
@@ -596,12 +658,26 @@ class ExceptionalDaysIndex extends Component
         $type = (string) ($this->form['scope_type'] ?? 'all');
 
         if ($type === 'all') {
-            $this->form['include'] = ['departments'=>[], 'sections'=>[], 'employees'=>[]];
+            $this->form['include'] = ['departments'=>[], 'sections'=>[], 'branches'=>[], 'contract_types'=>[], 'employees'=>[]];
         } elseif ($type === 'departments') {
+            $this->form['include']['branches'] = [];
+            $this->form['include']['contract_types'] = [];
+            $this->form['include']['employees'] = [];
+        } elseif ($type === 'branches') {
+            $this->form['include']['departments'] = [];
+            $this->form['include']['sections'] = [];
+            $this->form['include']['contract_types'] = [];
+            $this->form['include']['employees'] = [];
+        } elseif ($type === 'contract_types') {
+            $this->form['include']['departments'] = [];
+            $this->form['include']['sections'] = [];
+            $this->form['include']['branches'] = [];
             $this->form['include']['employees'] = [];
         } elseif ($type === 'employees') {
             $this->form['include']['departments'] = [];
             $this->form['include']['sections'] = [];
+            $this->form['include']['branches'] = [];
+            $this->form['include']['contract_types'] = [];
         }
 
         $companyId = $this->companyId();
@@ -979,7 +1055,35 @@ class ExceptionalDaysIndex extends Component
                 ->toArray();
         }
 
-        return compact('departments', 'sections', 'employees');
+        $branches = [];
+        if (Schema::hasTable('branches')) {
+            $companyCol = $this->companyColumnFor('branches');
+            $nameExpr = $this->coalesceNameExpr(
+                'branches',
+                app()->isLocale('ar') ? ['name_ar', 'name', 'name_en'] : ['name_en', 'name', 'name_ar']
+            );
+
+            $branches = DB::table('branches')
+                ->when($companyCol, fn ($q) => $q->where($companyCol, $companyId))
+                ->select('id', DB::raw("{$nameExpr} as name"))
+                ->orderByRaw("{$nameExpr} asc")
+                ->get()
+                ->toArray();
+        }
+
+        $contractTypes = [];
+        if (Schema::hasTable('employees')) {
+            $contractTypes = DB::table('employees')
+                ->where('saas_company_id', $companyId)
+                ->whereNotNull('contract_type')
+                ->where('contract_type', '!=', '')
+                ->distinct()
+                ->pluck('contract_type')
+                ->map(fn($t) => (object) ['id' => $t, 'name' => $t])
+                ->toArray();
+        }
+
+        return compact('departments', 'sections', 'employees', 'branches', 'contractTypes');
     }
 
     public function render()
@@ -1039,6 +1143,8 @@ class ExceptionalDaysIndex extends Component
             'departmentsOptions' => $opts['departments'],
             'sectionsOptions' => $opts['sections'],
             'employeesOptions' => $opts['employees'],
+            'branchesOptions' => $opts['branches'],
+            'contractTypesOptions' => $opts['contractTypes'],
 
             'createdByMap' => $createdByMap,
 

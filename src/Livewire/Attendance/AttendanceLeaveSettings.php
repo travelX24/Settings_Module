@@ -1686,17 +1686,29 @@ public function savePermissionSettings(): void
         return;
     }
 
-    $data = $this->validate([
-        'perm_approval_required' => ['boolean'],
-        'perm_monthly_limit_hours' => ['required', 'numeric', 'min:0', 'max:744'],
-        'perm_max_request_hours' => ['required', 'numeric', 'min:0', 'max:24'],
-        'perm_deduction_policy' => ['required', 'in:not_allowed_after_limit,salary_after_limit,allow_without_deduction'],
-        'perm_show_in_app' => ['boolean'],
+    try {
+        $data = $this->validate([
+            'perm_approval_required' => ['boolean'],
+            'perm_monthly_limit_hours' => ['required', 'numeric', 'min:1', 'max:744'],
+            'perm_max_request_hours' => ['required', 'numeric', 'min:1', 'max:24'],
+            'perm_deduction_policy' => ['required', 'in:not_allowed_after_limit,salary_after_limit,allow_without_deduction'],
+            'perm_show_in_app' => ['boolean'],
 
-        'perm_requires_attachment' => ['boolean'],
-        'perm_attachment_types' => ['array'],
-        'perm_attachment_types.*' => ['in:pdf,jpg,png'],
-    ]);
+            'perm_requires_attachment' => ['boolean'],
+            'perm_attachment_types' => ['array'],
+            'perm_attachment_types.*' => ['in:pdf,jpg,png'],
+        ], [
+            'perm_monthly_limit_hours.min' => tr('The monthly limit must be at least 1 hour.'),
+            'perm_max_request_hours.min' => tr('The maximum duration per request must be at least 1 hour.'),
+        ]);
+    } catch (\Illuminate\Validation\ValidationException $e) {
+        $this->dispatch('toast', [
+            'type' => 'error',
+            'title' => tr('Validation Error'),
+            'message' => $e->validator->errors()->first()
+        ]);
+        throw $e;
+    }
 
     $types = !empty($data['perm_requires_attachment'])
         ? array_values($data['perm_attachment_types'] ?? [])
@@ -1717,7 +1729,10 @@ public function savePermissionSettings(): void
         ]
     );
 
-    session()->flash('success', tr('Saved successfully'));
+    $this->dispatch('toast', [
+        'type' => 'success',
+        'message' => tr('Saved successfully')
+    ]);
 }
 
 protected function loadExcludedContractSettings(int $companyId): void

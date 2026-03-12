@@ -172,7 +172,27 @@
                     <div class="mt-1 text-xs text-gray-500">{{ tr('Target Department') }}</div>
                 </div>
 
-                <div class="md:col-span-4">
+                <div class="md:col-span-2">
+                    <x-ui.select wire:model.live="branchId">
+                        <option value="">{{ tr('All Branches') }}</option>
+                        @foreach($branchesOptions as $b)
+                            <option value="{{ $b->id }}">{{ $b->name }}</option>
+                        @endforeach
+                    </x-ui.select>
+                    <div class="mt-1 text-xs text-gray-500">{{ tr('Target Branch') }}</div>
+                </div>
+
+                <div class="md:col-span-2">
+                    <x-ui.select wire:model.live="contractType">
+                        <option value="">{{ tr('All Contract Types') }}</option>
+                        @foreach($contractTypesOptions as $ct)
+                            <option value="{{ $ct->id }}">{{ $ct->name }}</option>
+                        @endforeach
+                    </x-ui.select>
+                    <div class="mt-1 text-xs text-gray-500">{{ tr('Target Contract Type') }}</div>
+                </div>
+
+                <div class="md:col-span-6">
                     <x-ui.search-box wire:model.live.debounce.300ms="search" :placeholder="tr('Search by name/description...')" />
                     <div class="mt-1 text-xs text-gray-500">{{ tr('Search') }}</div>
                 </div>
@@ -254,7 +274,11 @@
                                     ? tr('All Employees')
                                     : ($scope === 'departments'
                                         ? tr('Departments')
-                                        : tr('Employees'));
+                                        : ($scope === 'branches'
+                                            ? tr('Branches')
+                                            : ($scope === 'contract_types'
+                                                ? tr('Contract Types')
+                                                : tr('Employees'))));
 
                                 $isWithout = ($apply === 'none') || ($percent <= 0);
                             @endphp
@@ -559,6 +583,8 @@
                                 <x-ui.select wire:model.live="form.scope_type">
                                     <option value="all">{{ tr('All Employees') }}</option>
                                     <option value="departments">{{ tr('Specific Departments') }}</option>
+                                    <option value="branches">{{ tr('Specific Branches') }}</option>
+                                    <option value="contract_types">{{ tr('Specific Contract Types') }}</option>
                                     <option value="employees">{{ tr('Specific Employees') }}</option>
                                 </x-ui.select>
                                 @error('form.scope_type') <div class="text-xs text-red-600 mt-1">{{ $message }}</div> @enderror
@@ -573,7 +599,7 @@
                             </div>
 
                             {{-- ✅ Departments mode --}}
-                            @if(($form['scope_type'] ?? 'all') === 'departments')
+                             @if(($form['scope_type'] ?? 'all') === 'departments')
                                 <div>
                                     <div class="text-xs text-gray-600 mb-1">{{ tr('Departments') }}</div>
                                     <x-ui.select multiple wire:model.defer="form.include.departments">
@@ -591,6 +617,32 @@
                                             <option value="{{ $s->id }}">{{ $s->name }}</option>
                                         @endforeach
                                     </x-ui.select>
+                                </div>
+                            @endif
+
+                            {{-- ✅ Branches mode --}}
+                            @if(($form['scope_type'] ?? 'all') === 'branches')
+                                <div class="md:col-span-2">
+                                    <div class="text-xs text-gray-600 mb-1">{{ tr('Branches') }}</div>
+                                    <x-ui.select multiple wire:model.defer="form.include.branches">
+                                        @foreach($branchesOptions as $b)
+                                            <option value="{{ $b->id }}">{{ $b->name }}</option>
+                                        @endforeach
+                                    </x-ui.select>
+                                    @error('form.include.branches') <div class="text-xs text-red-600 mt-1">{{ $message }}</div> @enderror
+                                </div>
+                            @endif
+
+                            {{-- ✅ Contract Types mode --}}
+                            @if(($form['scope_type'] ?? 'all') === 'contract_types')
+                                <div class="md:col-span-2">
+                                    <div class="text-xs text-gray-600 mb-1">{{ tr('Contract Types') }}</div>
+                                    <x-ui.select multiple wire:model.defer="form.include.contract_types">
+                                        @foreach($contractTypesOptions as $ct)
+                                            <option value="{{ $ct->name }}">{{ $ct->name }}</option>
+                                        @endforeach
+                                    </x-ui.select>
+                                    @error('form.include.contract_types') <div class="text-xs text-red-600 mt-1">{{ $message }}</div> @enderror
                                 </div>
                             @endif
 
