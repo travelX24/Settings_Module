@@ -66,7 +66,19 @@ class ApprovalSettingService
     {
         if (!Schema::hasTable($table)) return [];
         
-        $query = DB::table($table)->select('id', 'name');
+        $nameColumn = 'name';
+        if (!Schema::hasColumn($table, 'name')) {
+            if (Schema::hasColumn($table, 'name_ar') || Schema::hasColumn($table, 'name_en')) {
+                $nameColumn = app()->getLocale() === 'ar' 
+                    ? (Schema::hasColumn($table, 'name_ar') ? 'name_ar' : 'name_en')
+                    : (Schema::hasColumn($table, 'name_en') ? 'name_en' : 'name_ar');
+            } else {
+                // If no name column at all, just return id
+                $nameColumn = 'id';
+            }
+        }
+
+        $query = DB::table($table)->select('id', DB::raw("$nameColumn as name"));
         
         // Handle common company columns
         if (Schema::hasColumn($table, 'saas_company_id')) {

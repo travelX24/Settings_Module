@@ -7,6 +7,7 @@ use Livewire\WithPagination;
 use Athka\SystemSettings\Models\ApprovalPolicy;
 use Athka\SystemSettings\Services\ApprovalSettingService;
 use Illuminate\Support\Str;
+use Illuminate\Support\Facades\DB;
 
 class ApprovalSequenceSettings extends Component
 {
@@ -83,6 +84,17 @@ class ApprovalSequenceSettings extends Component
         $this->steps = [['approver_type' => 'direct_manager', 'approver_id' => 0]];
     }
 
+    public function getTabsProperty(): array
+    {
+        return [
+            'leaves'           => tr('Leaves'),
+            'leave_exceptions' => tr('Leave Exceptions'),
+            'permissions'      => tr('Permissions'),
+            'overtime'         => tr('Overtime'),
+            'expenses'         => tr('Expenses'),
+        ];
+    }
+
     public function render()
     {
         $companyId = auth()->user()->saas_company_id;
@@ -93,9 +105,16 @@ class ApprovalSequenceSettings extends Component
             ->when($this->search, fn($q) => $q->where('name', 'like', "%{$this->search}%"))
             ->paginate(10);
 
+        $counts = ApprovalPolicy::where('company_id', $companyId)
+            ->select('operation_key', DB::raw('count(*) as count'))
+            ->groupBy('operation_key')
+            ->pluck('count', 'operation_key')
+            ->toArray();
+
         return view('system-settings::livewire.approvals.approval-sequence-settings', [
             'policies' => $policies,
-            'lookups' => $lookups
+            'lookups'  => $lookups,
+            'counts'   => $counts,
         ])->layout('layouts.company-admin');
     }
 }
