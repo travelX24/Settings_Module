@@ -41,8 +41,8 @@
         loading = true;
         reset();
         const url = type === 'department'
-            ? '/company-admin/settings/organizational-structure/departments/employees/' + id
-            : '/company-admin/settings/organizational-structure/job-titles/employees/' + id;
+            ? '/settings/organizational-structure/departments/employees/' + id
+            : '/settings/organizational-structure/job-titles/employees/' + id;
         fetch(url)
             .then(res => res.json())
             .then(data => { employees = data; loading = false; })

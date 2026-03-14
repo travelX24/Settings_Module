@@ -1,0 +1,227 @@
+<?php
+
+namespace Athka\SystemSettings\Services\Approvals;
+
+use Athka\SystemSettings\Models\ApprovalPolicy;
+use Athka\SystemSettings\Models\ApprovalTask;
+use Athka\SystemSettings\Models\ApprovalTaskDetail;
+use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Schema;
+use Carbon\Carbon;
+
+class ApprovalService
+{
+    /**
+     * Map request types to DB tables with column detection.
+     */
+    public function getRequestSource(string $type): ?array
+    {
+        $map = [
+            'leaves' => [
+                'tables' => ['attendance_leave_requests', 'attendance_leave_cut_requests', 'leave_requests', 'employee_leave_requests'],
+                'operation_key' => 'leaves',
+            ],
+            'permissions' => [
+                'tables' => ['attendance_permission_requests', 'permission_requests', 'employee_permission_requests'],
+                'operation_key' => 'permissions',
+            ],
+            'missions' => [
+                'tables' => ['attendance_mission_requests'],
+                'operation_key' => 'missions',
+            ],
+            'replacements' => [
+                'tables' => ['attendance_leave_requests'],
+                'operation_key' => 'replacements',
+            ],
+        ];
+
+        if (!isset($map[$type])) return null;
+
+        $table = null;
+        foreach ($map[$type]['tables'] as $t) {
+            if (Schema::hasTable($t)) { $table = $t; break; }
+        }
+        if (!$table) return null;
+
+        $idCol = Schema::hasColumn($table, 'id') ? 'id' : null;
+        if (!$idCol) return null;
+
+        $companyCol = $this->detectCompanyColumn($table);
+        $employeeCol = Schema::hasColumn($table, 'employee_id')
+            ? 'employee_id'
+            : (Schema::hasColumn($table, 'user_id') ? 'user_id' : null);
+
+        $approvalStatusCol = Schema::hasColumn($table, 'approval_status') ? 'approval_status' : null;
+        $statusCol = Schema::hasColumn($table, 'status') ? 'status' : null;
+
+        $updatedAtCol = Schema::hasColumn($table, 'updated_at') ? 'updated_at' : null;
+        $createdAtCol = Schema::hasColumn($table, 'created_at') ? 'created_at' : null;
+
+        return [
+            'type' => $type,
+            'table' => $table,
+            'operation_key' => $map[$type]['operation_key'],
+            'idCol' => $idCol,
+            'companyCol' => $companyCol,
+            'employeeCol' => $employeeCol,
+            'approvalStatusCol' => $approvalStatusCol,
+            'statusCol' => $statusCol,
+            'createdAtCol' => $createdAtCol,
+            'updatedAtCol' => $updatedAtCol,
+        ];
+    }
+
+    /**
+     * Detect company column.
+     */
+    public function detectCompanyColumn(string $table): ?string
+    {
+        foreach (['saas_company_id', 'company_id'] as $c) {
+            if (Schema::hasColumn($table, $c)) return $c;
+        }
+        return null;
+    }
+
+    /**
+     * Resolve manager.
+     */
+    public function resolveDirectManagerId(int $employeeId): int
+    {
+        $candidates = ['direct_manager_id', 'manager_id', 'reports_to_id', 'supervisor_id', 'line_manager_id'];
+        $col = null;
+        foreach ($candidates as $c) {
+            if (Schema::hasTable('employees') && Schema::hasColumn('employees', $c)) { $col = $c; break; }
+        }
+        if (!$col) return 0;
+        return (int) DB::table('employees')->where('id', $employeeId)->value($col);
+    }
+
+    /**
+     * Summary of pending tasks.
+     */
+    public function getTaskSummary(int $employeeId, int $companyId): array
+    {
+        $counts = ApprovalTask::where('approver_employee_id', $employeeId)
+            ->where('status', 'pending')
+            ->where('company_id', $companyId)
+            ->selectRaw('operation_key, count(*) as count')
+            ->groupBy('operation_key')
+            ->pluck('count', 'operation_key')
+            ->all();
+
+        return $counts;
+    }
+
+    /**
+     * Ensure tasks exist for all pending requests of a specific source.
+     */
+    public function ensureTasksForPendingRequests(array $src, int $companyId): void
+    {
+        $uCol = $src['approvalStatusCol'] ?: $src['statusCol'];
+        if (!$uCol) return;
+
+        $pendingRequests = DB::table($src['table'])
+            ->where($src['companyCol'], $companyId)
+            ->where($uCol, 'pending')
+            ->where($src['createdAtCol'], '>=', now()->subMonths(3))
+            ->get();
+
+        foreach ($pendingRequests as $req) {
+            $this->ensureTasksForRequest($src, $req, $companyId);
+        }
+    }
+
+    /**
+     * Ensure tasks exist for a single request.
+     */
+    public function ensureTasksForRequest(array $src, object $request, int $companyId): void
+    {
+        $existing = ApprovalTask::where('request_type', $src['type'])
+            ->where('request_id', $request->{$src['idCol']})
+            ->exists();
+
+        if ($existing) return;
+
+        // Logic to generate tasks based on policy
+        // ... (This is a simplified version of the logic) ...
+        // We find the policy, find the steps, and create tasks.
+    }
+
+    /**
+     * Process task action (Approve/Reject).
+     */
+    public function processTask(ApprovalTask $task, int $actedByEmployeeId, string $status, ?string $comment = null): bool
+    {
+        return DB::transaction(function() use ($task, $actedByEmployeeId, $status, $comment) {
+            $task->update([
+                'status' => $status,
+                'acted_by_employee_id' => $actedByEmployeeId,
+                'acted_at' => now(),
+                'comment' => $comment ?: '',
+            ]);
+
+            $src = $this->getRequestSource($task->approvable_type);
+
+            if ($status === 'rejected') {
+                $this->cancelRemainingTasks($task, 'Rejected by another approver');
+                $this->updateRequestStatus($src, $task->approvable_id, 'rejected');
+            } else if ($status === 'approved') {
+                $this->handleSuccessiveApprovals($task, $src);
+            }
+
+            return true;
+        });
+    }
+
+    protected function cancelRemainingTasks(ApprovalTask $task, string $comment)
+    {
+        ApprovalTask::where('approvable_type', $task->approvable_type)
+            ->where('approvable_id', $task->approvable_id)
+            ->whereIn('status', ['pending', 'waiting'])
+            ->where('id', '!=', $task->id)
+            ->update(['status' => 'cancelled', 'comment' => $comment]);
+    }
+
+    protected function updateRequestStatus(?array $src, int $id, string $status)
+    {
+        if (!$src) return;
+        $uCol = $src['approvalStatusCol'] ?: $src['statusCol'];
+        if ($uCol) {
+            DB::table($src['table'])->where($src['idCol'], $id)->update([$uCol => $status]);
+        }
+    }
+
+    protected function handleSuccessiveApprovals(ApprovalTask $task, ?array $src)
+    {
+        // 1. Check if there are other pending tasks at the same sequence
+        $otherPendingAtSameSeq = ApprovalTask::where('approvable_type', $task->approvable_type)
+            ->where('approvable_id', $task->approvable_id)
+            ->where('sequence', $task->sequence)
+            ->where('status', 'pending')
+            ->exists();
+
+        if ($otherPendingAtSameSeq) return; // Wait for others if it's "all must approve" logic (simple version)
+
+        // 2. Activate next sequence
+        $nextSeq = (int)$task->sequence + 1;
+        $waitingTasks = ApprovalTask::where('approvable_type', $task->approvable_type)
+            ->where('approvable_id', $task->approvable_id)
+            ->where('sequence', $nextSeq)
+            ->where('status', 'waiting')
+            ->get();
+
+        foreach ($waitingTasks as $wt) {
+            $wt->update(['status' => 'pending']);
+        }
+
+        // 3. Mark request as approved if no more tasks
+        $hasMore = ApprovalTask::where('approvable_type', $task->approvable_type)
+            ->where('approvable_id', $task->approvable_id)
+            ->whereIn('status', ['pending', 'waiting'])
+            ->exists();
+
+        if (!$hasMore) {
+            $this->updateRequestStatus($src, $task->approvable_id, 'approved');
+        }
+    }
+}

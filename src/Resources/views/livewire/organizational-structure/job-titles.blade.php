@@ -390,7 +390,7 @@
                             </x-ui.secondary-button>
 
                             @can('settings.organizational.manage')
-                            <x-ui.primary-button type="submit" :fullWidth="false" class="cursor-pointer">
+                            <x-ui.primary-button type="submit" :fullWidth="false" class="cursor-pointer" loading="save">
                                 <i class="fas fa-save me-2"></i>
                                 {{ tr('Save') }}
                             </x-ui.primary-button>

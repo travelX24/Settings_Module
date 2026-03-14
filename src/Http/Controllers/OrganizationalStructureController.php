@@ -25,19 +25,15 @@ class OrganizationalStructureController extends Controller
 
         // ✅ موظفين الأقسام (الحالي والأبناء)
         $employees = \Athka\Employees\Models\Employee::whereIn('department_id', $allDeptIds)
-            ->with('jobTitle')
-            ->select('id', 'name_ar', 'name_en', 'email_work as email', 'job_title_id', 'department_id')
+            ->with(['jobTitle', 'department'])
+            ->select('id', 'name_ar', 'name_en', 'email_work', 'job_title_id', 'department_id')
             ->get()
             ->map(function ($emp) use ($isArabic) {
-                $jobTitleName = $emp->jobTitle 
-                    ? ($isArabic ? $emp->jobTitle->name : $emp->jobTitle->name) 
-                    : '-';
-                
                 return [
                     'id' => $emp->id,
                     'name' => $isArabic ? ($emp->name_ar ?: $emp->name_en) : ($emp->name_en ?: $emp->name_ar),
-                    'email' => $emp->email,
-                    'job_title' => $jobTitleName,
+                    'email' => $emp->email_work,
+                    'job_title' => $emp->jobTitle ? $emp->jobTitle->name : '-',
                     'department_name' => $emp->department ? $emp->department->name : '-',
                 ];
             });
@@ -103,13 +99,13 @@ class OrganizationalStructureController extends Controller
 
         $employees = $jobTitle->employees()
             ->with('department')
-            ->select('id', 'name_ar', 'name_en', 'email_work as email', 'department_id')
+            ->select('id', 'name_ar', 'name_en', 'email_work', 'department_id', 'job_title_id')
             ->get()
             ->map(function ($emp) use ($isArabic, $jobTitle) {
                 return [
                     'id' => $emp->id,
                     'name' => $isArabic ? ($emp->name_ar ?: $emp->name_en) : ($emp->name_en ?: $emp->name_ar),
-                    'email' => $emp->email,
+                    'email' => $emp->email_work,
                     'job_title' => $jobTitle->name,
                     'department_name' => $emp->department ? $emp->department->name : '-',
                 ];

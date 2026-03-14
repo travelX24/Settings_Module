@@ -10,6 +10,7 @@ use Livewire\Component;
 class OrganizationalStructureIndex extends Component
 {
     public $activeTab = 'departments';
+    public $search = '';
 
     protected $queryString = [
         'activeTab' => ['except' => 'departments'],

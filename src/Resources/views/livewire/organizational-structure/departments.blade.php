@@ -191,7 +191,14 @@
                                 <div class="flex items-center justify-between text-sm">
                                     <span class="text-gray-500">{{ tr('Manager') }}</span>
                                     <span class="font-semibold text-gray-900">
-                                        {{ $department->manager ? ($department->manager->name_ar ?? $department->manager->name_en) : '-' }}
+                                        @if($department->manager)
+                                            {{ app()->getLocale() === 'ar' 
+                                                ? ($department->manager->name_ar ?? $department->manager->name_en) 
+                                                : ($department->manager->name_en ?? $department->manager->name_ar) 
+                                            }}
+                                        @else
+                                            -
+                                        @endif
                                     </span>
                                 </div>
 
@@ -272,8 +279,15 @@
                             </td>
 
                             <td class="py-4 px-6 align-top whitespace-nowrap">
-                                <div class="text-sm text-gray-900">
-                                    {{ $department->manager ? ($department->manager->name_ar ?? $department->manager->name_en) : '-' }}
+                                <div class="text-sm text-gray-900 border-b border-dotted border-gray-100 pb-1">
+                                    @if($department->manager)
+                                        {{ app()->getLocale() === 'ar' 
+                                            ? ($department->manager->name_ar ?? $department->manager->name_en) 
+                                            : ($department->manager->name_en ?? $department->manager->name_ar) 
+                                        }}
+                                    @else
+                                        -
+                                    @endif
                                 </div>
                             </td>
 
@@ -422,198 +436,40 @@
                                     :disabled="!auth()->user()->can('settings.organizational.manage')"
                                 />
 
-                                {{-- Manager (Searchable Dropdown) --}}
-                                <div
-                                    x-data="searchableSelect({
-                                        value: @entangle('manager_id').live,
-                                        options: @js($managers),
-                                        placeholder: @js(tr('Select Manager')),
-                                        searchPlaceholder: @js(tr('Search...')),
-                                        getLabel: (o) => (o.name ?? '') + (o.email ? ' (' + o.email + ')' : ''),
-                                    })"
-                                    class="space-y-2"
+                                {{-- Manager --}}
+                                <x-ui.select
+                                    label="{{ tr('Manager') }}"
+                                    name="manager_id"
+                                    wire:model="manager_id"
+                                    placeholder="{{ tr('Select Manager') }}"
+                                    hint="{{ tr('Optional') }}"
+                                    searchable="true"
+                                    :disabled="!auth()->user()->can('settings.organizational.manage')"
                                 >
-                                    <div class="flex items-center justify-between">
-                                        <label class="block text-sm font-semibold text-gray-700">{{ tr('Manager') }}</label>
-                                        <span class="text-xs text-gray-400">{{ tr('Optional') }}</span>
-                                    </div>
+                                    <option value="">{{ tr('Select Manager') }}</option>
+                                    @foreach($managers as $m)
+                                        <option value="{{ $m['id'] ?? $m->id }}">
+                                            {{ $m['name'] ?? $m->name }} {{ isset($m['email']) || isset($m->email) ? '(' . ($m['email'] ?? $m->email) . ')' : '' }}
+                                        </option>
+                                    @endforeach
+                                </x-ui.select>
 
-                                    <div class="relative">
-                                        <button
-                                            type="button"
-                                            @click="toggle()"
-                                            class="w-full rounded-xl border border-gray-200 bg-white px-4 py-3 text-sm shadow-sm
-                                                   focus:outline-none focus:ring-2 focus:ring-[color:var(--brand-via)]/20 focus:border-[color:var(--brand-via)]
-                                                   transition flex items-center justify-between disabled:opacity-50 disabled:cursor-not-allowed"
-                                            @cannot('settings.organizational.manage') disabled @endcannot
-                                        >
-                                            <span
-                                                class="truncate"
-                                                :class="selectedLabel() ? 'text-gray-900' : 'text-gray-400'"
-                                                x-text="selectedLabel() || placeholder"
-                                            ></span>
-
-                                            <i class="fas fa-chevron-down text-xs text-gray-400 transition"
-                                               :class="open ? 'rotate-180' : ''"></i>
-                                        </button>
-
-                                        {{-- Dropdown Panel: OPEN UP --}}
-                                        <div
-                                            x-show="open"
-                                            x-transition
-                                            @click.away="close()"
-                                            @keydown.escape.window="close()"
-                                            class="absolute z-[10000] w-full rounded-xl border border-gray-200 bg-white shadow-xl overflow-hidden"
-                                            :class="direction === 'up' ? 'bottom-full mb-2' : 'top-full mt-2'"
-                                            style="display:none;"
-                                        >
-                                            {{-- Search Row --}}
-                                            <div class="p-3 border-b border-gray-100 bg-white">
-                                                <div class="relative">
-                                                    <span class="absolute inset-y-0 start-3 flex items-center pointer-events-none">
-                                                        <i class="fas fa-search text-gray-400 text-sm"></i>
-                                                    </span>
-                                                    <input
-                                                        x-ref="search"
-                                                        type="search"
-                                                        x-model="search"
-                                                        :placeholder="searchPlaceholder"
-                                                        class="w-full rounded-lg border border-gray-200 bg-white px-4 py-2 ps-10 text-sm
-                                                               focus:outline-none focus:ring-2 focus:ring-[color:var(--brand-via)]/20 focus:border-[color:var(--brand-via)]"
-                                                    />
-                                                </div>
-                                            </div>
-
-                                            {{-- Items --}}
-                                            <div class="max-h-56 overflow-y-auto">
-                                                <template x-if="filtered().length === 0">
-                                                    <div class="p-4 text-sm text-gray-500">{{ tr('No results found') }}</div>
-                                                </template>
-
-                                                <template x-for="opt in filtered()" :key="opt.id">
-                                                    <button
-                                                        type="button"
-                                                        @click="choose(opt)"
-                                                        class="w-full text-start px-4 py-2.5 hover:bg-gray-50 transition flex items-center justify-between"
-                                                    >
-                                                        <span class="text-sm text-gray-900" x-text="getLabel(opt)"></span>
-                                                        <i class="fas fa-check text-xs text-[color:var(--brand-via)]"
-                                                           x-show="String(value) === String(opt.id)"></i>
-                                                    </button>
-                                                </template>
-                                            </div>
-
-                                            {{-- Footer --}}
-                                            <div class="p-2 border-t border-gray-100 flex items-center justify-between bg-white">
-                                                <button type="button" @click="clear()" class="text-xs text-gray-500 hover:text-gray-700">
-                                                    {{ tr('Clear') }}
-                                                </button>
-                                                <button type="button" @click="close()" class="text-xs text-gray-500 hover:text-gray-700">
-                                                    {{ tr('Close') }}
-                                                </button>
-                                            </div>
-                                        </div>
-                                    </div>
-
-                                    @error('manager_id')
-                                        <div class="text-xs text-red-600 font-semibold">{{ $message }}</div>
-                                    @enderror
-                                </div>
-
-                                {{-- Parent Department (Searchable Dropdown) --}}
-                                <div
-                                    x-data="searchableSelect({
-                                        value: @entangle('parent_id').live,
-                                        options: @js($parentDepartments),
-                                        placeholder: @js(tr('Select Parent Department')),
-                                        searchPlaceholder: @js(tr('Search...')),
-                                        getLabel: (o) => (o.name ?? ''),
-                                    })"
-                                    class="space-y-2"
+                                {{-- Parent Department --}}
+                                <x-ui.select
+                                    label="{{ tr('Parent Department') }}"
+                                    name="parent_id"
+                                    wire:model="parent_id"
+                                    placeholder="{{ tr('Select Parent Department') }}"
+                                    hint="{{ tr('Optional') }}"
+                                    searchable="true"
+                                    align="up"
+                                    :disabled="!auth()->user()->can('settings.organizational.manage')"
                                 >
-                                    <div class="flex items-center justify-between">
-                                        <label class="block text-sm font-semibold text-gray-700">{{ tr('Parent Department') }}</label>
-                                        <span class="text-xs text-gray-400">{{ tr('Optional') }}</span>
-                                    </div>
-
-                                    <div class="relative">
-                                        <button
-                                            type="button"
-                                            @click="toggle()"
-                                            class="w-full rounded-xl border border-gray-200 bg-white px-4 py-3 text-sm shadow-sm
-                                                   focus:outline-none focus:ring-2 focus:ring-[color:var(--brand-via)]/20 focus:border-[color:var(--brand-via)]
-                                                   transition flex items-center justify-between disabled:opacity-50 disabled:cursor-not-allowed"
-                                            @cannot('settings.organizational.manage') disabled @endcannot
-                                        >
-                                            <span
-                                                class="truncate"
-                                                :class="selectedLabel() ? 'text-gray-900' : 'text-gray-400'"
-                                                x-text="selectedLabel() || placeholder"
-                                            ></span>
-
-                                            <i class="fas fa-chevron-down text-xs text-gray-400 transition"
-                                               :class="open ? 'rotate-180' : ''"></i>
-                                        </button>
-
-                                        {{-- Dropdown Panel: OPEN UP --}}
-                                        <div
-                                            x-show="open"
-                                            x-transition
-                                            @click.away="close()"
-                                            @keydown.escape.window="close()"
-                                            class="absolute z-[10000] w-full rounded-xl border border-gray-200 bg-white shadow-xl overflow-hidden"
-                                            :class="direction === 'up' ? 'bottom-full mb-2' : 'top-full mt-2'"
-                                            style="display:none;"
-                                        >
-                                            <div class="p-3 border-b border-gray-100 bg-white">
-                                                <div class="relative">
-                                                    <span class="absolute inset-y-0 start-3 flex items-center pointer-events-none">
-                                                        <i class="fas fa-search text-gray-400 text-sm"></i>
-                                                    </span>
-                                                    <input
-                                                        x-ref="search"
-                                                        type="search"
-                                                        x-model="search"
-                                                        :placeholder="searchPlaceholder"
-                                                        class="w-full rounded-lg border border-gray-200 bg-white px-4 py-2 ps-10 text-sm
-                                                               focus:outline-none focus:ring-2 focus:ring-[color:var(--brand-via)]/20 focus:border-[color:var(--brand-via)]"
-                                                    />
-                                                </div>
-                                            </div>
-
-                                            <div class="max-h-56 overflow-y-auto">
-                                                <template x-if="filtered().length === 0">
-                                                    <div class="p-4 text-sm text-gray-500">{{ tr('No results found') }}</div>
-                                                </template>
-
-                                                <template x-for="opt in filtered()" :key="opt.id">
-                                                    <button
-                                                        type="button"
-                                                        @click="choose(opt)"
-                                                        class="w-full text-start px-4 py-2.5 hover:bg-gray-50 transition flex items-center justify-between"
-                                                    >
-                                                        <span class="text-sm text-gray-900" x-text="getLabel(opt)"></span>
-                                                        <i class="fas fa-check text-xs text-[color:var(--brand-via)]"
-                                                           x-show="String(value) === String(opt.id)"></i>
-                                                    </button>
-                                                </template>
-                                            </div>
-
-                                            <div class="p-2 border-t border-gray-100 flex items-center justify-between bg-white">
-                                                <button type="button" @click="clear()" class="text-xs text-gray-500 hover:text-gray-700">
-                                                    {{ tr('Clear') }}
-                                                </button>
-                                                <button type="button" @click="close()" class="text-xs text-gray-500 hover:text-gray-700">
-                                                    {{ tr('Close') }}
-                                                </button>
-                                            </div>
-                                        </div>
-                                    </div>
-
-                                    @error('parent_id')
-                                        <div class="text-xs text-red-600 font-semibold">{{ $message }}</div>
-                                    @enderror
-                                </div>
+                                    <option value="">{{ tr('Select Parent Department') }}</option>
+                                    @foreach($parentDepartments as $pd)
+                                        <option value="{{ $pd->id }}">{{ $pd->name }}</option>
+                                    @endforeach
+                                </x-ui.select>
                             </div>
 
                             {{-- Right Column --}}
@@ -655,7 +511,7 @@
                             </x-ui.secondary-button>
 
                             @can('settings.organizational.manage')
-                            <x-ui.primary-button type="submit" :fullWidth="false" class="cursor-pointer">
+                            <x-ui.primary-button type="submit" :fullWidth="false" class="cursor-pointer" loading="save">
                                 <i class="fas fa-save me-2"></i>
                                 {{ tr('Save') }}
                             </x-ui.primary-button>
@@ -678,57 +534,3 @@
     />
 </div>
 
-@push('scripts')
-<script>
-document.addEventListener('alpine:init', () => {
-    Alpine.data('searchableSelect', (cfg) => ({
-        open: false,
-        search: '',
-        value: cfg.value,
-        options: Array.isArray(cfg.options) ? cfg.options : [],
-        placeholder: cfg.placeholder || 'Select',
-        searchPlaceholder: cfg.searchPlaceholder || 'Search...',
-        getLabel: cfg.getLabel || ((o) => (o?.name ?? '')),
-
-        // ✅ always open UP
-        direction: 'up',
-
-        toggle() {
-            this.open = !this.open;
-            if (this.open) {
-                this.direction = 'up';
-                this.$nextTick(() => this.$refs.search?.focus());
-            }
-        },
-        close() {
-            this.open = false;
-            this.search = '';
-        },
-        clear() {
-            this.value = null;
-            this.close();
-        },
-        selected() {
-            return this.options.find(o => String(o.id) === String(this.value));
-        },
-        selectedLabel() {
-            const s = this.selected();
-            return s ? this.getLabel(s) : '';
-        },
-        filtered() {
-            const q = (this.search || '').trim().toLowerCase();
-            if (!q) return this.options;
-
-            return this.options.filter(o => {
-                const label = (this.getLabel(o) || '').toLowerCase();
-                return label.includes(q);
-            });
-        },
-        choose(opt) {
-            this.value = opt?.id ?? null;
-            this.close();
-        },
-    }));
-});
-</script>
-@endpush
