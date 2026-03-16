@@ -5,6 +5,8 @@ namespace Athka\SystemSettings\Services;
 use Illuminate\Support\Facades\DB;
 use Carbon\Carbon;
 use Athka\Employees\Models\Employee;
+use Athka\Attendance\Models\AttendanceDailyLog;
+use Athka\Attendance\Models\AttendanceDailyDetail;
 
 class AttendanceService
 {
@@ -20,57 +22,35 @@ class AttendanceService
      */
     public function ensureLog(int $companyId, int $employeeId, string $date, $schedule = null, $holidays = null)
     {
-        $existing = DB::table('attendance_daily_logs')
-            ->where('saas_company_id', $companyId)
+        $log = AttendanceDailyLog::where('saas_company_id', $companyId)
             ->where('employee_id', $employeeId)
             ->whereDate('attendance_date', $date)
             ->first();
 
-        if ($existing && !is_null($existing->scheduled_hours)) {
-            return $existing;
+        if ($log && !is_null($log->scheduled_hours)) {
+            return $log;
         }
 
-        $metrics = $this->scheduleService->getMetricsForDate($date, $schedule, $holidays);
-
-        if ($existing) {
-            $update = [
-                'work_schedule_id' => $schedule ? $schedule->id : null,
-                'scheduled_hours' => $metrics['hours'],
-                'scheduled_check_in' => $metrics['check_in'],
-                'scheduled_check_out' => $metrics['check_out'],
-                'updated_at' => now(),
-            ];
-            DB::table('attendance_daily_logs')->where('id', $existing->id)->update($update);
-            return DB::table('attendance_daily_logs')->where('id', $existing->id)->first();
+        if (!$log) {
+            $log = new AttendanceDailyLog();
+            $log->saas_company_id = $companyId;
+            $log->employee_id = $employeeId;
+            $log->attendance_date = $date;
+            $log->attendance_status = 'absent';
+            $log->approval_status = 'pending';
+            $log->source = 'automatic';
         }
 
-        $id = DB::table('attendance_daily_logs')->insertGetId([
-            'saas_company_id' => $companyId,
-            'employee_id' => $employeeId,
-            'attendance_date' => $date,
-            'work_schedule_id' => $schedule ? $schedule->id : null,
-            'scheduled_hours' => $metrics['hours'],
-            'scheduled_check_in' => $metrics['check_in'],
-            'scheduled_check_out' => $metrics['check_out'],
-            'attendance_status' => ($metrics['hours'] === null) ? 'day_off' : 'absent',
-            'approval_status' => 'pending',
-            'source' => 'automatic',
-            'meta_data' => json_encode([
-                'generated_by' => 'service',
-                'is_holiday' => $metrics['is_holiday'],
-                'day_key' => $metrics['day_key'],
-            ], JSON_UNESCAPED_UNICODE),
-            'created_at' => now(),
-            'updated_at' => now(),
-        ]);
+        // Saving triggers syncWithSchedule and other calculations in the model
+        $log->save();
 
-        return DB::table('attendance_daily_logs')->where('id', $id)->first();
+        return $log;
     }
 
     /**
      * Record a check-in event.
      */
-    public function recordCheckIn(object $log, string $method, ?float $lat, ?float $lng, $schedule, int $lateGraceMins = 15): array
+    public function recordCheckIn(AttendanceDailyLog $log, string $method, ?float $lat, ?float $lng, $schedule, int $lateGraceMins = 15): array
     {
         $now = now();
         $dateStr = $log->attendance_date;
@@ -135,15 +115,12 @@ class AttendanceService
         ]);
 
         // Update Main Log
-        $updateData = ['updated_at' => $now];
-        if (empty($log->check_in_time)) $updateData['check_in_time'] = $nowTime;
-        
-        // Status precedence
-        if ((string)$log->attendance_status === 'absent' || $status === 'late') {
-            $updateData['attendance_status'] = $status;
+        if (empty($log->check_in_time)) {
+            $log->check_in_time = $nowTime;
         }
-
-        DB::table('attendance_daily_logs')->where('id', $log->id)->update($updateData);
+        
+        // Let the model handle status and other calculations
+        $log->save();
 
         return ['ok' => true, 'time' => substr($nowTime, 0, 5), 'status' => $status];
     }
@@ -151,7 +128,7 @@ class AttendanceService
     /**
      * Record a check-out event.
      */
-    public function recordCheckOut(object $log, string $method, ?float $lat, ?float $lng): array
+    public function recordCheckOut(AttendanceDailyLog $log, string $method, ?float $lat, ?float $lng): array
     {
         $now = now();
         $nowTime = $now->format('H:i:s');
@@ -171,31 +148,26 @@ class AttendanceService
             'updated_at' => $now,
         ]);
 
-        // Recalculate Totals
-        $allDetails = DB::table('attendance_daily_details')
-            ->where('daily_log_id', $log->id)
-            ->whereNotNull('check_out_time')
+        $log->check_out_time = $nowTime;
+        // Calculation triggers on save() via Model's calculateActualHours and calculateCompliance
+        $log->save();
+
+        // Re-fetch the log to get updated actual_hours and compliance_percentage
+        $log->refresh();
+
+        return ['ok' => true, 'time' => substr($nowTime, 0, 5), 'actual_hours' => $log->actual_hours];
+    }
+
+    /**
+     * Get attendance logs for an employee in a date range.
+     */
+    public function getLogs(int $companyId, int $employeeId, string $from, string $to)
+    {
+        return AttendanceDailyLog::where('saas_company_id', $companyId)
+            ->where('employee_id', $employeeId)
+            ->whereBetween('attendance_date', [$from, $to])
+            ->orderBy('attendance_date', 'asc')
             ->get();
-
-        $totalMinutes = 0;
-        foreach ($allDetails as $session) {
-            $totalMinutes += $this->minutesBetween((string)$session->check_in_time, (string)$session->check_out_time);
-        }
-        $actualHours = round($totalMinutes / 60, 2);
-
-        $compliance = null;
-        if ($log->scheduled_hours > 0) {
-            $compliance = round(min(100, ($totalMinutes / ($log->scheduled_hours * 60)) * 100), 2);
-        }
-
-        DB::table('attendance_daily_logs')->where('id', $log->id)->update([
-            'check_out_time' => $nowTime,
-            'actual_hours' => $actualHours,
-            'compliance_percentage' => $compliance,
-            'updated_at' => $now,
-        ]);
-
-        return ['ok' => true, 'time' => substr($nowTime, 0, 5), 'actual_hours' => $actualHours];
     }
 
     public function minutesBetween(string $startTime, string $endTime): int

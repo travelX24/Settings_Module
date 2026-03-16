@@ -66,15 +66,26 @@ class DailyAttendanceController extends Controller
 
         $logs = $this->attendanceService->getLogs($companyId, $employee->id, $from->toDateString(), $to->toDateString());
 
-        // Simple transformation for now (can be moved to a Resource later)
         $data = $logs->map(function($log) {
+            // Load details if using Eloquent
+            $details = property_exists($log, 'details') ? $log->details : DB::table('attendance_daily_details')->where('daily_log_id', $log->id)->get();
+
             return [
+                'id' => $log->id,
                 'date' => $log->attendance_date,
-                'check_in' => $log->check_in_time ? substr($log->check_in_time, 0, 5) : null,
-                'check_out' => $log->check_out_time ? substr($log->check_out_time, 0, 5) : null,
-                'status' => $log->attendance_status,
-                'compliance' => $log->compliance_percentage,
+                'check_in_time' => $log->check_in_time ? Carbon::parse($log->check_in_time)->format('H:i') : null,
+                'check_out_time' => $log->check_out_time ? Carbon::parse($log->check_out_time)->format('H:i') : null,
+                'attendance_status' => $log->attendance_status,
+                'status' => $log->attendance_status, // Keep for backward compatibility
+                'compliance_percentage' => $log->compliance_percentage,
                 'actual_hours' => $log->actual_hours,
+                'scheduled_hours' => $log->scheduled_hours,
+                'scheduled_check_in' => $log->scheduled_check_in ? Carbon::parse($log->scheduled_check_in)->format('H:i') : null,
+                'scheduled_check_out' => $log->scheduled_check_out ? Carbon::parse($log->scheduled_check_out)->format('H:i') : null,
+                'punches' => collect($details)->map(fn($d) => [
+                    'check_in' => $d->check_in_time ? Carbon::parse($d->check_in_time)->format('H:i') : null,
+                    'check_out' => $d->check_out_time ? Carbon::parse($d->check_out_time)->format('H:i') : null,
+                ]),
             ];
         });
 

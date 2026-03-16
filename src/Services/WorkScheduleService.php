@@ -13,9 +13,33 @@ class WorkScheduleService
     /**
      * Get the effective schedule for a company/employee.
      */
-    public function getEffectiveSchedule(int $companyId, ?Employee $employee = null): ?WorkSchedule
+    public function getEffectiveSchedule(int $companyId, ?Employee $employee = null, ?string $date = null): ?WorkSchedule
     {
-        // 1. Fallback to default company schedule
+        $resolveDate = $date ?: now()->toDateString();
+
+        // 1. Try employee-specific assignment
+        if ($employee) {
+            $assignment = DB::table('employee_work_schedules')
+                ->where('employee_id', $employee->id)
+                ->where('is_active', true)
+                ->where('start_date', '<=', $resolveDate)
+                ->where(function ($q) use ($resolveDate) {
+                    $q->whereNull('end_date')
+                      ->orWhere('end_date', '>=', $resolveDate);
+                })
+                ->orderByDesc('start_date')
+                ->first();
+
+            if ($assignment) {
+                $schedule = WorkSchedule::query()
+                    ->with(['periods', 'exceptions'])
+                    ->find($assignment->work_schedule_id);
+                
+                if ($schedule) return $schedule;
+            }
+        }
+
+        // 2. Fallback to default company schedule
         $schedule = WorkSchedule::query()
             ->with(['periods', 'exceptions'])
             ->where('saas_company_id', $companyId)
@@ -24,7 +48,7 @@ class WorkScheduleService
         
         if ($schedule) return $schedule;
         
-        // 2. Fallback to latest schedule
+        // 3. Fallback to latest schedule
         return WorkSchedule::query()
             ->with(['periods', 'exceptions'])
             ->where('saas_company_id', $companyId)
@@ -155,12 +179,19 @@ class WorkScheduleService
             }
         }
 
+        $firstCheckIn = $periodsOut->isNotEmpty() ? $periodsOut->first()['start_time'] : null;
+        $lastCheckOut = $periodsOut->isNotEmpty() ? $periodsOut->last()['end_time'] : null;
+
         return [
             'status' => $isHoliday ? 'holiday' : ($isWorkday && $periodsOut->isNotEmpty() ? 'workday' : 'off'),
             'is_holiday' => (bool)$isHoliday,
             'holiday_name' => $holidayName,
             'is_workday' => $isWorkday,
+            'day_key' => $dayKey,
             'total_minutes' => $scheduledMinutes,
+            'hours' => $scheduledMinutes > 0 ? ($scheduledMinutes / 60) : null,
+            'check_in' => $firstCheckIn,
+            'check_out' => $lastCheckOut,
             'periods' => $periodsOut,
         ];
     }

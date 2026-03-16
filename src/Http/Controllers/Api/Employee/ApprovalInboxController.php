@@ -114,6 +114,38 @@ class ApprovalInboxController extends Controller
         return response()->json(['ok' => true, 'message' => "Request $status successfully"]);
     }
 
+    /**
+     * Trigger task generation for a request.
+     * Handles various signatures from other modules.
+     */
+    public function ensureTasksForRequest($param1, $param2, $param3 = null): void
+    {
+        $companyId = null;
+        $type = null;
+        $requestId = null;
+        $src = null;
+
+        if (is_array($param1) && isset($param1['table'])) {
+            // Signature: ($src, $requestId)
+            $src = $param1;
+            $requestId = (int) $param2;
+            $companyId = (int) ($src['last_company_id'] ?? $this->employeeService->getCompanyId());
+        } else {
+            // Signature: ($companyId, $type, $id)
+            $companyId = (int) $param1;
+            $type = (string) $param2;
+            $requestId = (int) $param3;
+            $src = $this->approvalService->getRequestSource($type);
+        }
+
+        if (!$src || !$requestId) return;
+
+        $request = DB::table($src['table'])->where($src['idCol'], $requestId)->first();
+        if (!$request) return;
+
+        $this->approvalService->ensureTasksForRequest($src, $request, $companyId);
+    }
+
     protected function normalizeRequestData($task, Request $request)
     {
         $src = $this->approvalService->getRequestSource($task->approvable_type);
@@ -132,7 +164,10 @@ class ApprovalInboxController extends Controller
         }
 
         // Add type label
-        $data->type_label = $isAr ? $this->getLabels()[$task->approvable_type]['ar'] : $this->getLabels()[$task->approvable_type]['en'];
+        $labels = $this->getLabels();
+        $data->type_label = $isAr 
+            ? ($labels[$task->approvable_type]['ar'] ?? $task->approvable_type) 
+            : ($labels[$task->approvable_type]['en'] ?? $task->approvable_type);
 
         return $data;
     }

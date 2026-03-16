@@ -19,8 +19,11 @@ class EmployeeService
         $employee = null;
 
         // 1. Check if user has explicit employee_id
-        if (property_exists($user, 'employee_id') && (int) ($user->employee_id ?? 0) > 0) {
-            $employee = Employee::find((int) $user->employee_id);
+        $userId = $user->id ?? 0;
+        $employeeId = property_exists($user, 'employee_id') ? (int) $user->employee_id : (isset($user['employee_id']) ? (int) $user['employee_id'] : 0);
+
+        if ($employeeId > 0) {
+            $employee = Employee::find($employeeId);
         }
 
         // 2. Try relationship
@@ -30,7 +33,7 @@ class EmployeeService
 
         // 3. Try lookup by user_id in employees table
         if (!$employee && Schema::hasTable('employees') && Schema::hasColumn('employees', 'user_id')) {
-            $employee = Employee::where('user_id', (int) $user->id)->first();
+            $employee = Employee::where('user_id', $userId)->first();
         }
 
         return $employee;
