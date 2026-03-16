@@ -56,31 +56,7 @@
 
             <div class="flex items-center gap-2">
                 {{-- View Toggle (Cards / List) --}}
-                <div class="flex items-center gap-1">
-                    <button
-                        type="button"
-                        @click="setView('cards')"
-                        :class="view === 'cards'
-                            ? 'bg-amber-500 border-amber-500 text-white shadow-sm'
-                            : 'bg-white text-gray-600 border-gray-300 hover:bg-gray-50'"
-                        class="cursor-pointer w-10 h-10 inline-flex items-center justify-center rounded-xl border transition"
-                        title="{{ tr('Cards View') }}"
-                    >
-                        <i class="fas fa-table-cells"></i>
-                    </button>
-
-                    <button
-                        type="button"
-                        @click="setView('table')"
-                        :class="view === 'table'
-                            ? 'bg-amber-500 border-amber-500 text-white shadow-sm'
-                            : 'bg-white text-gray-600 border-gray-300 hover:bg-gray-50'"
-                        class="cursor-pointer w-10 h-10 inline-flex items-center justify-center rounded-xl border transition"
-                        title="{{ tr('Table View') }}"
-                    >
-                        <i class="fas fa-list"></i>
-                    </button>
-                </div>
+                <x-ui.view-toggle />
 
                 {{-- Export --}}
                 <button
@@ -274,133 +250,91 @@
     </x-ui.card>
 
     {{-- Add/Edit Modal --}}
-    @if($showModal)
-        <div
-            x-data="{ open: @entangle('showModal') }"
-            x-show="open"
-            x-transition:enter="transition ease-out duration-300"
-            x-transition:enter-start="opacity-0"
-            x-transition:enter-end="opacity-100"
-            x-transition:leave="transition ease-in duration-200"
-            x-transition:leave-start="opacity-100"
-            x-transition:leave-end="opacity-0"
-            class="fixed inset-0 z-[9999] flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm"
-            style="z-index: 9999;"
-            @click.away="open = false"
-            wire:ignore.self
-        >
-            <div
-                @click.stop
-                x-transition:enter="transition ease-out duration-300"
-                x-transition:enter-start="opacity-0 scale-95 translate-y-4"
-                x-transition:enter-end="opacity-100 scale-100 translate-y-0"
-                x-transition:leave="transition ease-in duration-200"
-                x-transition:leave-start="opacity-100 scale-100 translate-y-0"
-                x-transition:leave-end="opacity-0 scale-95 translate-y-4"
-                class="bg-white rounded-2xl shadow-2xl max-w-4xl w-full overflow-hidden flex flex-col"
-            >
-                {{-- Header --}}
-                <div class="p-6 border-b border-gray-200 bg-gradient-to-r from-[color:var(--brand-from)]/5 via-[color:var(--brand-via)]/5 to-[color:var(--brand-to)]/5">
-                    <div class="flex items-center justify-between">
-                        <div class="flex items-center gap-3">
-                            <div class="w-10 h-10 rounded-xl bg-gradient-to-r from-[color:var(--brand-from)] via-[color:var(--brand-via)] to-[color:var(--brand-to)] flex items-center justify-center">
-                                <i class="fas fa-briefcase text-white text-lg"></i>
-                            </div>
-                            <div>
-                                <h3 class="text-xl font-bold text-gray-900">
-                                    {{ $editingId ? tr('Edit Job Title') : tr('Add Job Title') }}
-                                </h3>
-                                <p class="text-xs text-gray-500 mt-0.5">
-                                    {{ $editingId ? tr('Update job title information') : tr('Create a new job title') }}
-                                </p>
-                            </div>
+    <x-ui.modal wire:model="showModal" maxWidth="4xl">
+        <x-slot:title>
+            <div class="space-y-1">
+                <div>{{ $editingId ? tr('Edit Job Title') : tr('Add Job Title') }}</div>
+                <div class="text-xs text-gray-500 mt-0.5 font-normal">
+                    {{ $editingId ? tr('Update job title information') : tr('Create a new job title') }}
+                </div>
+            </div>
+        </x-slot:title>
+
+        <x-slot:icon>
+            <i class="fas fa-briefcase text-white text-lg"></i>
+        </x-slot:icon>
+
+        <x-slot:content>
+            <form wire:submit.prevent="save" id="job-title-form">
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    {{-- Left Column --}}
+                    <div class="space-y-5">
+                        {{-- Name --}}
+                        <x-ui.input
+                            label="{{ tr('Job Title Name') }}"
+                            name="name"
+                            wire:model="name"
+                            placeholder="{{ tr('Enter job title name') }}"
+                            required
+                            :disabled="!auth()->user()->can('settings.organizational.manage')"
+                        />
+
+                        {{-- Is Active --}}
+                        <div class="flex items-center gap-3 p-4 bg-gray-50 rounded-xl border border-gray-200">
+                            <input
+                                type="checkbox"
+                                wire:model="is_active"
+                                id="is_active_job"
+                                class="w-5 h-5 text-[color:var(--brand-via)] border-gray-300 rounded focus:ring-[color:var(--brand-via)] focus:ring-2 disabled:opacity-50"
+                                @cannot('settings.organizational.manage') disabled @endcannot
+                            />
+                            <label for="is_active_job" class="text-sm font-semibold text-gray-700 cursor-pointer">
+                                {{ tr('Active') }}
+                                <span class="text-xs text-gray-500 font-normal ms-1">({{ tr('Job title will be available for selection') }})</span>
+                            </label>
                         </div>
-                        <button
-                            wire:click="closeModal"
-                            class="cursor-pointer w-8 h-8 rounded-lg flex items-center justify-center text-gray-400 hover:text-gray-600 hover:bg-gray-100 transition-colors"
-                        >
-                            <i class="fas fa-times"></i>
-                        </button>
+
+                        {{-- Code --}}
+                        <x-ui.input
+                            label="{{ tr('Job Code') }}"
+                            name="code"
+                            wire:model="code"
+                            placeholder="{{ tr('Enter unique job code') }}"
+                            hint="{{ tr('Will be used for matching in imports') }}"
+                            :disabled="!auth()->user()->can('settings.organizational.manage')"
+                        />
+                    </div>
+
+                    {{-- Right Column --}}
+                    <div class="space-y-5">
+                        {{-- Description --}}
+                        <x-ui.textarea
+                            label="{{ tr('Description') }}"
+                            name="description"
+                            wire:model="description"
+                            placeholder="{{ tr('Enter job title description') }}"
+                            hint="{{ tr('Optional') }}"
+                            :rows="8"
+                            :disabled="!auth()->user()->can('settings.organizational.manage')"
+                        />
                     </div>
                 </div>
+            </form>
+        </x-slot:content>
 
-                {{-- Form Content --}}
-                <form wire:submit.prevent="save" class="flex flex-col">
-                    <div class="p-6">
-                        <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
-                            {{-- Left Column --}}
-                            <div class="space-y-5">
-                                {{-- Name --}}
-                                <x-ui.input
-                                    label="{{ tr('Job Title Name') }}"
-                                    name="name"
-                                    wire:model="name"
-                                    placeholder="{{ tr('Enter job title name') }}"
-                                    required
-                                    :disabled="!auth()->user()->can('settings.organizational.manage')"
-                                />
+        <x-slot:footer>
+            <x-ui.secondary-button type="button" wire:click="closeModal" class="cursor-pointer">
+                {{ tr('Cancel') }}
+            </x-ui.secondary-button>
 
-                                {{-- Is Active --}}
-                                <div class="flex items-center gap-3 p-4 bg-gray-50 rounded-xl border border-gray-200">
-                                    <input
-                                        type="checkbox"
-                                        wire:model="is_active"
-                                        id="is_active_job"
-                                        class="w-5 h-5 text-[color:var(--brand-via)] border-gray-300 rounded focus:ring-[color:var(--brand-via)] focus:ring-2 disabled:opacity-50"
-                                        @cannot('settings.organizational.manage') disabled @endcannot
-                                    />
-                                    <label for="is_active_job" class="text-sm font-semibold text-gray-700 cursor-pointer">
-                                        {{ tr('Active') }}
-                                        <span class="text-xs text-gray-500 font-normal ms-1">({{ tr('Job title will be available for selection') }})</span>
-                                    </label>
-                                </div>
-
-                                {{-- Code --}}
-                                <x-ui.input
-                                    label="{{ tr('Job Code') }}"
-                                    name="code"
-                                    wire:model="code"
-                                    placeholder="{{ tr('Enter unique job code') }}"
-                                    hint="{{ tr('Will be used for matching in imports') }}"
-                                    :disabled="!auth()->user()->can('settings.organizational.manage')"
-                                />
-                            </div>
-
-                            {{-- Right Column --}}
-                            <div class="space-y-5">
-                                {{-- Description --}}
-                                <x-ui.textarea
-                                    label="{{ tr('Description') }}"
-                                    name="description"
-                                    wire:model="description"
-                                    placeholder="{{ tr('Enter job title description') }}"
-                                    hint="{{ tr('Optional') }}"
-                                    :rows="8"
-                                    :disabled="!auth()->user()->can('settings.organizational.manage')"
-                                />
-                            </div>
-                        </div>
-                    </div>
-
-                    {{-- Footer Actions --}}
-                    <div class="p-6 border-t border-gray-200 bg-gray-50">
-                        <div class="flex items-center justify-end gap-3">
-                            <x-ui.secondary-button type="button" wire:click="closeModal" class="cursor-pointer">
-                                {{ tr('Cancel') }}
-                            </x-ui.secondary-button>
-
-                            @can('settings.organizational.manage')
-                            <x-ui.primary-button type="submit" :fullWidth="false" class="cursor-pointer" loading="save">
-                                <i class="fas fa-save me-2"></i>
-                                {{ tr('Save') }}
-                            </x-ui.primary-button>
-                            @endcan
-                        </div>
-                    </div>
-                </form>
-            </div>
-        </div>
-    @endif
+            @can('settings.organizational.manage')
+            <x-ui.primary-button type="submit" form="job-title-form" :fullWidth="false" class="cursor-pointer" loading="save">
+                <i class="fas fa-save me-2"></i>
+                {{ tr('Save') }}
+            </x-ui.primary-button>
+            @endcan
+        </x-slot:footer>
+    </x-ui.modal>
 
     {{-- Deletion Confirmation Dialog --}}
     <x-ui.confirm-dialog

@@ -42,6 +42,15 @@ class AttendanceSettingService
      */
     public function savePenalty(int $companyId, int $policyId, string $type, array $data): void
     {
+        $payload = array_merge($data, [
+            'penalty_action' => 'deduction', 
+            'is_active' => true,
+            'recurrence_from' => 1,
+            'recurrence_to' => 1,
+            'minutes_from' => $data['threshold_minutes'] ?? 0,
+            'minutes_to' => 9999,
+        ]);
+
         AttendancePenaltyPolicy::updateOrCreate(
             [
                 'policy_id' => $policyId,
@@ -49,7 +58,7 @@ class AttendanceSettingService
                 'violation_type' => $type,
                 'recurrence_count' => 1,
             ],
-            array_merge($data, ['penalty_action' => 'deduction', 'is_active' => true])
+            $payload
         );
     }
 
@@ -58,13 +67,22 @@ class AttendanceSettingService
      */
     public function saveAbsencePolicy(int $companyId, int $policyId, array $data): void
     {
+        $payload = array_merge($data, [
+            'penalty_action' => 'deduction', 
+            'is_active' => true,
+            'day_selector_type' => 'single',
+            'day_from' => 1,
+            'day_to' => 1,
+            'recurrence_count' => 1,
+        ]);
+
         UnexcusedAbsencePolicy::updateOrCreate(
             [
                 'policy_id' => $policyId,
                 'saas_company_id' => $companyId,
                 'absence_reason_type' => 'no_notice',
             ],
-            array_merge($data, ['penalty_action' => 'deduction', 'is_active' => true])
+            $payload
         );
     }
 

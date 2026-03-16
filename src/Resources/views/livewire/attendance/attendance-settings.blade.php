@@ -31,7 +31,7 @@
             <button 
                 type="button"
                 wire:click="setActiveTab('policies')"
-                class="flex-1 py-4 px-6 font-semibold text-sm flex items-center justify-center gap-2 transition-all duration-200 {{ $activeTab === 'policies' ? 'text-[color:var(--brand-via)] border-b-2 border-[color:var(--brand-via)] bg-white' : 'text-gray-500 hover:text-gray-700 hover:bg-gray-50' }}"
+                class="flex-1 py-4 px-6 font-semibold text-sm flex items-center justify-center gap-2 transition-all duration-200 cursor-pointer {{ $activeTab === 'policies' ? 'text-[color:var(--brand-via)] border-b-2 border-[color:var(--brand-via)] bg-white' : 'text-gray-500 hover:text-gray-700 hover:bg-gray-50' }}"
             >
                 <i class="fas fa-clock"></i>
                 <span>{{ tr('Attendance Tracking') }}</span>
@@ -39,7 +39,7 @@
             <button 
                 type="button"
                 wire:click="setActiveTab('regulations')"
-                class="flex-1 py-4 px-6 font-semibold text-sm flex items-center justify-center gap-2 transition-all duration-200 {{ $activeTab === 'regulations' ? 'text-[color:var(--brand-via)] border-b-2 border-[color:var(--brand-via)] bg-white' : 'text-gray-500 hover:text-gray-700 hover:bg-gray-50' }}"
+                class="flex-1 py-4 px-6 font-semibold text-sm flex items-center justify-center gap-2 transition-all duration-200 cursor-pointer {{ $activeTab === 'regulations' ? 'text-[color:var(--brand-via)] border-b-2 border-[color:var(--brand-via)] bg-white' : 'text-gray-500 hover:text-gray-700 hover:bg-gray-50' }}"
             >
                 <i class="fas fa-gavel"></i>
                 <span>{{ tr('Regulations & Penalties') }}</span>
@@ -47,7 +47,7 @@
             <button 
                 type="button"
                 wire:click="setActiveTab('groups')"
-                class="flex-1 py-4 px-6 font-semibold text-sm flex items-center justify-center gap-2 transition-all duration-200 {{ $activeTab === 'groups' ? 'text-[color:var(--brand-via)] border-b-2 border-[color:var(--brand-via)] bg-white' : 'text-gray-500 hover:text-gray-700 hover:bg-gray-50' }}"
+                class="flex-1 py-4 px-6 font-semibold text-sm flex items-center justify-center gap-2 transition-all duration-200 cursor-pointer {{ $activeTab === 'groups' ? 'text-[color:var(--brand-via)] border-b-2 border-[color:var(--brand-via)] bg-white' : 'text-gray-500 hover:text-gray-700 hover:bg-gray-50' }}"
             >
                 <i class="fas fa-users-cog"></i>
                 <span>{{ tr('Groups') }}</span>

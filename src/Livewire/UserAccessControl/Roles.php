@@ -8,6 +8,8 @@ use Spatie\Permission\Models\Role;
 use Athka\SystemSettings\Services\AccessControlService;
 use Athka\SystemSettings\Livewire\UserAccessControl\Traits\HandleBranchFilter;
 
+use Livewire\Attributes\On;
+
 class Roles extends Component
 {
     use WithPagination, HandleBranchFilter;
@@ -35,11 +37,18 @@ class Roles extends Component
         $this->uacService->syncPermissionDefinitions();
     }
 
+    #[On('open-add-role-modal')]
     public function openAddModal()
     {
         $this->authorize('uac.roles.manage');
         $this->reset(['name', 'description', 'selectedPermissions', 'editingId']);
+        $this->resetErrorBag();
         $this->showModal = true;
+    }
+
+    public function openEditModal($id)
+    {
+        $this->edit($id);
     }
 
     public function edit($id)
@@ -49,6 +58,7 @@ class Roles extends Component
         $this->editingId = $id;
         $this->name = $role->name;
         $this->selectedPermissions = $role->permissions->pluck('name')->toArray();
+        $this->resetErrorBag();
         $this->showModal = true;
     }
 
@@ -64,6 +74,35 @@ class Roles extends Component
 
         $this->showModal = false;
         $this->dispatch('toast', ['type' => 'success', 'message' => tr('Operation successful')]);
+    }
+
+    public function toggleGroup($groupName)
+    {
+        $this->authorize('uac.roles.manage');
+        $groups = $this->uacService->getPermissionGroups();
+        if (!isset($groups[$groupName])) return;
+
+        $groupPermissions = array_keys($groups[$groupName]);
+        $alreadySelected = array_intersect($groupPermissions, $this->selectedPermissions);
+
+        if (count($alreadySelected) === count($groupPermissions)) {
+            // Deselect all
+            $this->selectedPermissions = array_values(array_diff($this->selectedPermissions, $groupPermissions));
+        } else {
+            // Select all
+            $this->selectedPermissions = array_values(array_unique(array_merge($this->selectedPermissions, $groupPermissions)));
+        }
+    }
+
+    public function copyRole($id)
+    {
+        $this->authorize('uac.roles.manage');
+        $role = Role::findOrFail($id);
+        $this->reset(['editingId']);
+        $this->name = $role->name . ' - ' . tr('Copy');
+        $this->selectedPermissions = $role->permissions->pluck('name')->toArray();
+        $this->resetErrorBag();
+        $this->showModal = true;
     }
 
     public function delete($id)

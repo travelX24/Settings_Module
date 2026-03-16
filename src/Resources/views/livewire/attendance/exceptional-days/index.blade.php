@@ -20,7 +20,7 @@
                         : url('/company-admin/settings') ) }}"
                 :arrow="false"
                 :fullWidth="false"
-                class="!px-4 !py-2 !text-sm !rounded-xl !gap-2"
+                class="!px-4 !py-2 !text-sm !rounded-xl !gap-2 cursor-pointer"
             >
                 <i class="fas {{ app()->getLocale() == 'ar' ? 'fa-arrow-right' : 'fa-arrow-left' }} text-xs"></i>
                 <span>{{ tr('Back') }}</span>
@@ -41,7 +41,7 @@
                         wire:click="openCreate"
                         :arrow="false"
                         :fullWidth="false"
-                        class="!px-4 !py-2 !text-sm !rounded-xl !gap-2"
+                        class="!px-4 !py-2 !text-sm !rounded-xl !gap-2 cursor-pointer"
                     >
                         <i class="fas fa-plus text-xs"></i>
                         <span>{{ tr('Add Exceptional Day') }}</span>
@@ -53,7 +53,7 @@
                         wire:click="openCopyModal"
                         :arrow="false"
                         :fullWidth="false"
-                        class="!px-4 !py-2 !text-sm !rounded-xl !gap-2"
+                        class="!px-4 !py-2 !text-sm !rounded-xl !gap-2 cursor-pointer"
                     >
                         <i class="fas fa-copy text-xs"></i>
                         <span>{{ tr('Compare Years') }}</span>
@@ -65,7 +65,7 @@
                         wire:click="exportCsv"
                         :arrow="false"
                         :fullWidth="false"
-                        class="!px-4 !py-2 !text-sm !rounded-xl !gap-2"
+                        class="!px-4 !py-2 !text-sm !rounded-xl !gap-2 cursor-pointer"
                     >
                         <i class="fas fa-file-export text-xs"></i>
                         <span>{{ tr('Export CSV') }}</span>
@@ -84,7 +84,7 @@
                             onclick="window.dispatchEvent(new CustomEvent('open-confirm-exceptional-day-bulk-enable'));"
                             :arrow="false"
                             :fullWidth="false"
-                            class="!px-4 !py-2 !text-sm !rounded-xl !gap-2"
+                            class="!px-4 !py-2 !text-sm !rounded-xl !gap-2 cursor-pointer"
                         >
                             <i class="fas fa-toggle-on text-xs"></i>
                             <span>{{ tr('Enable') }}</span>
@@ -95,7 +95,7 @@
                             onclick="window.dispatchEvent(new CustomEvent('open-confirm-exceptional-day-bulk-disable'));"
                             :arrow="false"
                             :fullWidth="false"
-                            class="!px-4 !py-2 !text-sm !rounded-xl !gap-2"
+                            class="!px-4 !py-2 !text-sm !rounded-xl !gap-2 cursor-pointer"
                         >
                             <i class="fas fa-toggle-off text-xs"></i>
                             <span>{{ tr('Disable') }}</span>
@@ -106,7 +106,7 @@
                             onclick="window.dispatchEvent(new CustomEvent('open-confirm-exceptional-day-bulk-delete'));"
                             :arrow="false"
                             :fullWidth="false"
-                            class="!px-4 !py-2 !text-sm !rounded-xl !gap-2 !text-red-600"
+                            class="!px-4 !py-2 !text-sm !rounded-xl !gap-2 !text-red-600 cursor-pointer"
                         >
                             <i class="fas fa-trash text-xs"></i>
                             <span>{{ tr('Delete Selected') }}</span>
@@ -123,78 +123,78 @@
             <div class="grid grid-cols-1 md:grid-cols-6 gap-3 w-full">
 
                 <div>
+                    <div class="mb-1 text-xs text-gray-500">{{ tr('Year') }}</div>
                     <x-ui.input type="number" :placeholder="tr('Year')" wire:model.live="year" min="2000" max="2100" />
-                    <div class="mt-1 text-xs text-gray-500">{{ tr('Year') }}</div>
                 </div>
 
                 <div>
+                    <div class="mb-1 text-xs text-gray-500">{{ tr('Month') }}</div>
                     <x-ui.input type="number" :placeholder="tr('Month')" wire:model.live="month" min="1" max="12" />
-                    <div class="mt-1 text-xs text-gray-500">{{ tr('Month') }}</div>
                 </div>
 
                 <div>
+                    <div class="mb-1 text-xs text-gray-500">{{ tr('Status') }}</div>
                     <x-ui.select wire:model.live="status">
                         <option value="all">{{ tr('All') }}</option>
                         <option value="current">{{ tr('Active (Current)') }}</option>
                         <option value="upcoming">{{ tr('Upcoming') }}</option>
                         <option value="ended">{{ tr('Ended') }}</option>
                     </x-ui.select>
-                    <div class="mt-1 text-xs text-gray-500">{{ tr('Status') }}</div>
                 </div>
 
                 <div>
+                    <div class="mb-1 text-xs text-gray-500">{{ tr('Apply Type') }}</div>
                     <x-ui.select wire:model.live="deductionType">
                         <option value="all">{{ tr('All Types') }}</option>
                         <option value="absence">{{ tr('Absence') }}</option>
                         <option value="late">{{ tr('Late') }}</option>
                         <option value="without">{{ tr('Without Deduction') }}</option>
                     </x-ui.select>
-                    <div class="mt-1 text-xs text-gray-500">{{ tr('Apply Type') }}</div>
                 </div>
 
                 <div>
+                    <div class="mb-1 text-xs text-gray-500">{{ tr('Min Deduction %') }}</div>
                     <x-ui.input type="number" step="0.01" min="0" max="1000" wire:model.live="minMultiplier" :placeholder="tr('Min %')" />
-                    <div class="mt-1 text-xs text-gray-500">{{ tr('Min Deduction %') }}</div>
                 </div>
 
                 <div>
+                    <div class="mb-1 text-xs text-gray-500">{{ tr('Max Deduction %') }}</div>
                     <x-ui.input type="number" step="0.01" min="0" max="1000" wire:model.live="maxMultiplier" :placeholder="tr('Max %')" />
-                    <div class="mt-1 text-xs text-gray-500">{{ tr('Max Deduction %') }}</div>
                 </div>
 
                 <div class="md:col-span-2">
+                    <div class="mb-1 text-xs text-gray-500">{{ tr('Target Department') }}</div>
                     <x-ui.select wire:model.live="departmentId">
                         <option value="">{{ tr('All Departments') }}</option>
                         @foreach($departmentsOptions as $d)
                             <option value="{{ $d->id }}">{{ $d->name }}</option>
                         @endforeach
                     </x-ui.select>
-                    <div class="mt-1 text-xs text-gray-500">{{ tr('Target Department') }}</div>
                 </div>
 
                 <div class="md:col-span-2">
+                    <div class="mb-1 text-xs text-gray-500">{{ tr('Target Branch') }}</div>
                     <x-ui.select wire:model.live="branchId">
                         <option value="">{{ tr('All Branches') }}</option>
                         @foreach($branchesOptions as $b)
                             <option value="{{ $b->id }}">{{ $b->name }}</option>
                         @endforeach
                     </x-ui.select>
-                    <div class="mt-1 text-xs text-gray-500">{{ tr('Target Branch') }}</div>
                 </div>
 
                 <div class="md:col-span-2">
+                    <div class="mb-1 text-xs text-gray-500">{{ tr('Target Contract Type') }}</div>
                     <x-ui.select wire:model.live="contractType">
                         <option value="">{{ tr('All Contract Types') }}</option>
                         @foreach($contractTypesOptions as $ct)
                             <option value="{{ $ct->id }}">{{ $ct->name }}</option>
                         @endforeach
                     </x-ui.select>
-                    <div class="mt-1 text-xs text-gray-500">{{ tr('Target Contract Type') }}</div>
                 </div>
 
                 <div class="md:col-span-6">
+                    <div class="mb-1 text-xs text-gray-500">{{ tr('Search') }}</div>
                     <x-ui.search-box wire:model.live.debounce.300ms="search" :placeholder="tr('Search by name/description...')" />
-                    <div class="mt-1 text-xs text-gray-500">{{ tr('Search') }}</div>
                 </div>
 
             </div>
@@ -226,31 +226,29 @@
         </div>
 
         {{-- Table --}}
-        <x-ui.card class="!p-0 overflow-hidden">
-            <div class="overflow-x-auto">
-                <x-ui.table>
-                    <x-slot name="head">
-                        <tr>
-                            <th class="p-3 text-right w-10">
-                                <input type="checkbox" wire:model.live="selectPage" class="rounded">
-                            </th>
-                            <th class="p-3 text-right">{{ tr('Name') }}</th>
-                            <th class="p-3 text-right">{{ tr('Period') }}</th>
-                            <th class="p-3 text-right">{{ tr('Start') }}</th>
-                            <th class="p-3 text-right">{{ tr('End') }}</th>
-                            <th class="p-3 text-right">{{ tr('Apply') }}</th>
-                            <th class="p-3 text-right">{{ tr('Deduction %') }}</th>
-                            <th class="p-3 text-right">{{ tr('Grace Hours') }}</th>
-                            <th class="p-3 text-right">{{ tr('Scope') }}</th>
-                            <th class="p-3 text-right">{{ tr('Notified') }}</th>
-                            <th class="p-3 text-right">{{ tr('Created By') }}</th>
-                            <th class="p-3 text-right">{{ tr('Created At') }}</th>
-                            <th class="p-3 text-right">{{ tr('Active') }}</th>
-                            <th class="p-3 text-right">{{ tr('Actions') }}</th>
-                        </tr>
-                    </x-slot>
-
-                    <x-slot name="body">
+        <div class="bg-white rounded-3xl shadow-sm border border-gray-100 overflow-visible relative mt-2">
+            <table class="w-full text-start border-collapse table-fixed">
+                <thead>
+                    <tr class="bg-gray-50/50 border-b border-gray-100">
+                        <th class="w-10 px-6 py-4 text-[10px] font-black text-gray-400 uppercase tracking-widest text-right">
+                            <input type="checkbox" wire:model.live="selectPage" class="rounded cursor-pointer">
+                        </th>
+                        <th class="px-6 py-4 text-[10px] font-black text-gray-400 uppercase tracking-widest text-right">{{ tr('Name') }}</th>
+                        <th class="px-6 py-4 text-[10px] font-black text-gray-400 uppercase tracking-widest text-center">{{ tr('Period') }}</th>
+                        <th class="px-6 py-4 text-[10px] font-black text-gray-400 uppercase tracking-widest text-center">{{ tr('Start') }}</th>
+                        <th class="px-6 py-4 text-[10px] font-black text-gray-400 uppercase tracking-widest text-center">{{ tr('End') }}</th>
+                        <th class="px-6 py-4 text-[10px] font-black text-gray-400 uppercase tracking-widest text-center">{{ tr('Apply') }}</th>
+                        <th class="px-6 py-4 text-[10px] font-black text-gray-400 uppercase tracking-widest text-center">{{ tr('Deduction %') }}</th>
+                        <th class="px-6 py-4 text-[10px] font-black text-gray-400 uppercase tracking-widest text-center">{{ tr('Grace Hours') }}</th>
+                        <th class="px-6 py-4 text-[10px] font-black text-gray-400 uppercase tracking-widest text-center">{{ tr('Scope') }}</th>
+                        <th class="px-6 py-4 text-[10px] font-black text-gray-400 uppercase tracking-widest text-center">{{ tr('Notified') }}</th>
+                        <th class="px-6 py-4 text-[10px] font-black text-gray-400 uppercase tracking-widest text-center">{{ tr('Created By') }}</th>
+                        <th class="px-6 py-4 text-[10px] font-black text-gray-400 uppercase tracking-widest text-center">{{ tr('Created At') }}</th>
+                        <th class="px-6 py-4 text-[10px] font-black text-gray-400 uppercase tracking-widest text-center">{{ tr('Active') }}</th>
+                        <th class="px-6 py-4 text-[10px] font-black text-gray-400 uppercase tracking-widest text-right">{{ tr('Actions') }}</th>
+                    </tr>
+                </thead>
+                <tbody class="divide-y divide-gray-50">
                         @forelse($rows as $row)
                             @php
                                 $apply = (string) ($row->apply_on ?? 'absence');
@@ -283,183 +281,98 @@
                                 $isWithout = ($apply === 'none') || ($percent <= 0);
                             @endphp
 
-                            <tr class="border-t">
-                                <td class="p-3">
-                                    <input type="checkbox" wire:model.live="selected" value="{{ $row->id }}" class="rounded">
+                            <tr class="hover:bg-gray-50/40 transition-colors cursor-default border-t">
+                                <td class="px-6 py-4">
+                                    <input type="checkbox" wire:model.live="selected" value="{{ $row->id }}" class="rounded cursor-pointer">
                                 </td>
 
-                                <td class="p-3">
-                                    <div class="font-semibold">{{ $row->name }}</div>
+                                <td class="px-6 py-4 text-right">
+                                    <div class="text-sm font-bold text-gray-800">{{ $row->name }}</div>
                                     @if(!empty($row->description))
-                                        <div class="text-xs text-gray-500 line-clamp-2">{{ $row->description }}</div>
+                                        <div class="text-[10px] text-gray-400 truncate">{{ $row->description }}</div>
                                     @endif
                                 </td>
 
-                                <td class="p-3">
-                                    {{ ($row->period_type === 'single') ? tr('Single Day') : tr('Range') }}
+                                <td class="px-6 py-4 text-center">
+                                    <span class="text-xs font-semibold text-gray-700">
+                                        {{ ($row->period_type === 'single') ? tr('Single Day') : tr('Range') }}
+                                    </span>
                                 </td>
 
-                                <td class="p-3">{{ optional($row->start_date)->format('Y-m-d') }}</td>
-                                <td class="p-3">{{ optional($row->end_date ?? $row->start_date)->format('Y-m-d') }}</td>
+                                <td class="px-6 py-4 text-center text-xs font-semibold text-gray-700">{{ optional($row->start_date)->format('Y-m-d') }}</td>
+                                <td class="px-6 py-4 text-center text-xs font-semibold text-gray-700">{{ optional($row->end_date ?? $row->start_date)->format('Y-m-d') }}</td>
 
-                                <td class="p-3">{{ $applyLabel }}</td>
+                                <td class="px-6 py-4 text-center text-xs font-semibold text-gray-700">{{ $applyLabel }}</td>
 
-                                <td class="p-3">
+                                <td class="px-6 py-4 text-center text-xs font-semibold text-gray-700">
                                     {{ $isWithout ? '—' : number_format($percent, 2) . '%' }}
                                 </td>
 
-                                <td class="p-3">
+                                <td class="px-6 py-4 text-center text-xs font-semibold text-gray-700">
                                     {{ ($apply === 'late' && !$isWithout) ? (int) $row->grace_hours : '—' }}
                                 </td>
 
-                                <td class="p-3">{{ $scopeLabel }}</td>
+                                <td class="px-6 py-4 text-center text-xs font-semibold text-gray-700">{{ $scopeLabel }}</td>
 
-                                <td class="p-3">
+                                <td class="px-6 py-4 text-center text-xs font-semibold text-gray-700">
                                     {{ $row->notified_at ? tr('Sent') : tr('Not Sent') }}
                                 </td>
 
-                                <td class="p-3">
+                                <td class="px-6 py-4 text-center text-xs font-semibold text-gray-700">
                                     {{ $createdByMap[$row->created_by] ?? ($row->created_by ?? '—') }}
                                 </td>
 
-                                <td class="p-3">
+                                <td class="px-6 py-4 text-center text-xs font-semibold text-gray-700">
                                     {{ optional($row->created_at)->format('Y-m-d') ?? '—' }}
                                 </td>
 
-                                <td class="p-3">
-                                    @can('settings.attendance.manage')
-                                    <button
-                                        type="button"
-                                        wire:click="toggleActive({{ $row->id }})"
-                                        class="inline-flex items-center gap-2 px-3 py-1 rounded-full text-xs border
-                                            {{ $row->is_active ? 'bg-green-50 border-green-200 text-green-700' : 'bg-gray-50 border-gray-200 text-gray-700' }}"
-                                    >
-                                        <span class="w-1.5 h-1.5 rounded-full {{ $row->is_active ? 'bg-green-500' : 'bg-gray-400' }}"></span>
-                                        {{ $row->is_active ? tr('Enabled') : tr('Disabled') }}
-                                    </button>
-                                    @else
-                                    <span class="inline-flex items-center gap-2 px-3 py-1 rounded-full text-xs border
-                                            {{ $row->is_active ? 'bg-green-50 border-green-200 text-green-700' : 'bg-gray-50 border-gray-200 text-gray-700' }}"
-                                    >
-                                        <span class="w-1.5 h-1.5 rounded-full {{ $row->is_active ? 'bg-green-500' : 'bg-gray-400' }}"></span>
-                                        {{ $row->is_active ? tr('Enabled') : tr('Disabled') }}
-                                    </span>
-                                    @endcan
+                                <td class="px-6 py-4 text-center">
+                                    <div class="flex justify-center">
+                                        @can('settings.attendance.manage')
+                                        <button wire:click="toggleActive({{ $row->id }})" class="w-9 h-4.5 rounded-full p-1 transition-all relative cursor-pointer {{ $row->is_active ? 'bg-green-500' : 'bg-gray-200' }}">
+                                            <div class="w-2.5 h-2.5 bg-white rounded-full shadow-sm transition-all {{ $row->is_active ? (app()->getLocale() == 'ar' ? 'mr-4.5' : 'ml-4.5') : '' }}"></div>
+                                        </button>
+                                        @else
+                                        <button disabled class="w-9 h-4.5 rounded-full p-1 transition-all relative cursor-not-allowed opacity-50 {{ $row->is_active ? 'bg-green-500' : 'bg-gray-200' }}">
+                                            <div class="w-2.5 h-2.5 bg-white rounded-full shadow-sm transition-all {{ $row->is_active ? (app()->getLocale() == 'ar' ? 'mr-4.5' : 'ml-4.5') : '' }}"></div>
+                                        </button>
+                                        @endcan
+                                    </div>
                                 </td>
 
-                                {{-- ✅ FIXED Actions: Teleport dropdown خارج الجدول (بدون حاوية داخل حاوية) --}}
-                                <td class="p-3 text-right">
+                                <td class="px-6 py-4 text-right">
                                     @can('settings.attendance.manage')
-                                    <div
-                                        class="inline-flex"
-                                        x-data="{
-                                            open: false,
-                                            top: 0,
-                                            left: 0,
-                                            toggle() {
-                                                this.open = !this.open;
-                                                if (this.open) this.$nextTick(() => this.reposition());
-                                            },
-                                            close() { this.open = false; },
-                                            reposition() {
-                                                const btn = this.$refs.btn;
-                                                const menu = this.$refs.menu;
-                                                if (!btn || !menu) return;
-
-                                                const r = btn.getBoundingClientRect();
-                                                const gap = 8;
-
-                                                const mw = menu.offsetWidth || 200;
-                                                const mh = menu.offsetHeight || 160;
-
-                                                let left = r.right - mw;
-
-                                                left = Math.max(8, Math.min(left, window.innerWidth - mw - 8));
-
-                                                let top = r.bottom + gap;
-
-                                                if (top + mh > window.innerHeight - 8) {
-                                                    top = Math.max(8, r.top - mh - gap);
-                                                }
-
-                                                this.left = Math.round(left);
-                                                this.top  = Math.round(top);
-                                            },
-                                        }"
-                                        @keydown.escape.window="close()"
-                                        @scroll.window="open && reposition()"
-                                        @resize.window="open && reposition()"
-                                        @click.window="
-                                            if (!open) return;
-                                            const t = $event.target;
-                                            if ($refs.btn && $refs.btn.contains(t)) return;
-                                            if ($refs.menu && $refs.menu.contains(t)) return;
-                                            close();
-                                        "
-                                    >
-                                        {{-- زر النقاط --}}
-                                        <button
-                                            type="button"
-                                            x-ref="btn"
-                                            @click="toggle()"
-                                            class="inline-flex items-center justify-center w-9 h-9 rounded-xl border border-gray-200 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-purple-200"
-                                            aria-label="{{ tr('Actions') }}"
-                                        >
-                                            <i class="fas fa-ellipsis-v text-sm opacity-80"></i>
-                                        </button>
-
-                                        {{-- القائمة (Teleported) --}}
-                                        <template x-teleport="body">
-                                            <div
-                                                x-cloak
-                                                x-show="open"
-                                                x-transition.origin.top.right
-                                                x-ref="menu"
-                                                class="fixed z-[9999] min-w-[180px] rounded-xl border border-gray-200 bg-white shadow-lg overflow-hidden"
-                                                :style="`top:${top}px; left:${left}px;`"
-                                                role="menu"
-                                                aria-label="{{ tr('Actions') }}"
-                                            >
-                                                <button
-                                                    type="button"
-                                                    role="menuitem"
-                                                    class="w-full flex items-center gap-2 px-3 py-2 text-sm hover:bg-gray-50"
-                                                    @click="close(); $wire.openEdit({{ $row->id }})"
-                                                >
-                                                    <i class="fas fa-pen text-xs opacity-80"></i>
-                                                    <span>{{ tr('Edit') }}</span>
-                                                </button>
-
-                                                <button
-                                                    type="button"
-                                                    role="menuitem"
-                                                    class="w-full flex items-center gap-2 px-3 py-2 text-sm text-red-600 hover:bg-red-50"
-                                                    @click="close(); window.dispatchEvent(new CustomEvent('open-confirm-exceptional-day-delete', { detail: { id: {{ $row->id }} } }));"
-                                                >
-                                                    <i class="fas fa-trash text-xs opacity-80"></i>
-                                                    <span>{{ tr('Delete') }}</span>
-                                                </button>
-                                            </div>
-                                        </template>
-                                    </div>
+                                            <x-ui.actions-menu>
+                                                <x-ui.dropdown-item wire:click="openEdit({{ $row->id }})" class="cursor-pointer">
+                                                    <i class="fas fa-edit me-2 text-blue-500"></i> {{ tr('Edit') }}
+                                                </x-ui.dropdown-item>
+                                                <x-ui.dropdown-item danger onclick="window.dispatchEvent(new CustomEvent('open-confirm-exceptional-day-delete', { detail: { id: {{ $row->id }} } }));" class="cursor-pointer">
+                                                    <i class="fas fa-trash-alt me-2 text-red-500"></i> {{ tr('Delete') }}
+                                                </x-ui.dropdown-item>
+                                            </x-ui.actions-menu>
                                     @endcan
                                 </td>
                             </tr>
                         @empty
                             <tr>
-                                <td class="p-8 text-center text-gray-500" colspan="14">
-                                    {{ tr('No records found.') }}
+                                <td colspan="14" class="px-6 py-24 text-center border-t border-gray-100">
+                                    <div class="opacity-20 flex flex-col items-center">
+                                        <div class="w-24 h-24 bg-gray-50 rounded-full flex items-center justify-center text-4xl mb-4 border border-gray-100">
+                                            <i class="fas fa-calendar-times"></i>
+                                        </div>
+                                        <h4 class="text-base font-bold text-gray-800">{{ tr('Database Empty') }}</h4>
+                                        <p class="text-xs max-w-[250px] mt-2 leading-relaxed">{{ tr('No records found.') }}</p>
+                                    </div>
                                 </td>
                             </tr>
                         @endforelse
-                    </x-slot>
-                </x-ui.table>
-            </div>
+                </tbody>
+            </table>
 
             <div class="border-t p-4">
                 {{ $rows->links() }}
             </div>
-        </x-ui.card>
+        </div>
 
         {{-- Modal Create/Edit --}}
         <x-ui.modal wire:model="showModal" maxWidth="4xl">
@@ -671,8 +584,8 @@
                             </div>
 
                             <div class="md:col-span-2 flex items-center gap-2">
-                                <input type="checkbox" wire:model.defer="form.is_active" id="is_active" class="rounded">
-                                <label for="is_active" class="text-sm">{{ tr('Enabled') }}</label>
+                                <input type="checkbox" wire:model.defer="form.is_active" id="is_active" class="rounded cursor-pointer">
+                                <label for="is_active" class="text-sm cursor-pointer">{{ tr('Enabled') }}</label>
                             </div>
 
                         </div>
@@ -687,7 +600,8 @@
                 </x-ui.secondary-button>
 
                 @can('settings.attendance.manage')
-                <x-ui.primary-button type="button" wire:click="save">
+                <x-ui.primary-button type="button" wire:click="save" loading="save" class="cursor-pointer">
+                    <i class="fas fa-save me-2" wire:loading.remove wire:target="save"></i>
                     {{ tr('Save') }}
                 </x-ui.primary-button>
                 @endcan
@@ -729,7 +643,7 @@
                                 <x-ui.primary-button
                                     type="button"
                                     wire:click="copySelectedDays"
-                                    class="w-full justify-center"
+                                    class="w-full justify-center cursor-pointer"
                                 >
                                     <i class="fas fa-copy text-xs"></i>
                                     <span>{{ tr('Copy Selected') }}</span>
@@ -749,7 +663,7 @@
                                 <x-slot name="head">
                                     <tr>
                                         <th class="p-3 text-right w-10">
-                                            <input type="checkbox" wire:model.live="copySelectAll" class="rounded">
+                                            <input type="checkbox" wire:model.live="copySelectAll" class="rounded cursor-pointer">
                                         </th>
                                         <th class="p-3 text-right">{{ tr('Name') }}</th>
                                         <th class="p-3 text-right">{{ tr('Start') }}</th>
@@ -780,7 +694,7 @@
                                             <td class="p-3">
                                                 <input
                                                     type="checkbox"
-                                                    class="rounded"
+                                                    class="rounded cursor-pointer"
                                                     wire:model.live="copySelected"
                                                     value="{{ $r->id }}"
                                                 >
@@ -808,7 +722,7 @@
                                                     wire:click="copyOneDay({{ $r->id }})"
                                                     :arrow="false"
                                                     :fullWidth="false"
-                                                    class="!px-3 !py-1.5 !text-xs !rounded-lg !gap-2"
+                                                    class="!px-3 !py-1.5 !text-xs !rounded-lg !gap-2 cursor-pointer"
                                                 >
                                                     <i class="fas fa-copy text-xs"></i>
                                                     <span>{{ tr('Copy') }}</span>
@@ -831,7 +745,7 @@
             </x-slot>
 
             <x-slot name="footer">
-                <x-ui.secondary-button type="button" wire:click="$set('showCopyModal', false)">
+                <x-ui.secondary-button type="button" wire:click="$set('showCopyModal', false)" class="cursor-pointer">
                     {{ tr('Close') }}
                 </x-ui.secondary-button>
             </x-slot>

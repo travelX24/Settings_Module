@@ -13,6 +13,16 @@ trait HandleLeavePolicies
         $this->createOpen = true;
     }
 
+    public function saveCreate()
+    {
+        $this->savePolicy();
+    }
+
+    public function saveEdit()
+    {
+        $this->savePolicy();
+    }
+
     public function savePolicy()
     {
         $this->authorize('settings.attendance.manage');
@@ -22,6 +32,8 @@ trait HandleLeavePolicies
         ]);
 
         $data = [
+            'company_id' => auth()->user()->saas_company_id,
+            'policy_year_id' => $this->selectedYearId,
             'name' => $this->name,
             'leave_type' => $this->leave_type,
             'days_per_year' => $this->days_per_year,
@@ -30,6 +42,7 @@ trait HandleLeavePolicies
             'show_in_app' => $this->show_in_app,
             'requires_attachment' => $this->requires_attachment,
             'description' => $this->description,
+            'excluded_contract_types' => $this->selected_leave_excluded_contract_types,
             'settings' => [
                 'accrual_method' => $this->accrual_method,
                 'monthly_accrual_rate' => $this->monthly_accrual_rate,
@@ -37,6 +50,15 @@ trait HandleLeavePolicies
                 'carryover_days' => $this->carryover_days,
                 'weekend_policy' => $this->weekend_policy,
                 'deduction_policy' => $this->deduction_policy,
+                'max_balance' => $this->max_balance,
+                'duration_unit' => $this->duration_unit,
+                'notice_min_days' => $this->notice_min_days,
+                'notice_max_advance_days' => $this->notice_max_advance_days,
+                'allow_retroactive' => $this->allow_retroactive,
+                'note_required' => $this->note_required,
+                'note_text' => $this->note_text,
+                'note_ack_required' => $this->note_ack_required,
+                'attachment_types' => $this->attachment_types,
             ]
         ];
 
@@ -68,6 +90,21 @@ trait HandleLeavePolicies
         $this->weekend_policy = $settings['weekend_policy'] ?? 'exclude';
         $this->deduction_policy = $settings['deduction_policy'] ?? 'balance_only';
 
+        $this->max_balance = $settings['max_balance'] ?? 0;
+        $this->duration_unit = $settings['duration_unit'] ?? 'full_day';
+        $this->notice_min_days = $settings['notice_min_days'] ?? 0;
+        $this->notice_max_advance_days = $settings['notice_max_advance_days'] ?? 0;
+        $this->allow_retroactive = $settings['allow_retroactive'] ?? false;
+        $this->selected_leave_excluded_contract_types = $policy->excluded_contract_types ?? [];
+        $this->note_required = $settings['note_required'] ?? false;
+        $this->note_text = $settings['note_text'] ?? '';
+        $this->note_ack_required = $settings['note_ack_required'] ?? false;
+        $this->attachment_types = $settings['attachment_types'] ?? ['pdf', 'jpg', 'png'];
+
+        $this->editingNameLocked = (string) data_get($settings, 'meta.system_key', '') === 'annual_default'
+            || trim((string) $this->name) === 'سنوية'
+            || trim((string) $this->name) === 'Annual';
+
         $this->editOpen = true;
     }
 
@@ -75,6 +112,12 @@ trait HandleLeavePolicies
     {
         $this->editingId = $id;
         $this->deleteOpen = true;
+    }
+
+    public function closeDelete()
+    {
+        $this->deleteOpen = false;
+        $this->reset(['editingId']);
     }
 
     public function copyPolicy($id)

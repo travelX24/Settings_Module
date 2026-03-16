@@ -85,10 +85,16 @@
             wire:loading.attr="disabled"
             :arrow="false"
             :fullWidth="false"
-            class="!px-6 !py-2 !rounded-xl !bg-red-600 hover:!bg-red-700"
+            class="!px-6 !py-2 !rounded-xl !bg-red-600 hover:!bg-red-700 cursor-pointer"
         >
-            <i class="fas fa-save me-2"></i>
-            {{ tr('Save Absence Penalties') }}
+            <span wire:loading.remove wire:target="saveBasicAbsencePenalty">
+                <i class="fas fa-save me-2"></i>
+                {{ tr('Save Absence Penalties') }}
+            </span>
+            <span wire:loading wire:target="saveBasicAbsencePenalty" class="flex items-center gap-2">
+                <i class="fas fa-spinner fa-spin"></i>
+                {{ tr('Saving...') }}
+            </span>
         </x-ui.primary-button>
     </div>
     @endcan

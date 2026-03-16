@@ -28,7 +28,7 @@
         href="{{ route('company-admin.settings.attendance') }}"
         :arrow="false"
         :fullWidth="false"
-        class="!px-4 !py-2 !text-sm !rounded-xl !gap-2"
+        class="!px-4 !py-2 !text-sm !rounded-xl !gap-2 cursor-pointer"
     >
         <i class="fas {{ $isRtl ? 'fa-arrow-right' : 'fa-arrow-left' }} text-xs"></i>
         <span>{{ tr('Back') }}</span>
@@ -51,10 +51,13 @@
                 <div class="flex flex-wrap items-center gap-2 sm:shrink-0">
                     <x-ui.secondary-button
                         :fullWidth="false"
-                        class="!border-amber-200 !bg-amber-50/50 !text-amber-700 hover:!bg-amber-100"
+                        wire:click="exportCsv"
+                        wire:loading.attr="disabled"
+                        class="!border-amber-200 !bg-amber-50/50 !text-amber-700 hover:!bg-amber-100 cursor-pointer"
                     >
-                        <i class="fas fa-file-export"></i>
-                        <span class="ms-2">{{ tr('Export') }}</span>
+                        <i class="fas fa-file-export" wire:loading.remove wire:target="exportCsv"></i>
+                        <i class="fas fa-circle-notch fa-spin" wire:loading wire:target="exportCsv"></i>
+                        <span class="ms-2 leading-none">{{ tr('Export') }}</span>
                     </x-ui.secondary-button>
 
                     @can('settings.attendance.manage')
@@ -62,6 +65,7 @@
                             :arrow="false"
                             :fullWidth="false"
                             wire:click="openCreate"
+                            class="cursor-pointer"
                         >
                             <i class="fas fa-plus"></i>
                             <span class="ms-2">{{ tr('New Holiday') }}</span>
@@ -76,7 +80,7 @@
                     <button
                         type="button"
                         @click="open = !open"
-                        class="flex items-center justify-between text-sm font-semibold text-gray-700 hover:text-gray-900 transition-colors"
+                        class="flex items-center justify-between text-sm font-semibold text-gray-700 hover:text-gray-900 transition-colors cursor-pointer"
                     >
                         <span class="flex items-center gap-2">
                             <i class="fas fa-filter text-xs"></i>
@@ -141,7 +145,7 @@
                                 wire:click="clearAllFilters"
                                 wire:loading.attr="disabled"
                                 wire:target="clearAllFilters"
-                                class="inline-flex items-center gap-2 px-3 py-1.5 text-xs font-semibold text-gray-600 hover:text-gray-900 transition-colors disabled:opacity-50"
+                                class="inline-flex items-center gap-2 px-3 py-1.5 text-xs font-semibold text-gray-600 hover:text-gray-900 transition-colors disabled:opacity-50 cursor-pointer"
                             >
                                 <i class="fas fa-times" wire:loading.remove wire:target="clearAllFilters"></i>
                                 <i class="fas fa-spinner fa-spin" wire:loading wire:target="clearAllFilters"></i>
@@ -190,10 +194,11 @@
                         </td>
 
                         <td class="px-6 py-4 text-center">
-                            <span class="text-xs font-semibold text-gray-700">
-                                {{ $row->start_date }}
-                                @if($row->end_date && $row->end_date !== $row->start_date)
-                                    - {{ $row->end_date }}
+                            <span class="text-[11px] font-bold text-gray-700 tabular-nums">
+                                {{ $row->start_date ? $row->start_date->format('Y-m-d') : '—' }}
+                                @if($row->end_date && $row->end_date->format('Y-m-d') !== $row->start_date?->format('Y-m-d'))
+                                    <span class="mx-1 text-gray-300">→</span>
+                                    {{ $row->end_date->format('Y-m-d') }}
                                 @endif
                             </span>
                         </td>
@@ -205,11 +210,15 @@
                         <td class="px-6 py-4 text-end">
                             @can('settings.attendance.manage')
                             <x-ui.actions-menu>
-                                <x-ui.dropdown-item wire:click.stop="openEdit({{ (int) $row->id }})">
+                                <x-ui.dropdown-item wire:click.stop="openEdit({{ (int) $row->id }})" class="cursor-pointer">
                                     <i class="fas fa-edit me-2 text-blue-500"></i> {{ tr('Edit') }}
                                 </x-ui.dropdown-item>
 
-                                <x-ui.dropdown-item danger wire:click.stop="confirmDelete({{ (int) $row->id }})">
+                                <x-ui.dropdown-item 
+                                    danger 
+                                    @click.stop="$dispatch('open-confirm-delete-holiday', { id: {{ $row->id }} })" 
+                                    class="cursor-pointer"
+                                >
                                     <i class="fas fa-trash-alt me-2 text-red-500"></i> {{ tr('Delete') }}
                                 </x-ui.dropdown-item>
                             </x-ui.actions-menu>
@@ -319,11 +328,11 @@
 
         <x-slot:footer>
             <div class="flex items-center justify-end gap-3 w-full">
-                <x-ui.secondary-button wire:click="closeCreate" class="!px-6 !rounded-xl">
+                <x-ui.secondary-button wire:click="closeCreate" class="!px-6 !rounded-xl cursor-pointer">
                     {{ tr('Cancel') }}
                 </x-ui.secondary-button>
                 @can('settings.attendance.manage')
-                <x-ui.primary-button wire:click="saveNewHoliday" class="!px-6 !rounded-xl shadow-lg">
+                <x-ui.primary-button wire:click="saveNewHoliday" loading="saveNewHoliday" class="!px-6 !rounded-xl shadow-lg cursor-pointer" :arrow="false">
                     <i class="fas fa-save me-2"></i>
                     {{ tr('Save') }}
                 </x-ui.primary-button>
@@ -409,11 +418,11 @@
 
         <x-slot:footer>
             <div class="flex items-center justify-end gap-3 w-full">
-                <x-ui.secondary-button wire:click="closeEdit" class="!px-6 !rounded-xl">
+                <x-ui.secondary-button wire:click="closeEdit" class="!px-6 !rounded-xl cursor-pointer">
                     {{ tr('Cancel') }}
                 </x-ui.secondary-button>
                 @can('settings.attendance.manage')
-                <x-ui.primary-button wire:click="saveEditHoliday" class="!px-6 !rounded-xl shadow-lg">
+                <x-ui.primary-button wire:click="saveEditHoliday" loading="saveEditHoliday" class="!px-6 !rounded-xl shadow-lg cursor-pointer" :arrow="false">
                     <i class="fas fa-save me-2"></i>
                     {{ tr('Update') }}
                 </x-ui.primary-button>
@@ -422,53 +431,17 @@
         </x-slot:footer>
     </x-ui.modal>
 
-    {{-- ========================= --}}
-    {{-- Delete Confirm Modal --}}
-    {{-- ========================= --}}
-    {{-- Delete Confirm Modal --}}
-    <x-ui.modal wire:model="confirmDeleteOpen" maxWidth="md">
-        <x-slot:title>
-            <div class="flex items-center gap-3">
-                <div class="w-10 h-10 bg-red-50 text-red-600 rounded-xl flex items-center justify-center text-lg border border-red-100 shadow-sm">
-                    <i class="fas fa-trash-alt"></i>
-                </div>
-                <div>
-                    <h3 class="font-bold text-gray-900 text-lg leading-tight">{{ tr('Delete Holiday') }}</h3>
-                    <p class="text-[10px] text-gray-400 font-bold uppercase tracking-widest">{{ tr('Confirm Action') }}</p>
-                </div>
-            </div>
-        </x-slot:title>
-
-        <x-slot:content>
-            <div class="py-4 text-center">
-                <div class="text-sm text-gray-600 leading-relaxed mb-2">
-                    {{ tr('Are you sure you want to delete') }}:
-                </div>
-                <div class="text-base font-black text-gray-800 bg-red-50 py-2 rounded-xl mb-4 border border-red-100">
-                    {{ $deleteHolidayName }}
-                </div>
-                <div class="text-xs text-red-500 font-semibold">
-                    {{ tr('This action cannot be undone.') }}
-                </div>
-            </div>
-        </x-slot:content>
-
-        <x-slot:footer>
-            <div class="flex items-center justify-end gap-3 w-full">
-                <x-ui.secondary-button wire:click="closeDelete" class="!px-6 !rounded-xl">
-                    {{ tr('Cancel') }}
-                </x-ui.secondary-button>
-
-                @can('settings.attendance.manage')
-                <x-ui.primary-button
-                    wire:click="deleteHoliday"
-                    class="!bg-red-600 hover:!bg-red-700 !px-6 !rounded-xl shadow-lg shadow-red-200"
-                >
-                    <i class="fas fa-trash me-2"></i>
-                    {{ tr('Delete') }}
-                </x-ui.primary-button>
-                @endcan
-            </div>
-        </x-slot:footer>
-    </x-ui.modal>
+    <template x-teleport="body">
+        <div>
+            <x-ui.confirm-dialog 
+                id="delete-holiday" 
+                confirmText="{{ tr('Delete') }}"
+                cancelText="{{ tr('Cancel') }}"
+                confirmAction="wire:deleteHoliday(__ID__)"
+                title="{{ tr('Delete Holiday') }}"
+                message="{{ tr('Are you sure you want to delete this holiday? This action cannot be undone.') }}"
+                type="danger"
+            />
+        </div>
+    </template>
 </div>

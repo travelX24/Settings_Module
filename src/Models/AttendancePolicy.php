@@ -42,7 +42,7 @@ class AttendancePolicy extends Model
         return $this->belongsTo(User::class, 'updated_by_user_id');
     }
 
-    public function penaltyPolicies(): HasMany
+    public function penalties(): HasMany
     {
         return $this->hasMany(AttendancePenaltyPolicy::class, 'policy_id');
     }

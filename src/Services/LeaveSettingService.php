@@ -18,6 +18,7 @@ class LeaveSettingService
             ->when($filters['search'], fn($q) => $q->where('name', 'like', "%{$filters['search']}%"))
             ->when($filters['status'] !== 'all', fn($q) => $q->where('is_active', $filters['status'] === 'active'))
             ->when($filters['gender'] !== 'all', fn($q) => $q->where('gender', $filters['gender']))
+            ->when(isset($filters['year_id']) && $filters['year_id'] !== 'all', fn($q) => $q->where('policy_year_id', $filters['year_id']))
             ->latest()
             ->paginate($perPage);
     }
@@ -38,8 +39,9 @@ class LeaveSettingService
      */
     public function savePermissionSettings(array $data): PermissionPolicy
     {
-        $policy = PermissionPolicy::firstOrNew(['saas_company_id' => auth()->user()->saas_company_id]);
-        $policy->fill($data);
+        $companyId = auth()->user()->saas_company_id;
+        $policy = PermissionPolicy::firstOrNew(['company_id' => $companyId]);
+        $policy->fill(array_merge($data, ['company_id' => $companyId]));
         $policy->save();
         return $policy;
     }

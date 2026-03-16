@@ -191,10 +191,10 @@ class CurrenciesManager extends Component
                 }
             }
         });
-
-        session()->flash('success', tr('Saved successfully'));
+        
         $this->modalOpen = false;
         $this->resetForm();
+        $this->dispatch('toast', ['type' => 'success', 'message' => tr('Saved successfully')]);
     }
 
     public function setDefault(int $id): void
@@ -204,8 +204,8 @@ class CurrenciesManager extends Component
             $this->baseQuery()->update(['is_default' => false]);
             $this->baseQuery()->whereKey($id)->update(['is_default' => true]);
         });
-
-        session()->flash('success', tr('Default currency updated'));
+        
+        $this->dispatch('toast', ['type' => 'success', 'message' => tr('Default currency updated')]);
     }
 
     public function confirmDelete(int $id): void
@@ -234,29 +234,29 @@ class CurrenciesManager extends Component
         $c = $this->baseQuery()->findOrFail($id);
 
         if ($c->is_default) {
-            session()->flash('error', tr('Cannot delete default currency'));
             $this->cancelDelete();
+            $this->dispatch('toast', ['type' => 'error', 'message' => tr('Cannot delete default currency')]);
             return;
         }
 
         $count = (int) $this->baseQuery()->count();
         if ($count <= 1) {
-            session()->flash('error', tr('At least one currency must remain'));
             $this->cancelDelete();
+            $this->dispatch('toast', ['type' => 'error', 'message' => tr('At least one currency must remain')]);
             return;
         }
 
         $linkedCount = $this->linkedTransactionsCount($c->id);
         if ($linkedCount > 0) {
-            session()->flash('error', tr('Cannot delete currency because it is linked to :count transaction(s)', ['count' => $linkedCount]));
             $this->cancelDelete();
+            $this->dispatch('toast', ['type' => 'error', 'message' => tr('Cannot delete currency because it is linked to :count transaction(s)', ['count' => $linkedCount])]);
             return;
         }
 
         $c->delete();
-
-        session()->flash('success', tr('Deleted successfully'));
+        
         $this->cancelDelete();
+        $this->dispatch('toast', ['type' => 'success', 'message' => tr('Deleted successfully')]);
     }
 
     protected function resetForm(): void
@@ -265,6 +265,7 @@ class CurrenciesManager extends Component
             'editingId', 'name', 'symbol', 'code', 'is_default', 'codeLocked',
         ]);
         $this->mode = 'create';
+        $this->resetErrorBag();
         $this->resetValidation();
     }
 

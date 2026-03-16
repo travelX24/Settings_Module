@@ -5,7 +5,7 @@
             {{ tr('Recurring Violations (2, 3, 4)') }}
         </h3>
         @can('settings.attendance.manage')
-        <x-ui.secondary-button wire:click="openPenaltyModal" class="!px-4 !py-2 !text-xs !rounded-xl shadow-sm">
+        <x-ui.secondary-button wire:click="openPenaltyModal" class="!px-4 !py-2 !text-xs !rounded-xl shadow-sm cursor-pointer">
             <i class="fas fa-plus me-1 text-purple-500"></i>
             {{ tr('Add Recurring Violation') }}
         </x-ui.secondary-button>

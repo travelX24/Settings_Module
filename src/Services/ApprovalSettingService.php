@@ -87,6 +87,6 @@ class ApprovalSettingService
             $query->where('company_id', $companyId);
         }
 
-        return $query->orderBy('name')->get()->toArray();
+        return $query->orderBy('name')->get()->map(fn($item) => (array)$item)->toArray();
     }
 }

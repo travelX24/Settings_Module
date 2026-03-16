@@ -3,7 +3,7 @@
 namespace Athka\SystemSettings\Livewire\Attendance\ExceptionalDays;
 
 use Athka\SystemSettings\Models\AttendanceExceptionalDay;
-use Illuminate\Database\Eloquent\Builder;
+use Athka\SystemSettings\Services\ExceptionalDayService;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Schema;
 use Illuminate\Validation\Rule;
@@ -78,6 +78,13 @@ class ExceptionalDaysIndex extends Component
 
         'is_active' => true,
     ];
+
+    protected ExceptionalDayService $exceptionalDayService;
+
+    public function boot(ExceptionalDayService $exceptionalDayService): void
+    {
+        $this->exceptionalDayService = $exceptionalDayService;
+    }
 
     public function mount(): void
     {
@@ -255,6 +262,7 @@ class ExceptionalDaysIndex extends Component
             'form.is_active' => ['boolean'],
         ];
     }
+    
     private function companyId(): int
     {
         if (app()->bound('currentCompany') && app('currentCompany')) {
@@ -264,112 +272,20 @@ class ExceptionalDaysIndex extends Component
         return (int) (auth()->user()->saas_company_id ?? auth()->user()->company_id ?? 0);
     }
 
-
-    private function rowsQuery(int $companyId): Builder
+    private function getFilters(): array
     {
-        $today = now()->toDateString();
-
-        $minPercent = ($this->minMultiplier !== null) ? (float) $this->minMultiplier : null;
-        $maxPercent = ($this->maxMultiplier !== null) ? (float) $this->maxMultiplier : null;
-
-        $minFactor = ($minPercent !== null) ? ($minPercent / 100.0) : null;
-        $maxFactor = ($maxPercent !== null) ? ($maxPercent / 100.0) : null;
-
-        $q = AttendanceExceptionalDay::query()
-            ->where('company_id', $companyId)
-            ->when($this->year, fn ($qq) => $qq->whereYear('start_date', $this->year))
-            ->when($this->month, fn ($qq) => $qq->whereMonth('start_date', $this->month))
-            ->when($this->search !== '', function ($qq) {
-                $s = trim($this->search);
-                $qq->where(function ($q2) use ($s) {
-                    $q2->where('name', 'like', "%{$s}%")
-                        ->orWhere('description', 'like', "%{$s}%");
-                });
-            })
-            ->when($this->status !== 'all', function ($qq) use ($today) {
-                if ($this->status === 'current') {
-                    $qq->whereDate('start_date', '<=', $today)
-                        ->whereDate('end_date', '>=', $today);
-                } elseif ($this->status === 'upcoming') {
-                    $qq->whereDate('start_date', '>', $today);
-                } elseif ($this->status === 'ended') {
-                    $qq->whereDate('end_date', '<', $today);
-                }
-            })
-            ->when($this->deductionType !== 'all', function ($qq) {
-                $type = (string) $this->deductionType;
-
-                if (in_array($type, ['absence', 'late'], true)) {
-                    $qq->where('apply_on', $type);
-                    return;
-                }
-
-                if ($type === 'without') {
-                    $qq->where(function ($w) {
-                        $w->orWhere('apply_on', 'none')
-                          ->orWhere(function ($a) {
-                              $a->where('apply_on', 'absence')->where('absence_multiplier', '<=', 0);
-                          })
-                          ->orWhere(function ($l) {
-                              $l->where('apply_on', 'late')->where('late_multiplier', '<=', 0);
-                          });
-                    });
-                }
-            })
-            ->when($minFactor !== null && $minFactor !== 0.0, function ($qq) use ($minFactor) {
-                $qq->where(function ($w) use ($minFactor) {
-                    $w->where(function ($a) use ($minFactor) {
-                        $a->where('apply_on', 'absence')->where('absence_multiplier', '>=', $minFactor);
-                    })->orWhere(function ($l) use ($minFactor) {
-                        $l->where('apply_on', 'late')->where('late_multiplier', '>=', $minFactor);
-                    });
-                });
-            })
-            ->when($maxFactor !== null && $maxFactor !== 0.0, function ($qq) use ($maxFactor) {
-                $qq->where(function ($w) use ($maxFactor) {
-                    $w->where(function ($a) use ($maxFactor) {
-                        $a->where('apply_on', 'absence')->where('absence_multiplier', '<=', $maxFactor);
-                    })->orWhere(function ($l) use ($maxFactor) {
-                        $l->where('apply_on', 'late')->where('late_multiplier', '<=', $maxFactor);
-                    })->orWhere(function ($n) {
-                        $n->where('apply_on', 'none');
-                    });
-                });
-            })
-            ->when($this->departmentId, function ($qq) {
-                $deptId = (int) $this->departmentId;
-
-                $qq->where(function ($q2) use ($deptId) {
-                    $q2->where('scope_type', 'all')
-                        ->orWhere(function ($q3) use ($deptId) {
-                            $q3->where('scope_type', 'departments')
-                                ->whereJsonContains('include->departments', $deptId);
-                        });
-                });
-            })
-            ->when($this->branchId, function ($qq) {
-                $bid = (int) $this->branchId;
-                $qq->where(function ($q2) use ($bid) {
-                    $q2->where('scope_type', 'all')
-                        ->orWhere(function ($q3) use ($bid) {
-                            $q3->where('scope_type', 'branches')
-                                ->whereJsonContains('include->branches', $bid);
-                        });
-                });
-            })
-            ->when($this->contractType, function ($qq) {
-                $type = $this->contractType;
-                $qq->where(function ($q2) use ($type) {
-                    $q2->where('scope_type', 'all')
-                        ->orWhere(function ($q3) use ($type) {
-                            $q3->where('scope_type', 'contract_types')
-                                ->whereJsonContains('include->contract_types', $type);
-                        });
-                });
-            })
-            ->orderBy('start_date', 'desc');
-
-        return $q;
+        return [
+            'year'          => $this->year,
+            'month'         => $this->month,
+            'search'        => $this->search,
+            'status'        => $this->status,
+            'deductionType' => $this->deductionType,
+            'minMultiplier' => $this->minMultiplier,
+            'maxMultiplier' => $this->maxMultiplier,
+            'departmentId'  => $this->departmentId,
+            'branchId'      => $this->branchId,
+            'contractType'  => $this->contractType,
+        ];
     }
 
     private function validateScopeSelections(): bool
@@ -637,20 +553,9 @@ class ExceptionalDaysIndex extends Component
         $start = $this->form['start_date'];
         $end   = $this->form['end_date'];
 
-        $overlap = AttendanceExceptionalDay::query()
-            ->where('company_id', $this->companyId())
-            ->when($this->editingId, fn ($q) => $q->where('id', '!=', $this->editingId))
-            ->where(function ($q) use ($start, $end) {
-                $q->whereBetween('start_date', [$start, $end])
-                  ->orWhereBetween('end_date', [$start, $end])
-                  ->orWhere(function ($q2) use ($start, $end) {
-                      $q2->where('start_date', '<=', $start)
-                         ->where('end_date', '>=', $end);
-                  });
-            })
-            ->exists();
-
-        if ($overlap) {
+        $companyId = $this->companyId();
+        
+        if ($this->exceptionalDayService->checkOverlap($companyId, $start, $end, $this->editingId)) {
             $this->addError('form.start_date', tr('Date range overlaps with another exceptional day.'));
             return;
         }
@@ -680,8 +585,6 @@ class ExceptionalDaysIndex extends Component
             $this->form['include']['contract_types'] = [];
         }
 
-        $companyId = $this->companyId();
-
         AttendanceExceptionalDay::updateOrCreate(
             [
                 'id' => $this->editingId,
@@ -693,6 +596,8 @@ class ExceptionalDaysIndex extends Component
         $this->showModal = false;
         $this->resetValidation();
         $this->resetPage();
+        
+        $this->dispatch('toast', ['type' => 'success', 'message' => tr('Operation successful')]);
     }
 
     public function toggleActive(int $id): void
@@ -703,6 +608,7 @@ class ExceptionalDaysIndex extends Component
             ->findOrFail($id);
 
         $row->update(['is_active' => ! $row->is_active]);
+        $this->dispatch('toast', ['type' => 'success', 'message' => tr('Status updated')]);
     }
 
     public function deleteRow(int $id): void
@@ -714,6 +620,7 @@ class ExceptionalDaysIndex extends Component
             ->delete();
 
         $this->resetPage();
+        $this->dispatch('toast', ['type' => 'success', 'message' => tr('Deleted successfully')]);
     }
 
     public function updatedSelectPage($value): void
@@ -722,7 +629,7 @@ class ExceptionalDaysIndex extends Component
             $companyId = $this->companyId();
             $page = (int) $this->getPage(); 
 
-            $ids = $this->rowsQuery($companyId)
+            $ids = $this->exceptionalDayService->getRowsQuery($companyId, $this->getFilters())
                 ->forPage($page, $this->perPage)
                 ->pluck('id')
                 ->toArray();
@@ -747,6 +654,7 @@ class ExceptionalDaysIndex extends Component
         $this->selected = [];
         $this->selectPage = false;
         $this->resetPage();
+        $this->dispatch('toast', ['type' => 'success', 'message' => tr('Deleted successfully')]);
     }
 
     public function setSelectedActive(bool $active): void
@@ -761,8 +669,8 @@ class ExceptionalDaysIndex extends Component
 
         $this->selected = [];
         $this->selectPage = false;
+        $this->dispatch('toast', ['type' => 'success', 'message' => tr('Status updated')]);
     }
-
 
     public function updatedCopyFromYear($value): void
     {
@@ -839,89 +747,24 @@ class ExceptionalDaysIndex extends Component
         }
 
         $diffYears = $to - $from;
-
-        $rows = AttendanceExceptionalDay::query()
-            ->where('company_id', $companyId)
-            ->whereIn('id', $this->copySelected)
-            ->get();
-
-        $copied = 0;
-        $skipped = 0;
-
-        foreach ($rows as $r) {
-            $start = $r->start_date?->copy();
-            if (!$start) { $skipped++; continue; }
-
-            $end = ($r->end_date ?? $r->start_date)?->copy() ?? $start->copy();
-
-            $newStart = $start->copy()->addYears($diffYears);
-            $newEnd   = $end->copy()->addYears($diffYears);
-
-            $overlap = AttendanceExceptionalDay::query()
-                ->where('company_id', $companyId)
-                ->where(function ($q) use ($newStart, $newEnd) {
-                    $s = $newStart->toDateString();
-                    $e = $newEnd->toDateString();
-
-                    $q->whereBetween('start_date', [$s, $e])
-                      ->orWhereBetween('end_date', [$s, $e])
-                      ->orWhere(function ($q2) use ($s, $e) {
-                          $q2->where('start_date', '<=', $s)
-                             ->where('end_date', '>=', $e);
-                      });
-                })
-                ->exists();
-
-            if ($overlap) {
-                $skipped++;
-                continue;
-            }
-
-            AttendanceExceptionalDay::create([
-                'company_id' => $companyId,
-                'name' => $r->name,
-                'description' => $r->description,
-
-                'period_type' => $r->period_type,
-                'start_date' => $newStart->toDateString(),
-                'end_date' => $newEnd->toDateString(),
-
-                'apply_on' => $r->apply_on,
-                'absence_multiplier' => $r->absence_multiplier,
-                'late_multiplier' => $r->late_multiplier,
-                'grace_hours' => $r->grace_hours,
-
-                'scope_type' => $r->scope_type,
-                'include' => $r->include,
-
-                'notify_policy' => $r->notify_policy,
-                'notify_message' => $r->notify_message,
-                'retroactive' => $r->retroactive,
-
-                'is_active' => false,
-                'created_by' => auth()->id(),
-            ]);
-
-            $copied++;
-        }
+        
+        $result = $this->exceptionalDayService->copyDays($companyId, $this->copySelected, $diffYears);
 
         $this->copySelected = [];
         $this->copySelectAll = false;
-
         $this->showCopyModal = false;
         $this->resetPage();
 
-        if ($copied > 0 || $skipped > 0) {
-            session()->flash('message', tr('Copied') . ": {$copied} | " . tr('Skipped') . ": {$skipped}");
+        if ($result['copied'] > 0 || $result['skipped'] > 0) {
+            $msg = tr('Copied') . ": {$result['copied']} | " . tr('Skipped') . ": {$result['skipped']}";
+            $this->dispatch('toast', ['type' => 'success', 'message' => $msg]);
         }
     }
-
-
 
     public function exportCsv()
     {
         $companyId = $this->companyId();
-        $rows = $this->rowsQuery($companyId)->get();
+        $rows = $this->exceptionalDayService->getRowsQuery($companyId, $this->getFilters())->get();
 
         $filename = 'exceptional-days-' . now()->format('Ymd-His') . '.csv';
 
@@ -965,132 +808,11 @@ class ExceptionalDaysIndex extends Component
         }, $filename);
     }
 
-
-
-    private function companyColumnFor(string $table): ?string
-    {
-        if (!Schema::hasTable($table)) return null;
-
-        if (Schema::hasColumn($table, 'company_id')) return 'company_id';
-        if (Schema::hasColumn($table, 'saas_company_id')) return 'saas_company_id';
-
-        return null;
-    }
-
-    private function coalesceNameExpr(string $table, array $preferredColumns, string $idColumn = 'id'): string
-    {
-        $cols = [];
-
-        foreach ($preferredColumns as $col) {
-            if (Schema::hasColumn($table, $col)) {
-                $cols[] = $col;
-            }
-        }
-
-        $cols[] = "CAST({$idColumn} AS CHAR)";
-
-        return 'COALESCE(' . implode(', ', $cols) . ')';
-    }
-
-    private function loadScopeOptions(int $companyId): array
-    {
-        $departments = [];
-        $sections = [];
-        $employees = [];
-
-        if (Schema::hasTable('departments')) {
-            $companyCol = $this->companyColumnFor('departments');
-            $nameExpr = $this->coalesceNameExpr(
-                'departments',
-                app()->isLocale('ar') ? ['name_ar', 'name', 'name_en'] : ['name_en', 'name', 'name_ar']
-            );
-
-            $departments = DB::table('departments')
-                ->when($companyCol, fn ($q) => $q->where($companyCol, $companyId))
-                ->select('id', DB::raw("{$nameExpr} as name"))
-                ->orderByRaw("{$nameExpr} asc")
-                ->get()
-                ->toArray();
-        }
-
-        if (Schema::hasTable('sections')) {
-            $companyCol = $this->companyColumnFor('sections');
-            $nameExpr = $this->coalesceNameExpr(
-                'sections',
-                app()->isLocale('ar') ? ['name_ar', 'name', 'name_en'] : ['name_en', 'name', 'name_ar']
-            );
-
-            $sections = DB::table('sections')
-                ->when($companyCol, fn ($q) => $q->where($companyCol, $companyId))
-                ->select('id', DB::raw("{$nameExpr} as name"))
-                ->orderByRaw("{$nameExpr} asc")
-                ->get()
-                ->toArray();
-        }
-
-               if (Schema::hasTable('employees')) {
-            $companyCol = $this->companyColumnFor('employees');
-
-            $nameExpr = $this->coalesceNameExpr(
-                'employees',
-                app()->isLocale('ar')
-                    ? ['name_ar', 'name', 'full_name', 'name_en', 'employee_no']
-                    : ['name_en', 'name', 'full_name', 'name_ar', 'employee_no']
-            );
-
-            $allowedBranchIds = $this->currentUserAllowedBranchIds($companyId);
-            $branchCol = $this->employeeBranchColumn();
-
-            $employees = DB::table('employees')
-                ->when($companyCol, fn ($q) => $q->where($companyCol, $companyId))
-                ->when($allowedBranchIds !== null, function ($q) use ($allowedBranchIds, $branchCol) {
-                    if (!$branchCol) { $q->whereRaw('1=0'); return; }
-
-                    $q->whereIn($branchCol, $allowedBranchIds);
-                })
-                ->select('id', DB::raw("{$nameExpr} as name"))
-                ->orderByRaw("{$nameExpr} asc")
-                ->limit(300)
-                ->get()
-                ->toArray();
-        }
-
-        $branches = [];
-        if (Schema::hasTable('branches')) {
-            $companyCol = $this->companyColumnFor('branches');
-            $nameExpr = $this->coalesceNameExpr(
-                'branches',
-                app()->isLocale('ar') ? ['name_ar', 'name', 'name_en'] : ['name_en', 'name', 'name_ar']
-            );
-
-            $branches = DB::table('branches')
-                ->when($companyCol, fn ($q) => $q->where($companyCol, $companyId))
-                ->select('id', DB::raw("{$nameExpr} as name"))
-                ->orderByRaw("{$nameExpr} asc")
-                ->get()
-                ->toArray();
-        }
-
-        $contractTypes = [];
-        if (Schema::hasTable('employees')) {
-            $contractTypes = DB::table('employees')
-                ->where('saas_company_id', $companyId)
-                ->whereNotNull('contract_type')
-                ->where('contract_type', '!=', '')
-                ->distinct()
-                ->pluck('contract_type')
-                ->map(fn($t) => (object) ['id' => $t, 'name' => $t])
-                ->toArray();
-        }
-
-        return compact('departments', 'sections', 'employees', 'branches', 'contractTypes');
-    }
-
     public function render()
     {
         $companyId = $this->companyId();
 
-        $rows = $this->rowsQuery($companyId)->paginate($this->perPage);
+        $rows = $this->exceptionalDayService->getRowsQuery($companyId, $this->getFilters())->paginate($this->perPage);
 
         $createdByMap = [];
         if (Schema::hasTable('users')) {
@@ -1124,7 +846,8 @@ class ExceptionalDaysIndex extends Component
             'cost_estimate' => null,
         ];
 
-        $opts = $this->loadScopeOptions($companyId);
+        $allowedBranchIds = $this->exceptionalDayService->currentUserAllowedBranchIds($companyId);
+        $opts = $this->exceptionalDayService->loadScopeOptions($companyId, app()->getLocale(), $allowedBranchIds);
 
         $copyRows = collect();
         if ($this->showCopyModal) {
@@ -1151,92 +874,4 @@ class ExceptionalDaysIndex extends Component
             'copyRows' => $copyRows,
         ])->layout('layouts.company-admin');
     }
-
-  
-
-    private function employeeBranchColumn(): ?string
-    {
-        if (!Schema::hasTable('employees')) return null;
-
-        foreach (['branch_id'] as $c) {
-            if (Schema::hasColumn('employees', $c)) return $c;
-        }
-
-        return null;
-    }
-
-    // ✅ فروع المستخدم الحالي حسب access_scope
-    // ترجع:
-    // - null  => بدون تقييد (all_branches)
-    // - []    => لا يوجد فروع مسموحة (يظهر صفر موظفين)
-    // - [..]  => IDs الفروع المسموحة
-    private function currentUserAllowedBranchIds(int $companyId): ?array
-    {
-        $user = auth()->user();
-        if (!$user) return [];
-
-        $scope = (string) ($user->access_scope ?? 'all_branches');
-        if (!in_array($scope, ['all_branches', 'my_branch', 'selected_branches'], true)) {
-            $scope = 'all_branches';
-        }
-
-        if ($scope === 'all_branches') {
-            return null; // ✅ no restriction
-        }
-
-        // company column on branches
-        $branchesCompanyCol = null;
-        if (Schema::hasTable('branches')) {
-            foreach (['saas_company_id', 'company_id'] as $c) {
-                if (Schema::hasColumn('branches', $c)) { $branchesCompanyCol = $c; break; }
-            }
-        }
-
-        // my_branch => فرع الموظف المرتبط بالمستخدم
-        if ($scope === 'my_branch') {
-            $branchCol = $this->employeeBranchColumn();
-            if (!$branchCol) return [];
-
-            $bid = (int) ($user->employee?->{$branchCol} ?? 0);
-
-            if ($bid <= 0 && Schema::hasTable('employees') && !empty($user->employee_id)) {
-                $bid = (int) DB::table('employees')->where('id', (int) $user->employee_id)->value($branchCol);
-            }
-
-            return $bid > 0 ? [$bid] : [];
-        }
-
-        // selected_branches => من pivot عبر allowedBranches()
-        if ($scope === 'selected_branches') {
-            if (!method_exists($user, 'allowedBranches')) {
-                return []; // ✅ امنياً: ما نعرض شيء إذا العلاقة غير موجودة
-            }
-
-            $ids = $user->allowedBranches()
-                ->pluck('branches.id')
-                ->map(fn ($v) => (int) $v)
-                ->filter()
-                ->unique()
-                ->values()
-                ->all();
-
-            if (empty($ids)) return [];
-
-            // تأكيد أنها لنفس الشركة (لو branches فيها company col)
-            if ($branchesCompanyCol) {
-                $ids = DB::table('branches')
-                    ->where($branchesCompanyCol, $companyId)
-                    ->whereIn('id', $ids)
-                    ->pluck('id')
-                    ->map(fn ($v) => (int) $v)
-                    ->all();
-            }
-
-            return $ids;
-        }
-
-        return null;
-    }
-
-  
 }

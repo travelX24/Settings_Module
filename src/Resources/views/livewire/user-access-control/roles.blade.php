@@ -1,363 +1,321 @@
-<div class="space-y-6">
-    {{-- Top Controls --}}
-    <div class="flex flex-col sm:flex-row justify-between items-center gap-4 mb-6">
-        <div class="w-full sm:w-1/3">
-            <x-ui.input
-                wire:model.live.debounce.300ms="search"
-                type="search"
-                icon="fa-search"
-                placeholder="{{ tr('Search roles...') }}"
-            />
-        </div>
-
-        @if(!empty($branches))
-            <div class="w-full sm:w-1/4">
-                <x-ui.select
-                    label="{{ tr('Branch') }}"
-                    wire:model.live="filterBranchId"
-                    :disabled="$lockBranchFilter"
-                >
-                    <option value="">{{ tr('All Branches') }}</option>
-                    @foreach($branches as $br)
-                        <option value="{{ $br['id'] }}">{{ $br['name'] }}</option>
-                    @endforeach
-                </x-ui.select>
-
-                @if($lockBranchFilter)
-                    <div class="text-[10px] text-gray-500 mt-1">
-                        {{ tr('Access scope is limited to your branch.') }}
+<div
+    class="space-y-6"
+    x-data="{
+        view: (localStorage.getItem('uac_roles_view') || 'table'),
+        setView(v){
+            this.view = v;
+            localStorage.setItem('uac_roles_view', v);
+        }
+    }"
+    x-init="localStorage.setItem('uac_roles_view', view)"
+>
+    {{-- Search & Filters --}}
+    <x-ui.card :padding="false" class="border-gray-200 p-4">
+        <div class="flex flex-col md:flex-row gap-4 items-start md:items-end justify-between">
+            <div class="flex-1 w-full">
+                <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+                    <div>
+                        <label class="block text-xs font-bold text-gray-500 uppercase tracking-wider mb-1.5">
+                            {{ tr('Search Roles') }}
+                        </label>
+                        <x-ui.search-box wire:model.live.debounce.300ms="search" :placeholder="tr('Search by role name...')" />
                     </div>
-                @endif
+
+                    @if(!empty($branches))
+                        <div>
+                            <label class="block text-xs font-bold text-gray-500 uppercase tracking-wider mb-1.5">
+                                {{ tr('Branch Filter') }}
+                            </label>
+                            <x-ui.select wire:model.live="filterBranchId" :disabled="$lockBranchFilter">
+                                <option value="">{{ tr('All Branches') }}</option>
+                                @foreach($branches as $br)
+                                    <option value="{{ $br['id'] }}">{{ $br['name'] }}</option>
+                                @endforeach
+                            </x-ui.select>
+                        </div>
+                    @endif
+                </div>
+            </div>
+            <div class="flex items-center gap-3">
+                <x-ui.view-toggle />
+            </div>
+        </div>
+    </x-ui.card>
+
+    {{-- Cards Layout --}}
+    <div x-show="view === 'cards'" x-cloak>
+        <div class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
+            @forelse($roles as $role)
+                <x-ui.card wire:key="role-card-{{ $role->id }}" :hover="true" :padding="false" class="rounded-2xl border-gray-200 p-5 group flex flex-col h-full">
+                    <div class="flex items-start justify-between mb-4">
+                        <div class="flex items-center gap-3 min-w-0">
+                            <div class="w-12 h-12 rounded-xl bg-gradient-to-br from-indigo-500 to-purple-600 flex items-center justify-center text-white shadow-lg shrink-0">
+                                <i class="fas fa-user-shield text-xl"></i>
+                            </div>
+                            <div class="min-w-0">
+                                <h4 class="text-base font-bold text-gray-900 truncate">{{ $role->name }}</h4>
+                                <p class="text-[10px] text-gray-400 font-mono uppercase tracking-tighter">{{ $role->guard_name }}</p>
+                            </div>
+                        </div>
+
+                        <x-ui.actions-menu>
+                            @can('uac.roles.manage')
+                                <x-ui.dropdown-item wire:click="openEditModal({{ $role->id }})">
+                                    <i class="fas fa-edit mr-2 w-5 text-blue-500"></i>
+                                    {{ tr('Edit Role') }}
+                                </x-ui.dropdown-item>
+                                <x-ui.dropdown-item wire:click="copyRole({{ $role->id }})">
+                                    <i class="fas fa-copy mr-2 w-5 text-emerald-500"></i>
+                                    {{ tr('Duplicate Role') }}
+                                </x-ui.dropdown-item>
+                                
+                                @if(!in_array($role->name, ['company-admin', 'saas-admin']))
+                                    <div class="h-px bg-gray-100 my-1"></div>
+                                    <x-ui.dropdown-item 
+                                        @click="$dispatch('open-confirm-delete-role', {{ $role->id }})" 
+                                        danger
+                                    >
+                                        <i class="fas fa-trash-alt mr-2 w-5"></i>
+                                        {{ tr('Delete Role') }}
+                                    </x-ui.dropdown-item>
+                                @endif
+                            @endcan
+                        </x-ui.actions-menu>
+                    </div>
+
+                    <div class="space-y-3 flex-1">
+                        <div class="flex items-center justify-between py-2 border-b border-gray-50">
+                            <span class="text-xs font-medium text-gray-500">{{ tr('Users Count') }}</span>
+                            <span class="inline-flex items-center gap-1.5 px-2 py-0.5 rounded-lg bg-slate-50 text-slate-700 border border-slate-100 text-[10px] font-bold">
+                                <i class="fas fa-users text-[8px] text-slate-400"></i>
+                                {{ $role->users_count }}
+                            </span>
+                        </div>
+                        <div class="flex items-center justify-between py-2 border-b border-gray-50">
+                            <span class="text-xs font-medium text-gray-500">{{ tr('Permissions') }}</span>
+                            @php $permsCount = $role->permissions->count(); @endphp
+                            <span class="text-xs font-bold text-indigo-600 bg-indigo-50 px-2 py-0.5 rounded-lg">
+                                {{ $permsCount }} {{ tr('Permissions') }}
+                            </span>
+                        </div>
+                        <div class="flex items-center justify-between py-2 border-b border-gray-50">
+                            <span class="text-xs font-medium text-gray-500">{{ tr('Created At') }}</span>
+                            <span class="text-[10px] font-bold text-gray-700">
+                                {{ $role->created_at->format('Y-m-d') }}
+                            </span>
+                        </div>
+                    </div>
+
+                    <div class="mt-4 flex items-center justify-between">
+                         <span class="text-[10px] bg-indigo-50 text-indigo-700 px-2 py-1 rounded-lg font-bold border border-indigo-100">
+                            <i class="fas fa-shield-alt mr-1"></i> {{ tr('Access Role') }}
+                        </span>
+                    </div>
+                </x-ui.card>
+            @empty
+                <div class="col-span-full py-12 text-center text-gray-400">
+                    <i class="fas fa-user-shield text-4xl mb-4 opacity-20"></i>
+                    <p>{{ tr('No roles found.') }}</p>
+                </div>
+            @endforelse
+        </div>
+        @if($roles->hasPages())
+            <div class="mt-6 border-t border-gray-100 pt-4">
+                {{ $roles->links() }}
             </div>
         @endif
     </div>
 
-    {{-- Roles Table --}}
-    <div class="bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden">
-        <x-ui.table
-            :headers="[
-                tr('Role Name'),
-                tr('Permissions'),
-                tr('Users Count'),
-                tr('Created At'),
-                tr('Actions')
-            ]"
-            :headerAlign="['start','center','center','center','end']"
-            :enablePagination="false"
-        >
+    {{-- Table Layout --}}
+    <div x-show="view === 'table'" x-cloak class="overflow-hidden rounded-xl border border-gray-200 shadow-sm bg-white">
+        <x-ui.table :headers="[tr('Role Name'), tr('Guard'), tr('Permissions'), tr('Users'), tr('Created At'), tr('Actions')]">
             @forelse($roles as $role)
-                <tr class="hover:bg-gray-50/50 transition-colors border-b border-gray-50 last:border-0">
-                    <td class="px-6 py-4 whitespace-nowrap align-middle text-start">
-                        <div class="flex flex-col">
-                            <span class="text-sm font-bold text-gray-900">{{ $role->name }}</span>
-                            <span class="text-[10px] text-gray-400 font-mono uppercase tracking-tighter">{{ $role->guard_name }}</span>
-                        </div>
+                <tr class="hover:bg-gray-50 transition-colors" wire:key="role-row-{{ $role->id }}">
+                    <td class="px-6 py-4 whitespace-nowrap">
+                        <span class="text-sm font-semibold text-gray-900">{{ $role->name }}</span>
                     </td>
-                    <td class="px-6 py-4 whitespace-nowrap align-middle text-center">
-                        <div class="flex items-center justify-center gap-1.5" x-data="{ 
-                            showPerms: false,
-                            pos: { top: 0, left: 0 }
-                        }">
+                    <td class="px-6 py-4 whitespace-nowrap">
+                        <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-[10px] font-mono font-medium bg-slate-100 text-slate-700 uppercase">
+                            {{ $role->guard_name }}
+                        </span>
+                    </td>
+                    <td class="px-6 py-4 whitespace-nowrap align-middle">
+                        <div class="flex items-center" x-data="{ showTooltip: false, pos: { top: 0, left: 0 } }">
+                            @php $permsCount = $role->permissions->count(); @endphp
                             <div class="relative inline-block">
-                                @php $permsCount = $role->permissions->count(); @endphp
-                                <button 
-                                    type="button" 
-                                    x-ref="trigger"
-                                    @click="
-                                        showPerms = !showPerms;
-                                        if(showPerms) {
-                                            const rect = $refs.trigger.getBoundingClientRect();
-                                            pos = { top: rect.top, left: rect.left + rect.width / 2 };
-                                        }
-                                    "
-                                    class="flex items-center gap-2 px-3 py-1.5 rounded-lg bg-indigo-50 text-indigo-700 border border-indigo-100/50 hover:bg-indigo-100 transition-all group"
-                                >
+                                <button type="button" x-ref="trigger" @click="showTooltip = !showTooltip; if(showTooltip) { const rect = $refs.trigger.getBoundingClientRect(); pos = { top: rect.top, left: rect.left + rect.width / 2 }; }" class="flex items-center gap-2 px-3 py-1.5 rounded-lg bg-indigo-50 text-indigo-700 border border-indigo-100/50 hover:bg-indigo-100 transition-all group cursor-pointer">
                                     <i class="fas fa-shield-alt text-indigo-400 group-hover:scale-110 transition-transform"></i>
                                     <span class="text-xs font-bold">{{ $permsCount }}</span>
                                 </button>
-
-                                {{-- Permissions Tooltip --}}
                                 <template x-teleport="body">
-                                    <div 
-                                        x-show="showPerms" 
-                                        x-cloak
-                                        @click.away="showPerms = false"
-                                        x-transition:enter="transition ease-out duration-200"
-                                        x-transition:enter-start="opacity-0 translate-y-1"
-                                        x-transition:enter-end="opacity-100 translate-y-0"
-                                        class="fixed z-[9999]"
-                                        :style="`top: ${pos.top}px; left: ${pos.left}px; transform: translate(-50%, -110%);`"
-                                    >
-                                        <div class="bg-white border border-gray-100 rounded-xl shadow-2xl p-3 w-64 text-start">
+                                    <div x-show="showTooltip" x-cloak @click.away="showTooltip = false" x-transition.opacity class="fixed z-[9999]" :style="'top: ' + pos.top + 'px; left: ' + pos.left + 'px; transform: translate(-50%, -110%);'">
+                                        <div class="bg-white border border-gray-100 rounded-xl shadow-2xl p-3 w-64">
                                             <h5 class="font-bold text-gray-900 text-[10px] uppercase tracking-wider mb-2 border-b border-gray-50 pb-1 flex items-center gap-2">
                                                 <i class="fas fa-shield-alt text-indigo-500"></i>
                                                 {{ tr('Role Permissions') }}
                                             </h5>
                                             <div class="flex flex-wrap gap-1 max-h-48 overflow-y-auto custom-scrollbar">
                                                 @forelse($role->permissions as $perm)
-                                                    <span class="text-[9px] bg-gray-50 text-gray-600 px-1.5 py-0.5 rounded border border-gray-100">{{ tr($permissionsMap[$perm->name] ?? $perm->name) }}</span>
+                                                    <span class="text-[9px] bg-gray-50 text-gray-600 px-1.5 py-0.5 rounded border border-gray-100">
+                                                        {{ tr($permissionsMap[$perm->name] ?? $perm->name) }}
+                                                    </span>
                                                 @empty
-                                                    <span class="text-[10px] text-gray-400 italic">{{ tr('No permissions assigned') }}</span>
+                                                    <span class="text-[10px] text-gray-400 italic">{{ tr('No permissions') }}</span>
                                                 @endforelse
                                             </div>
-                                            <div class="absolute -bottom-1 left-1/2 -translate-x-1/2 w-2 h-2 bg-white border-b border-r border-gray-100 transform rotate-45"></div>
                                         </div>
                                     </div>
                                 </template>
                             </div>
                         </div>
                     </td>
-                    <td class="px-6 py-4 whitespace-nowrap align-middle text-center">
-                        <div class="flex items-center justify-center" x-data="{ 
-                            showUsers: false,
-                            pos: { top: 0, left: 0 }
-                        }">
-                            <div class="relative inline-block">
-                                <button 
-                                    type="button"
-                                    x-ref="trigger"
-                                    @click="
-                                        showUsers = !showUsers;
-                                        if(showUsers) {
-                                            const rect = $refs.trigger.getBoundingClientRect();
-                                            pos = { top: rect.top, left: rect.left + rect.width / 2 };
-                                        }
-                                    "
-                                    class="inline-flex items-center gap-2 px-3 py-1.5 rounded-lg bg-slate-50 text-slate-700 border border-slate-100/60 hover:bg-slate-100 transition-colors"
-                                >
-                                    <i class="fas fa-users text-slate-400 text-xs"></i>
-                                    <span class="text-xs font-bold">{{ $role->users_count }}</span>
-                                </button>
-
-                                {{-- Users Tooltip --}}
-                                <template x-teleport="body">
-                                    <div 
-                                        x-show="showUsers" 
-                                        x-cloak
-                                        @click.away="showUsers = false"
-                                        x-transition:enter="transition ease-out duration-200"
-                                        x-transition:enter-start="opacity-0 translate-y-1"
-                                        x-transition:enter-end="opacity-100 translate-y-0"
-                                        class="fixed z-[9999]"
-                                        :style="`top: ${pos.top}px; left: ${pos.left}px; transform: translate(-50%, -110%);`"
-                                    >
-                                        <div class="bg-white border border-gray-100 rounded-xl shadow-2xl p-3 w-48 text-start">
-                                            <h5 class="font-bold text-gray-900 text-[10px] uppercase tracking-wider mb-2 border-b border-gray-50 pb-1 flex items-center gap-2">
-                                                <i class="fas fa-user-friends text-slate-500"></i>
-                                                {{ tr('Assigned Users') }}
-                                            </h5>
-                                            <div class="space-y-1.5 max-h-40 overflow-y-auto custom-scrollbar">
-                                                @php
-                                                    $roleUsersQ = \App\Models\User::role($role->name)
-                                                        ->where('saas_company_id', auth()->user()->saas_company_id);
-
-                                                    if(($filterBranchId ?? '') !== '' && ($employeeBranchCol ?? null)) {
-                                                        $bid = (int)$filterBranchId;
-                                                        $col = $employeeBranchCol;
-
-                                                        $roleUsersQ->whereHas('employee', fn($q) => $q->where($col, $bid));
-                                                    }
-
-                                                    $roleUsers = $roleUsersQ->take(10)->get();
-                                                @endphp      
-                                                                                          @forelse($roleUsers as $u)
-                                                    <div class="text-[10px] text-gray-700 flex items-center gap-2">
-                                                        <div class="w-1 h-1 rounded-full bg-slate-300"></div>
-                                                        <span class="font-medium">{{ $u->name }}</span>
-                                                    </div>
-                                                @empty
-                                                    <div class="text-[10px] text-gray-400 italic text-center py-2">{{ tr('No users assigned') }}</div>
-                                                @endforelse
-                                                @if($role->users_count > 10)
-                                                    <div class="text-[9px] text-indigo-500 font-bold border-t border-gray-50 pt-1 text-center mt-1">
-                                                        +{{ $role->users_count - 10 }} {{ tr('more users') }}
-                                                    </div>
-                                                @endif
-                                            </div>
-                                            <div class="absolute -bottom-1 left-1/2 -translate-x-1/2 w-2 h-2 bg-white border-b border-r border-gray-100 transform rotate-45"></div>
-                                        </div>
-                                    </div>
-                                </template>
-                            </div>
-                        </div>
+                    <td class="px-6 py-4 whitespace-nowrap">
+                        <span class="inline-flex items-center gap-1.5 px-2 py-1 rounded-lg bg-slate-50 text-slate-700 border border-slate-100 text-xs font-bold">
+                            <i class="fas fa-users text-[10px] text-slate-400"></i>
+                            {{ $role->users_count }}
+                        </span>
                     </td>
-                    <td class="px-6 py-4 whitespace-nowrap align-middle text-center">
+                    <td class="px-6 py-4 whitespace-nowrap">
                         <div class="flex flex-col">
-                            <span class="text-xs text-gray-600 font-medium">{{ $role->created_at->format('Y/m/d') }}</span>
+                            <span class="text-xs text-gray-700 font-medium">{{ $role->created_at->format('Y-m-d') }}</span>
                             <span class="text-[10px] text-gray-400">{{ $role->created_at->format('h:i A') }}</span>
                         </div>
                     </td>
-<td class="px-6 py-4 whitespace-nowrap align-middle {{ app()->isLocale('ar') ? 'text-left' : 'text-right' }}">
+                    <td class="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
                         <x-ui.actions-menu>
                             @can('uac.roles.manage')
-                            <x-ui.dropdown-item wire:click="openEditModal({{ $role->id }})">
-                                <i class="fas fa-edit mr-2 w-5 text-blue-500"></i>
-                                {{ tr('Edit Role') }}
-                            </x-ui.dropdown-item>
-
-                            <x-ui.dropdown-item wire:click="copyRole({{ $role->id }})">
-                                <i class="fas fa-copy mr-2 w-5 text-emerald-500"></i>
-                                {{ tr('Duplicate Role') }}
-                            </x-ui.dropdown-item>
-                            @endcan
-
-                            @if($role->name !== 'company-admin' && $role->name !== 'saas-admin')
-                                @can('uac.roles.manage')
-                                <div class="h-px bg-gray-100 my-1"></div>
-                                <x-ui.dropdown-item 
-                                    wire:click="deleteRole({{ $role->id }})" 
-                                    danger
-                                    onclick="confirm('{{ tr('Are you sure you want to delete this role?') }}') || event.stopImmediatePropagation()"
-                                >
-                                    <i class="fas fa-trash-alt mr-2 w-5"></i>
-                                    {{ tr('Delete Role') }}
+                                <x-ui.dropdown-item wire:click="openEditModal({{ $role->id }})">
+                                    <i class="fas fa-edit mr-2 w-5 text-blue-500"></i>
+                                    {{ tr('Edit Role') }}
                                 </x-ui.dropdown-item>
-                                @endcan
-                            @endif
+                                <x-ui.dropdown-item wire:click="copyRole({{ $role->id }})">
+                                    <i class="fas fa-copy mr-2 w-5 text-emerald-500"></i>
+                                    {{ tr('Duplicate') }}
+                                </x-ui.dropdown-item>
+                                
+                                @if(!in_array($role->name, ['company-admin', 'saas-admin']))
+                                    <div class="h-px bg-gray-100 my-1"></div>
+                                    <x-ui.dropdown-item @click="$dispatch('open-confirm-delete-role', {{ $role->id }})" danger>
+                                        <i class="fas fa-trash-alt mr-2 w-5"></i>
+                                        {{ tr('Delete') }}
+                                    </x-ui.dropdown-item>
+                                @endif
+                            @endcan
                         </x-ui.actions-menu>
                     </td>
                 </tr>
             @empty
                 <tr>
-                    <td colspan="5" class="px-6 py-16 text-center">
-                        <div class="flex flex-col items-center justify-center max-w-xs mx-auto">
-                            <div class="w-16 h-16 bg-gray-50 rounded-full flex items-center justify-center mb-4">
-                                <i class="fas fa-user-shield text-3xl text-gray-200"></i>
-                            </div>
-                            <h3 class="text-sm font-bold text-gray-900 mb-1">{{ tr('No roles found') }}</h3>
-                            <p class="text-xs text-gray-500">{{ tr('Try adjusting your search or create a new role to get started.') }}</p>
-                        </div>
-                    </td>
+                    <td colspan="6" class="px-6 py-12 text-center text-gray-500">{{ tr('No roles found.') }}</td>
                 </tr>
             @endforelse
         </x-ui.table>
+        <div class="px-6 py-4 border-t border-gray-100">
+            {{ $roles->links() }}
+        </div>
     </div>
 
-    {{-- Pagination --}}
-    <div class="mt-4">
-        {{ $roles->links() }}
-    </div>
-
-    {{-- Add/Edit Role Modal --}}
+    {{-- Role Modal --}}
     <x-ui.modal wire:model="showModal" maxWidth="5xl">
         <x-slot name="title">
             <div class="flex items-center gap-3">
                 <div class="w-10 h-10 rounded-xl flex items-center justify-center {{ $editingId ? 'bg-blue-50' : 'bg-emerald-50' }}">
-                    <i class="fas {{ $editingId ? 'fa-edit text-blue-500' : 'fa-plus-circle text-emerald-500' }} text-lg"></i>
+                    <i class="fas {{ $editingId ? 'fa-edit text-blue-500' : 'fa-plus text-emerald-500' }} text-lg"></i>
                 </div>
-                <div class="flex flex-col">
-                    <span class="text-base font-extrabold text-gray-900">{{ $editingId ? tr('Edit Role') : tr('Add New Role') }}</span>
-                    <span class="text-[10px] text-gray-400 font-medium uppercase tracking-widest">{{ $editingId ? tr('Update permissions & settings') : tr('Define a new access group') }}</span>
+                <div>
+                    <h3 class="text-base font-extrabold text-gray-900 leading-none mb-1">
+                        {{ $editingId ? tr('Edit Role') : tr('Add New Role') }}
+                    </h3>
+                    <p class="text-[10px] text-gray-400 font-medium uppercase tracking-widest">
+                        {{ $editingId ? tr('Update role permissions') : tr('Set up a new access role') }}
+                    </p>
                 </div>
             </div>
         </x-slot>
-
         <x-slot name="content">
-            <div class="space-y-6 py-2" x-data="{ permSearch: '', activeGroup: null }">
-                {{-- Error Messages --}}
+            <div class="space-y-6" x-data="{ permSearch: '', activeGroup: null }">
                 @if($errors->any())
-                    <div class="bg-red-50 border-r-4 border-red-500 p-4 rounded-xl mb-4">
-                        <div class="flex items-center gap-3">
-                            <i class="fas fa-exclamation-triangle text-red-500"></i>
-                            <span class="text-sm font-bold text-red-800">{{ tr('Validation Error') }}</span>
-                        </div>
-                        <ul class="mt-2 text-xs text-red-700 list-disc list-inside">
-                            @foreach($errors->all() as $error)
-                                <li>{{ $error }}</li>
+                    <div class="bg-red-50 border-s-4 border-red-500 p-3 rounded-lg">
+                        <ul class="list-disc list-inside text-xs text-red-600">
+                            @foreach ($errors->all() as $error)
+                                <li>{{ tr($error) }}</li>
                             @endforeach
                         </ul>
                     </div>
                 @endif
 
-                {{-- Role Information --}}
-                <div class="bg-gray-50/50 p-5 rounded-2xl border border-gray-100">
+                <div class="bg-gray-50/50 p-4 rounded-2xl border border-gray-100">
                     <x-ui.input 
                         label="{{ tr('Role Name') }}" 
                         wire:model="name" 
                         required 
-                        placeholder="{{ tr('e.g. Sales Manager...') }}"
-                        class="!bg-white"
-                        error="name"
                         :disabled="!auth()->user()->can('uac.roles.manage')"
+                        placeholder="{{ tr('e.g. Sales Manager, HR Admin...') }}"
                     />
                 </div>
 
-                {{-- Permissions Accordion Section --}}
                 <div class="space-y-4">
-                    <div class="flex items-center justify-between border-b border-gray-100 pb-2">
-                        <h3 class="text-sm font-extrabold text-gray-900 flex items-center gap-2">
-                            <i class="fas fa-shield-alt text-[color:var(--brand-via)]"></i>
-                            {{ tr('Interface Permissions') }}
-                        </h3>
-                        <div class="relative w-48 sm:w-64">
+                    <div class="flex items-center justify-between border-b border-gray-100 pb-3">
+                        <h4 class="text-sm font-extrabold text-gray-900 flex items-center gap-2">
+                             <i class="fas fa-shield-alt text-indigo-500"></i>
+                             {{ tr('Role Permissions') }}
+                        </h4>
+                        <div class="relative w-64">
                             <input 
                                 type="text" 
-                                x-model="permSearch"
+                                x-model="permSearch" 
                                 placeholder="{{ tr('Filter permissions...') }}"
-                                class="w-full pr-8 pl-3 py-1.5 text-[11px] border border-gray-200 rounded-xl focus:ring-2 focus:ring-[color:var(--brand-via)]/20 focus:border-[color:var(--brand-via)] outline-none transition-all"
-                            >
-                            <span class="absolute inset-y-0 right-0 pr-2.5 flex items-center pointer-events-none">
-                                <i class="fas fa-search text-gray-400 text-[10px]"></i>
+                                class="w-full pr-8 pl-3 py-1.5 text-xs border border-gray-200 rounded-xl focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 outline-none transition-all"
+                            />
+                            <span class="absolute inset-y-0 end-0 pe-3 flex items-center pointer-events-none">
+                                <i class="fas fa-search text-gray-300 text-[10px]"></i>
                             </span>
                         </div>
                     </div>
 
-                    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 max-h-[500px] overflow-y-auto custom-scrollbar px-1">
+                    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 max-h-[450px] overflow-y-auto custom-scrollbar px-1">
                         @foreach($permissionGroups as $groupName => $permissions)
                             <div 
-                                class="bg-white border rounded-xl transition-all duration-200 self-start"
-                                :class="activeGroup === '{{ $groupName }}' ? 'border-[color:var(--brand-via)] shadow-sm' : 'border-gray-100'"
+                                class="bg-white border rounded-xl transition-all duration-200 self-start overflow-hidden"
+                                :class="activeGroup === '{{ $groupName }}' ? 'border-indigo-500 shadow-sm' : 'border-gray-100'"
                                 x-show="!permSearch || '{{ strtolower(tr($groupName)) }}'.includes(permSearch.toLowerCase()) || @js(array_values($permissions)).some(p => p.toLowerCase().includes(permSearch.toLowerCase()))"
                             >
-                                {{-- Group Title / Header --}}
                                 <div 
-                                    class="px-4 py-3 flex items-center justify-between cursor-pointer group select-none"
+                                    class="px-4 py-3 bg-gray-50/30 flex items-center justify-between cursor-pointer group select-none"
                                     @click="activeGroup = (activeGroup === '{{ $groupName }}' ? null : '{{ $groupName }}')"
                                 >
-                                    <div class="flex items-center gap-3">
-                                        <div class="relative flex items-center">
-                                            <input 
-                                                type="checkbox" 
-                                                class="w-4 h-4 rounded border-gray-300 text-[color:var(--brand-via)] focus:ring-[color:var(--brand-via)] cursor-pointer"
-                                                wire:click.stop="toggleGroup('{{ $groupName }}')"
-                                                @php
-                                                    $groupKeys = array_keys($permissions);
-                                                    $allSelected = count(array_intersect($groupKeys, $selectedPermissions)) === count($groupKeys);
-                                                @endphp
-                                                {{ $allSelected ? 'checked' : '' }}
-                                                @cannot('uac.roles.manage') disabled @endcannot
-                                            >
-                                        </div>
-                                        <span class="text-xs font-bold text-gray-800 group-hover:text-[color:var(--brand-via)] transition-colors">{{ tr($groupName) }}</span>
+                                    <div class="flex items-center gap-2">
+                                        <input 
+                                            type="checkbox" 
+                                            class="w-4 h-4 rounded border-gray-300 text-indigo-600 focus:ring-indigo-500 cursor-pointer"
+                                            wire:click.stop="toggleGroup('{{ $groupName }}')"
+                                            @php $groupKeys = array_keys($permissions); $allSelected = count(array_intersect($groupKeys, $selectedPermissions)) === count($groupKeys); @endphp
+                                            {{ $allSelected ? 'checked' : '' }}
+                                            @cannot('uac.roles.manage') disabled @endcannot
+                                        />
+                                        <span class="text-xs font-bold text-gray-800 group-hover:text-indigo-600 transition-colors">{{ tr($groupName) }}</span>
                                     </div>
-                                    <div class="flex items-center gap-3 text-gray-400">
-                                        <span class="text-[10px] font-bold bg-gray-50 px-2 py-0.5 rounded-full border border-gray-100">{{ count($permissions) }}</span>
-                                        <i class="fas fa-chevron-down text-[10px] transition-transform duration-300" :class="activeGroup === '{{ $groupName }}' ? 'rotate-180 text-[color:var(--brand-via)]' : ''"></i>
-                                    </div>
+                                    <i class="fas fa-chevron-down text-[10px] text-gray-400 transition-transform duration-300" :class="activeGroup === '{{ $groupName }}' ? 'rotate-180 text-indigo-500' : ''"></i>
                                 </div>
 
-                                {{-- Permissions Body (Collapsible) --}}
                                 <div 
                                     x-show="activeGroup === '{{ $groupName }}' || permSearch.length > 0"
-                                    x-transition:enter="transition ease-out duration-200"
-                                    x-transition:enter-start="opacity-0 -translate-y-2"
-                                    x-transition:enter-end="opacity-100 translate-y-0"
-                                    class="px-4 pb-4 pt-1 grid grid-cols-1 gap-1.5 border-t border-gray-50"
+                                    class="p-3 grid grid-cols-1 gap-1 border-t border-gray-50"
                                 >
                                     @foreach($permissions as $permKey => $permLabel)
                                         <label 
-                                            class="flex items-center gap-3 p-2 rounded-lg hover:bg-gray-50 transition-colors cursor-pointer group/item select-none border border-transparent hover:border-gray-100"
+                                            class="flex items-center gap-3 p-2 rounded-lg hover:bg-gray-50 transition-colors cursor-pointer group/item select-none border border-transparent"
                                             x-show="!permSearch || '{{ strtolower(tr($permLabel)) }}'.includes(permSearch.toLowerCase()) || '{{ strtolower($permKey) }}'.includes(permSearch.toLowerCase())"
                                         >
                                             <input 
                                                 type="checkbox" 
                                                 wire:model="selectedPermissions" 
                                                 value="{{ $permKey }}"
-                                                class="w-3.5 h-3.5 rounded border-gray-300 text-[color:var(--brand-via)] focus:ring-[color:var(--brand-via)] cursor-pointer"
+                                                class="w-3.5 h-3.5 rounded border-gray-300 text-indigo-600 focus:ring-indigo-500 cursor-pointer"
                                                 @cannot('uac.roles.manage') disabled @endcannot
                                             >
-                                            <div class="flex flex-col min-w-0 overflow-hidden">
-                                                <span class="text-[11px] font-semibold text-gray-700 group-hover/item:text-[color:var(--brand-via)] transition-colors break-words leading-tight">{{ tr($permLabel) }}</span>
+                                            <div class="flex flex-col min-w-0">
+                                                <span class="text-[11px] font-semibold text-gray-700 group-hover/item:text-indigo-600 transition-colors break-words leading-tight">{{ tr($permLabel) }}</span>
                                                 <span class="text-[8px] text-gray-400 font-mono tracking-tighter truncate">{{ $permKey }}</span>
                                             </div>
                                         </label>
@@ -367,38 +325,42 @@
                         @endforeach
                     </div>
                 </div>
-            </div>
-        </x-slot>
 
-        <x-slot name="footer">
-            <div class="flex items-center justify-between w-full">
-                <div class="hidden sm:flex items-center gap-2">
-                     <div class="text-[10px] font-bold text-gray-400 uppercase tracking-widest">{{ tr('Permissions') }}:</div>
-                     <div class="text-xs font-extrabold text-[color:var(--brand-via)] bg-[color:var(--brand-via)]/10 px-3 py-1 rounded-full border border-[color:var(--brand-via)]/20">
-                        {{ count($selectedPermissions) }}
+                <div class="flex items-center justify-between border-t border-gray-100 pt-4 mt-8">
+                     <div class="flex items-center gap-2">
+                         <span class="text-[10px] font-bold text-gray-400 uppercase tracking-widest">{{ tr('Total Permissions') }}:</span>
+                         <span class="text-xs font-extrabold text-indigo-600 bg-indigo-50 px-3 py-1 rounded-full border border-indigo-100">
+                            {{ count($selectedPermissions) }}
+                         </span>
                      </div>
-                </div>
-                <div class="flex items-center gap-3">
-                    <x-ui.secondary-button wire:click="$set('showModal', false)" class="!px-6 !text-xs">
-                        {{ tr('Cancel') }}
-                    </x-ui.secondary-button>
-                    
-                    @can('uac.roles.manage')
-                    <x-ui.primary-button type="button" wire:click="save" wire:loading.attr="disabled" :arrow="false" class="!px-8">
-                        <span wire:loading.remove class="flex items-center gap-2">
-                            <i class="fas fa-check-circle"></i>
-                            {{ $editingId ? tr('Update Role') : tr('Create Role') }}
-                        </span>
-                        <span wire:loading class="flex items-center gap-2">
-                            <i class="fas fa-spinner fa-spin"></i>
-                            {{ tr('Saving...') }}
-                        </span>
-                    </x-ui.primary-button>
-                    @endcan
+                     <div class="flex items-center gap-3">
+                        <x-ui.secondary-button wire:click="$set('showModal', false)">
+                            {{ tr('Cancel') }}
+                        </x-ui.secondary-button>
+                        @can('uac.roles.manage')
+                            <x-ui.primary-button type="button" wire:click="save" wire:loading.attr="disabled">
+                                <span wire:loading.remove>{{ tr('Save Changes') }}</span>
+                                <span wire:loading>
+                                    <i class="fas fa-spinner fa-spin mr-1"></i> {{ tr('Saving...') }}
+                                </span>
+                            </x-ui.primary-button>
+                        @endcan
+                     </div>
                 </div>
             </div>
         </x-slot>
     </x-ui.modal>
+
+    {{-- Confirm Dialog --}}
+    <x-ui.confirm-dialog
+        id="delete-role"
+        :title="tr('Delete Role')"
+        :message="tr('Are you sure you want to delete this role? This action cannot be undone.')"
+        :confirmText="tr('Delete Role')"
+        cancelText="{{ tr('Keep Role') }}"
+        confirmAction="wire:delete(__ID__)"
+        type="danger"
+    />
 
     <style>
         .custom-scrollbar::-webkit-scrollbar { width: 4px; }
@@ -407,8 +369,3 @@
         .custom-scrollbar::-webkit-scrollbar-thumb:hover { background: #d1d5db; }
     </style>
 </div>
-
-
-
-
-

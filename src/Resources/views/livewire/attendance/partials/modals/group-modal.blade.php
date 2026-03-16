@@ -33,6 +33,7 @@
                                     class="!py-3 !rounded-2xl" 
                                     :disabled="!auth()->user()->can('settings.attendance.manage')"
                                 />
+                                @error('newGroup.name') <span class="text-[10px] text-red-500 font-bold px-2">{{ tr($message) }}</span> @enderror
                                 
                                 <x-ui.select 
                                     label="{{ tr('Policy Type') }}" 
@@ -44,6 +45,7 @@
                                         <option value="{{ $key }}">{{ $label }}</option>
                                     @endforeach
                                 </x-ui.select>
+                                @error('newGroup.policy') <span class="text-[10px] text-red-500 font-bold px-2">{{ tr($message) }}</span> @enderror
                             </div>
 
                             {{-- Tracking Mode (Only if NOT General) --}}
@@ -72,6 +74,7 @@
                                         </div>
                                     @endforeach
                                 </div>
+                                @error('newGroup.tracking_mode') <span class="text-[10px] text-red-500 font-bold px-2 text-center block w-full">{{ tr($message) }}</span> @enderror
                             </div>
                             @endif
 
@@ -83,6 +86,7 @@
                                 class="!py-3 !rounded-2xl" 
                                 :disabled="!auth()->user()->can('settings.attendance.manage')"
                             />
+                            @error('newGroup.description') <span class="text-[10px] text-red-500 font-bold px-2">{{ tr($message) }}</span> @enderror
                         </div>
                     </div>
 
@@ -135,7 +139,7 @@
                                 <button 
                                     @can('settings.attendance.manage')
                                     wire:click="$set('newGroup.grace_periods_type', 'general')"
-                                    class="flex-1 py-1.5 px-3 rounded-lg text-[10px] font-black transition-all {{ $newGroup['grace_periods_type'] === 'general' ? 'bg-amber-500 text-white shadow-md' : 'text-amber-600 hover:bg-amber-50' }}"
+                                    class="flex-1 py-1.5 px-3 rounded-lg text-[10px] font-black transition-all cursor-pointer {{ $newGroup['grace_periods_type'] === 'general' ? 'bg-amber-500 text-white shadow-md' : 'text-amber-600 hover:bg-amber-50' }}"
                                     @else
                                     class="flex-1 py-1.5 px-3 rounded-lg text-[10px] font-black transition-all cursor-not-allowed {{ $newGroup['grace_periods_type'] === 'general' ? 'bg-amber-500 text-white opacity-60' : 'text-amber-400 opacity-60' }}"
                                     @endcan
@@ -145,7 +149,7 @@
                                 <button 
                                     @can('settings.attendance.manage')
                                     wire:click="$set('newGroup.grace_periods_type', 'custom')"
-                                    class="flex-1 py-1.5 px-3 rounded-lg text-[10px] font-black transition-all {{ $newGroup['grace_periods_type'] === 'custom' ? 'bg-amber-100 text-amber-700 shadow-sm' : 'text-amber-600 hover:bg-amber-50' }}"
+                                    class="flex-1 py-1.5 px-3 rounded-lg text-[10px] font-black transition-all cursor-pointer {{ $newGroup['grace_periods_type'] === 'custom' ? 'bg-amber-100 text-amber-700 shadow-sm' : 'text-amber-600 hover:bg-amber-50' }}"
                                     @else
                                     class="flex-1 py-1.5 px-3 rounded-lg text-[10px] font-black transition-all cursor-not-allowed {{ $newGroup['grace_periods_type'] === 'custom' ? 'bg-amber-50 text-amber-600 opacity-60' : 'text-amber-400 opacity-60' }}"
                                     @endcan
@@ -239,13 +243,24 @@
 
     <x-slot:footer>
         <div class="flex items-center justify-end gap-3 w-full">
-            <x-ui.secondary-button wire:click="$set('showGroupModal', false)" class="!text-xs !py-3 !px-6 !rounded-2xl">
+            <x-ui.secondary-button wire:click="$set('showGroupModal', false)" class="!text-xs !py-3 !px-6 !rounded-2xl cursor-pointer">
                 {{ tr('Cancel') }}
             </x-ui.secondary-button>
             @can('settings.attendance.manage')
-            <x-ui.brand-button wire:click="saveGroup" class="!px-10 !rounded-2xl !text-xs !py-3 shadow-xl">
-                {{ tr('Save Group') }}
-            </x-ui.brand-button>
+            <x-ui.primary-button 
+                wire:click="saveGroup" 
+                wire:loading.attr="disabled"
+                class="!px-10 !rounded-2xl !text-xs !py-3 shadow-xl cursor-pointer"
+            >
+                <span wire:loading.remove wire:target="saveGroup">
+                    <i class="fas fa-save me-1"></i>
+                    {{ tr('Save Group') }}
+                </span>
+                <span wire:loading wire:target="saveGroup" class="flex items-center gap-2">
+                    <i class="fas fa-spinner fa-spin"></i>
+                    {{ tr('Saving...') }}
+                </span>
+            </x-ui.primary-button>
             @endcan
         </div>
     </x-slot:footer>

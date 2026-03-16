@@ -81,10 +81,16 @@
             wire:loading.attr="disabled"
             :arrow="false"
             :fullWidth="false"
-            class="!px-6 !py-2 !rounded-xl !bg-blue-600 hover:!bg-blue-700"
+            class="!px-6 !py-2 !rounded-xl !bg-blue-600 hover:!bg-blue-700 cursor-pointer"
         >
-            <i class="fas fa-save me-2"></i>
-            {{ tr('Save Early Departure Penalties') }}
+            <span wire:loading.remove wire:target="saveBasicEarlyPenalty">
+                <i class="fas fa-save me-2"></i>
+                {{ tr('Save Early Departure Penalties') }}
+            </span>
+            <span wire:loading wire:target="saveBasicEarlyPenalty" class="flex items-center gap-2">
+                <i class="fas fa-spinner fa-spin"></i>
+                {{ tr('Saving...') }}
+            </span>
         </x-ui.primary-button>
     </div>
     @endcan

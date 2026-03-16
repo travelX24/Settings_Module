@@ -10,10 +10,6 @@
         class="!flex-col {{ $isRtl ? '!items-end !text-right' : '!items-start !text-left' }} !justify-start !gap-1"
         titleSize="xl"
     />
-
-    <div class="text-xs text-gray-400">calendar_type: {{ config('company.calendar_type') }}</div>
-
-
 @endsection
 
 @section('topbar-actions')
@@ -29,6 +25,23 @@
 @endsection
 
 <div class="space-y-6">
+    {{-- Floating Elements Teleported to Body --}}
+    <template x-teleport="body">
+        <div>
+            @include('systemsettings::livewire.attendance.partials.work-schedule-modal')
+            
+            <x-ui.confirm-dialog 
+                id="delete-work-schedule" 
+                confirmText="{{ tr('Yes, Delete') }}"
+                cancelText="{{ tr('Cancel') }}"
+                confirmAction="wire:deleteSchedule(__ID__)"
+                title="{{ tr('Confirm Permanent Deletion') }}"
+                message="{{ tr('Are you sure you want to delete this schedule template? This action cannot be reversed.') }}"
+                type="danger"
+            />
+        </div>
+    </template>
+
     <x-ui.card>
         <div class="space-y-4">
             {{-- Search Box & Main Actions --}}
@@ -45,7 +58,7 @@
                     <x-ui.secondary-button
                         wire:click="exportSchedules"
                         :fullWidth="false"
-                        class="!border-amber-200 !bg-amber-50/50 !text-amber-700 hover:!bg-amber-100"
+                        class="!border-amber-200 !bg-amber-50/50 !text-amber-700 hover:!bg-amber-100 cursor-pointer"
                     >
                         <i class="fas fa-file-export"></i>
                         <span class="ms-2">{{ tr('Export CSV') }}</span>
@@ -56,6 +69,7 @@
                         wire:click="openScheduleModal"
                         :arrow="false"
                         :fullWidth="false"
+                        class="cursor-pointer"
                     >
                         <i class="fas fa-plus"></i>
                         <span class="ms-2">{{ tr('New Schedule') }}</span>
@@ -70,7 +84,7 @@
                     <button
                         type="button"
                         @click="open = !open"
-                        class="flex items-center justify-between text-sm font-semibold text-gray-700 hover:text-gray-900 transition-colors"
+                        class="flex items-center justify-between text-sm font-semibold text-gray-700 hover:text-gray-900 transition-colors cursor-pointer"
                     >
                         <span class="flex items-center gap-2">
                             <i class="fas fa-filter text-xs"></i>
@@ -107,7 +121,6 @@
                         :options="[
                             ['value' => 'active', 'label' => tr('Active')],
                             ['value' => 'inactive', 'label' => tr('Inactive')],
-                            ['value' => 'archived', 'label' => tr('Archived')],
                         ]"
                         width="full"
                         :defer="false"
@@ -128,22 +141,20 @@
                         :applyOnChange="true"
                     />
 
-            <div class="grid grid-cols-2 gap-2">
-                <x-ui.company-date-picker
-                    model="filterDateStart"
-                    :label="tr('From')"
-                    :placeholder="tr('Select date...')"
-                />
+                    <div class="grid grid-cols-2 gap-2">
+                        <x-ui.company-date-picker
+                            model="filterDateStart"
+                            :label="tr('From')"
+                            :placeholder="tr('Select date...')"
+                        />
 
-                <x-ui.company-date-picker
-                    model="filterDateEnd"
-                    :label="tr('To')"
-                    :placeholder="tr('Select date...')"
-                />
-            </div>
-
-
-
+                        <x-ui.company-date-picker
+                            model="filterDateEnd"
+                            :label="tr('To')"
+                            :placeholder="tr('Select date...')"
+                        />
+                    </div>
+                </div>
 
                 {{-- Clear Filters Button --}}
                 <div
@@ -156,7 +167,7 @@
                         wire:click="clearAllFilters"
                         wire:loading.attr="disabled"
                         wire:target="clearAllFilters"
-                        class="inline-flex items-center gap-2 px-3 py-1.5 text-xs font-semibold text-gray-600 hover:text-gray-900 transition-colors disabled:opacity-50"
+                        class="inline-flex items-center gap-2 px-3 py-1.5 text-xs font-semibold text-gray-600 hover:text-gray-900 transition-colors disabled:opacity-50 cursor-pointer"
                     >
                         <i class="fas fa-times" wire:loading.remove wire:target="clearAllFilters"></i>
                         <i class="fas fa-spinner fa-spin" wire:loading wire:target="clearAllFilters"></i>
@@ -169,7 +180,7 @@
     </x-ui.card>
 
     {{-- Table Collection --}}
-    <div class="bg-white rounded-3xl shadow-sm border border-gray-100 overflow-x-auto overflow-y-visible relative mt-2">
+    <div class="bg-white rounded-3xl shadow-sm border border-gray-100 overflow-visible relative mt-2">
         <table class="w-full text-start border-collapse table-fixed">
             <thead>
                 <tr class="bg-gray-50/50 border-b border-gray-100">
@@ -199,7 +210,7 @@
                             </div>
                         </div>
                     </td>
-                    <td class="px-6 py-4">
+                    <td class="px-6 py-4 text-center">
                         <div class="flex flex-col items-center justify-center gap-1.5">
                             @foreach($schedule->periods as $period)
                                 <div class="flex items-center justify-center gap-2 text-[10px] font-black text-gray-600 bg-white px-2.5 py-1 rounded-xl border border-gray-100 shadow-sm w-fit whitespace-nowrap">
@@ -213,7 +224,7 @@
                             @endforeach
                         </div>
                     </td>
-                    <td class="px-6 py-4">
+                    <td class="px-6 py-4 text-center">
                         <div class="flex flex-col items-center justify-center">
                             <div class="flex items-center justify-center -space-x-1.5 {{ $isRtl ? 'space-x-reverse' : '' }}">
                                 @foreach(['saturday', 'sunday', 'monday', 'tuesday', 'wednesday', 'thursday', 'friday'] as $day)
@@ -222,52 +233,18 @@
                                     </div>
                                 @endforeach
                             </div>
-                            @if($schedule->exceptions->count() > 0)
+                            @if(($schedule->exceptions ?? collect())->count() > 0)
                                 <div class="mt-2 text-center" x-data="{ open: false }">
                                     <div class="inline-block relative">
                                         <span 
                                             x-ref="anchor"
                                             @mouseenter="open = true" 
                                             @mouseleave="open = false"
-                                            class="px-2 py-1 rounded-lg bg-indigo-50/50 text-[9px] font-bold text-indigo-600 border border-indigo-100/50 uppercase inline-flex items-center gap-1.5 cursor-help transition-all hover:bg-indigo-100/50"
+                                            class="px-2 py-1 rounded-lg bg-indigo-50/50 text-[9px] font-bold text-indigo-600 border border-indigo-100/50 uppercase inline-flex items-center gap-1.5 cursor-pointer transition-all hover:bg-indigo-100/50"
                                         >
                                             <i class="fas fa-magic text-[8px]"></i>
                                             {{ $schedule->exceptions->count() }} {{ tr('Exceptions') }}
                                         </span>
-                                        
-                                        {{-- Tooltip - Teleported to Body to avoid clipping --}}
-                                        <template x-teleport="body">
-                                            <div 
-                                                x-show="open"
-                                                x-anchor.top.offset.8="$refs.anchor"
-                                                x-transition:enter="transition ease-out duration-200"
-                                                x-transition:enter-start="opacity-0 translate-y-2"
-                                                x-transition:enter-end="opacity-100 translate-y-0"
-                                                class="z-[9999] pointer-events-none"
-                                            >
-                                                <div class="bg-white rounded-xl shadow-xl border border-gray-100 p-3 w-64 ring-1 ring-black/5">
-                                                    <div class="text-[10px] font-black text-gray-400 uppercase tracking-widest mb-2 border-b border-gray-50 pb-2 flex items-center gap-2">
-                                                        <i class="fas fa-list text-[8px]"></i>
-                                                        {{ tr('Exception Details') }}
-                                                    </div>
-                                                    <div class="space-y-1.5">
-                                                        @foreach($schedule->exceptions->where('is_active', true) as $exception)
-                                                            <div class="flex items-center justify-between gap-3 p-2 rounded-lg bg-gray-50/50 border border-gray-100/50">
-                                                                <div class="flex items-center gap-2">
-                                                                    <div class="w-1.5 h-1.5 rounded-full bg-indigo-400"></div>
-                                                                    <span class="text-xs font-bold text-gray-700">
-                                                                        {{ tr(ucfirst($exception->day_of_week)) }}
-                                                                    </span>
-                                                                </div>
-                                                                <div class="text-[10px] font-medium text-gray-500 bg-white px-1.5 py-0.5 rounded border border-gray-100">
-                                                                    {{ substr($exception->start_time, 0, 5) }} - {{ substr($exception->end_time, 0, 5) }}
-                                                                </div>
-                                                            </div>
-                                                        @endforeach
-                                                    </div>
-                                                </div>
-                                            </div>
-                                        </template>
                                     </div>
                                 </div>
                             @endif
@@ -276,7 +253,7 @@
                     <td class="px-6 py-4 text-center">
                         <div class="flex justify-center">
                             @can('settings.attendance.manage')
-                            <button wire:click="toggleStatus({{ $schedule->id }})" class="w-9 h-4.5 rounded-full p-1 transition-all relative {{ $schedule->is_active ? 'bg-green-500' : 'bg-gray-200' }}">
+                            <button wire:click="toggleStatus({{ $schedule->id }})" class="w-9 h-4.5 rounded-full p-1 transition-all relative cursor-pointer {{ $schedule->is_active ? 'bg-green-500' : 'bg-gray-200' }}">
                                 <div class="w-2.5 h-2.5 bg-white rounded-full shadow-sm transition-all {{ $schedule->is_active ? ($isRtl ? 'mr-4.5' : 'ml-4.5') : '' }}"></div>
                             </button>
                             @else
@@ -289,15 +266,16 @@
                     <td class="px-6 py-4 text-end">
                         @can('settings.attendance.manage')
                         <x-ui.actions-menu>
-                            <x-ui.dropdown-item wire:click="copySchedule({{ $schedule->id }})">
+                            <x-ui.dropdown-item wire:click="copySchedule({{ $schedule->id }})" class="cursor-pointer">
                                 <i class="fas fa-copy me-2 text-amber-500"></i> {{ tr('Duplicate') }}
                             </x-ui.dropdown-item>
-                            <x-ui.dropdown-item wire:click="openScheduleModal({{ $schedule->id }})">
+                            <x-ui.dropdown-item wire:click="openScheduleModal({{ $schedule->id }})" class="cursor-pointer">
                                 <i class="fas fa-edit me-2 text-blue-500"></i> {{ tr('Edit Details') }}
                             </x-ui.dropdown-item>
                             <x-ui.dropdown-item 
                                 danger
-                                @click="$dispatch('open-confirm-delete', { id: {{ $schedule->id }} })"
+                                @click.stop="$dispatch('open-confirm-delete-work-schedule', { id: '{{ $schedule->id }}' })"
+                                class="cursor-pointer"
                             >
                                 <i class="fas fa-trash-alt me-2 text-red-500"></i> {{ tr('Delete Permanently') }}
                             </x-ui.dropdown-item>
@@ -325,22 +303,4 @@
         </div>
         @endif
     </div>
-
-    {{-- Floating Modals & Dialogs --}}
-    @include('systemsettings::livewire.attendance.partials.work-schedule-modal')
-
-    <x-ui.confirm-dialog 
-        id="delete" 
-        confirmText="{{ tr('Yes, Delete') }}"
-        cancelText="{{ tr('Cancel') }}"
-        confirmAction="wire:deleteSchedule(__ID__)"
-        title="{{ tr('Confirm Permanent Deletion') }}"
-        message="{{ tr('Are you sure you want to delete this schedule template? This action cannot be reversed.') }}"
-        type="danger"
-    />
 </div>
-
-
-
-
-

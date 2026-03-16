@@ -13,7 +13,7 @@
         <div 
             @can('settings.attendance.manage')
             wire:click="setTrackingPolicy('{{ $key }}')" 
-            class="p-4 border rounded-xl cursor-pointer transition-all {{ $trackingPolicy === $key ? 'border-[color:var(--brand-via)] bg-[color:var(--brand-via)]/5 ring-1 ring-[color:var(--brand-via)]/20 shadow-sm' : 'border-gray-200 bg-white hover:border-gray-300' }}"
+            class="p-4 border rounded-xl cursor-pointer transition-all hover:shadow-md {{ $trackingPolicy === $key ? 'border-[color:var(--brand-via)] bg-[color:var(--brand-via)]/5 ring-1 ring-[color:var(--brand-via)]/20 shadow-sm' : 'border-gray-200 bg-white hover:border-gray-300' }}"
             @else
             class="p-4 border rounded-xl cursor-not-allowed opacity-80 {{ $trackingPolicy === $key ? 'border-[color:var(--brand-via)] bg-[color:var(--brand-via)]/5' : 'border-gray-200 bg-gray-50' }}"
             @endcan

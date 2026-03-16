@@ -17,7 +17,7 @@
         href="{{ route('company-admin.settings.general') }}"
         :arrow="false"
         :fullWidth="false"
-        class="!px-4 !py-2 !text-sm !rounded-xl !gap-2"
+        class="!px-4 !py-2 !text-sm !rounded-xl !gap-2 cursor-pointer"
     >
         <i class="fas {{ $isRtl ? 'fa-arrow-right' : 'fa-arrow-left' }} text-xs"></i>
         <span>{{ tr('Back') }}</span>
@@ -35,7 +35,7 @@
                     @can('uac.users.view')
                     <button
                         wire:click="setActiveTab('users')"
-                        class="px-6 py-4 font-semibold text-sm transition-all duration-200 flex items-center gap-2 {{ $activeTab === 'users' 
+                        class="px-6 py-4 font-semibold text-sm transition-all duration-200 flex items-center gap-2 cursor-pointer {{ $activeTab === 'users' 
                             ? 'border-b-2 border-[color:var(--brand-via)] text-[color:var(--brand-via)] bg-white' 
                             : 'text-gray-600 hover:text-gray-900 hover:bg-gray-100' }}"
                     >
@@ -48,7 +48,7 @@
                     @can('uac.roles.view')
                     <button
                         wire:click="setActiveTab('roles')"
-                        class="px-6 py-4 font-semibold text-sm transition-all duration-200 flex items-center gap-2 {{ $activeTab === 'roles' 
+                        class="px-6 py-4 font-semibold text-sm transition-all duration-200 flex items-center gap-2 cursor-pointer {{ $activeTab === 'roles' 
                             ? 'border-b-2 border-[color:var(--brand-via)] text-[color:var(--brand-via)] bg-white' 
                             : 'text-gray-600 hover:text-gray-900 hover:bg-gray-100' }}"
                     >
@@ -64,7 +64,7 @@
                     <button
                         type="button"
                         @click="$dispatch('open-add-user-modal')"
-                        class="group relative overflow-hidden rounded-xl px-4 py-2 text-sm font-semibold text-white shadow-md bg-gradient-to-r from-[color:var(--brand-from)] via-[color:var(--brand-via)] to-[color:var(--brand-to)] hover:shadow-lg active:scale-[0.98] transition-all duration-300 focus:outline-none focus:ring-2 focus:ring-[color:var(--brand-from)]/30"
+                        class="group relative overflow-hidden rounded-xl px-4 py-2 text-sm font-semibold text-white shadow-md bg-gradient-to-r from-[color:var(--brand-from)] via-[color:var(--brand-via)] to-[color:var(--brand-to)] hover:shadow-lg active:scale-[0.98] transition-all duration-300 focus:outline-none focus:ring-2 focus:ring-[color:var(--brand-from)]/30 cursor-pointer"
                     >
                         <span class="absolute inset-0 bg-gradient-to-r from-transparent via-white/20 to-transparent -translate-x-full group-hover:translate-x-full transition-transform duration-1000"></span>
                         <span class="relative flex items-center gap-2">
@@ -81,7 +81,7 @@
                     <button
                         type="button"
                         @click="$dispatch('open-add-role-modal')"
-                        class="group relative overflow-hidden rounded-xl px-4 py-2 text-sm font-semibold text-white shadow-md bg-gradient-to-r from-[color:var(--brand-from)] via-[color:var(--brand-via)] to-[color:var(--brand-to)] hover:shadow-lg active:scale-[0.98] transition-all duration-300 focus:outline-none focus:ring-2 focus:ring-[color:var(--brand-from)]/30"
+                        class="group relative overflow-hidden rounded-xl px-4 py-2 text-sm font-semibold text-white shadow-md bg-gradient-to-r from-[color:var(--brand-from)] via-[color:var(--brand-via)] to-[color:var(--brand-to)] hover:shadow-lg active:scale-[0.98] transition-all duration-300 focus:outline-none focus:ring-2 focus:ring-[color:var(--brand-from)]/30 cursor-pointer"
                     >
                         <span class="absolute inset-0 bg-gradient-to-r from-transparent via-white/20 to-transparent -translate-x-full group-hover:translate-x-full transition-transform duration-1000"></span>
                         <span class="relative flex items-center gap-2">

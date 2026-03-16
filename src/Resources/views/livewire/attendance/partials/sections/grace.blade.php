@@ -85,10 +85,16 @@
             wire:loading.attr="disabled"
             :arrow="false"
             :fullWidth="false"
-            class="!px-6 !py-2 !rounded-xl"
+            class="!px-6 !py-2 !rounded-xl cursor-pointer"
         >
-            <i class="fas fa-save me-2"></i>
-            {{ tr('Save Basic Settings') }}
+            <span wire:loading.remove wire:target="saveGracePeriods">
+                <i class="fas fa-save me-2"></i>
+                {{ tr('Save Basic Settings') }}
+            </span>
+            <span wire:loading wire:target="saveGracePeriods" class="flex items-center gap-2">
+                <i class="fas fa-spinner fa-spin"></i>
+                {{ tr('Saving...') }}
+            </span>
         </x-ui.primary-button>
     </div>
     @endcan

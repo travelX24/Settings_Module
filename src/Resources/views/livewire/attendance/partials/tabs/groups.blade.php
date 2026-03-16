@@ -28,7 +28,7 @@
                 @endif
 
                 @can('settings.attendance.manage')
-                    <x-ui.primary-button wire:click="openGroupModal" class="!rounded-xl shadow-md">
+                    <x-ui.primary-button wire:click="openGroupModal" class="!rounded-xl shadow-md cursor-pointer">
                         <i class="fas fa-plus-circle me-1"></i> {{ tr('New Group') }}
                     </x-ui.primary-button>
                 @endcan
@@ -150,10 +150,10 @@
                     <td class="px-6 py-4 text-end">
                         @can('settings.attendance.manage')
                         <div class="flex items-center justify-end gap-2">
-                            <button wire:click="editGroup('{{ $group['id'] }}')" class="p-2 text-blue-500 hover:bg-blue-50 rounded-xl transition-colors">
+                            <button wire:click="editGroup('{{ $group['id'] }}')" class="p-2 text-blue-500 hover:bg-blue-50 rounded-xl transition-colors cursor-pointer">
                                 <i class="fas fa-edit text-xs"></i>
                             </button>
-                            <button @click="$dispatch('open-confirm-delete-group', { id: '{{ $group['id'] }}' })" class="p-2 text-red-500 hover:bg-red-50 rounded-xl transition-colors">
+                            <button @click="$dispatch('open-confirm-delete-group', { id: '{{ $group['id'] }}' })" class="p-2 text-red-500 hover:bg-red-50 rounded-xl transition-colors cursor-pointer">
                                 <i class="fas fa-trash-alt text-xs"></i>
                             </button>
                         </div>
