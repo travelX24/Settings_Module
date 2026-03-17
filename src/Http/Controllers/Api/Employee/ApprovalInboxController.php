@@ -35,12 +35,20 @@ class ApprovalInboxController extends Controller
 
         $counts = $this->approvalService->getTaskSummary($employee->id, $companyId);
         
+        $data = [];
+        foreach ($counts as $key => $count) {
+            $data[] = [
+                'operation_key' => $key,
+                'count' => (int) $count,
+                'label' => $this->getLabels()[$key]['ar'] ?? $key,
+            ];
+        }
+
         return response()->json([
             'ok' => true,
-            'data' => [
-                'pending_counts' => $counts,
-                'total_pending' => array_sum($counts),
-            ]
+            'data' => $data,
+            'total_pending' => array_sum($counts),
+            'is_approver' => true // Since they hit this endpoint and got data
         ]);
     }
 

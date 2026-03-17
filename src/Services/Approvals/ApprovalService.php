@@ -136,15 +136,71 @@ class ApprovalService
      */
     public function ensureTasksForRequest(array $src, object $request, int $companyId): void
     {
-        $existing = ApprovalTask::where('request_type', $src['type'])
-            ->where('request_id', $request->{$src['idCol']})
+        $requestId = $request->{$src['idCol']};
+        
+        $existing = ApprovalTask::where('approvable_type', $src['type'])
+            ->where('approvable_id', $requestId)
             ->exists();
 
         if ($existing) return;
 
-        // Logic to generate tasks based on policy
-        // ... (This is a simplified version of the logic) ...
-        // We find the policy, find the steps, and create tasks.
+        // 1. Find Policy
+        $policy = DB::table('approval_policies')
+            ->where('company_id', $companyId)
+            ->where('operation_key', $src['operation_key'])
+            ->where('is_active', true)
+            ->first();
+
+        if (!$policy) {
+            // No policy? Default to direct manager if possible
+            $managerId = $this->resolveDirectManagerId((int)$request->{$src['employeeCol']});
+            if ($managerId > 0) {
+                ApprovalTask::create([
+                    'company_id' => $companyId,
+                    'operation_key' => $src['operation_key'],
+                    'approvable_type' => $src['type'],
+                    'approvable_id' => $requestId,
+                    'request_employee_id' => $request->{$src['employeeCol']},
+                    'position' => 1,
+                    'approver_employee_id' => $managerId,
+                    'status' => 'pending',
+                ]);
+            }
+            return;
+        }
+
+        // 2. Fetch steps
+        $steps = DB::table('approval_policy_steps')
+            ->where('policy_id', $policy->id)
+            ->orderBy('position')
+            ->get();
+
+        if ($steps->isEmpty()) return;
+
+        foreach ($steps as $step) {
+            $approverId = 0;
+            if ($step->approver_type === 'direct_manager') {
+                $approverId = $this->resolveDirectManagerId((int)$request->{$src['employeeCol']});
+            } elseif ($step->approver_type === 'user') {
+                // Map user_id to employee_id (users table has employee_id, but employees table doesn't have user_id)
+                $approverId = DB::table('users')->where('id', $step->approver_id)->value('employee_id') ?: 0;
+            } elseif ($step->approver_type === 'employee') {
+                $approverId = $step->approver_id;
+            }
+
+            if ($approverId > 0) {
+                ApprovalTask::create([
+                    'company_id' => $companyId,
+                    'operation_key' => $src['operation_key'],
+                    'approvable_type' => $src['type'],
+                    'approvable_id' => $requestId,
+                    'request_employee_id' => $request->{$src['employeeCol']},
+                    'position' => $step->position,
+                    'approver_employee_id' => $approverId,
+                    'status' => ($step->position === 1) ? 'pending' : 'waiting',
+                ]);
+            }
+        }
     }
 
     /**
@@ -193,20 +249,20 @@ class ApprovalService
 
     protected function handleSuccessiveApprovals(ApprovalTask $task, ?array $src)
     {
-        // 1. Check if there are other pending tasks at the same sequence
+        // 1. Check if there are other pending tasks at the same position
         $otherPendingAtSameSeq = ApprovalTask::where('approvable_type', $task->approvable_type)
             ->where('approvable_id', $task->approvable_id)
-            ->where('sequence', $task->sequence)
+            ->where('position', $task->position)
             ->where('status', 'pending')
             ->exists();
 
-        if ($otherPendingAtSameSeq) return; // Wait for others if it's "all must approve" logic (simple version)
+        if ($otherPendingAtSameSeq) return; 
 
-        // 2. Activate next sequence
-        $nextSeq = (int)$task->sequence + 1;
+        // 2. Activate next position
+        $nextPos = (int)$task->position + 1;
         $waitingTasks = ApprovalTask::where('approvable_type', $task->approvable_type)
             ->where('approvable_id', $task->approvable_id)
-            ->where('sequence', $nextSeq)
+            ->where('position', $nextPos)
             ->where('status', 'waiting')
             ->get();
 

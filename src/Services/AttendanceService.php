@@ -20,14 +20,14 @@ class AttendanceService
     /**
      * Ensure a daily log exists.
      */
-    public function ensureLog(int $companyId, int $employeeId, string $date, $schedule = null, $holidays = null)
+    public function ensureLog(int $companyId, int $employeeId, string $date, $schedule = null, $holidays = null, bool $force = false)
     {
         $log = AttendanceDailyLog::where('saas_company_id', $companyId)
             ->where('employee_id', $employeeId)
             ->whereDate('attendance_date', $date)
             ->first();
 
-        if ($log && !is_null($log->scheduled_hours)) {
+        if (!$force && $log && !is_null($log->scheduled_hours) && (float)$log->scheduled_hours > 0) {
             return $log;
         }
 
@@ -53,7 +53,7 @@ class AttendanceService
     public function recordCheckIn(AttendanceDailyLog $log, string $method, ?float $lat, ?float $lng, $schedule, int $lateGraceMins = 15): array
     {
         $now = now();
-        $dateStr = $log->attendance_date;
+        $dateStr = Carbon::parse($log->attendance_date)->toDateString();
         $nowTime = $now->format('H:i:s');
 
         // Check for open sessions
@@ -63,7 +63,7 @@ class AttendanceService
             ->first();
 
         if ($openSession) {
-            return ['ok' => false, 'code' => 'already_checked_in', 'message' => 'لديك جلسة حضور مفتوحة بالفعل.'];
+            return ['ok' => false, 'code' => 'already_checked_in', 'message' => tr('You already have an open attendance session.')];
         }
 
         $status = 'present';
@@ -72,8 +72,8 @@ class AttendanceService
         if ($schedule && $schedule->periods) {
             $isWithinPeriod = false;
             foreach ($schedule->periods as $p) {
-                $pStartAllowed = Carbon::parse($dateStr . ' ' . $p->start_time)->subMinutes(30);
-                $pEnd = Carbon::parse($dateStr . ' ' . $p->end_time);
+                $pStartAllowed = Carbon::parse(Carbon::parse($dateStr)->toDateString() . " " . substr((string)$p->start_time, 0, 5))->subMinutes(30);
+                $pEnd = Carbon::parse(Carbon::parse($dateStr)->toDateString() . " " . substr((string)$p->end_time, 0, 5));
                 
                 if ($now->between($pStartAllowed, $pEnd)) {
                     $matchedPeriodId = $p->id;
@@ -86,11 +86,11 @@ class AttendanceService
                         ->exists();
 
                     if ($alreadyUsed) {
-                        return ['ok' => false, 'code' => 'period_already_completed', 'message' => 'لقد قمت بإكمال تسجيل الحضور لهذه الفترة مسبقاً.'];
+                        return ['ok' => false, 'code' => 'period_already_completed', 'message' => tr('You have already completed attendance registration for this period.')];
                     }
 
                     // Late calculation
-                    $realStart = Carbon::parse($dateStr . ' ' . $p->start_time);
+                    $realStart = Carbon::parse(Carbon::parse($dateStr)->toDateString() . " " . substr((string)$p->start_time, 0, 5));
                     if ($now->greaterThan($realStart->addMinutes($lateGraceMins))) {
                         $status = 'late';
                     }
@@ -99,7 +99,7 @@ class AttendanceService
             }
 
             if (!$isWithinPeriod) {
-                return ['ok' => false, 'code' => 'too_early_for_checkin', 'message' => 'لا يمكنك التحضير قبل بداية الفترة بأكثر من 30 دقيقة.'];
+                return ['ok' => false, 'code' => 'too_early_for_checkin', 'message' => tr('You cannot check-in more than 30 minutes before the period starts.')];
             }
         }
 
@@ -140,7 +140,7 @@ class AttendanceService
             ->first();
 
         if (!$openSession) {
-             return ['ok' => false, 'code' => 'no_check_in_record', 'message' => 'لا يوجد سجل حضور مفتوح حالياً'];
+             return ['ok' => false, 'code' => 'no_check_in_record', 'message' => tr('No open attendance record found currently.')];
         }
 
         DB::table('attendance_daily_details')->where('id', $openSession->id)->update([
