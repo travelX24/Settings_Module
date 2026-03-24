@@ -36,11 +36,13 @@ class ApprovalInboxController extends Controller
         $counts = $this->approvalService->getTaskSummary($employee->id, $companyId);
         
         $data = [];
+        $labels = $this->getLabels();
         foreach ($counts as $key => $count) {
             $data[] = [
-                'operation_key' => $key,
-                'count' => (int) $count,
-                'label' => $this->getLabels()[$key]['ar'] ?? $key,
+                'key' => $key,
+                'pending_count' => (int) $count,
+                'label_ar' => $labels[$key]['ar'] ?? $key,
+                'label_en' => $labels[$key]['en'] ?? $key,
             ];
         }
 
@@ -159,23 +161,61 @@ class ApprovalInboxController extends Controller
         $src = $this->approvalService->getRequestSource($task->approvable_type);
         if (!$src) return null;
 
-        $data = DB::table($src['table'])->where($src['idCol'], $task->approvable_id)->first();
-        if (!$data) return null;
+        $rawData = DB::table($src['table'])->where($src['idCol'], $task->approvable_id)->first();
+        if (!$rawData) return null;
 
+        $data = (array) $rawData;
         $isAr = str_contains($request->header('Accept-Language', 'ar'), 'ar');
 
-        // Add creator info
+        // Common Fields
+        $data['id'] = (int) $data['id'];
+        $data['status'] = (string) ($data['status'] ?? 'pending');
+        $data['reason'] = (string) ($data['reason'] ?? '');
+        $data['reject_reason'] = (string) ($data['reject_reason'] ?? '');
+
+        // Creator Info
         $employeeCol = $src['employeeCol'];
-        if ($employeeCol && isset($data->{$employeeCol})) {
-            $creator = DB::table('employees')->where('id', $data->{$employeeCol})->first(['name_ar', 'name_en']);
-            $data->creator = $creator ? ($isAr ? $creator->name_ar : $creator->name_en) : 'Unknown';
+        if ($employeeCol && isset($data[$employeeCol])) {
+            $creator = DB::table('employees')->where('id', $data[$employeeCol])->first(['name_ar', 'name_en']);
+            $data['creator'] = $creator ? ($isAr ? $creator->name_ar : $creator->name_en) : 'Unknown';
+        } else {
+            $data['creator'] = 'Unknown';
         }
 
-        // Add type label
+        // Type Label
         $labels = $this->getLabels();
-        $data->type_label = $isAr 
+        $data['type_label'] = $isAr 
             ? ($labels[$task->approvable_type]['ar'] ?? $task->approvable_type) 
             : ($labels[$task->approvable_type]['en'] ?? $task->approvable_type);
+
+        // Date fields normalization for Flutter models
+        $data['request_date'] = (string) ($data['created_at'] ?? $data['requested_at'] ?? '');
+        $data['from_date'] = (string) ($data['start_date'] ?? $data['date'] ?? $data['permission_date'] ?? '');
+        $data['to_date'] = (string) ($data['end_date'] ?? $data['date'] ?? $data['permission_date'] ?? '');
+        $data['from_time'] = (string) ($data['from_time'] ?? '');
+        $data['to_time'] = (string) ($data['to_time'] ?? '');
+
+        // Leave Specifics
+        if ($task->approvable_type === 'leaves') {
+            $policy = DB::table('attendance_leave_policies')->where('id', $data['leave_policy_id'] ?? 0)->first(['name_ar', 'name_en']);
+            $data['leave_type'] = $policy ? ($isAr ? $policy->name_ar : $policy->name_en) : 'Leave';
+            $data['requested_days'] = (string) ($data['requested_days'] ?? '0');
+        }
+
+        // Permission Specifics
+        if ($task->approvable_type === 'permissions') {
+            $data['leave_type'] = $isAr ? 'إذن' : 'Permission';
+            $data['permission_date'] = (string) ($data['date'] ?? $data['permission_date'] ?? '');
+        }
+
+        // Mission Specifics
+        if ($task->approvable_type === 'missions') {
+            $data['requested_at'] = (string) ($data['created_at'] ?? '');
+            $data['start_date'] = (string) ($data['start_date'] ?? '');
+            $data['end_date'] = (string) ($data['end_date'] ?? '');
+            $data['type'] = (string) ($data['type'] ?? 'full_day');
+            $data['destination'] = (string) ($data['destination'] ?? '');
+        }
 
         return $data;
     }
