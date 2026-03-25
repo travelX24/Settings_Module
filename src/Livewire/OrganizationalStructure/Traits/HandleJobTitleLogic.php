@@ -26,6 +26,8 @@ trait HandleJobTitleLogic
         ], $this->editingId);
 
         $this->showModal = false;
+        $this->resetForm();
+        $this->resetPage();
         $this->loadStats();
         $this->dispatch('toast', type: 'success', message: tr('Job title saved successfully'));
     }
@@ -41,6 +43,7 @@ trait HandleJobTitleLogic
         }
 
         $jt->delete();
+        $this->resetPage();
         $this->loadStats();
         $this->dispatch('toast', type: 'success', message: tr('Deleted successfully'));
     }

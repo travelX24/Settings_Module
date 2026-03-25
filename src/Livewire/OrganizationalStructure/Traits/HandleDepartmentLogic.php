@@ -33,6 +33,8 @@ trait HandleDepartmentLogic
         ], $this->editingId);
 
         $this->showModal = false;
+        $this->resetForm();
+        $this->resetPage();
         $this->loadStats();
         $this->dispatch('toast', type: 'success', title: tr('Success'), message: tr('Operation completed successfully'));
     }
@@ -48,6 +50,7 @@ trait HandleDepartmentLogic
         }
 
         $dept->delete();
+        $this->resetPage();
         $this->loadStats();
         $this->dispatch('toast', type: 'success', message: tr('Deleted successfully'));
     }
