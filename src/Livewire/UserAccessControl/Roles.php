@@ -73,6 +73,7 @@ class Roles extends Component
         ], $this->editingId);
 
         $this->showModal = false;
+        $this->resetPage();
         $this->dispatch('toast', ['type' => 'success', 'message' => tr('Operation successful')]);
     }
 
@@ -111,6 +112,7 @@ class Roles extends Component
         $res = $this->uacService->deleteRole($id, $this->getCompanyId());
         
         if ($res['ok']) {
+            $this->resetPage();
             $this->dispatch('toast', ['type' => 'success', 'message' => tr('Deleted successfully')]);
         } else {
             $this->dispatch('toast', ['type' => 'error', 'message' => $res['message']]);

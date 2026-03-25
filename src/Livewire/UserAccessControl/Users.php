@@ -59,13 +59,21 @@ class Users extends Component
         $this->edit($id);
     }
 
+    public function updatedSelectedEmployeeId($id)
+    {
+        if (!$id) {
+            $this->reset(['name', 'email']);
+            return;
+        }
+        $emp = Employee::findOrFail($id);
+        $this->name = $emp->name_ar ?? $emp->name_en;
+        $this->email = $emp->email_work ?? $emp->email_personal ?? '';
+    }
+
     public function selectEmployee($id)
     {
-        if (!$id) return;
-        $emp = Employee::findOrFail($id);
         $this->selectedEmployeeId = $id;
-        $this->name = $emp->name_ar ?? $emp->name_en;
-        $this->email = $emp->work_email ?? $emp->personal_email ?? '';
+        $this->updatedSelectedEmployeeId($id);
     }
 
     public function sendPasswordReset($id)
@@ -146,6 +154,7 @@ class Users extends Component
         }
 
         $this->showModal = false;
+        $this->resetPage();
         $this->dispatch('toast', ['type' => 'success', 'message' => tr('Operation successful')]);
     }
 
@@ -154,6 +163,7 @@ class Users extends Component
         $this->authorize('uac.users.manage');
         $user = User::where('saas_company_id', $this->getCompanyId())->findOrFail($id);
         $user->update(['is_active' => !$user->is_active]);
+        $this->resetPage();
         $this->dispatch('toast', ['type' => 'success', 'message' => tr('Status updated')]);
     }
 
@@ -188,7 +198,11 @@ class Users extends Component
         return view('systemsettings::livewire.user-access-control.users', [
             'users' => $users,
             'roles' => Role::where('name', '!=', 'saas-admin')->get(),
-            'foundEmployees' => Employee::forCompany($companyId)->whereDoesntHave('user')->get(),
+            'foundEmployees' => Employee::forCompany($companyId)
+                ->where(function($query) {
+                    $query->whereDoesntHave('user')
+                        ->orWhere('id', $this->selectedEmployeeId);
+                })->get(),
             'employeeBranchCol' => $metadata['col'],
             'branchesById' => $branchesById,
             'display_name' => $selectedEmp ? ($selectedEmp->name_ar ?? $selectedEmp->name_en) : '',

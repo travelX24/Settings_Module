@@ -24,11 +24,26 @@
     </x-ui.secondary-button>
 @endsection
 
-<div class="space-y-6">
+<div class="space-y-6 relative">
+    {{-- Global Moving Loading Bar --}}
+    <style>
+        @keyframes loading-progress {
+            0% { transform: translateX(-100%); }
+            100% { transform: translateX(100%); }
+        }
+        .animate-progress-move {
+            animation: loading-progress 2s infinite linear;
+        }
+    </style>
+    <div wire:loading wire:target="setActiveTab" class="fixed top-0 left-0 right-0 h-1 z-[9999] pointer-events-none bg-white/10 overflow-hidden">
+        <div class="h-full bg-gradient-to-r from-[color:var(--brand-from)] via-[color:var(--brand-via)] to-[color:var(--brand-to)] w-1/2 animate-progress-move shadow-[0_0_10px_rgba(var(--brand-via-rgb),0.5)]"></div>
+    </div>
+
+
     {{-- Tabs Container --}}
     <div class="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
         {{-- Tabs Header --}}
-        <div class="border-b border-gray-200 bg-gray-50">
+        <div class="border-b border-gray-200 bg-gray-50 relative">
             <div class="flex items-center justify-between">
                 <div class="flex justify-center flex-1">
                     {{-- Users Tab --}}

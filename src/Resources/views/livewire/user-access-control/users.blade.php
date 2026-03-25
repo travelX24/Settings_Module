@@ -329,6 +329,7 @@
                 @if(!$editingId || $needs_employee_link)
                     <div class="mb-3 p-3 bg-gray-50 rounded-lg border border-gray-100">
                         <x-ui.select
+                            wire:model.live="selectedEmployeeId"
                             wire:change="selectEmployee($event.target.value)"
                             label="{{ tr('Employee') }}"
                             searchable="true"
