@@ -132,24 +132,40 @@
                         </div>
 
                         <div class="space-y-3">
-                            @if($gpsTarget === 'branch')
-                                <x-ui.select wire:key="select-branch-target" id="gps_target_branch" label="{{ tr('Select Branch') }}" wire:model.defer="selectedBranch" name="selectedBranch" class="!py-2 shadow-sm" :disabled="!auth()->user()->can('settings.attendance.manage')">
-                                    <option value="main">{{ tr('Main Branch HQ') }}</option>
-                                    @foreach($branches as $branch)
-                                        @if(isset($branch['id']))
-                                            <option value="{{ $branch['id'] }}">{{ $branch['name'] }}</option>
-                                        @endif
-                                    @endforeach
-                                </x-ui.select>
-                                @error('selectedBranch') <span class="text-[10px] text-red-500 font-bold px-1">{{ tr($message) }}</span> @enderror
-                            @else
-                                <x-ui.select wire:key="select-groups-target" id="gps_target_groups" label="{{ tr('Select Employee Groups') }}" wire:model.defer="selectedGroups" name="selectedGroups" multiple class="!py-2 shadow-sm" :disabled="!auth()->user()->can('settings.attendance.manage')">
-                                   @foreach($groups as $g)
-                                        <option value="{{ $g['id'] }}">{{ $g['name'] }}</option>
-                                   @endforeach
-                                </x-ui.select>
-                                @error('selectedGroups') <span class="text-[10px] text-red-500 font-bold px-1">{{ tr($message) }}</span> @enderror
-                            @endif
+                            <div wire:key="gps-target-block-{{ $gpsTarget }}">
+                                @if($gpsTarget === 'branch')
+                                    @if(count($branches) > 0)
+                                        <x-ui.select wire:key="select-branch-target-{{ $gpsTarget }}" id="gps_target_branch" label="{{ tr('Select Branch') }}" wire:model.defer="selectedBranch" name="selectedBranch" class="!py-2 shadow-sm" :disabled="!auth()->user()->can('settings.attendance.manage')">
+                                            <option value="">{{ tr('Select a Branch') }}</option>
+                                            @foreach($branches as $branch)
+                                                @if(isset($branch['id']))
+                                                    <option value="{{ $branch['id'] }}">{{ $branch['name'] }}</option>
+                                                @endif
+                                            @endforeach
+                                        </x-ui.select>
+                                        @error('selectedBranch') <span class="text-[10px] text-red-500 font-bold px-1">{{ tr($message) }}</span> @enderror
+                                    @else
+                                        <div class="text-[11px] text-gray-500 bg-gray-50 p-2 rounded-lg border border-gray-100 flex items-center gap-2">
+                                            <i class="fas fa-info-circle text-blue-500"></i>
+                                            {{ tr('No branches available.') }}
+                                        </div>
+                                    @endif
+                                @else
+                                    @if(count($groups) > 0)
+                                        <x-ui.select wire:key="select-groups-target-{{ $gpsTarget }}" id="gps_target_groups" label="{{ tr('Select Employee Groups') }}" wire:model.defer="selectedGroups" name="selectedGroups" multiple class="!py-2 shadow-sm" :disabled="!auth()->user()->can('settings.attendance.manage')">
+                                           @foreach($groups as $g)
+                                                <option value="{{ $g['id'] }}">{{ $g['name'] }}</option>
+                                           @endforeach
+                                        </x-ui.select>
+                                        @error('selectedGroups') <span class="text-[10px] text-red-500 font-bold px-1">{{ tr($message) }}</span> @enderror
+                                    @else
+                                        <div class="text-[11px] text-gray-500 bg-gray-50 p-2 rounded-lg border border-gray-100 flex items-center gap-2">
+                                            <i class="fas fa-info-circle text-blue-500"></i>
+                                            {{ tr('No employee groups available.') }}
+                                        </div>
+                                    @endif
+                                @endif
+                            </div>
 
                             <x-ui.input label="{{ tr('Location Name') }}" wire:model.defer="gpsData.name" name="gpsData.name" placeholder="{{ tr('e.g. Sales Dept Area') }}" required class="!py-2" :disabled="!auth()->user()->can('settings.attendance.manage')" />
                             @error('gpsData.name') <span class="text-[10px] text-red-500 font-bold px-1">{{ tr($message) }}</span> @enderror
@@ -242,19 +258,14 @@
             <div class="flex gap-3">
                 <x-ui.secondary-button wire:click="$set('showGpsModal', false)">{{ tr('Cancel') }}</x-ui.secondary-button>
                 @can('settings.attendance.manage')
-                <x-ui.brand-button 
+                <x-ui.primary-button 
                     wire:click="saveGpsLocation" 
-                    wire:loading.attr="disabled"
+                    loading="saveGpsLocation"
                     class="!px-8 !rounded-xl shadow-lg shadow-blue-100"
+                    :fullWidth="false"
                 >
-                    <span wire:loading.remove wire:target="saveGpsLocation">
-                        {{ $isEditing ? tr('Update Location') : tr('Save Location') }}
-                    </span>
-                    <span wire:loading wire:target="saveGpsLocation" class="flex items-center gap-2">
-                        <i class="fas fa-circle-notch fa-spin"></i>
-                        {{ tr('Saving...') }}
-                    </span>
-                </x-ui.brand-button>
+                    {{ $isEditing ? tr('Update Location') : tr('Save Location') }}
+                </x-ui.primary-button>
                 @endcan
             </div>
         </div>

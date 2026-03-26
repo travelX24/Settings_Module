@@ -33,7 +33,7 @@ trait HandleGroupSettings
                 'policy' => $policyKey,
                 'tracking_mode' => $group->appliedPolicy ? $group->appliedPolicy->tracking_mode : 'check_in_out',
                 'methods' => $group->allowedMethods->where('is_allowed', true)->pluck('method')->toArray(),
-                'grace_periods_type' => $group->grace_source ?? 'general',
+                'grace_periods_type' => $group->grace_source ?? 'use_global',
                 'custom_grace_periods' => [
                     'late_arrival' => $group->graceSetting ? $group->graceSetting->late_grace_minutes : 0,
                     'early_departure' => $group->graceSetting ? $group->graceSetting->early_leave_grace_minutes : 0,
@@ -50,7 +50,7 @@ trait HandleGroupSettings
                 'policy' => 'general',
                 'tracking_mode' => 'check_in_out',
                 'methods' => [],
-                'grace_periods_type' => 'general',
+                'grace_periods_type' => 'use_global',
                 'custom_grace_periods' => ['late_arrival' => 0, 'early_departure' => 0, 'auto_departure' => 0],
                 'employee_ids' => []
             ];

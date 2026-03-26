@@ -49,7 +49,7 @@ class AttendanceSettings extends Component
         'policy' => 'general',
         'tracking_mode' => 'check_in_out',
         'methods' => [],
-        'grace_periods_type' => 'general',
+        'grace_periods_type' => 'use_global',
         'custom_grace_periods' => ['late_arrival' => 0, 'early_departure' => 0, 'auto_departure' => 0],
         'employee_ids' => []
     ];
@@ -95,7 +95,7 @@ class AttendanceSettings extends Component
 
     // GPS Specific
     public $gpsTarget = 'branch';
-    public $selectedBranch = 'main';
+    public $selectedBranch = null;
     public $selectedGroups = [];
     public $locationName = '';
     public $filterBranchId = null;
@@ -144,7 +144,7 @@ class AttendanceSettings extends Component
             ->toArray();
 
         // Load Branches
-        $this->branches = \Athka\SystemSettings\Models\Department::where('saas_company_id', $companyId)
+        $this->branches = \Athka\Saas\Models\Branch::where('saas_company_id', $companyId)
             ->get(['id', 'name'])
             ->toArray();
 

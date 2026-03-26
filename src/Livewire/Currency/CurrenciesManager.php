@@ -193,6 +193,7 @@ class CurrenciesManager extends Component
         });
         
         $this->modalOpen = false;
+        $this->resetPage(); // Reset to show newly created or edited items
         $this->resetForm();
         $this->dispatch('toast', ['type' => 'success', 'message' => tr('Saved successfully')]);
     }
@@ -205,6 +206,7 @@ class CurrenciesManager extends Component
             $this->baseQuery()->whereKey($id)->update(['is_default' => true]);
         });
         
+        $this->resetPage(); // Ensure the default one is at the top if sorted
         $this->dispatch('toast', ['type' => 'success', 'message' => tr('Default currency updated')]);
     }
 
@@ -255,6 +257,7 @@ class CurrenciesManager extends Component
 
         $c->delete();
         
+        $this->resetPage(); // If we deleted an item, ensure we're not on an empty page
         $this->cancelDelete();
         $this->dispatch('toast', ['type' => 'success', 'message' => tr('Deleted successfully')]);
     }

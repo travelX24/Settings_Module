@@ -114,62 +114,69 @@ class WorkSchedules extends Component
         $companyId = auth()->user()->saas_company_id;
         $this->service->saveSchedule($companyId, $this->scheduleData, $this->selectedId);
  
-         $this->showScheduleModal = false;
-         $this->dispatch('toast', type: 'success', message: tr('Work schedule saved successfully.'));
-     }
+        $this->showScheduleModal = false;
+        $this->resetPage(); 
+        $this->dispatch('toast', type: 'success', message: tr('Work schedule saved successfully.'));
+    }
  
-     public function clearAllFilters()
-     {
-         $this->reset(['search', 'filterStatus', 'filterType', 'filterPeriod', 'filterDateStart', 'filterDateEnd']);
-         $this->resetPage();
-     }
+    public function clearAllFilters()
+    {
+        $this->reset(['search', 'filterStatus', 'filterType', 'filterPeriod', 'filterDateStart', 'filterDateEnd']);
+        $this->resetPage();
+    }
  
-     public function exportSchedules()
-     {
-         $this->authorize('settings.attendance.view');
-         $companyId = auth()->user()->saas_company_id;
- 
-         $filename = "work_schedules_" . now()->format('Y_m_d_His') . ".csv";
-         
-         $headers = [
-             "Content-type"        => "text/csv",
-             "Content-Disposition" => "attachment; filename=$filename",
-             "Pragma"              => "no-cache",
-             "Cache-Control"       => "must-revalidate, post-check=0, pre-check=0",
-             "Expires"             => "0"
-         ];
- 
-         $columns = [tr('Name'), tr('Type'), tr('Status'), tr('Work Days'), tr('Periods Count')];
- 
-         $callback = function() use ($companyId, $columns) {
-             $file = fopen('php://output', 'w');
-             fprintf($file, chr(0xEF).chr(0xBB).chr(0xBF)); // UTF-8 BOM
-             fputcsv($file, $columns);
- 
-             $schedules = WorkSchedule::where('saas_company_id', $companyId)
-                 ->when($this->search, fn($q) => $q->where('name', 'like', "%{$this->search}%"))
-                 ->when($this->filterStatus !== 'all', fn($q) => $q->where('is_active', $this->filterStatus === 'active'))
-                 ->when($this->filterType !== 'all', fn($q) => $q->where('schedule_type', $this->filterType))
-                 ->with('periods')
-                 ->get();
- 
-             foreach ($schedules as $s) {
-                 fputcsv($file, [
-                     $s->name,
-                     tr(ucfirst($s->schedule_type)),
-                     $s->is_active ? tr('Active') : tr('Inactive'),
-                     implode(', ', array_map(fn($d) => tr(ucfirst($d)), (array)$s->work_days)),
-                     $s->periods->count()
-                 ]);
-             }
- 
-             fclose($file);
-         };
- 
-         return response()->stream($callback, 200, $headers);
-     }
- 
-     public function deleteSchedule($id)
+    public function exportSchedules()
+    {
+        $this->authorize('settings.attendance.view');
+        $companyId = auth()->user()->saas_company_id;
+
+        $filename = "work_schedules_" . now()->format('Y_m_d_His') . ".csv";
+        
+        $headers = [
+            "Content-type"        => "text/csv",
+            "Content-Disposition" => "attachment; filename=$filename",
+            "Pragma"              => "no-cache",
+            "Cache-Control"       => "must-revalidate, post-check=0, pre-check=0",
+            "Expires"             => "0"
+        ];
+
+        $columns = [tr('Name'), tr('Type'), tr('Status'), tr('Work Days'), tr('Periods Count')];
+
+        $callback = function() use ($companyId, $columns) {
+            $file = fopen('php://output', 'w');
+            fprintf($file, chr(0xEF).chr(0xBB).chr(0xBF)); // UTF-8 BOM
+            fputcsv($file, $columns);
+
+            $schedules = WorkSchedule::where('saas_company_id', $companyId)
+                ->when($this->search, fn($q) => $q->where('name', 'like', "%{$this->search}%"))
+                ->when($this->filterStatus !== 'all', fn($q) => $q->where('is_active', $this->filterStatus === 'active'))
+                ->when($this->filterType !== 'all', fn($q) => $q->where('schedule_type', $this->filterType))
+                ->with('periods')
+                ->get();
+
+            foreach ($schedules as $s) {
+                fputcsv($file, [
+                    $s->name,
+                    tr(ucfirst($s->schedule_type)),
+                    $s->is_active ? tr('Active') : tr('Inactive'),
+                    implode(', ', array_map(fn($d) => tr(ucfirst($d)), (array)$s->work_days)),
+                    $s->periods->count()
+                ]);
+            }
+
+            fclose($file);
+        };
+
+        return response()->stream($callback, 200, $headers);
+    }
+
+    public function confirmDelete($id)
+    {
+        $this->authorize('settings.attendance.manage');
+        $this->dispatch('open-confirm-schedule-delete', id: $id);
+    }
+
+    public function deleteSchedule($id)
     {
         $this->authorize('settings.attendance.manage');
         $companyId = auth()->user()->saas_company_id;
@@ -193,8 +200,9 @@ class WorkSchedules extends Component
             return;
         }
 
-        $schedule->delete();
-        $this->dispatch('toast', type: 'success', message: tr('Deleted successfully.'));
+        $schedule->forceDelete();
+        $this->resetPage(); 
+        $this->dispatch('toast', type: 'success', message: tr('Deleted permanently from database.'));
     }
 
     public function toggleStatus($id)

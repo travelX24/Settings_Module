@@ -297,9 +297,9 @@
                                 <div class="w-24 h-24 bg-gray-50 rounded-full flex items-center justify-center text-4xl mb-4 border border-gray-100">
                                     <i class="fas fa-calendar-times"></i>
                                 </div>
-                                <h4 class="text-base font-bold text-gray-800">{{ tr('Database Empty') }}</h4>
+                                <h4 class="text-base font-bold text-gray-800">{{ tr('No Leave Policies Found') }}</h4>
                                 <p class="text-xs max-w-[360px] mt-2 leading-relaxed">
-                                    {{ tr('No leave policies found. Start by creating the first leave type for the selected year.') }}
+                                    {{ tr('No leave policies have been defined yet. Start by creating the first leave type for the selected year.') }}
                                 </p>
                             </div>
                         </td>

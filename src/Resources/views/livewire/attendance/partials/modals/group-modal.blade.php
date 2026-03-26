@@ -138,10 +138,10 @@
                             <div class="flex p-1 bg-white/50 rounded-xl mb-4 border border-amber-50">
                                 <button 
                                     @can('settings.attendance.manage')
-                                    wire:click="$set('newGroup.grace_periods_type', 'general')"
-                                    class="flex-1 py-1.5 px-3 rounded-lg text-[10px] font-black transition-all cursor-pointer {{ $newGroup['grace_periods_type'] === 'general' ? 'bg-amber-500 text-white shadow-md' : 'text-amber-600 hover:bg-amber-50' }}"
+                                    wire:click="$set('newGroup.grace_periods_type', 'use_global')"
+                                    class="flex-1 py-1.5 px-3 rounded-lg text-[10px] font-black transition-all cursor-pointer {{ $newGroup['grace_periods_type'] === 'use_global' ? 'bg-amber-500 text-white shadow-md' : 'text-amber-600 hover:bg-amber-50' }}"
                                     @else
-                                    class="flex-1 py-1.5 px-3 rounded-lg text-[10px] font-black transition-all cursor-not-allowed {{ $newGroup['grace_periods_type'] === 'general' ? 'bg-amber-500 text-white opacity-60' : 'text-amber-400 opacity-60' }}"
+                                    class="flex-1 py-1.5 px-3 rounded-lg text-[10px] font-black transition-all cursor-not-allowed {{ $newGroup['grace_periods_type'] === 'use_global' ? 'bg-amber-500 text-white opacity-60' : 'text-amber-400 opacity-60' }}"
                                     @endcan
                                 >
                                     {{ tr('Company Defaults') }}

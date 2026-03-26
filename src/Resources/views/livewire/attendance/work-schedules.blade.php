@@ -5,7 +5,7 @@
 
 @section('topbar-left-content')
     <x-ui.page-header
-        :title="tr('Work Schedules Management')"
+        :title="tr('Work Schedules Settings')"
         :subtitle="tr('Define and manage flexible working hour templates for your organization')"
         class="!flex-col {{ $isRtl ? '!items-end !text-right' : '!items-start !text-left' }} !justify-start !gap-1"
         titleSize="xl"
@@ -25,23 +25,6 @@
 @endsection
 
 <div class="space-y-6">
-    {{-- Floating Elements Teleported to Body --}}
-    <template x-teleport="body">
-        <div>
-            @include('systemsettings::livewire.attendance.partials.work-schedule-modal')
-            
-            <x-ui.confirm-dialog 
-                id="delete-work-schedule" 
-                confirmText="{{ tr('Yes, Delete') }}"
-                cancelText="{{ tr('Cancel') }}"
-                confirmAction="wire:deleteSchedule(__ID__)"
-                title="{{ tr('Confirm Permanent Deletion') }}"
-                message="{{ tr('Are you sure you want to delete this schedule template? This action cannot be reversed.') }}"
-                type="danger"
-            />
-        </div>
-    </template>
-
     <x-ui.card>
         <div class="space-y-4">
             {{-- Search Box & Main Actions --}}
@@ -193,7 +176,7 @@
             </thead>
             <tbody class="divide-y divide-gray-50">
                 @forelse($schedules as $schedule)
-                <tr class="hover:bg-gray-50/40 transition-colors group/row">
+                <tr wire:key="schedule-row-{{ $schedule->id }}" class="hover:bg-gray-50/40 transition-colors group/row">
                     <td class="px-6 py-4">
                         <div class="flex items-center gap-3">
                             <div class="w-10 h-10 rounded-xl bg-gray-50 text-gray-400 flex items-center justify-center text-sm border border-gray-100 group-hover/row:bg-[color:var(--brand-via)] group-hover/row:text-white group-hover/row:border-[color:var(--brand-via)] transition-all flex-shrink-0">
@@ -233,21 +216,6 @@
                                     </div>
                                 @endforeach
                             </div>
-                            @if(($schedule->exceptions ?? collect())->count() > 0)
-                                <div class="mt-2 text-center" x-data="{ open: false }">
-                                    <div class="inline-block relative">
-                                        <span 
-                                            x-ref="anchor"
-                                            @mouseenter="open = true" 
-                                            @mouseleave="open = false"
-                                            class="px-2 py-1 rounded-lg bg-indigo-50/50 text-[9px] font-bold text-indigo-600 border border-indigo-100/50 uppercase inline-flex items-center gap-1.5 cursor-pointer transition-all hover:bg-indigo-100/50"
-                                        >
-                                            <i class="fas fa-magic text-[8px]"></i>
-                                            {{ $schedule->exceptions->count() }} {{ tr('Exceptions') }}
-                                        </span>
-                                    </div>
-                                </div>
-                            @endif
                         </div>
                     </td>
                     <td class="px-6 py-4 text-center">
@@ -274,7 +242,7 @@
                             </x-ui.dropdown-item>
                             <x-ui.dropdown-item 
                                 danger
-                                @click.stop="$dispatch('open-confirm-delete-work-schedule', { id: '{{ $schedule->id }}' })"
+                                x-on:click.prevent="$dispatch('open-confirm-schedule-delete', { id: {{ $schedule->id }} })"
                                 class="cursor-pointer"
                             >
                                 <i class="fas fa-trash-alt me-2 text-red-500"></i> {{ tr('Delete Permanently') }}
@@ -288,7 +256,7 @@
                     <td colspan="5" class="px-6 py-24 text-center">
                         <div class="opacity-20 flex flex-col items-center">
                             <div class="w-24 h-24 bg-gray-50 rounded-full flex items-center justify-center text-4xl mb-4 border border-gray-100"><i class="fas fa-calendar-alt"></i></div>
-                            <h4 class="text-base font-bold text-gray-800">{{ tr('Database Empty') }}</h4>
+                            <h4 class="text-base font-bold text-gray-800">{{ tr('No Work Schedules Found') }}</h4>
                             <p class="text-xs max-w-[250px] mt-2 leading-relaxed">{{ tr('No work schedules have been defined yet. Get started by creating your first template.') }}</p>
                         </div>
                     </td>
@@ -303,4 +271,19 @@
         </div>
         @endif
     </div>
+
+    {{-- Modals & Dialogs --}}
+    @include('systemsettings::livewire.attendance.partials.work-schedule-modal')
+    
+    <template x-teleport="body">
+        <x-ui.confirm-dialog 
+            id="schedule-delete" 
+            confirmText="{{ tr('Yes, Delete') }}"
+            cancelText="{{ tr('Cancel') }}"
+            confirmAction="wire:deleteSchedule(__ID__)"
+            title="{{ tr('Confirm Permanent Deletion') }}"
+            message="{{ tr('Are you sure you want to delete this schedule template? This action cannot be reversed.') }}"
+            type="danger"
+        />
+    </template>
 </div>

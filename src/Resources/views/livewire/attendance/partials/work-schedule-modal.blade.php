@@ -4,7 +4,7 @@
     $totalMinutes = 0;
     $hasDay = false;
     $hasNight = false;
-    $validPeriods = array_filter($scheduleData['periods'], fn($p) => $p['start_time'] && $p['end_time']);
+    $validPeriods = array_filter($scheduleData['periods'], fn($p) => isset($p['start_time']) && isset($p['end_time']) && $p['start_time'] && $p['end_time']);
 
     if (count($validPeriods) > 0) {
         foreach($validPeriods as $p) {
@@ -14,7 +14,10 @@
             if($p['is_night_shift'] || $end->lessThan($start)) {
                 $end->addDay();
             }
-            $totalMinutes += $end->diffInMinutes($start);
+            
+            // Ensure absolute difference to prevent negative values regardless of Carbon behavior
+            $diff = $end->diffInMinutes($start, true);
+            $totalMinutes += $diff;
 
             $hour = (int)substr($p['start_time'], 0, 2);
             if ($p['is_night_shift'] || $hour >= 18 || $hour < 6) $hasNight = true;
@@ -22,9 +25,10 @@
         }
     }
 
-    $hours = floor($totalMinutes / 60);
-    $mins = $totalMinutes % 60;
-    $weeklyHours = ($totalMinutes * count($scheduleData['work_days'])) / 60;
+    $absTotalMinutes = abs($totalMinutes);
+    $hours = floor($absTotalMinutes / 60);
+    $mins = $absTotalMinutes % 60;
+    $weeklyHours = ($absTotalMinutes * count($scheduleData['work_days'] ?? [])) / 60;
 
     // Standard Professional Themes
     $themeTitle = tr('Standard');
@@ -156,14 +160,14 @@
                                         <x-ui.input
                                             label="{{ tr('Starts') }}"
                                             type="time"
-                                            wire:model.lazy="scheduleData.periods.{{ $idx }}.start_time"
+                                            wire:model.defer="scheduleData.periods.{{ $idx }}.start_time"
                                             class="!py-1 !text-xs"
                                         />
                                         {{-- ✅ changed live -> lazy --}}
                                         <x-ui.input
                                             label="{{ tr('Ends') }}"
                                             type="time"
-                                            wire:model.lazy="scheduleData.periods.{{ $idx }}.end_time"
+                                            wire:model.defer="scheduleData.periods.{{ $idx }}.end_time"
                                             class="!py-1 !text-xs"
                                         />
                                     </div>
@@ -243,7 +247,7 @@
                                     <x-ui.input
                                         label="{{ tr('Start') }}"
                                         type="time"
-                                        wire:model.lazy="scheduleData.exceptions.{{ $idx }}.start_time"
+                                        wire:model.defer="scheduleData.exceptions.{{ $idx }}.start_time"
                                         class="!py-1 !text-[10px] !bg-white"
                                     />
                                 </div>
@@ -253,7 +257,7 @@
                                     <x-ui.input
                                         label="{{ tr('End') }}"
                                         type="time"
-                                        wire:model.lazy="scheduleData.exceptions.{{ $idx }}.end_time"
+                                        wire:model.defer="scheduleData.exceptions.{{ $idx }}.end_time"
                                         class="!py-1 !text-[10px] !bg-white"
                                     />
                                 </div>
@@ -270,8 +274,6 @@
                 </div>
             </div>
 
-            {{-- Preview Side --}}
-            <div class="lg:col-span-1 space-y-6">
             {{-- Preview Side --}}
             <div class="lg:col-span-1 space-y-6">
                 <div class="{{ $themeCls }} rounded-3xl p-6 shadow-xl relative overflow-hidden transition-all duration-500 border border-white/10">
