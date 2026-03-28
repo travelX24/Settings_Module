@@ -106,9 +106,47 @@ class WorkSchedules extends Component
         $this->showScheduleModal = true;
     }
 
+    protected function messages()
+    {
+        return [
+            'scheduleData.name.required' => tr('Schedule name is required.'),
+            'scheduleData.name.min' => tr('Schedule name must be at least 3 characters.'),
+            'scheduleData.periods.required' => tr('At least one work period is required.'),
+            'scheduleData.periods.*.start_time.required' => tr('Shift start time is required.'),
+            'scheduleData.periods.*.end_time.required' => tr('Shift end time is required.'),
+        ];
+    }
+
     public function save()
     {
         $this->authorize('settings.attendance.manage');
+
+        foreach ($this->scheduleData['periods'] as $period) {
+            $start = $period['start_time'] ?? null;
+            $end = $period['end_time'] ?? null;
+            $isNight = !empty($period['is_night_shift']);
+
+            if ($start && $end && $start > $end && !$isNight) {
+                $this->dispatch('toast', type: 'error', message: tr('You must enable the night shift (moon icon) for periods that cross midnight.'));
+                return;
+            }
+        }
+
+        if (!empty($this->scheduleData['exceptions'])) {
+            foreach ($this->scheduleData['exceptions'] as $exc) {
+                if (empty($exc['is_active'])) continue;
+
+                $start = $exc['start_time'] ?? null;
+                $end = $exc['end_time'] ?? null;
+                $isNight = !empty($exc['is_night_shift']);
+
+                if ($start && $end && $start > $end && !$isNight) {
+                    $this->dispatch('toast', type: 'error', message: tr('You must enable the night shift (moon icon) for exception periods that cross midnight.'));
+                    return;
+                }
+            }
+        }
+
         $this->validate(['scheduleData.name' => 'required|min:3', 'scheduleData.periods' => 'required|array|min:1']);
 
         $companyId = auth()->user()->saas_company_id;
