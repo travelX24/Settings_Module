@@ -21,6 +21,7 @@ class Departments extends Component
     // Form fields
     public $name = '', $code = '', $description = '', $manager_id = null, $parent_id = null, $is_active = true;
     public $stats = [];
+    public $hasChildren = false;
 
     protected $orgService;
 
@@ -59,7 +60,10 @@ class Departments extends Component
         return view('systemsettings::livewire.organizational-structure.departments', [
             'departments' => $departments,
             'managers' => $this->orgService->getManagersList($companyId, app()->getLocale()),
-            'parentDepartments' => Department::forCompany($companyId)->where('id', '!=', $this->editingId)->get(),
+            'parentDepartments' => Department::forCompany($companyId)
+                ->where('id', '!=', $this->editingId)
+                ->whereNull('parent_id') // Only root departments can be parents
+                ->get(),
             'rootDepartments' => Department::forCompany($companyId)->root()->get(),
         ]);
     }
@@ -73,7 +77,7 @@ class Departments extends Component
 
     public function openEditModal($id)
     {
-        $dept = Department::findOrFail($id);
+        $dept = Department::withCount('children')->findOrFail($id);
         $this->editingId = $id;
         $this->name = $dept->name;
         $this->code = $dept->code;
@@ -81,6 +85,7 @@ class Departments extends Component
         $this->manager_id = $dept->manager_id;
         $this->parent_id = $dept->parent_id;
         $this->is_active = $dept->is_active;
+        $this->hasChildren = $dept->children_count > 0;
         $this->showModal = true;
     }
 
@@ -137,6 +142,6 @@ class Departments extends Component
 
     public function resetForm()
     {
-        $this->reset(['name', 'code', 'description', 'manager_id', 'parent_id', 'is_active', 'editingId']);
+        $this->reset(['name', 'code', 'description', 'manager_id', 'parent_id', 'is_active', 'editingId', 'hasChildren']);
     }
 }

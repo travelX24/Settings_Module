@@ -23,6 +23,21 @@ trait HandleDepartmentLogic
             'parent_id' => 'nullable|exists:departments,id',
         ]);
 
+        if ($this->parent_id) {
+            // Ensure parent is level 1
+            $parent = Department::find($this->parent_id);
+            if ($parent && $parent->parent_id) {
+                $this->addError('parent_id', tr('A sub-department cannot be a parent.'));
+                return;
+            }
+            
+            // Ensure this department has no children (if it's to be a sub-department)
+            if ($this->editingId && \Athka\SystemSettings\Models\Department::where('parent_id', $this->editingId)->exists()) {
+                $this->addError('parent_id', tr('This department has sub-departments and cannot be assigned a parent.'));
+                return;
+            }
+        }
+
         $this->orgService->saveDepartment($companyId, [
             'name' => $this->name,
             'code' => $this->code,

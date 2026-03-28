@@ -9,6 +9,7 @@ use Illuminate\Support\Facades\Schema;
 use Carbon\Carbon;
 
 use Athka\Employees\Models\Employee;
+use Athka\Attendance\Models\AttendanceDailyLog;
 use Athka\SystemSettings\Models\WorkSchedule;
 use Athka\SystemSettings\Models\OfficialHolidayOccurrence;
 use Athka\SystemSettings\Models\AttendanceGraceSetting;
@@ -169,7 +170,11 @@ class DailyAttendanceController extends Controller
             }
         }
 
-        $log = DB::table('attendance_daily_logs')->where('saas_company_id', $companyId)->where('employee_id', $employee->id)->whereDate('attendance_date', now()->toDateString())->first();
+        $log = AttendanceDailyLog::where('saas_company_id', $companyId)
+            ->where('employee_id', $employee->id)
+            ->whereDate('attendance_date', now()->toDateString())
+            ->first();
+
         if (!$log) return response()->json(['ok' => false, 'message' => tr('No record found for today.')], 422);
 
         $res = $this->attendanceService->recordCheckOut($log, $data['method'], $data['lat'], $data['lng']);

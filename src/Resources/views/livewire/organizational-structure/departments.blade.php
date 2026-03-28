@@ -397,10 +397,10 @@
                             name="parent_id"
                             wire:model="parent_id"
                             placeholder="{{ tr('Select Parent Department') }}"
-                            hint="{{ tr('Optional') }}"
+                            hint="{{ $hasChildren ? tr('This department cannot have a parent because it already contains sub-departments.') : tr('Select only main departments (Max 2 levels allowed)') }}"
                             searchable="true"
                             align="up"
-                            :disabled="!auth()->user()->can('settings.organizational.manage')"
+                            :disabled="!auth()->user()->can('settings.organizational.manage') || $hasChildren"
                         >
                             <option value="">{{ tr('Select Parent Department') }}</option>
                             @foreach($parentDepartments as $pd)
