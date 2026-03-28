@@ -21,7 +21,9 @@ class Users extends Component
     public $search = '';
     public $viewMode = 'table';
     public $showModal = false;
+    public $showPermModal = false;
     public $editingId = null;
+    public $permUserId = null;
 
     public function updatingSearch() { $this->resetPage(); }
 
@@ -31,6 +33,12 @@ class Users extends Component
     public array $allowed_branch_ids = [];
     public bool $is_locked_role = false;
     public bool $needs_employee_link = false;
+
+    // Custom permissions
+    public array $customPermissions = [];
+    public ?string $permUserName = null;
+    public ?string $permReferencRole = null;
+    public bool $permUserHasCustom = false;
 
     protected $uacService;
 
@@ -167,6 +175,92 @@ class Users extends Component
         $this->dispatch('toast', ['type' => 'success', 'message' => tr('Status updated')]);
     }
 
+    public function openPermModal(int $userId)
+    {
+        $this->authorize('uac.users.manage');
+        $user = User::where('saas_company_id', $this->getCompanyId())
+            ->with('roles')
+            ->findOrFail($userId);
+
+        $this->permUserId = $userId;
+        $this->permUserName = $user->name;
+        $this->permUserHasCustom = (bool) $user->has_custom_permissions;
+
+        // Determine reference role name
+        if ($user->has_custom_permissions) {
+            $this->permReferencRole = $user->reference_role;
+        } else {
+            $this->permReferencRole = $user->roles->first()?->name;
+        }
+
+        // Load currently active permissions on the user
+        $this->customPermissions = $user->getAllPermissions()->pluck('name')->toArray();
+
+        $this->showPermModal = true;
+    }
+
+    public function saveCustomPermissions()
+    {
+        $this->authorize('uac.users.manage');
+
+        if (!$this->permUserId || !$this->permReferencRole) {
+            $this->dispatch('toast', ['type' => 'error', 'message' => tr('Missing required data.')]);
+            return;
+        }
+
+        $user = User::where('saas_company_id', $this->getCompanyId())->findOrFail($this->permUserId);
+
+        $this->uacService->saveCustomPermissions($user, $this->permReferencRole, $this->customPermissions);
+
+        $this->showPermModal = false;
+        $this->dispatch('toast', ['type' => 'success', 'message' => tr('Custom permissions saved.')]);
+    }
+
+    public function resetToRoleDefault()
+    {
+        $this->authorize('uac.users.manage');
+
+        $user = User::where('saas_company_id', $this->getCompanyId())->findOrFail($this->permUserId);
+        $result = $this->uacService->resetToRoleDefault($user);
+
+        if ($result['ok']) {
+            $this->showPermModal = false;
+            $this->dispatch('toast', ['type' => 'success', 'message' => tr('Permissions reset to role default.')]);
+        } else {
+            $this->dispatch('toast', ['type' => 'error', 'message' => $result['message']]);
+        }
+    }
+
+    public function toggleGroupCustom(string $groupName)
+    {
+        $groups = $this->uacService->getPermissionGroups();
+        if (!isset($groups[$groupName])) return;
+        $groupKeys = array_keys($groups[$groupName]);
+        $alreadySelected = array_intersect($groupKeys, $this->customPermissions);
+        if (count($alreadySelected) === count($groupKeys)) {
+            $this->customPermissions = array_values(array_diff($this->customPermissions, $groupKeys));
+        } else {
+            $this->customPermissions = array_values(array_unique(array_merge($this->customPermissions, $groupKeys)));
+        }
+    }
+
+    public function toggleTabCustom(string $tabKey)
+    {
+        $tabs = $this->uacService->getPermissionTabs();
+        if (!isset($tabs[$tabKey])) return;
+
+        $tabPermissions = collect($tabs[$tabKey]['groups'])->flatMap(fn($g) => array_keys($g))->toArray();
+        $alreadySelected = array_intersect($tabPermissions, $this->customPermissions);
+
+        if (count($alreadySelected) === count($tabPermissions)) {
+            // Deselect all in tab
+            $this->customPermissions = array_values(array_diff($this->customPermissions, $tabPermissions));
+        } else {
+            // Select all in tab
+            $this->customPermissions = array_values(array_unique(array_merge($this->customPermissions, $tabPermissions)));
+        }
+    }
+
     public function render()
     {
         $companyId = $this->getCompanyId();
@@ -197,7 +291,11 @@ class Users extends Component
 
         return view('systemsettings::livewire.user-access-control.users', [
             'users' => $users,
-            'roles' => Role::where('name', '!=', 'saas-admin')->get(),
+            'roles' => Role::where('name', '!=', 'saas-admin')
+                ->where(function ($q) use ($companyId) {
+                    $q->where('saas_company_id', $companyId)
+                      ->orWhereNull('saas_company_id');
+                })->get(),
             'foundEmployees' => Employee::forCompany($companyId)
                 ->where(function($query) {
                     $query->whereDoesntHave('user')
@@ -209,6 +307,9 @@ class Users extends Component
             'display_phone' => $selectedEmp ? ($selectedEmp->mobile ?? '') : '',
             'display_department' => $selectedEmp?->department?->name ?? '-',
             'display_job_title' => $selectedEmp?->jobTitle?->name ?? '-',
+            'permissionGroups' => $this->uacService->getPermissionGroups(),
+            'permissionsMap' => collect($this->uacService->getPermissionGroups())->flatMap(fn($g) => $g)->toArray(),
+            'permissionTabs' => $this->uacService->getPermissionTabs()
         ]);
     }
 }

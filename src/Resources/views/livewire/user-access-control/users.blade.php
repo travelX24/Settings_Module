@@ -83,6 +83,12 @@
                                     <i class="fas fa-edit mr-2 w-5 text-blue-500"></i>
                                     {{ tr('Edit') }}
                                 </x-ui.dropdown-item>
+                                @if(($user->access_type ?? 'system_and_app') !== 'hr_app_only')
+                                    <x-ui.dropdown-item wire:click="openPermModal({{ $user->id }})">
+                                        <i class="fas fa-sliders-h mr-2 w-5 text-amber-500"></i>
+                                        {{ tr('Custom Permissions') }}
+                                    </x-ui.dropdown-item>
+                                @endif
                                 <x-ui.dropdown-item
                                     @click="$dispatch('open-confirm-confirm-toggle-status', {{ $user->id }})"
                                     :danger="$user->is_active ?? true"
@@ -111,9 +117,18 @@
                             @php 
                                 $roleNames = $user->roles ? $user->roles->pluck('name')->filter() : collect(); 
                             @endphp
-                            <span class="text-xs font-bold text-indigo-600">
-                                {{ $roleNames->isNotEmpty() ? $roleNames->join(', ') : '-' }}
-                            </span>
+                            @if($user->has_custom_permissions && $user->reference_role)
+                                <div class="flex flex-col items-end gap-0.5">
+                                    <span class="text-xs font-bold text-indigo-600">{{ $user->reference_role }}</span>
+                                    <span class="text-[9px] bg-amber-50 text-amber-700 border border-amber-200 px-1.5 py-0.5 rounded-full font-bold">
+                                        <i class="fas fa-sliders-h mr-0.5"></i> {{ tr('Custom') }}
+                                    </span>
+                                </div>
+                            @else
+                                <span class="text-xs font-bold text-indigo-600">
+                                    {{ $roleNames->isNotEmpty() ? $roleNames->join(', ') : '-' }}
+                                </span>
+                            @endif
                         </div>
                         <div class="flex items-center justify-between py-2 border-b border-gray-50">
                             <span class="text-xs font-medium text-gray-500">{{ tr('Access Scope') }}</span>
@@ -211,6 +226,13 @@
                         @endphp
                         @if(($user->access_type ?? 'system_and_app') === 'hr_app_only')
                             <span class="text-xs text-gray-400">—</span>
+                        @elseif($user->has_custom_permissions && $user->reference_role)
+                            <div class="flex flex-col gap-0.5">
+                                <span class="text-sm font-medium text-gray-900">{{ $user->reference_role }}</span>
+                                <span class="text-[9px] bg-amber-50 text-amber-700 border border-amber-200 px-1.5 py-0.5 rounded-full font-bold w-fit">
+                                    <i class="fas fa-sliders-h mr-0.5"></i> {{ tr('Custom') }}
+                                </span>
+                            </div>
                         @elseif($roleNames->isNotEmpty())
                             <span class="text-sm font-medium text-gray-900">{{ $roleNames->join(', ') }}</span>
                         @else
@@ -218,7 +240,7 @@
                         @endif
                     </td>
                     <td class="px-6 py-4 whitespace-nowrap align-middle">
-                        <div class="flex items-center" x-data="{ showTooltip: false, pos: { top: 0, left: 0 } }">
+                        <div class="flex items-center gap-2" x-data="{ showTooltip: false, pos: { top: 0, left: 0 } }">
                             @php 
                                 $perms = $user->getAllPermissions(); 
                                 $permsCount = $perms->count(); 
@@ -248,6 +270,11 @@
                                     </div>
                                 </template>
                             </div>
+                            @if($user->has_custom_permissions)
+                                <span class="text-[9px] bg-amber-50 text-amber-700 border border-amber-200 px-1.5 py-0.5 rounded-full font-bold whitespace-nowrap">
+                                    <i class="fas fa-sliders-h mr-0.5"></i> {{ tr('Custom') }}
+                                </span>
+                            @endif
                         </div>
                     </td>
                     <td class="px-6 py-4 whitespace-nowrap">
@@ -285,6 +312,12 @@
                                     <i class="fas fa-edit mr-2 w-5 text-blue-500"></i>
                                     {{ tr('Edit') }}
                                 </x-ui.dropdown-item>
+                                @if(($user->access_type ?? 'system_and_app') !== 'hr_app_only')
+                                    <x-ui.dropdown-item wire:click="openPermModal({{ $user->id }})">
+                                        <i class="fas fa-sliders-h mr-2 w-5 text-amber-500"></i>
+                                        {{ tr('Custom Permissions') }}
+                                    </x-ui.dropdown-item>
+                                @endif
                                 <x-ui.dropdown-item @click="$dispatch('open-confirm-confirm-toggle-status', {{ $user->id }})" :danger="$user->is_active ?? true">
                                     @if($user->is_active ?? true)
                                         <i class="fas fa-user-slash mr-2 w-5 text-red-500"></i>
@@ -433,4 +466,179 @@
         confirmAction="wire:toggleStatus(__ID__)"
         type="warning"
     />
+
+    {{-- Custom Permissions Modal --}}
+    <x-ui.modal wire:model="showPermModal" maxWidth="5xl">
+        <x-slot name="title">
+            <div class="flex items-center gap-3">
+                <div class="w-10 h-10 rounded-xl flex items-center justify-center bg-amber-50">
+                    <i class="fas fa-sliders-h text-amber-500 text-lg"></i>
+                </div>
+                <div>
+                    <h3 class="text-base font-extrabold text-gray-900 leading-none mb-1">
+                        {{ tr('Custom Permissions') }} — {{ $permUserName }}
+                    </h3>
+                    <p class="text-[10px] text-gray-400 font-medium uppercase tracking-widest">
+                        {{ tr('Reference Role') }}: <span class="text-indigo-600 font-bold">{{ $permReferencRole ?? '—' }}</span>
+                        @if($permUserHasCustom)
+                            &nbsp;·&nbsp; <span class="text-amber-600 font-bold"><i class="fas fa-exclamation-triangle mr-1"></i>{{ tr('Custom overrides active') }}</span>
+                        @endif
+                    </p>
+                </div>
+            </div>
+        </x-slot>
+        <x-slot name="content">
+            <div class="space-y-5" x-data="{ permSearch: '', activeGroup: null }">
+
+                {{-- Info banner when custom is active --}}
+                @if($permUserHasCustom)
+                    <div class="flex items-center justify-between bg-amber-50 border border-amber-200 rounded-xl p-3">
+                        <div class="flex items-center gap-2 text-amber-700 text-xs font-semibold">
+                            <i class="fas fa-sliders-h"></i>
+                            {{ tr('This user has custom permissions that override their role defaults.') }}
+                        </div>
+                        <button
+                            type="button"
+                            wire:click="resetToRoleDefault"
+                            wire:loading.attr="disabled"
+                            class="flex items-center gap-2 px-3 py-1.5 bg-white border border-amber-300 text-amber-700 rounded-lg text-xs font-bold hover:bg-amber-100 transition cursor-pointer"
+                        >
+                            <i class="fas fa-undo"></i>
+                            {{ tr('Reset to Role Default') }}
+                        </button>
+                    </div>
+                @endif
+
+                {{-- Permission Groups --}}
+                <div class="flex items-center justify-between border-b border-gray-100 pb-3">
+                    <h4 class="text-sm font-extrabold text-gray-900 flex items-center gap-2">
+                        <i class="fas fa-shield-alt text-indigo-500"></i>
+                        {{ tr('Permissions') }}
+                        <span class="text-xs bg-indigo-50 text-indigo-600 px-2 py-0.5 rounded-full font-bold border border-indigo-100">
+                            {{ count($customPermissions) }}
+                        </span>
+                    </h4>
+                    <div class="relative w-56">
+                        <input
+                            type="text"
+                            x-model="permSearch"
+                            placeholder="{{ tr('Filter permissions...') }}"
+                            class="w-full pr-8 pl-3 py-1.5 text-xs border border-gray-200 rounded-xl focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 outline-none transition-all"
+                        />
+                        <span class="absolute inset-y-0 end-0 pe-3 flex items-center pointer-events-none">
+                            <i class="fas fa-search text-gray-300 text-[10px]"></i>
+                        </span>
+                    </div>
+                </div>
+
+                <div class="flex flex-col md:flex-row gap-6 min-h-[500px]" x-data="{ activeTab: 'core' }">
+                    {{-- Tabs Navigation --}}
+                    <div class="w-full md:w-64 flex flex-row md:flex-col gap-2 overflow-x-auto md:overflow-y-auto custom-scrollbar border-b md:border-b-0 md:border-e border-gray-100 pb-4 md:pb-0 md:pe-4 min-w-0">
+                        @foreach($permissionTabs as $tabKey => $tab)
+                            <button
+                                type="button"
+                                @click="activeTab = '{{ $tabKey }}'"
+                                :class="activeTab === '{{ $tabKey }}' ? 'bg-indigo-600 text-white shadow-md scale-[1.02]' : 'bg-white text-gray-500 hover:bg-gray-50 border border-gray-100'"
+                                class="flex items-center gap-3 px-4 py-3 rounded-xl transition-all duration-200 text-sm font-bold whitespace-nowrap group shrink-0"
+                            >
+                                <div class="w-8 h-8 rounded-lg flex items-center justify-center transition-colors" :class="activeTab === '{{ $tabKey }}' ? 'bg-white/20' : 'bg-gray-50 text-gray-400 group-hover:text-indigo-500'">
+                                    <i class="fas {{ $tab['icon'] }} text-xs"></i>
+                                </div>
+                                <span class="hidden md:inline">{{ $tab['label'] }}</span>
+                                <div class="ms-auto flex items-center" x-show="activeTab === '{{ $tabKey }}'">
+                                    <i class="fas fa-chevron-left text-[10px] opacity-50 ltr:rotate-180"></i>
+                                </div>
+                            </button>
+                        @endforeach
+                    </div>
+
+                    {{-- Tabs Content --}}
+                    <div class="flex-1 min-w-0">
+                        @foreach($permissionTabs as $tabKey => $tab)
+                            <div x-show="activeTab === '{{ $tabKey }}'" x-cloak class="space-y-6 animate-in fade-in slide-in-from-right-2 duration-300">
+                                <div class="flex items-center justify-between">
+                                    <h4 class="text-sm font-extrabold text-gray-900 flex items-center gap-2">
+                                        <i class="fas {{ $tab['icon'] }} text-indigo-500"></i>
+                                        {{ $tab['label'] }}
+                                    </h4>
+                                    <button
+                                        type="button"
+                                        @php
+                                            $allInTabKeys = collect($tab['groups'])->flatMap(fn($g) => array_keys($g))->toArray();
+                                            $tabKeysInSelected = array_intersect($allInTabKeys, $customPermissions);
+                                            $allSelectedInTab = count($allInTabKeys) > 0 && count($tabKeysInSelected) === count($allInTabKeys);
+                                        @endphp
+                                        wire:click="toggleTabCustom('{{ $tabKey }}')"
+                                        class="text-[10px] font-bold {{ $allSelectedInTab ? 'text-red-600 bg-red-50 border-red-100' : 'text-indigo-600 bg-indigo-50 border-indigo-100' }} border px-3 py-1.5 rounded-lg hover:brightness-95 transition-all"
+                                    >
+                                        {{ $allSelectedInTab ? tr('Deselect All Section') : tr('Select All Section') }}
+                                    </button>
+                                </div>
+
+                                <div class="grid grid-cols-1 lg:grid-cols-2 gap-4 max-h-[450px] overflow-y-auto custom-scrollbar pe-2">
+                                    @foreach($tab['groups'] as $groupName => $permissions)
+                                        <div class="bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden flex flex-col group/card hover:border-indigo-200 transition-colors self-start">
+                                            <div
+                                                class="px-4 py-3 bg-gray-50/50 border-b border-gray-100 flex items-center justify-between cursor-pointer hover:bg-gray-50 transition-colors group"
+                                                @click="activeGroup = activeGroup === '{{ $groupName }}' ? null : '{{ $groupName }}'"
+                                            >
+                                                <div class="flex items-center gap-3">
+                                                    @php
+                                                        $groupKeys = array_keys($permissions);
+                                                        $allSelI = count(array_intersect($groupKeys, $customPermissions)) === count($groupKeys);
+                                                    @endphp
+                                                    <input
+                                                        type="checkbox"
+                                                        class="w-4 h-4 rounded border-gray-300 text-indigo-600 focus:ring-indigo-500 cursor-pointer"
+                                                        wire:click.stop="toggleGroupCustom('{{ $groupName }}')"
+                                                        {{ $allSelI ? 'checked' : '' }}
+                                                    />
+                                                    <span class="text-xs font-extrabold text-gray-800 group-hover:text-indigo-600 transition-colors">{{ tr($groupName) }}</span>
+                                                </div>
+                                                <i class="fas fa-chevron-down text-[10px] text-gray-400 transition-transform duration-300" :class="activeGroup === '{{ $groupName }}' ? 'rotate-180 text-indigo-500' : ''"></i>
+                                            </div>
+
+                                            <div
+                                                x-show="activeGroup === '{{ $groupName }}' || permSearch.length > 0"
+                                                class="p-3 grid grid-cols-1 gap-1"
+                                            >
+                                                @foreach($permissions as $permKey => $permLabel)
+                                                    <label
+                                                        class="flex items-center gap-3 p-2 rounded-xl hover:bg-slate-50 transition-all cursor-pointer group/item select-none border border-transparent hover:border-slate-100"
+                                                        x-show="!permSearch || '{{ strtolower(tr($permLabel)) }}'.includes(permSearch.toLowerCase()) || '{{ strtolower($permKey) }}'.includes(permSearch.toLowerCase())"
+                                                    >
+                                                        <input
+                                                            type="checkbox"
+                                                            wire:model="customPermissions"
+                                                            value="{{ $permKey }}"
+                                                            class="w-4 h-4 rounded-md border-gray-300 text-indigo-600 focus:ring-indigo-500 cursor-pointer transition-all"
+                                                        >
+                                                        <div class="flex flex-col min-w-0">
+                                                            <span class="text-xs font-bold text-slate-700 group-hover/item:text-indigo-600 transition-colors break-words leading-tight">{{ tr($permLabel) }}</span>
+                                                            <span class="text-[9px] text-slate-400 font-mono tracking-tighter truncate mt-0.5">{{ $permKey }}</span>
+                                                        </div>
+                                                    </label>
+                                                @endforeach
+                                            </div>
+                                        </div>
+                                    @endforeach
+                                </div>
+                            </div>
+                        @endforeach
+                    </div>
+                </div>
+
+                <div class="flex items-center justify-end gap-3 border-t border-gray-100 pt-4 mt-2">
+                    <x-ui.secondary-button wire:click="$set('showPermModal', false)" class="cursor-pointer">
+                        {{ tr('Cancel') }}
+                    </x-ui.secondary-button>
+                    <x-ui.primary-button wire:click="saveCustomPermissions" wire:loading.attr="disabled" class="cursor-pointer">
+                        <span wire:loading.remove><i class="fas fa-save mr-1"></i>{{ tr('Save Custom Permissions') }}</span>
+                        <span wire:loading><i class="fas fa-spinner fa-spin mr-1"></i>{{ tr('Saving...') }}</span>
+                    </x-ui.primary-button>
+                </div>
+            </div>
+        </x-slot>
+    </x-ui.modal>
+
 </div>

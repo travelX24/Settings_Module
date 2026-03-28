@@ -60,16 +60,22 @@
 
                         <x-ui.actions-menu>
                             @can('uac.roles.manage')
-                                <x-ui.dropdown-item wire:click="openEditModal({{ $role->id }})">
-                                    <i class="fas fa-edit mr-2 w-5 text-blue-500"></i>
-                                    {{ tr('Edit Role') }}
-                                </x-ui.dropdown-item>
+                                @php 
+                                    $isProtected = in_array($role->name, ['company-admin', 'saas-admin', 'super-admin', 'system-admin']) || is_null($role->saas_company_id);
+                                @endphp
+
+                                @if(!$isProtected)
+                                    <x-ui.dropdown-item wire:click="openEditModal({{ $role->id }})">
+                                        <i class="fas fa-edit mr-2 w-5 text-blue-500"></i>
+                                        {{ tr('Edit Role') }}
+                                    </x-ui.dropdown-item>
+                                @endif
                                 <x-ui.dropdown-item wire:click="copyRole({{ $role->id }})">
                                     <i class="fas fa-copy mr-2 w-5 text-emerald-500"></i>
                                     {{ tr('Duplicate Role') }}
                                 </x-ui.dropdown-item>
                                 
-                                @if(!in_array($role->name, ['company-admin', 'saas-admin']))
+                                @if(!$isProtected)
                                     <div class="h-px bg-gray-100 my-1"></div>
                                     <x-ui.dropdown-item 
                                         @click="$dispatch('open-confirm-delete-role', {{ $role->id }})" 
@@ -184,16 +190,23 @@
                     <td class="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
                         <x-ui.actions-menu>
                             @can('uac.roles.manage')
-                                <x-ui.dropdown-item wire:click="openEditModal({{ $role->id }})">
-                                    <i class="fas fa-edit mr-2 w-5 text-blue-500"></i>
-                                    {{ tr('Edit Role') }}
-                                </x-ui.dropdown-item>
+                                @php 
+                                    $isProtected = in_array($role->name, ['company-admin', 'saas-admin', 'super-admin', 'system-admin']) || is_null($role->saas_company_id);
+                                @endphp
+
+                                @if(!$isProtected)
+                                    <x-ui.dropdown-item wire:click="openEditModal({{ $role->id }})">
+                                        <i class="fas fa-edit mr-2 w-5 text-blue-500"></i>
+                                        {{ tr('Edit Role') }}
+                                    </x-ui.dropdown-item>
+                                @endif
+
                                 <x-ui.dropdown-item wire:click="copyRole({{ $role->id }})">
                                     <i class="fas fa-copy mr-2 w-5 text-emerald-500"></i>
                                     {{ tr('Duplicate') }}
                                 </x-ui.dropdown-item>
                                 
-                                @if(!in_array($role->name, ['company-admin', 'saas-admin']))
+                                @if(!$isProtected)
                                     <div class="h-px bg-gray-100 my-1"></div>
                                     <x-ui.dropdown-item @click="$dispatch('open-confirm-delete-role', {{ $role->id }})" danger>
                                         <i class="fas fa-trash-alt mr-2 w-5"></i>
@@ -273,52 +286,98 @@
                         </div>
                     </div>
 
-                    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 max-h-[450px] overflow-y-auto custom-scrollbar px-1">
-                        @foreach($permissionGroups as $groupName => $permissions)
-                            <div 
-                                class="bg-white border rounded-xl transition-all duration-200 self-start overflow-hidden"
-                                :class="activeGroup === '{{ $groupName }}' ? 'border-indigo-500 shadow-sm' : 'border-gray-100'"
-                                x-show="!permSearch || '{{ strtolower(tr($groupName)) }}'.includes(permSearch.toLowerCase()) || @js(array_values($permissions)).some(p => p.toLowerCase().includes(permSearch.toLowerCase()))"
+                <div class="flex flex-col md:flex-row gap-6 min-h-[500px]" x-data="{ activeTab: 'core' }">
+                    {{-- Tabs Navigation --}}
+                    <div class="w-full md:w-64 flex flex-row md:flex-col gap-2 overflow-x-auto md:overflow-y-auto custom-scrollbar border-b md:border-b-0 md:border-e border-gray-100 pb-4 md:pb-0 md:pe-4 min-w-0">
+                        @foreach($permissionTabs as $tabKey => $tab)
+                            <button 
+                                type="button"
+                                @click="activeTab = '{{ $tabKey }}'"
+                                :class="activeTab === '{{ $tabKey }}' ? 'bg-indigo-600 text-white shadow-md scale-[1.02]' : 'bg-white text-gray-500 hover:bg-gray-50 border border-gray-100'"
+                                class="flex items-center gap-3 px-4 py-3 rounded-xl transition-all duration-200 text-sm font-bold whitespace-nowrap group shrink-0"
                             >
-                                <div 
-                                    class="px-4 py-3 bg-gray-50/30 flex items-center justify-between cursor-pointer group select-none"
-                                    @click="activeGroup = (activeGroup === '{{ $groupName }}' ? null : '{{ $groupName }}')"
-                                >
-                                    <div class="flex items-center gap-2">
-                                        <input 
-                                            type="checkbox" 
-                                            class="w-4 h-4 rounded border-gray-300 text-indigo-600 focus:ring-indigo-500 cursor-pointer"
-                                            wire:click.stop="toggleGroup('{{ $groupName }}')"
-                                            @php $groupKeys = array_keys($permissions); $allSelected = count(array_intersect($groupKeys, $selectedPermissions)) === count($groupKeys); @endphp
-                                            {{ $allSelected ? 'checked' : '' }}
-                                            @cannot('uac.roles.manage') disabled @endcannot
-                                        />
-                                        <span class="text-xs font-bold text-gray-800 group-hover:text-indigo-600 transition-colors">{{ tr($groupName) }}</span>
-                                    </div>
-                                    <i class="fas fa-chevron-down text-[10px] text-gray-400 transition-transform duration-300" :class="activeGroup === '{{ $groupName }}' ? 'rotate-180 text-indigo-500' : ''"></i>
+                                <div class="w-8 h-8 rounded-lg flex items-center justify-center transition-colors" :class="activeTab === '{{ $tabKey }}' ? 'bg-white/20' : 'bg-gray-50 text-gray-400 group-hover:text-indigo-500'">
+                                    <i class="fas {{ $tab['icon'] }} text-xs"></i>
+                                </div>
+                                <span class="hidden md:inline">{{ $tab['label'] }}</span>
+                                <div class="ms-auto flex items-center" x-show="activeTab === '{{ $tabKey }}'">
+                                    <i class="fas fa-chevron-left text-[10px] opacity-50 ltr:rotate-180"></i>
+                                </div>
+                            </button>
+                        @endforeach
+                    </div>
+
+                    {{-- Tabs Content --}}
+                    <div class="flex-1 min-w-0">
+                        @foreach($permissionTabs as $tabKey => $tab)
+                            <div x-show="activeTab === '{{ $tabKey }}'" x-cloak class="space-y-6 animate-in fade-in slide-in-from-right-2 duration-300">
+                                <div class="flex items-center justify-between">
+                                    <h4 class="text-sm font-extrabold text-gray-900 flex items-center gap-2">
+                                        <i class="fas {{ $tab['icon'] }} text-indigo-500"></i>
+                                        {{ $tab['label'] }}
+                                    </h4>
+                                    <button 
+                                        type="button"
+                                        @php 
+                                            $allInTabKeys = collect($tab['groups'])->flatMap(fn($g) => array_keys($g))->toArray();
+                                            $tabKeysInSelected = array_intersect($allInTabKeys, $selectedPermissions);
+                                            $allSelectedInTab = count($allInTabKeys) > 0 && count($tabKeysInSelected) === count($allInTabKeys);
+                                        @endphp
+                                        wire:click="toggleTab('{{ $tabKey }}')"
+                                        class="text-[10px] font-bold {{ $allSelectedInTab ? 'text-red-600 bg-red-50 border-red-100' : 'text-indigo-600 bg-indigo-50 border-indigo-100' }} border px-3 py-1.5 rounded-lg hover:brightness-95 transition-all"
+                                    >
+                                        {{ $allSelectedInTab ? tr('Deselect All Section') : tr('Select All Section') }}
+                                    </button>
                                 </div>
 
-                                <div 
-                                    x-show="activeGroup === '{{ $groupName }}' || permSearch.length > 0"
-                                    class="p-3 grid grid-cols-1 gap-1 border-t border-gray-50"
-                                >
-                                    @foreach($permissions as $permKey => $permLabel)
-                                        <label 
-                                            class="flex items-center gap-3 p-2 rounded-lg hover:bg-gray-50 transition-colors cursor-pointer group/item select-none border border-transparent"
-                                            x-show="!permSearch || '{{ strtolower(tr($permLabel)) }}'.includes(permSearch.toLowerCase()) || '{{ strtolower($permKey) }}'.includes(permSearch.toLowerCase())"
-                                        >
-                                            <input 
-                                                type="checkbox" 
-                                                wire:model="selectedPermissions" 
-                                                value="{{ $permKey }}"
-                                                class="w-3.5 h-3.5 rounded border-gray-300 text-indigo-600 focus:ring-indigo-500 cursor-pointer"
-                                                @cannot('uac.roles.manage') disabled @endcannot
+                                <div class="grid grid-cols-1 lg:grid-cols-2 gap-4 max-h-[450px] overflow-y-auto custom-scrollbar pe-2">
+                                    @foreach($tab['groups'] as $groupName => $permissions)
+                                        <div class="bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden flex flex-col group/card hover:border-indigo-200 transition-colors self-start">
+                                            <div 
+                                                class="px-4 py-3 bg-gray-50/50 border-b border-gray-100 flex items-center justify-between cursor-pointer hover:bg-gray-50 transition-colors group"
+                                                @click="activeGroup = activeGroup === '{{ $groupName }}' ? null : '{{ $groupName }}'"
                                             >
-                                            <div class="flex flex-col min-w-0">
-                                                <span class="text-[11px] font-semibold text-gray-700 group-hover/item:text-indigo-600 transition-colors break-words leading-tight">{{ tr($permLabel) }}</span>
-                                                <span class="text-[8px] text-gray-400 font-mono tracking-tighter truncate">{{ $permKey }}</span>
+                                                <div class="flex items-center gap-3">
+                                                    @php 
+                                                        $groupKeys = array_keys($permissions); 
+                                                        $allSelectedInGroup = count(array_intersect($groupKeys, $selectedPermissions)) === count($groupKeys); 
+                                                    @endphp
+                                                    <input 
+                                                        type="checkbox" 
+                                                        class="w-4 h-4 rounded border-gray-300 text-indigo-600 focus:ring-indigo-500 cursor-pointer"
+                                                        wire:click.stop="toggleGroup('{{ $groupName }}')"
+                                                        {{ $allSelectedInGroup ? 'checked' : '' }}
+                                                        @cannot('uac.roles.manage') disabled @endcannot
+                                                    />
+                                                    <span class="text-xs font-extrabold text-gray-800 group-hover:text-indigo-600 transition-colors">{{ tr($groupName) }}</span>
+                                                </div>
+                                                <i class="fas fa-chevron-down text-[10px] text-gray-400 transition-transform duration-300" :class="activeGroup === '{{ $groupName }}' ? 'rotate-180 text-indigo-500' : ''"></i>
                                             </div>
-                                        </label>
+
+                                            <div 
+                                                x-show="activeGroup === '{{ $groupName }}' || permSearch.length > 0"
+                                                class="p-3 grid grid-cols-1 gap-1"
+                                            >
+                                                @foreach($permissions as $permKey => $permLabel)
+                                                    <label 
+                                                        class="flex items-center gap-3 p-2 rounded-xl hover:bg-slate-50 transition-all cursor-pointer group/item select-none border border-transparent hover:border-slate-100"
+                                                        x-show="!permSearch || '{{ strtolower(tr($permLabel)) }}'.includes(permSearch.toLowerCase()) || '{{ strtolower($permKey) }}'.includes(permSearch.toLowerCase())"
+                                                    >
+                                                        <input 
+                                                            type="checkbox" 
+                                                            wire:model="selectedPermissions" 
+                                                            value="{{ $permKey }}"
+                                                            class="w-4 h-4 rounded-md border-gray-300 text-indigo-600 focus:ring-indigo-500 cursor-pointer transition-all"
+                                                            @cannot('uac.roles.manage') disabled @endcannot
+                                                        >
+                                                        <div class="flex flex-col min-w-0">
+                                                            <span class="text-xs font-bold text-slate-700 group-hover/item:text-indigo-600 transition-colors break-words leading-tight">{{ tr($permLabel) }}</span>
+                                                            <span class="text-[9px] text-slate-400 font-mono tracking-tighter truncate mt-0.5">{{ $permKey }}</span>
+                                                        </div>
+                                                    </label>
+                                                @endforeach
+                                            </div>
+                                        </div>
                                     @endforeach
                                 </div>
                             </div>

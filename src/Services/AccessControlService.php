@@ -17,11 +17,47 @@ class AccessControlService
     public function getPermissionGroups(): array
     {
         return [
+            // --- Core System ---
             'Dashboard' => [
                 'dashboard.view' => tr('View Dashboard Statistics'),
                 'dashboard.reports' => tr('Access Reports Dashboard'),
             ],
-            'Employee Management' => [
+            'General Settings' => [
+                'settings.general.view' => tr('View General Settings'),
+                'settings.general.edit' => tr('Edit General Settings'),
+                'settings.general.manage' => tr('Manage Overall Settings'),
+                'settings.branches.manage' => tr('Manage Company Branches'),
+                'settings.lists.manage' => tr('Manage Dynamic Selection Lists'),
+            ],
+            'Organizational Structure' => [
+                'settings.organizational.view' => tr('View Organizational Structure'),
+                'settings.organizational.manage' => tr('Manage Departments & Job Titles'),
+            ],
+            'User Access Control' => [
+                'uac.users.view' => tr('View System Users'),
+                'uac.users.manage' => tr('Manage System Users'),
+                'uac.roles.view' => tr('View Roles & Groups'),
+                'uac.roles.manage' => tr('Manage Roles & Permissions'),
+            ],
+            'Approval Workflows' => [
+                'settings.approval.view' => tr('View Approval Workflows'),
+                'settings.approval.manage' => tr('Manage Approval Workflows'),
+            ],
+            'System Logs & Backup' => [
+                'logs.view' => tr('View System Activity Logs'),
+                'logs.export' => tr('Export Activity Logs'),
+                'settings.backup.view' => tr('View System Backups'),
+                'settings.backup.manage' => tr('Manage Multi-Backups'),
+                'settings.branding.view' => tr('View Branding Settings'),
+                'settings.branding.manage' => tr('Manage System Branding'),
+            ],
+            'Currency & Calendar' => [
+                'settings.calendar.manage' => tr('Manage System Calendar'),
+                'settings.currencies.manage' => tr('Manage Currencies'),
+            ],
+
+            // --- HR Modules ---
+            'Employee Master Data' => [
                 'employees.view' => tr('View Employees List'),
                 'employees.view-details' => tr('View Employee Full Profile'),
                 'employees.create' => tr('Add New Employee'),
@@ -33,7 +69,9 @@ class AccessControlService
                 'employees.export' => tr('Export Employee Data'),
                 'employees.import' => tr('Import Employee Data'),
             ],
-            'Attendance & Timesheets' => [
+
+            // --- Operations ---
+            'Daily Attendance' => [
                 'attendance.dashboard.view' => tr('View Attendance Dashboard'),
                 'attendance.daily.view' => tr('View Daily Attendance (All)'),
                 'attendance.daily.view-subordinates' => tr('View Subordinates Attendance'),
@@ -41,6 +79,8 @@ class AccessControlService
                 'attendance.daily.manual-entry' => tr('Add Manual Attendance Entry'),
                 'attendance.logs.view' => tr('View Attendance Logs'),
                 'attendance.logs.sync' => tr('Sync Fingerprint Devices Data'),
+            ],
+            'Work Schedules' => [
                 'attendance.schedules.view' => tr('View Work Schedules'),
                 'attendance.schedules.view-subordinates' => tr('View Subordinates Schedules'),
                 'attendance.schedules.manage' => tr('Manage Work Schedules'),
@@ -49,8 +89,13 @@ class AccessControlService
                 'shifts.view' => tr('View Shifts'),
                 'shifts.manage' => tr('Manage Shifts & Rotations'),
                 'holidays.manage' => tr('Manage Public Holidays'),
+                'settings.attendance.view' => tr('View Global Attendance Rules'),
+                'settings.attendance.manage' => tr('Manage Global Attendance Policies'),
+                'settings.attendance.schedules.manage' => tr('Manage Master Schedules Settings'),
+                'settings.attendance.holidays.manage' => tr('Manage Global Holiday Policies'),
+                'settings.attendance.exceptional.manage' => tr('Manage Exceptional Attendance Rules'),
             ],
-            'Requests & Approvals' => [
+            'Requests Management' => [
                 'requests.leaves.view' => tr('View Leave Requests'),
                 'requests.leaves.create' => tr('Submit Leave Request'),
                 'requests.leaves.approve' => tr('Approve/Reject Leave Requests'),
@@ -64,74 +109,20 @@ class AccessControlService
                 'requests.overtime.manage' => tr('Manage Overtime Requests'),
                 'requests.business-trip.manage' => tr('Manage Business Trip Requests'),
                 'attendance.missions.manage' => tr('Manage Work Missions'),
+                'settings.attendance.leaves.manage' => tr('Manage Global Leave Policies'),
             ],
-            'Penalties & Discipline' => [
+            'Discipline & Penalties' => [
                 'attendance.penalties.view' => tr('View Attendance Penalties'),
                 'attendance.penalties.view-subordinates' => tr('View Subordinates Penalties'),
                 'attendance.penalties.manage' => tr('Process Attendance Penalties'),
                 'attendance.penalties.waive' => tr('Waive/Cancel Penalties'),
             ],
-            'Payroll & Finance' => [
-                'payroll.view' => tr('View Payroll Data'),
-                'payroll.process' => tr('Process / Close Monthly Payroll'),
-                'payroll.payslips.view' => tr('View/Download Payslips'),
-                'payroll.allowances.manage' => tr('Manage Allowances & Deductions'),
-                'payroll.loans.manage' => tr('Manage Employee Loans'),
-                'payroll.bonuses.manage' => tr('Manage Bonuses & Incentives'),
-                'payroll.bank-files.export' => tr('Generate Bank Transfer Files'),
-            ],
-            'Recruitment & Performance' => [
-                'recruitment.jobs.manage' => tr('Manage Job Postings'),
-                'recruitment.applicants.view' => tr('View Applicants List'),
-                'recruitment.applicants.manage' => tr('Manage Recruitment Stages'),
-                'recruitment.interviews.manage' => tr('Manage Interviewing Process'),
-                'performance.evaluations.view' => tr('View Performance Results'),
-                'performance.evaluations.manage' => tr('Manage Employee Evaluations'),
-                'performance.kpi.manage' => tr('Manage KPI Definitions'),
-            ],
-            'Assets Management' => [
-                'assets.view' => tr('View Assets Inventory'),
-                'assets.manage' => tr('Manage Asset Records'),
-                'assets.assignment.manage' => tr('Manage Assets Assignment'),
-            ],
-            'Locations & Geofencing' => [
+
+            // --- Locations ---
+            'Geographic Management' => [
                 'locations.view' => tr('View Work Locations'),
                 'locations.manage' => tr('Manage Work Locations'),
                 'geofencing.manage' => tr('Manage Geofencing Rules'),
-            ],
-            'Logs & Auditing' => [
-                'logs.view' => tr('View System Activity Logs'),
-                'logs.export' => tr('Export Activity Logs'),
-            ],
-            'System Settings' => [
-                'settings.general.view' => tr('View General Settings'),
-                'settings.general.edit' => tr('Edit General Settings'),
-                'settings.general.manage' => tr('Manage Overall Settings'),
-                'settings.organizational.view' => tr('View Organizational Structure'),
-                'settings.organizational.manage' => tr('Manage Departments & Job Titles'),
-                'settings.attendance.view' => tr('View Attendance Rules'),
-                'settings.attendance.manage' => tr('Manage Attendance Settings'),
-                'settings.attendance.schedules.manage' => tr('Manage Master Schedules Settings'),
-                'settings.attendance.leaves.manage' => tr('Manage Global Leave Policies'),
-                'settings.attendance.holidays.manage' => tr('Manage Global Holiday Policies'),
-                'settings.attendance.exceptional.manage' => tr('Manage Exceptional Attendance Rules'),
-                'settings.payroll.manage' => tr('Manage Payroll Settings'),
-                'settings.branches.manage' => tr('Manage Company Branches'),
-                'settings.branding.view' => tr('View Branding Settings'),
-                'settings.branding.manage' => tr('Manage System Branding'),
-                'settings.approval.view' => tr('View Approval Workflows'),
-                'settings.approval.manage' => tr('Manage Approval Workflows'),
-                'settings.calendar.manage' => tr('Manage System Calendar'),
-                'settings.currencies.manage' => tr('Manage Currencies'),
-                'settings.backup.view' => tr('View System Backups'),
-                'settings.backup.manage' => tr('Manage Multi-Backups'),
-                'settings.lists.manage' => tr('Manage Dynamic Selection Lists'),
-            ],
-            'User Access Control' => [
-                'uac.users.view' => tr('View System Users'),
-                'uac.users.manage' => tr('Manage System Users'),
-                'uac.roles.view' => tr('View Roles & Groups'),
-                'uac.roles.manage' => tr('Manage Roles & Permissions'),
             ],
         ];
     }
@@ -151,13 +142,23 @@ class AccessControlService
     /**
      * Save/Update Role.
      */
-    public function saveRole(array $data, ?int $id = null): Role
+    public function saveRole(array $data, ?int $id = null, ?int $companyId = null): Role
     {
-        return DB::transaction(function () use ($data, $id) {
-            $role = $id ? Role::findOrFail($id) : Role::create(['name' => $data['name'], 'guard_name' => 'web']);
-            
+        return DB::transaction(function () use ($data, $id, $companyId) {
             if ($id) {
-                $role->update(['name' => $data['name']]);
+                $role = Role::findOrFail($id);
+                
+                // 🛑 Block editing protected system roles
+                if (in_array($role->name, ['company-admin', 'saas-admin', 'super-admin', 'system-admin']) || is_null($role->saas_company_id)) {
+                    throw new \Exception(tr('System roles cannot be edited.'));
+                }
+
+                $role->name = $data['name'];
+                $role->save();
+            } else {
+                $role = new Role(['name' => $data['name'], 'guard_name' => 'web']);
+                $role->saas_company_id = $companyId;
+                $role->save();
             }
 
             if (isset($data['permissions'])) {
@@ -174,8 +175,12 @@ class AccessControlService
     public function deleteRole(int $id, int $companyId): array
     {
         $role = Role::findOrFail($id);
+
+        if ($role->saas_company_id !== null && $role->saas_company_id !== $companyId) {
+            return ['ok' => false, 'message' => tr('Unauthorized operation.')];
+        }
         
-        if (in_array($role->name, ['company-admin', 'saas-admin'])) {
+        if (in_array($role->name, ['company-admin', 'saas-admin', 'super-admin', 'system-admin']) || $role->saas_company_id === null) {
             return ['ok' => false, 'message' => tr('System roles cannot be deleted.')];
         }
 
@@ -229,6 +234,56 @@ class AccessControlService
     }
 
     /**
+     * Save custom permissions for a specific user (overrides their role).
+     * Detaches the role, assigns direct permissions, and stores the reference role name.
+     */
+    public function saveCustomPermissions(User $user, string $referencRoleName, array $permissions): void
+    {
+        DB::transaction(function () use ($user, $referencRoleName, $permissions) {
+            // Remove role assignment — only direct permissions are now authoritative
+            $user->syncRoles([]);
+            // Assign direct permissions
+            $user->syncPermissions($permissions);
+            // Store reference so we can reset later
+            $user->update([
+                'reference_role' => $referencRoleName,
+                'has_custom_permissions' => true,
+            ]);
+        });
+    }
+
+    /**
+     * Reset a user's permissions back to the defaults of their reference role.
+     */
+    public function resetToRoleDefault(User $user): array
+    {
+        $roleName = $user->reference_role;
+
+        if (!$roleName) {
+            return ['ok' => false, 'message' => tr('No reference role found for this user.')];
+        }
+
+        $role = Role::where('name', $roleName)->first();
+
+        if (!$role) {
+            return ['ok' => false, 'message' => tr('The reference role no longer exists.')];
+        }
+
+        DB::transaction(function () use ($user, $role) {
+            // Remove direct permissions
+            $user->syncPermissions([]);
+            // Restore the role
+            $user->syncRoles([$role->name]);
+            // Clear custom flag
+            $user->update([
+                'has_custom_permissions' => false,
+            ]);
+        });
+
+        return ['ok' => true];
+    }
+
+    /**
      * Get shared branch metadata.
      */
     public function getBranchMetadata(int $companyId): array
@@ -249,6 +304,51 @@ class AccessControlService
         return [
             'col' => $employeeBranchCol,
             'list' => $branches
+        ];
+    }
+
+    public function getPermissionTabs(): array
+    {
+        $groups = $this->getPermissionGroups();
+        
+        return [
+            'core' => [
+                'label' => tr('Core Settings'),
+                'icon' => 'fa-cog',
+                'groups' => [
+                    'Dashboard' => $groups['Dashboard'],
+                    'General Settings' => $groups['General Settings'],
+                    'Organizational Structure' => $groups['Organizational Structure'],
+                    'User Access Control' => $groups['User Access Control'],
+                    'Approval Workflows' => $groups['Approval Workflows'],
+                    'System Logs & Backup' => $groups['System Logs & Backup'],
+                    'Currency & Calendar' => $groups['Currency & Calendar'],
+                ]
+            ],
+            'hr' => [
+                'label' => tr('HR Management'),
+                'icon' => 'fa-users',
+                'groups' => [
+                    'Employee Master Data' => $groups['Employee Master Data'],
+                ]
+            ],
+            'operations' => [
+                'label' => tr('Operations'),
+                'icon' => 'fa-calendar-check',
+                'groups' => [
+                    'Daily Attendance' => $groups['Daily Attendance'],
+                    'Work Schedules' => $groups['Work Schedules'],
+                    'Requests Management' => $groups['Requests Management'],
+                    'Discipline & Penalties' => $groups['Discipline & Penalties'],
+                ]
+            ],
+            'locations' => [
+                'label' => tr('Locations'),
+                'icon' => 'fa-map-marker-alt',
+                'groups' => [
+                    'Geographic Management' => $groups['Geographic Management'],
+                ]
+            ],
         ];
     }
 }
