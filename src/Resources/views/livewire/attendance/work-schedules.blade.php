@@ -99,7 +99,7 @@
                         class="w-[22%] px-6 py-4 text-[10px] font-black text-gray-400 uppercase tracking-widest text-center">
                         {{ tr('Timing Slot') }}</th>
                     <th
-                        class="w-[20%] px-6 py-4 text-[10px] font-black text-gray-400 uppercase tracking-widest text-center">
+                        class="w-[24%] px-6 py-4 text-[10px] font-black text-gray-400 uppercase tracking-widest text-center">
                         {{ tr('Week Matrix') }}</th>
                     <th
                         class="w-[12%] px-6 py-4 text-[10px] font-black text-gray-400 uppercase tracking-widest text-center">
@@ -154,16 +154,56 @@
                             </div>
                         </td>
                         <td class="px-6 py-4 text-center">
-                            <div class="flex flex-col items-center justify-center">
-                                <div
-                                    class="flex items-center justify-center -space-x-1.5 {{ $isRtl ? 'space-x-reverse' : '' }}">
-                                    @foreach (['saturday', 'sunday', 'monday', 'tuesday', 'wednesday', 'thursday', 'friday'] as $day)
-                                        <div
-                                            class="w-6 h-6 rounded-full border-2 border-white flex items-center justify-center text-[9px] font-black shadow-sm flex-shrink-0 {{ in_array($day, $schedule->work_days ?? []) ? 'bg-[color:var(--brand-via)] text-white' : 'bg-gray-100 text-gray-300' }}">
-                                            {{ mb_substr(tr(ucfirst($day)), 0, 1) }}
-                                        </div>
-                                    @endforeach
-                                </div>
+                            @php
+                                $weekDays = [
+                                    'saturday',
+                                    'sunday',
+                                    'monday',
+                                    'tuesday',
+                                    'wednesday',
+                                    'thursday',
+                                    'friday',
+                                ];
+
+                                $dayShortLabels =
+                                    substr($locale, 0, 2) === 'ar'
+                                        ? [
+                                            'saturday' => 'السبت',
+                                            'sunday' => 'الأحد',
+                                            'monday' => 'الإثنين',
+                                            'tuesday' => 'الثلاثاء',
+                                            'wednesday' => 'الأربعاء',
+                                            'thursday' => 'الخميس',
+                                            'friday' => 'الجمعة',
+                                        ]
+                                        : [
+                                            'saturday' => 'Sat',
+                                            'sunday' => 'Sun',
+                                            'monday' => 'Mon',
+                                            'tuesday' => 'Tue',
+                                            'wednesday' => 'Wed',
+                                            'thursday' => 'Thu',
+                                            'friday' => 'Fri',
+                                        ];
+                            @endphp
+
+                            <div
+                                class="flex flex-wrap items-center justify-center gap-1.5 {{ substr($locale, 0, 2) === 'ar' ? 'max-w-[440px]' : 'max-w-[260px]' }} mx-auto">
+                                @foreach ($weekDays as $day)
+                                    @php
+                                        $isActiveDay = in_array($day, $schedule->work_days ?? []);
+                                    @endphp
+
+                                    <div class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg border {{ substr($locale, 0, 2) === 'ar' ? 'text-[9px]' : 'text-[10px]' }} font-black whitespace-nowrap transition-colors
+            {{ $isActiveDay
+                ? 'bg-[color:var(--brand-via)]/10 text-[color:var(--brand-via)] border-[color:var(--brand-via)]/20'
+                : 'bg-gray-50 text-gray-400 border-gray-200' }}"
+                                        title="{{ $daysOfWeek[$day] ?? tr(ucfirst($day)) }}">
+                                        <i
+                                            class="fas {{ $isActiveDay ? 'fa-check-circle' : 'fa-minus-circle' }} text-[9px] flex-shrink-0"></i>
+                                        <span>{{ $dayShortLabels[$day] ?? ($daysOfWeek[$day] ?? tr(ucfirst($day))) }}</span>
+                                    </div>
+                                @endforeach
                             </div>
                         </td>
 
