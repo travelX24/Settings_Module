@@ -107,7 +107,7 @@
                         <div class="flex items-center justify-between py-2 border-b border-gray-50">
                             <span class="text-xs font-medium text-gray-500">{{ tr('Created At') }}</span>
                             <span class="text-[10px] font-bold text-gray-700">
-                                {{ $role->created_at->format('Y-m-d') }}
+                                {{ company_date($role->created_at) }}
                             </span>
                         </div>
                     </div>
@@ -183,7 +183,7 @@
                     </td>
                     <td class="px-6 py-4 whitespace-nowrap">
                         <div class="flex flex-col">
-                            <span class="text-xs text-gray-700 font-medium">{{ $role->created_at->format('Y-m-d') }}</span>
+                            <span class="text-xs text-gray-700 font-medium">{{ company_date($role->created_at) }}</span>
                             <span class="text-[10px] text-gray-400">{{ $role->created_at->format('h:i A') }}</span>
                         </div>
                     </td>

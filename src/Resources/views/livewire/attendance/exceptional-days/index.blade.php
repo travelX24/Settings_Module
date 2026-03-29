@@ -95,8 +95,11 @@
 
                 <div>
                     <div class="mb-1 text-xs text-gray-500">{{ tr('Year') }}</div>
-                    <x-ui.input type="number" :placeholder="tr('Year')" wire:model.live.debounce.0ms.number="year"
-                        min="2000" max="2100" />
+                    <x-ui.select wire:model.live="year">
+                        @foreach($this->availableYears as $y)
+                            <option value="{{ $y }}" {{ $year == $y ? 'selected' : '' }}>{{ $y }}</option>
+                        @endforeach
+                    </x-ui.select>
                 </div>
 
                 <div>
@@ -172,6 +175,38 @@
                     <x-ui.search-box wire:model.live.debounce.300ms="search" :placeholder="tr('Search by name/description...')" />
                 </div>
 
+            </div>
+
+            {{-- Clear Filters Button --}}
+            <div
+                x-data="{
+                    hasFilters() {
+                        return ($wire.status && $wire.status !== 'all') ||
+                               ($wire.search && $wire.search.trim() !== '') ||
+                               ($wire.deductionType && $wire.deductionType !== 'all') ||
+                               $wire.minMultiplier !== null ||
+                               $wire.maxMultiplier !== null ||
+                               $wire.departmentId !== null ||
+                               $wire.branchId !== null ||
+                               ($wire.contractType && $wire.contractType !== null && $wire.contractType !== '');
+                    }
+                }"
+                x-show="hasFilters()"
+                x-transition
+                class="flex items-center justify-end mt-2"
+            >
+                <button
+                    type="button"
+                    wire:click="clearAllFilters"
+                    wire:loading.attr="disabled"
+                    wire:target="clearAllFilters"
+                    class="inline-flex items-center gap-2 px-3 py-1.5 text-xs font-semibold text-gray-600 hover:text-gray-900 transition-colors disabled:opacity-50 cursor-pointer"
+                >
+                    <i class="fas fa-times" wire:loading.remove wire:target="clearAllFilters"></i>
+                    <i class="fas fa-spinner fa-spin" wire:loading wire:target="clearAllFilters"></i>
+                    <span wire:loading.remove wire:target="clearAllFilters">{{ tr('Clear all filters') }}</span>
+                    <span wire:loading wire:target="clearAllFilters">{{ tr('Clearing...') }}</span>
+                </button>
             </div>
         </x-ui.card>
 
@@ -301,10 +336,8 @@
                                 </span>
                             </td>
 
-                            <td class="px-6 py-4 text-center text-xs font-semibold text-gray-700">
-                                {{ optional($row->start_date)->format('Y-m-d') }}</td>
-                            <td class="px-6 py-4 text-center text-xs font-semibold text-gray-700">
-                                {{ optional($row->end_date ?? $row->start_date)->format('Y-m-d') }}</td>
+                            <td class="px-6 py-4 text-center text-xs font-semibold text-gray-700">{{ $this->formatCompanyDate(optional($row->start_date)->toDateString()) }}</td>
+                            <td class="px-6 py-4 text-center text-xs font-semibold text-gray-700">{{ $this->formatCompanyDate(optional($row->end_date ?? $row->start_date)->toDateString()) }}</td>
 
                             <td class="px-6 py-4 text-center text-xs font-semibold text-gray-700">{{ $applyLabel }}
                             </td>
@@ -329,7 +362,7 @@
                             </td>
 
                             <td class="px-6 py-4 text-center text-xs font-semibold text-gray-700">
-                                {{ optional($row->created_at)->format('Y-m-d') ?? '—' }}
+                                {{ $this->formatCompanyDate(optional($row->created_at)->toDateString()) ?? '—' }}
                             </td>
 
                             <td class="px-6 py-4 text-center">
@@ -680,8 +713,11 @@
                     <div class="grid grid-cols-1 md:grid-cols-2 gap-3">
                         <div>
                             <div class="text-xs text-gray-600 mb-1">{{ tr('From Year') }}</div>
-                            <x-ui.input type="number" min="2000" max="2100"
-                                wire:model.live="compareFromYear" />
+                            <x-ui.select wire:model.live="compareFromYear">
+                                @foreach($this->availableYears as $y)
+                                    <option value="{{ $y }}" {{ $compareFromYear == $y ? 'selected' : '' }}>{{ $y }}</option>
+                                @endforeach
+                            </x-ui.select>
                         </div>
 
                         <div>
@@ -857,8 +893,18 @@
                                                 {{ $row['from_start'] }}
                                             </td>
 
+<<<<<<< HEAD
                                             <td class="px-6 py-4 text-center text-xs font-semibold text-gray-700">
                                                 {{ $row['to_start'] }}
+=======
+                                            <td class="p-3">{{ $this->formatCompanyDate(optional($r->start_date)->toDateString()) }}</td>
+                                            <td class="p-3">{{ $this->formatCompanyDate(optional($r->end_date ?? $r->start_date)->toDateString()) }}</td>
+
+                                            <td class="p-3">{{ $applyLabel }}</td>
+
+                                            <td class="p-3">
+                                                {{ $isWithout ? '—' : number_format($percent, 2) . '%' }}
+>>>>>>> 778a058 (تعديلات في الفلتره وغيرها)
                                             </td>
 
                                             <td class="px-6 py-4 text-center text-xs font-semibold text-gray-700">

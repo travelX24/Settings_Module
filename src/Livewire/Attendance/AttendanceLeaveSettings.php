@@ -19,6 +19,41 @@ use Athka\Attendance\Models\AttendanceLeaveRequest;
 class AttendanceLeaveSettings extends Component
 {
     use WithPagination, WithFileUploads, HandleLeavePolicies, HandlePermissionPolicies;
+
+    protected function getCompanyId()
+    {
+        return auth()->user()->saas_company_id;
+    }
+
+    private function getCompanyCalendarType(): string
+    {
+        $companyId = $this->getCompanyId();
+        return \Illuminate\Support\Facades\Cache::remember("company_calendar_type_{$companyId}", 3600, function () use ($companyId) {
+            $row = \Illuminate\Support\Facades\DB::table('operational_calendars')
+                ->where('company_id', $companyId)
+                ->first(['calendar_type']);
+            return strtolower((string) ($row->calendar_type ?? 'gregorian'));
+        });
+    }
+
+    public function getAvailableYearsProperty()
+    {
+        $type = $this->getCompanyCalendarType();
+        $years = [];
+        
+        if ($type === 'hijri') {
+            // Hijri range e.g., 1440 to 1460
+            for ($i = 1440; $i <= 1460; $i++) {
+                $years[] = ['value' => $i, 'label' => $i];
+            }
+        } else {
+            // Gregorian range e.g., 2020 to 2040
+            for ($i = 2020; $i <= 2040; $i++) {
+                $years[] = ['value' => $i, 'label' => $i];
+            }
+        }
+        return $years;
+    }
     
     public string $search = '';
     
@@ -183,18 +218,46 @@ class AttendanceLeaveSettings extends Component
     public function saveYear()
     {
         $this->authorize('settings.attendance.manage');
-        $this->validate(['newYear' => 'required|integer|min:2000|max:2100']);
         
+        $rules = [
+            'newYear' => 'required|integer',
+            'copyFromYearId' => 'nullable|exists:leave_policy_years,id',
+        ];
+
+        $this->validate($rules);
+
         $companyId = auth()->user()->saas_company_id;
-        
+
+        // Check if year already exists
+        $exists = LeavePolicyYear::where('company_id', $companyId)
+            ->where('year', $this->newYear)
+            ->exists();
+
+        if ($exists) {
+            $this->addError('newYear', tr('This year already exists.'));
+            return;
+        }
+
+        $type = $this->getCompanyCalendarType();
+        $yearValue = (int) $this->newYear;
+
+        // Basic date setting based on calendar type
+        if ($type === 'hijri') {
+            $startsOn = $yearValue . "-01-01"; 
+            $endsOn   = $yearValue . "-12-29"; 
+        } else {
+            $startsOn = $yearValue . "-01-01";
+            $endsOn   = $yearValue . "-12-31";
+        }
+
         $year = LeavePolicyYear::create([
             'company_id' => $companyId,
-            'year' => (int)$this->newYear,
-            'starts_on' => $this->newYear . '-01-01',
-            'ends_on' => $this->newYear . '-12-31',
-            'is_active' => false
+            'year'       => $yearValue,
+            'starts_on'  => $startsOn,
+            'ends_on'    => $endsOn,
+            'is_active'  => false
         ]);
-        
+
         if ($this->copyFromYearId) {
             $policies = LeavePolicy::where('policy_year_id', $this->copyFromYearId)->get();
             foreach ($policies as $p) {
@@ -203,9 +266,11 @@ class AttendanceLeaveSettings extends Component
                 $newP->save();
             }
         }
-        
+
+        $this->newYear = '';
+        $this->copyFromYearId = '';
+        $this->dispatch('toast', type: 'success', message: tr('New year configuration created successfully.'));
         $this->reset(['newYear', 'copyFromYearId', 'yearsOpen']);
-        $this->dispatch('toast', type: 'success', message: tr('Year created successfully.'));
     }
 
     public function deleteYear($id)

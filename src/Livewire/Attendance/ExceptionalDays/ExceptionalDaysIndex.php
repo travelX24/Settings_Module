@@ -88,8 +88,23 @@ class ExceptionalDaysIndex extends Component
     public function mount(): void
     {
         $this->authorize('settings.attendance.view');
-        $this->year = (int) now()->year;
-        $this->month = (int) now()->month;
+        
+        $type = $this->getCompanyCalendarType();
+        if ($type === 'hijri') {
+            // Get current Hijri year
+            if (class_exists(\IntlCalendar::class)) {
+                $tz  = \IntlTimeZone::createTimeZone('UTC');
+                $cal = \IntlCalendar::createInstance($tz, 'en_US@calendar=islamic-umalqura');
+                $this->year = (int) $cal->get(\IntlCalendar::FIELD_YEAR);
+                $this->month = (int) $cal->get(\IntlCalendar::FIELD_MONTH) + 1;
+            } else {
+                $this->year = (int) now()->year;
+                $this->month = (int) now()->month;
+            }
+        } else {
+            $this->year = (int) now()->year;
+            $this->month = (int) now()->month;
+        }
 
         $this->compareFromYear = (int) now()->subYear()->year;
         $this->compareToYear = (int) $this->year;
@@ -135,6 +150,33 @@ class ExceptionalDaysIndex extends Component
     }
     public function updatingContractType()
     {
+        $this->resetPage();
+    }
+
+    public function clearAllFilters(): void
+    {
+        // Reset filter fields to defaults
+        $this->status = 'all';
+        $this->search = '';
+        $this->deductionType = 'all';
+        $this->minMultiplier = null;
+        $this->maxMultiplier = null;
+        $this->departmentId = null;
+        $this->branchId = null;
+        $this->contractType = null;
+
+        // Reset year/month to current
+        $type = $this->getCompanyCalendarType();
+        if ($type === 'hijri' && class_exists(\IntlCalendar::class)) {
+            $tz  = \IntlTimeZone::createTimeZone('UTC');
+            $cal = \IntlCalendar::createInstance($tz, 'en_US@calendar=islamic-umalqura');
+            $this->year  = (int) $cal->get(\IntlCalendar::FIELD_YEAR);
+            $this->month = (int) $cal->get(\IntlCalendar::FIELD_MONTH) + 1;
+        } else {
+            $this->year  = (int) now()->year;
+            $this->month = (int) now()->month;
+        }
+
         $this->resetPage();
     }
 
@@ -300,6 +342,49 @@ class ExceptionalDaysIndex extends Component
         }
 
         return (int) (auth()->user()->saas_company_id ?? auth()->user()->company_id ?? 0);
+    }
+
+    private function getCompanyCalendarType(): string
+    {
+        $companyId = $this->companyId();
+        return \Illuminate\Support\Facades\Cache::remember("company_calendar_type_{$companyId}", 3600, function () use ($companyId) {
+            $row = \Illuminate\Support\Facades\DB::table('operational_calendars')
+                ->where('company_id', $companyId)
+                ->first(['calendar_type']);
+            return strtolower((string) ($row->calendar_type ?? 'gregorian'));
+        });
+    }
+
+    public function getAvailableYearsProperty(): array
+    {
+        $type = $this->getCompanyCalendarType();
+        $years = [];
+        if ($type === 'hijri') {
+            for ($i = 1440; $i <= 1460; $i++) {
+                $years[] = $i;
+            }
+        } else {
+            for ($i = 2020; $i <= 2040; $i++) {
+                $years[] = $i;
+            }
+        }
+        return $years;
+    }
+
+    public function formatCompanyDate(?string $gregorianYmd): string
+    {
+        if (!$gregorianYmd) return '—';
+        $type = $this->getCompanyCalendarType();
+        $d = \Carbon\Carbon::parse($gregorianYmd)->startOfDay();
+        if ($type !== 'hijri' || !class_exists(\IntlDateFormatter::class)) {
+            return $d->format('Y/m/d');
+        }
+        $fmt = new \IntlDateFormatter(
+            'en_US@calendar=islamic-umalqura',
+            \IntlDateFormatter::NONE, \IntlDateFormatter::NONE,
+            'UTC', \IntlDateFormatter::TRADITIONAL, 'yyyy-MM-dd'
+        );
+        return (string) $fmt->format($d->getTimestamp());
     }
 
     private function getFilters(): array

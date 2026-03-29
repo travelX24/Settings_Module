@@ -1005,12 +1005,16 @@
                     </div>
 
                     <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-                        <x-ui.input 
-                            type="number" min="2000" max="2100" 
+                        <x-ui.select 
                             label="{{ tr('Year') }}" 
                             wire:model.defer="newYear" 
                             :disabled="!auth()->user()->can('settings.attendance.manage')"
-                        />
+                        >
+                            <option value="">{{ tr('Select year') }}</option>
+                            @foreach($this->availableYears as $y)
+                                <option value="{{ $y['value'] }}">{{ $y['label'] }}</option>
+                            @endforeach
+                        </x-ui.select>
 
                         <x-ui.select label="{{ tr('Copy from year (optional)') }}" wire:model.defer="copyFromYearId" :disabled="!auth()->user()->can('settings.attendance.manage')">
                              <option value="">{{ tr('Do not copy') }}</option>
