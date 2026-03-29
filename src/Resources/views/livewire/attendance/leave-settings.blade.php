@@ -11,7 +11,10 @@
         'training'   => tr('Training'),
         'freelancer_remote' => tr('Freelancer (Remote)'),
     ];
-@endphp<div class="space-y-6">
+@endphp
+<div class="space-y-6" wire:poll.15s>
+    
+    <x-ui.toast />
 @section('topbar-left-content')
     <div class="flex flex-col gap-3 {{ $isRtl ? 'items-end text-right' : 'items-start text-left' }}">
         <x-ui.page-header
@@ -748,7 +751,6 @@
                             >
                                 <option value="exclude">{{ tr('Auto exclude') }}</option>
                                 <option value="include">{{ tr('Auto include') }}</option>
-                                <option value="employee_choice">{{ tr('Employee choice') }}</option>
                             </x-ui.select>
                         </div>
                     </div>
@@ -1067,30 +1069,56 @@
             <div class="space-y-4 py-2">
 
                 <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-                     <x-ui.select
+                    <x-ui.select
+                        id="select_compare_year_a"
                         label="{{ tr('Year A') }}"
-                        wire:model="compareYearAId"
+                        wire:model.live="compareYearAId"
                         :disabled="!auth()->user()->can('settings.attendance.manage')"
                     >
                         <option value="">{{ tr('Select year') }}</option>
                         @foreach($years as $y)
-                            <option value="{{ (int) $y->id }}">{{ $y->year }}</option>
+                            @if(!$compareYearBId || $y->id != $compareYearBId)
+                                <option value="{{ (int) $y->id }}">{{ $y->year }}</option>
+                            @endif
                         @endforeach
                     </x-ui.select>
 
                     <x-ui.select
+                        id="select_compare_year_b"
                         label="{{ tr('Year B') }}"
-                        wire:model="compareYearBId"
+                        wire:model.live="compareYearBId"
                         :disabled="!auth()->user()->can('settings.attendance.manage')"
                     >
                         <option value="">{{ tr('Select year') }}</option>
                         @foreach($years as $y)
-                            <option value="{{ (int) $y->id }}">{{ $y->year }}</option>
+                            @if(!$compareYearAId || $y->id != $compareYearAId)
+                                <option value="{{ (int) $y->id }}">{{ $y->year }}</option>
+                            @endif
                         @endforeach
                     </x-ui.select>
                 </div>
 
                 <div class="bg-white rounded-2xl border border-gray-100 overflow-hidden shadow-sm">
+                    @php
+                        $enumToTr = function($val) {
+                            if (!$val || $val === '—') return '—';
+                            $valStr = strtolower((string)$val);
+                            $map = [
+                                'annual_grant' => tr('Annual full grant'),
+                                'monthly' => tr('Monthly accrual'),
+                                'balance_only' => tr('Deduct from balance only'),
+                                'allow_without_deduction' => tr('Allow without deduction'),
+                                'salary_after_balance' => tr('Deduct from salary after balance'),
+                                'exclude' => tr('Auto exclude'),
+                                'include' => tr('Auto include'),
+                                'employee_choice' => tr('Employee choice'),
+                                'full_day' => tr('Full day'),
+                                'half_day' => tr('Half day'),
+                                'hourly' => tr('Hourly'),
+                            ];
+                            return $map[$valStr] ?? tr((string)$val);
+                        };
+                    @endphp
                     <div class="overflow-x-auto">
                         <table class="w-full text-start border-collapse table-fixed">
                             <thead>
@@ -1190,9 +1218,25 @@
                                                     <div class="grid grid-cols-2 gap-2 text-[12px]">
                                                         <div><b>{{ tr('Show in App') }}:</b> {{ $a->show_in_app ? tr('Yes') : tr('No') }}</div>
                                                         <div><b>{{ tr('Requires attachment') }}:</b> {{ $a->requires_attachment ? tr('Yes') : tr('No') }}</div>
+                                                        
+                                                        @php $sA = $a->settings ?? []; @endphp
+                                                        @if($a->leave_type === 'annual')
+                                                            <div><b>{{ tr('Accrual method') }}:</b> {{ $enumToTr($sA['accrual_method'] ?? '—') }}</div>
+                                                            <div><b>{{ tr('Monthly rate') }}:</b> {{ $sA['monthly_accrual_rate'] ?? '—' }}</div>
+                                                            <div><b>{{ tr('Max balance') }}:</b> {{ $sA['max_balance'] ?? '—' }}</div>
+                                                            <div><b>{{ tr('Carryover days allowed') }}:</b> {{ ($sA['allow_carryover'] ?? false) ? ($sA['carryover_days'] ?? '—') : tr('No') }}</div>
+                                                            <div><b>{{ tr('Weekend days') }}:</b> {{ $enumToTr($sA['weekend_policy'] ?? '—') }}</div>
+                                                        @endif
+                                                        <div><b>{{ tr('Deduction policy') }}:</b> {{ $enumToTr($sA['deduction_policy'] ?? '—') }}</div>
+                                                        <div><b>{{ tr('Duration type') }}:</b> {{ $enumToTr($sA['duration_type'] ?? 'full_day') }}</div>
+                                                        <div><b>{{ tr('Min notice (days)') }}:</b> {{ $sA['notice_min_days'] ?? '0' }}</div>
+                                                        <div><b>{{ tr('Max advance (days)') }}:</b> {{ $sA['notice_max_advance_days'] ?? '0' }}</div>
+                                                        <div><b>{{ tr('Allow retroactive requests') }}:</b> {{ ($sA['allow_retroactive'] ?? false) ? tr('Yes') : tr('No') }}</div>
+                                                        <div><b>{{ tr('Mandatory note') }}:</b> {{ ($sA['note_required'] ?? false) ? tr('Yes') : tr('No') }}</div>
+
                                                         <div class="col-span-2">
                                                             <b>{{ tr('Attachment types') }}:</b>
-                                                            @php $tA = data_get($a->settings ?? [], 'attachments.types', []); @endphp
+                                                            @php $tA = $sA['attachments.types'] ?? $sA['attachment_types'] ?? []; @endphp
                                                             {{ is_array($tA) ? implode(', ', $tA) : (string)$tA }}
                                                         </div>
                                                     </div>
@@ -1206,9 +1250,25 @@
                                                     <div class="grid grid-cols-2 gap-2 text-[12px]">
                                                         <div><b>{{ tr('Show in App') }}:</b> {{ $b->show_in_app ? tr('Yes') : tr('No') }}</div>
                                                         <div><b>{{ tr('Requires attachment') }}:</b> {{ $b->requires_attachment ? tr('Yes') : tr('No') }}</div>
+                                                        
+                                                        @php $sB = $b->settings ?? []; @endphp
+                                                        @if($b->leave_type === 'annual')
+                                                            <div><b>{{ tr('Accrual method') }}:</b> {{ $enumToTr($sB['accrual_method'] ?? '—') }}</div>
+                                                            <div><b>{{ tr('Monthly rate') }}:</b> {{ $sB['monthly_accrual_rate'] ?? '—' }}</div>
+                                                            <div><b>{{ tr('Max balance') }}:</b> {{ $sB['max_balance'] ?? '—' }}</div>
+                                                            <div><b>{{ tr('Carryover days allowed') }}:</b> {{ ($sB['allow_carryover'] ?? false) ? ($sB['carryover_days'] ?? '—') : tr('No') }}</div>
+                                                            <div><b>{{ tr('Weekend days') }}:</b> {{ $enumToTr($sB['weekend_policy'] ?? '—') }}</div>
+                                                        @endif
+                                                        <div><b>{{ tr('Deduction policy') }}:</b> {{ $enumToTr($sB['deduction_policy'] ?? '—') }}</div>
+                                                        <div><b>{{ tr('Duration type') }}:</b> {{ $enumToTr($sB['duration_type'] ?? 'full_day') }}</div>
+                                                        <div><b>{{ tr('Min notice (days)') }}:</b> {{ $sB['notice_min_days'] ?? '0' }}</div>
+                                                        <div><b>{{ tr('Max advance (days)') }}:</b> {{ $sB['notice_max_advance_days'] ?? '0' }}</div>
+                                                        <div><b>{{ tr('Allow retroactive requests') }}:</b> {{ ($sB['allow_retroactive'] ?? false) ? tr('Yes') : tr('No') }}</div>
+                                                        <div><b>{{ tr('Mandatory note') }}:</b> {{ ($sB['note_required'] ?? false) ? tr('Yes') : tr('No') }}</div>
+
                                                         <div class="col-span-2">
                                                             <b>{{ tr('Attachment types') }}:</b>
-                                                            @php $tB = data_get($b->settings ?? [], 'attachments.types', []); @endphp
+                                                            @php $tB = $sB['attachments.types'] ?? $sB['attachment_types'] ?? []; @endphp
                                                             {{ is_array($tB) ? implode(', ', $tB) : (string)$tB }}
                                                         </div>
                                                     </div>
