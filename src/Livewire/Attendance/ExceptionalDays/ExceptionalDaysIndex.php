@@ -589,11 +589,6 @@ class ExceptionalDaysIndex extends Component
 
         $companyId = $this->companyId();
 
-        if ($this->exceptionalDayService->checkOverlap($companyId, $start, $end, $this->editingId)) {
-            $this->addError('form.start_date', tr('Date range overlaps with another exceptional day.'));
-            return;
-        }
-
         $type = (string) ($this->form['scope_type'] ?? 'all');
 
         if ($type === 'all') {
@@ -617,6 +612,20 @@ class ExceptionalDaysIndex extends Component
             $this->form['include']['sections'] = [];
             $this->form['include']['branches'] = [];
             $this->form['include']['contract_types'] = [];
+        }
+
+        if (
+            $this->exceptionalDayService->checkOverlap(
+                $companyId,
+                $start,
+                $end,
+                $this->editingId,
+                $type,
+                $this->form['include'] ?? []
+            )
+        ) {
+            $this->addError('form.start_date', tr('Date range overlaps with another exceptional day in the same scope.'));
+            return;
         }
 
         AttendanceExceptionalDay::updateOrCreate(
