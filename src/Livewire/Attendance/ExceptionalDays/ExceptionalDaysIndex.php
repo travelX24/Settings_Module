@@ -20,9 +20,9 @@ class ExceptionalDaysIndex extends Component
     public string $status = 'all';
     public string $search = '';
 
-    public string $deductionType = 'all'; 
-    public ?float $minMultiplier = null;  
-    public ?float $maxMultiplier = null; 
+    public string $deductionType = 'all';
+    public ?float $minMultiplier = null;
+    public ?float $maxMultiplier = null;
     public ?int $departmentId = null;
     public ?int $branchId = null;
     public ?string $contractType = null;
@@ -51,18 +51,18 @@ class ExceptionalDaysIndex extends Component
         'start_date' => null,
         'end_date' => null,
 
-        'apply_on' => 'absence', 
+        'apply_on' => 'absence',
 
-        'deduction_mode' => 'with', 
+        'deduction_mode' => 'with',
 
-        'deduction_percent' => 100.0, 
+        'deduction_percent' => 100.0,
 
         'absence_multiplier' => 1.00,
         'late_multiplier' => 1.00,
 
         'grace_hours' => 0,
 
-        'scope_type' => 'all', 
+        'scope_type' => 'all',
         'include' => [
             'departments' => [],
             'sections' => [],
@@ -93,20 +93,50 @@ class ExceptionalDaysIndex extends Component
         $this->month = (int) now()->month;
 
         $this->copyFromYear = (int) now()->subYear()->year;
-        $this->copyToYear   = (int) $this->year;
+        $this->copyToYear = (int) $this->year;
         $this->copyFromCount = null;
     }
 
-    public function updatingYear() { $this->resetPage(); }
-    public function updatingMonth() { $this->resetPage(); }
-    public function updatingStatus() { $this->resetPage(); }
-    public function updatingSearch() { $this->resetPage(); }
-    public function updatingDeductionType() { $this->resetPage(); }
-    public function updatingMinMultiplier() { $this->resetPage(); }
-    public function updatingMaxMultiplier() { $this->resetPage(); }
-    public function updatingDepartmentId() { $this->resetPage(); }
-    public function updatingBranchId() { $this->resetPage(); }
-    public function updatingContractType() { $this->resetPage(); }
+    public function updatingYear()
+    {
+        $this->resetPage();
+    }
+    public function updatingMonth()
+    {
+        $this->resetPage();
+    }
+    public function updatingStatus()
+    {
+        $this->resetPage();
+    }
+    public function updatingSearch()
+    {
+        $this->resetPage();
+    }
+    public function updatingDeductionType()
+    {
+        $this->resetPage();
+    }
+    public function updatingMinMultiplier()
+    {
+        $this->resetPage();
+    }
+    public function updatingMaxMultiplier()
+    {
+        $this->resetPage();
+    }
+    public function updatingDepartmentId()
+    {
+        $this->resetPage();
+    }
+    public function updatingBranchId()
+    {
+        $this->resetPage();
+    }
+    public function updatingContractType()
+    {
+        $this->resetPage();
+    }
 
     public function updatedFormPeriodType($value): void
     {
@@ -149,7 +179,7 @@ class ExceptionalDaysIndex extends Component
             if (!isset($this->form['deduction_percent']) || $this->form['deduction_percent'] === null) {
                 $this->form['deduction_percent'] = 100.0;
             }
-        } else { 
+        } else {
             $this->form['grace_hours'] = 0;
             if (!isset($this->form['deduction_percent']) || $this->form['deduction_percent'] === null) {
                 $this->form['deduction_percent'] = 100.0;
@@ -180,7 +210,7 @@ class ExceptionalDaysIndex extends Component
         $type = (string) $value;
 
         if ($type === 'all') {
-            $this->form['include'] = ['departments'=>[], 'sections'=>[], 'employees'=>[]];
+            $this->form['include'] = ['departments' => [], 'sections' => [], 'employees' => []];
             return;
         }
 
@@ -225,7 +255,7 @@ class ExceptionalDaysIndex extends Component
             'form.start_date' => ['required', 'date'],
 
             'form.end_date' => [
-                Rule::requiredIf(fn () => ($this->form['period_type'] ?? 'single') === 'range'),
+                Rule::requiredIf(fn() => ($this->form['period_type'] ?? 'single') === 'range'),
                 'nullable',
                 'date',
                 'after_or_equal:form.start_date',
@@ -236,7 +266,7 @@ class ExceptionalDaysIndex extends Component
             'form.deduction_mode' => ['required', Rule::in(['with', 'without'])],
 
             'form.deduction_percent' => [
-                Rule::requiredIf(fn () => $hasDeduction),
+                Rule::requiredIf(fn() => $hasDeduction),
                 'nullable',
                 'numeric',
                 'min:0',
@@ -244,7 +274,7 @@ class ExceptionalDaysIndex extends Component
             ],
 
             'form.grace_hours' => [
-                Rule::requiredIf(fn () => $hasDeduction && (($this->form['apply_on'] ?? 'absence') === 'late')),
+                Rule::requiredIf(fn() => $hasDeduction && (($this->form['apply_on'] ?? 'absence') === 'late')),
                 'nullable',
                 'integer',
                 'min:0',
@@ -262,7 +292,7 @@ class ExceptionalDaysIndex extends Component
             'form.is_active' => ['boolean'],
         ];
     }
-    
+
     private function companyId(): int
     {
         if (app()->bound('currentCompany') && app('currentCompany')) {
@@ -275,23 +305,23 @@ class ExceptionalDaysIndex extends Component
     private function getFilters(): array
     {
         return [
-            'year'          => $this->year,
-            'month'         => $this->month,
-            'search'        => $this->search,
-            'status'        => $this->status,
+            'year' => $this->year,
+            'month' => $this->month,
+            'search' => $this->search,
+            'status' => $this->status,
             'deductionType' => $this->deductionType,
             'minMultiplier' => $this->minMultiplier,
             'maxMultiplier' => $this->maxMultiplier,
-            'departmentId'  => $this->departmentId,
-            'branchId'      => $this->branchId,
-            'contractType'  => $this->contractType,
+            'departmentId' => $this->departmentId,
+            'branchId' => $this->branchId,
+            'contractType' => $this->contractType,
         ];
     }
 
     private function validateScopeSelections(): bool
     {
         $type = (string) ($this->form['scope_type'] ?? 'all');
-        $inc  = $this->form['include'] ?? ['departments'=>[], 'sections'=>[], 'employees'=>[]];
+        $inc = $this->form['include'] ?? ['departments' => [], 'sections' => [], 'employees' => []];
 
         if ($type === 'all') {
             return true;
@@ -357,8 +387,10 @@ class ExceptionalDaysIndex extends Component
         $percent = (float) ($this->form['deduction_percent'] ?? 0.0);
         $factor = $percent / 100.0;
 
-        if ($factor < 0) $factor = 0;
-        if ($factor > 10) $factor = 10;
+        if ($factor < 0)
+            $factor = 0;
+        if ($factor > 10)
+            $factor = 10;
 
         if ($apply === 'absence') {
             $this->form['absence_multiplier'] = $factor;
@@ -394,7 +426,7 @@ class ExceptionalDaysIndex extends Component
             'grace_hours' => (int) ($this->form['grace_hours'] ?? 0),
 
             'scope_type' => $this->form['scope_type'] ?? 'all',
-            'include' => $this->form['include'] ?? ['departments'=>[], 'sections'=>[], 'branches'=>[], 'contract_types'=>[], 'employees'=>[]],
+            'include' => $this->form['include'] ?? ['departments' => [], 'sections' => [], 'branches' => [], 'contract_types' => [], 'employees' => []],
 
             'notify_policy' => $this->form['notify_policy'] ?? 'none',
             'notify_message' => $this->form['notify_message'] ?? null,
@@ -429,7 +461,7 @@ class ExceptionalDaysIndex extends Component
             'grace_hours' => 0,
 
             'scope_type' => 'all',
-            'include' => ['departments'=>[], 'sections'=>[], 'branches'=>[], 'contract_types'=>[], 'employees'=>[]],
+            'include' => ['departments' => [], 'sections' => [], 'branches' => [], 'contract_types' => [], 'employees' => []],
 
             'notify_policy' => 'none',
             'notify_message' => null,
@@ -469,14 +501,16 @@ class ExceptionalDaysIndex extends Component
         $applyForUi = ($applyStored === 'none') ? 'absence' : $applyStored;
 
         $percent = 0.0;
-        if ($applyStored === 'absence') $percent = (float) $row->absence_multiplier * 100.0;
-        if ($applyStored === 'late') $percent = (float) $row->late_multiplier * 100.0;
+        if ($applyStored === 'absence')
+            $percent = (float) $row->absence_multiplier * 100.0;
+        if ($applyStored === 'late')
+            $percent = (float) $row->late_multiplier * 100.0;
 
         if ($deductionMode === 'without') {
             $percent = 0.0;
         }
 
-        $include = $row->include ?? ['departments'=>[], 'sections'=>[], 'employees'=>[]];
+        $include = $row->include ?? ['departments' => [], 'sections' => [], 'employees' => []];
         $scopeType = (string) ($row->scope_type ?? 'all');
 
         if (!in_array($scopeType, ['all', 'departments', 'employees', 'branches', 'contract_types'], true)) {
@@ -551,10 +585,10 @@ class ExceptionalDaysIndex extends Component
         $this->normalizeApplyAndRates();
 
         $start = $this->form['start_date'];
-        $end   = $this->form['end_date'];
+        $end = $this->form['end_date'];
 
         $companyId = $this->companyId();
-        
+
         if ($this->exceptionalDayService->checkOverlap($companyId, $start, $end, $this->editingId)) {
             $this->addError('form.start_date', tr('Date range overlaps with another exceptional day.'));
             return;
@@ -563,7 +597,7 @@ class ExceptionalDaysIndex extends Component
         $type = (string) ($this->form['scope_type'] ?? 'all');
 
         if ($type === 'all') {
-            $this->form['include'] = ['departments'=>[], 'sections'=>[], 'branches'=>[], 'contract_types'=>[], 'employees'=>[]];
+            $this->form['include'] = ['departments' => [], 'sections' => [], 'branches' => [], 'contract_types' => [], 'employees' => []];
         } elseif ($type === 'departments') {
             $this->form['include']['branches'] = [];
             $this->form['include']['contract_types'] = [];
@@ -596,7 +630,7 @@ class ExceptionalDaysIndex extends Component
         $this->showModal = false;
         $this->resetValidation();
         $this->resetPage();
-        
+
         $this->dispatch('toast', ['type' => 'success', 'message' => tr('Operation successful')]);
     }
 
@@ -607,7 +641,7 @@ class ExceptionalDaysIndex extends Component
             ->where('company_id', $this->companyId())
             ->findOrFail($id);
 
-        $row->update(['is_active' => ! $row->is_active]);
+        $row->update(['is_active' => !$row->is_active]);
         $this->dispatch('toast', ['type' => 'success', 'message' => tr('Status updated')]);
     }
 
@@ -627,7 +661,7 @@ class ExceptionalDaysIndex extends Component
     {
         if ($value) {
             $companyId = $this->companyId();
-            $page = (int) $this->getPage(); 
+            $page = (int) $this->getPage();
 
             $ids = $this->exceptionalDayService->getRowsQuery($companyId, $this->getFilters())
                 ->forPage($page, $this->perPage)
@@ -644,7 +678,8 @@ class ExceptionalDaysIndex extends Component
     public function deleteSelected(): void
     {
         $this->authorize('settings.attendance.manage');
-        if (empty($this->selected)) return;
+        if (empty($this->selected))
+            return;
 
         AttendanceExceptionalDay::query()
             ->where('company_id', $this->companyId())
@@ -660,7 +695,8 @@ class ExceptionalDaysIndex extends Component
     public function setSelectedActive(bool $active): void
     {
         $this->authorize('settings.attendance.manage');
-        if (empty($this->selected)) return;
+        if (empty($this->selected))
+            return;
 
         AttendanceExceptionalDay::query()
             ->where('company_id', $this->companyId())
@@ -736,10 +772,11 @@ class ExceptionalDaysIndex extends Component
         $companyId = $this->companyId();
 
         $from = (int) $this->copyFromYear;
-        $to   = (int) $this->year; 
+        $to = (int) $this->year;
         $this->copyToYear = $to;
 
-        if ($from < 2000 || $to < 2000) return;
+        if ($from < 2000 || $to < 2000)
+            return;
 
         if (empty($this->copySelected)) {
             $this->addError('copySelected', tr('Please select at least one day to copy.'));
@@ -747,7 +784,7 @@ class ExceptionalDaysIndex extends Component
         }
 
         $diffYears = $to - $from;
-        
+
         $result = $this->exceptionalDayService->copyDays($companyId, $this->copySelected, $diffYears);
 
         $this->copySelected = [];
@@ -774,17 +811,30 @@ class ExceptionalDaysIndex extends Component
             $out = fopen('php://output', 'w');
 
             fputcsv($out, [
-                'Name', 'Description', 'Period Type', 'Start Date', 'End Date',
-                'Apply', 'Deduction %', 'Grace Hours', 'Scope Type',
-                'Notify Policy', 'Notified At', 'Is Active', 'Created By', 'Created At',
+                'Name',
+                'Description',
+                'Period Type',
+                'Start Date',
+                'End Date',
+                'Apply',
+                'Deduction %',
+                'Grace Hours',
+                'Scope Type',
+                'Notify Policy',
+                'Notified At',
+                'Is Active',
+                'Created By',
+                'Created At',
             ]);
 
             foreach ($rows as $r) {
                 $apply = (string) $r->apply_on;
 
                 $percent = 0.0;
-                if ($apply === 'absence') $percent = (float) $r->absence_multiplier * 100.0;
-                if ($apply === 'late') $percent = (float) $r->late_multiplier * 100.0;
+                if ($apply === 'absence')
+                    $percent = (float) $r->absence_multiplier * 100.0;
+                if ($apply === 'late')
+                    $percent = (float) $r->late_multiplier * 100.0;
 
                 fputcsv($out, [
                     $r->name,
@@ -822,28 +872,32 @@ class ExceptionalDaysIndex extends Component
             }
         }
 
+        $today = now()->toDateString();
+        $selectedYear = (int) ($this->year ?: now()->year);
+        $selectedMonth = (int) ($this->month ?: now()->month);
+
         $stats = [
             'total_year' => AttendanceExceptionalDay::query()
                 ->where('company_id', $companyId)
-                ->whereYear('start_date', $this->year)
+                ->whereYear('start_date', $selectedYear)
                 ->count(),
 
             'active_now' => AttendanceExceptionalDay::query()
                 ->where('company_id', $companyId)
                 ->where('is_active', true)
-                ->whereDate('start_date', '<=', now()->toDateString())
-                ->whereDate('end_date', '>=', now()->toDateString())
+                ->whereDate('start_date', '<=', $today)
+                ->where(function ($q) use ($today) {
+                    $q->whereNull('end_date')
+                        ->orWhereDate('end_date', '>=', $today);
+                })
                 ->count(),
 
             'upcoming_month' => AttendanceExceptionalDay::query()
                 ->where('company_id', $companyId)
-                ->where('is_active', true)
-                ->whereYear('start_date', now()->year)
-                ->whereMonth('start_date', now()->month)
-                ->whereDate('start_date', '>', now()->toDateString())
+                ->whereYear('start_date', $selectedYear)
+                ->whereMonth('start_date', $selectedMonth)
+                ->whereDate('start_date', '>', $today)
                 ->count(),
-
-            'cost_estimate' => null,
         ];
 
         $allowedBranchIds = $this->exceptionalDayService->currentUserAllowedBranchIds($companyId);

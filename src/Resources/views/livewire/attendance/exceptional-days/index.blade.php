@@ -176,7 +176,7 @@
         </x-ui.card>
 
         {{-- Stats --}}
-        <div class="grid grid-cols-1 md:grid-cols-4 gap-3">
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-3">
             <x-ui.card class="!p-4">
                 <div class="text-xs text-gray-500">{{ tr('Total (Year)') }}</div>
                 <div class="text-2xl font-bold">{{ $stats['total_year'] ?? 0 }}</div>
@@ -190,13 +190,6 @@
             <x-ui.card class="!p-4">
                 <div class="text-xs text-gray-500">{{ tr('Upcoming This Month') }}</div>
                 <div class="text-2xl font-bold">{{ $stats['upcoming_month'] ?? 0 }}</div>
-            </x-ui.card>
-
-            <x-ui.card class="!p-4">
-                <div class="text-xs text-gray-500">{{ tr('Estimated Cost') }}</div>
-                <div class="text-2xl font-bold">
-                    {{ is_null($stats['cost_estimate'] ?? null) ? '—' : number_format((float) $stats['cost_estimate'], 2) }}
-                </div>
             </x-ui.card>
         </div>
 
