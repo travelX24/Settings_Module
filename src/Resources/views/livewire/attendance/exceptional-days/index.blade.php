@@ -95,14 +95,14 @@
 
                 <div>
                     <div class="mb-1 text-xs text-gray-500">{{ tr('Year') }}</div>
-                    <x-ui.input type="number" :placeholder="tr('Year')" wire:model.live="year" min="2000"
-                        max="2100" />
+                    <x-ui.input type="number" :placeholder="tr('Year')" wire:model.live.debounce.0ms.number="year"
+                        min="2000" max="2100" />
                 </div>
 
                 <div>
                     <div class="mb-1 text-xs text-gray-500">{{ tr('Month') }}</div>
-                    <x-ui.input type="number" :placeholder="tr('Month')" wire:model.live="month" min="1"
-                        max="12" />
+                    <x-ui.input type="number" :placeholder="tr('Month')" wire:model.live.debounce.0ms.number="month"
+                        min="1" max="12" />
                 </div>
 
                 <div>
@@ -128,13 +128,13 @@
                 <div>
                     <div class="mb-1 text-xs text-gray-500">{{ tr('Min Deduction %') }}</div>
                     <x-ui.input type="number" step="0.01" min="0" max="1000"
-                        wire:model.live="minMultiplier" :placeholder="tr('Min %')" />
+                        wire:model.live.debounce.0ms="minMultiplier" :placeholder="tr('Min %')" />
                 </div>
 
                 <div>
                     <div class="mb-1 text-xs text-gray-500">{{ tr('Max Deduction %') }}</div>
                     <x-ui.input type="number" step="0.01" min="0" max="1000"
-                        wire:model.live="maxMultiplier" :placeholder="tr('Max %')" />
+                        wire:model.live.debounce.0ms="maxMultiplier" :placeholder="tr('Max %')" />
                 </div>
 
                 <div class="md:col-span-2">
