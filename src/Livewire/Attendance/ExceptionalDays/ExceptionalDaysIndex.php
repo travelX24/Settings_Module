@@ -33,13 +33,12 @@ class ExceptionalDaysIndex extends Component
     public array $selected = [];
     public bool $selectPage = false;
 
-    public bool $showCopyModal = false;
-    public int $copyFromYear;
-    public int $copyToYear;
-    public ?int $copyFromCount = null;
+    public bool $showCompareModal = false;
+    public int $compareFromYear;
+    public int $compareToYear;
 
-    public array $copySelected = [];
-    public bool $copySelectAll = false;
+    public array $compareSummary = [];
+    public array $compareRows = [];
 
     public int $perPage = 10;
 
@@ -92,9 +91,10 @@ class ExceptionalDaysIndex extends Component
         $this->year = (int) now()->year;
         $this->month = (int) now()->month;
 
-        $this->copyFromYear = (int) now()->subYear()->year;
-        $this->copyToYear = (int) $this->year;
-        $this->copyFromCount = null;
+        $this->compareFromYear = (int) now()->subYear()->year;
+        $this->compareToYear = (int) $this->year;
+        $this->compareSummary = [];
+        $this->compareRows = [];
     }
 
     public function updatingYear()
@@ -708,96 +708,201 @@ class ExceptionalDaysIndex extends Component
         $this->dispatch('toast', ['type' => 'success', 'message' => tr('Status updated')]);
     }
 
-    public function updatedCopyFromYear($value): void
+    public function updatedCompareFromYear($value): void
     {
-        $from = (int) $value;
-        $companyId = $this->companyId();
+        $this->compareFromYear = (int) $value;
 
-        $this->copyFromCount = AttendanceExceptionalDay::query()
-            ->where('company_id', $companyId)
-            ->whereYear('start_date', $from)
-            ->count();
-
-        $this->copySelected = [];
-        $this->copySelectAll = false;
+        if ($this->showCompareModal) {
+            $this->buildCompareData();
+        }
     }
 
-    public function openCopyModal(): void
+    public function updatedCompareToYear($value): void
     {
-        $this->authorize('settings.attendance.manage');
+        $this->compareToYear = (int) $value;
+
+        if ($this->showCompareModal) {
+            $this->buildCompareData();
+        }
+    }
+
+    public function openCompareModal(): void
+    {
+        $this->authorize('settings.attendance.view');
         $this->resetValidation();
 
-        $this->copyToYear = (int) $this->year;
+        $this->compareToYear = (int) $this->year;
+        $this->buildCompareData();
 
-        $this->updatedCopyFromYear($this->copyFromYear);
-
-        $this->showCopyModal = true;
+        $this->showCompareModal = true;
     }
 
-    public function updatedCopySelectAll($value): void
+    private function buildCompareData(): void
     {
-        $this->copySelectAll = (bool) $value;
-
-        if (!$this->showCopyModal) {
-            $this->copySelected = [];
-            return;
-        }
-
-        if ($this->copySelectAll) {
-            $companyId = $this->companyId();
-
-            $ids = AttendanceExceptionalDay::query()
-                ->where('company_id', $companyId)
-                ->whereYear('start_date', (int) $this->copyFromYear)
-                ->orderBy('start_date')
-                ->limit(200)
-                ->pluck('id')
-                ->toArray();
-
-            $this->copySelected = $ids;
-        } else {
-            $this->copySelected = [];
-        }
-    }
-
-    public function copyOneDay(int $id): void
-    {
-        $this->copySelected = [$id];
-        $this->copySelectedDays();
-    }
-
-    public function copySelectedDays(): void
-    {
-        $this->authorize('settings.attendance.manage');
         $companyId = $this->companyId();
+        $today = now()->toDateString();
 
-        $from = (int) $this->copyFromYear;
-        $to = (int) $this->year;
-        $this->copyToYear = $to;
+        $fromRows = AttendanceExceptionalDay::query()
+            ->where('company_id', $companyId)
+            ->whereYear('start_date', (int) $this->compareFromYear)
+            ->orderBy('start_date')
+            ->get();
 
-        if ($from < 2000 || $to < 2000)
-            return;
+        $toRows = AttendanceExceptionalDay::query()
+            ->where('company_id', $companyId)
+            ->whereYear('start_date', (int) $this->compareToYear)
+            ->orderBy('start_date')
+            ->get();
 
-        if (empty($this->copySelected)) {
-            $this->addError('copySelected', tr('Please select at least one day to copy.'));
-            return;
-        }
+        $fromSummary = $this->buildYearSummary($fromRows, $today);
+        $toSummary = $this->buildYearSummary($toRows, $today);
 
-        $diffYears = $to - $from;
+        $this->compareSummary = [
+            'from' => $fromSummary,
+            'to' => $toSummary,
+            'diff' => [
+                'total_days' => $toSummary['total_days'] - $fromSummary['total_days'],
+                'active_now' => $toSummary['active_now'] - $fromSummary['active_now'],
+                'avg_deduction' => round($toSummary['avg_deduction'] - $fromSummary['avg_deduction'], 2),
+            ],
+        ];
 
-        $result = $this->exceptionalDayService->copyDays($companyId, $this->copySelected, $diffYears);
+        $fromMap = $fromRows->keyBy(fn($row) => mb_strtolower(trim((string) $row->name)));
+        $toMap = $toRows->keyBy(fn($row) => mb_strtolower(trim((string) $row->name)));
 
-        $this->copySelected = [];
-        $this->copySelectAll = false;
-        $this->showCopyModal = false;
-        $this->resetPage();
+        $keys = $fromMap->keys()->merge($toMap->keys())->unique()->values();
 
-        if ($result['copied'] > 0 || $result['skipped'] > 0) {
-            $msg = tr('Copied') . ": {$result['copied']} | " . tr('Skipped') . ": {$result['skipped']}";
-            $this->dispatch('toast', ['type' => 'success', 'message' => $msg]);
-        }
+        $this->compareRows = $keys->map(function ($key) use ($fromMap, $toMap) {
+            $from = $fromMap->get($key);
+            $to = $toMap->get($key);
+
+            $fromEnd = $from ? ($from->end_date ?? $from->start_date) : null;
+            $toEnd = $to ? ($to->end_date ?? $to->start_date) : null;
+
+            return [
+                'name' => $from->name ?? $to->name ?? '—',
+
+                'from_start' => ($from && $from->start_date) ? $from->start_date->format('Y-m-d') : '—',
+                'to_start' => ($to && $to->start_date) ? $to->start_date->format('Y-m-d') : '—',
+
+                'from_end' => $fromEnd ? $fromEnd->format('Y-m-d') : '—',
+                'to_end' => $toEnd ? $toEnd->format('Y-m-d') : '—',
+
+                'from_apply' => $from ? $this->applyLabel($from) : '—',
+                'to_apply' => $to ? $this->applyLabel($to) : '—',
+
+                'from_percent' => $from ? number_format($this->exceptionalDayPercent($from), 2) . '%' : '—',
+                'to_percent' => $to ? number_format($this->exceptionalDayPercent($to), 2) . '%' : '—',
+
+                'status' => $this->compareRowStatus($from, $to),
+            ];
+        })->values()->all();
     }
 
+    private function buildYearSummary($rows, string $today): array
+    {
+        $activeNow = $rows->filter(function ($row) use ($today) {
+            $endDate = $row->end_date ?? $row->start_date;
+
+            return (bool) $row->is_active
+                && $row->start_date
+                && $row->start_date->toDateString() <= $today
+                && $endDate
+                && $endDate->toDateString() >= $today;
+        })->count();
+
+        $upcoming = $rows->filter(function ($row) use ($today) {
+            return $row->start_date && $row->start_date->toDateString() > $today;
+        })->count();
+
+        $absenceCount = $rows->filter(fn($row) => (string) ($row->apply_on ?? '') === 'absence')->count();
+        $lateCount = $rows->filter(fn($row) => (string) ($row->apply_on ?? '') === 'late')->count();
+        $withoutDeductionCount = $rows->filter(fn($row) => $this->exceptionalDayPercent($row) <= 0)->count();
+
+        $avgDeduction = $rows->count() > 0
+            ? round((float) $rows->map(fn($row) => $this->exceptionalDayPercent($row))->avg(), 2)
+            : 0.0;
+
+        return [
+            'total_days' => $rows->count(),
+            'active_now' => $activeNow,
+            'upcoming' => $upcoming,
+            'absence_count' => $absenceCount,
+            'late_count' => $lateCount,
+            'without_deduction_count' => $withoutDeductionCount,
+            'avg_deduction' => $avgDeduction,
+        ];
+    }
+
+    private function exceptionalDayPercent($row): float
+    {
+        if (!$row) {
+            return 0.0;
+        }
+
+        $apply = (string) ($row->apply_on ?? 'absence');
+
+        if ($apply === 'absence') {
+            return (float) $row->absence_multiplier * 100.0;
+        }
+
+        if ($apply === 'late') {
+            return (float) $row->late_multiplier * 100.0;
+        }
+
+        return 0.0;
+    }
+
+    private function applyLabel($row): string
+    {
+        $apply = (string) ($row->apply_on ?? 'absence');
+
+        return $apply === 'absence'
+            ? tr('Absence')
+            : ($apply === 'late' ? tr('Late') : tr('Without Deduction'));
+    }
+
+    private function compareRowStatus($from, $to): string
+    {
+        if ($from && !$to) {
+            return tr('Only in source year');
+        }
+
+        if (!$from && $to) {
+            return tr('Only in target year');
+        }
+
+        $changes = [];
+
+        $fromStart = $from && $from->start_date ? $from->start_date->format('Y-m-d') : null;
+        $toStart = $to && $to->start_date ? $to->start_date->format('Y-m-d') : null;
+
+        $fromEnd = $from && ($from->end_date ?? $from->start_date)
+            ? ($from->end_date ?? $from->start_date)->format('Y-m-d')
+            : null;
+
+        $toEnd = $to && ($to->end_date ?? $to->start_date)
+            ? ($to->end_date ?? $to->start_date)->format('Y-m-d')
+            : null;
+
+        if ($fromStart !== $toStart || $fromEnd !== $toEnd) {
+            $changes[] = tr('Date changed');
+        }
+
+        if ((string) ($from->apply_on ?? '') !== (string) ($to->apply_on ?? '')) {
+            $changes[] = tr('Apply type changed');
+        }
+
+        if (round($this->exceptionalDayPercent($from), 2) !== round($this->exceptionalDayPercent($to), 2)) {
+            $changes[] = tr('Deduction changed');
+        }
+
+        if (empty($changes)) {
+            return tr('Matched');
+        }
+
+        return implode(' / ', $changes);
+    }
     public function exportCsv()
     {
         $companyId = $this->companyId();
@@ -903,16 +1008,6 @@ class ExceptionalDaysIndex extends Component
         $allowedBranchIds = $this->exceptionalDayService->currentUserAllowedBranchIds($companyId);
         $opts = $this->exceptionalDayService->loadScopeOptions($companyId, app()->getLocale(), $allowedBranchIds);
 
-        $copyRows = collect();
-        if ($this->showCopyModal) {
-            $copyRows = AttendanceExceptionalDay::query()
-                ->where('company_id', $companyId)
-                ->whereYear('start_date', (int) $this->copyFromYear)
-                ->orderBy('start_date')
-                ->limit(200)
-                ->get();
-        }
-
         return view('settings-module::livewire.attendance.exceptional-days.index', [
             'rows' => $rows,
             'stats' => $stats,
@@ -925,7 +1020,8 @@ class ExceptionalDaysIndex extends Component
 
             'createdByMap' => $createdByMap,
 
-            'copyRows' => $copyRows,
+            'compareSummary' => $this->compareSummary,
+            'compareRows' => $this->compareRows,
         ])->layout('layouts.company-admin');
     }
 }

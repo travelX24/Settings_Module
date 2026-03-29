@@ -38,9 +38,9 @@
                             <span>{{ tr('Add Exceptional Day') }}</span>
                         </x-ui.brand-button>
 
-                        <x-ui.secondary-button type="button" wire:click="openCopyModal" :arrow="false" :fullWidth="false"
-                            class="!px-4 !py-2 !text-sm !rounded-xl !gap-2 cursor-pointer">
-                            <i class="fas fa-copy text-xs"></i>
+                        <x-ui.secondary-button type="button" wire:click="openCompareModal" :arrow="false"
+                            :fullWidth="false" class="!px-4 !py-2 !text-sm !rounded-xl !gap-2 cursor-pointer">
+                            <i class="fas fa-chart-bar text-xs"></i>
                             <span>{{ tr('Compare Years') }}</span>
                         </x-ui.secondary-button>
                     @endcan
@@ -653,149 +653,275 @@
             </x-slot>
         </x-ui.modal>
 
-        {{-- ✅ Compare/Copy Modal --}}
-        <x-ui.modal wire:model="showCopyModal" maxWidth="5xl">
+        {{-- ✅ Compare Years Modal --}}
+        <x-ui.modal wire:model="showCompareModal" maxWidth="7xl">
             <x-slot name="title">{{ tr('Compare Years') }}</x-slot>
 
             <x-slot name="content">
                 <div class="space-y-4">
 
-                    <div class="grid grid-cols-1 md:grid-cols-3 gap-3">
+                    <x-ui.card class="!p-4 !bg-gray-50/50">
+                        <div class="flex items-start gap-3">
+                            <div
+                                class="w-10 h-10 rounded-xl bg-violet-100 text-violet-700 flex items-center justify-center">
+                                <i class="fas fa-chart-bar"></i>
+                            </div>
+
+                            <div>
+                                <div class="text-sm font-bold text-gray-800">{{ tr('How this comparison works') }}
+                                </div>
+                                <div class="mt-1 text-xs text-gray-500 leading-6">
+                                    {{ tr('This window compares exceptional days between two years based on the day name. It shows totals for each year and highlights records that exist in only one year or changed in date, apply type, or deduction.') }}
+                                </div>
+                            </div>
+                        </div>
+                    </x-ui.card>
+
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-3">
                         <div>
                             <div class="text-xs text-gray-600 mb-1">{{ tr('From Year') }}</div>
                             <x-ui.input type="number" min="2000" max="2100"
-                                wire:model.live="copyFromYear" />
-                            <div class="mt-1 text-xs text-gray-500">
-                                {{ tr('Records found') }}:
-                                <span class="font-bold">{{ $copyFromCount ?? '—' }}</span>
-                            </div>
+                                wire:model.live="compareFromYear" />
                         </div>
 
                         <div>
                             <div class="text-xs text-gray-600 mb-1">{{ tr('To Year') }}</div>
-                            <x-ui.input type="number" :value="$copyToYear" disabled />
-                            <div class="mt-1 text-xs text-gray-500">
-                                {{ tr('Copy target is the selected/current year in filters.') }}
-                            </div>
-                        </div>
-
-                        <div class="flex items-end gap-2">
-                            <div class="w-full">
-                                @error('copySelected')
-                                    <div class="text-xs text-red-600 mb-2">{{ $message }}</div>
-                                @enderror
-
-                                @can('settings.attendance.manage')
-                                    <x-ui.primary-button type="button" wire:click="copySelectedDays"
-                                        class="w-full justify-center cursor-pointer">
-                                        <i class="fas fa-copy text-xs"></i>
-                                        <span>{{ tr('Copy Selected') }}</span>
-                                    </x-ui.primary-button>
-                                @endcan
-
-                                <div class="mt-2 text-xs text-gray-500">
-                                    {{ tr('Copied days will be created as Disabled by default.') }}
-                                </div>
-                            </div>
+                            <x-ui.input type="number" min="2000" max="2100"
+                                wire:model.live="compareToYear" />
                         </div>
                     </div>
 
-                    <x-ui.card class="!p-0 overflow-hidden">
+                    <div class="grid grid-cols-1 lg:grid-cols-3 gap-3">
+                        <x-ui.card class="!p-4">
+                            <div class="text-sm font-bold text-gray-800 mb-3">
+                                {{ tr('Year') }} {{ $compareFromYear }}
+                            </div>
+
+                            <div class="grid grid-cols-2 gap-3 text-sm">
+                                <div>
+                                    <div class="text-gray-500 text-xs">{{ tr('Total Days') }}</div>
+                                    <div class="font-bold">{{ $compareSummary['from']['total_days'] ?? 0 }}</div>
+                                </div>
+
+                                <div>
+                                    <div class="text-gray-500 text-xs">{{ tr('Active Now') }}</div>
+                                    <div class="font-bold">{{ $compareSummary['from']['active_now'] ?? 0 }}</div>
+                                </div>
+
+                                <div>
+                                    <div class="text-gray-500 text-xs">{{ tr('Upcoming') }}</div>
+                                    <div class="font-bold">{{ $compareSummary['from']['upcoming'] ?? 0 }}</div>
+                                </div>
+
+                                <div>
+                                    <div class="text-gray-500 text-xs">{{ tr('Average Deduction') }}</div>
+                                    <div class="font-bold">
+                                        {{ number_format((float) ($compareSummary['from']['avg_deduction'] ?? 0), 2) }}%
+                                    </div>
+                                </div>
+
+                                <div>
+                                    <div class="text-gray-500 text-xs">{{ tr('Absence Days') }}</div>
+                                    <div class="font-bold">{{ $compareSummary['from']['absence_count'] ?? 0 }}</div>
+                                </div>
+
+                                <div>
+                                    <div class="text-gray-500 text-xs">{{ tr('Late Days') }}</div>
+                                    <div class="font-bold">{{ $compareSummary['from']['late_count'] ?? 0 }}</div>
+                                </div>
+                            </div>
+                        </x-ui.card>
+
+                        <x-ui.card class="!p-4">
+                            <div class="text-sm font-bold text-gray-800 mb-3">
+                                {{ tr('Year') }} {{ $compareToYear }}
+                            </div>
+
+                            <div class="grid grid-cols-2 gap-3 text-sm">
+                                <div>
+                                    <div class="text-gray-500 text-xs">{{ tr('Total Days') }}</div>
+                                    <div class="font-bold">{{ $compareSummary['to']['total_days'] ?? 0 }}</div>
+                                </div>
+
+                                <div>
+                                    <div class="text-gray-500 text-xs">{{ tr('Active Now') }}</div>
+                                    <div class="font-bold">{{ $compareSummary['to']['active_now'] ?? 0 }}</div>
+                                </div>
+
+                                <div>
+                                    <div class="text-gray-500 text-xs">{{ tr('Upcoming') }}</div>
+                                    <div class="font-bold">{{ $compareSummary['to']['upcoming'] ?? 0 }}</div>
+                                </div>
+
+                                <div>
+                                    <div class="text-gray-500 text-xs">{{ tr('Average Deduction') }}</div>
+                                    <div class="font-bold">
+                                        {{ number_format((float) ($compareSummary['to']['avg_deduction'] ?? 0), 2) }}%
+                                    </div>
+                                </div>
+
+                                <div>
+                                    <div class="text-gray-500 text-xs">{{ tr('Absence Days') }}</div>
+                                    <div class="font-bold">{{ $compareSummary['to']['absence_count'] ?? 0 }}</div>
+                                </div>
+
+                                <div>
+                                    <div class="text-gray-500 text-xs">{{ tr('Late Days') }}</div>
+                                    <div class="font-bold">{{ $compareSummary['to']['late_count'] ?? 0 }}</div>
+                                </div>
+                            </div>
+                        </x-ui.card>
+
+                        <x-ui.card class="!p-4 !bg-violet-50/40">
+                            <div class="text-sm font-bold text-gray-800 mb-3">{{ tr('Differences') }}</div>
+
+                            <div class="space-y-3 text-sm">
+                                <div>
+                                    <div class="text-gray-500 text-xs">{{ tr('Difference in Total Days') }}</div>
+                                    <div class="font-bold">{{ $compareSummary['diff']['total_days'] ?? 0 }}</div>
+                                </div>
+
+                                <div>
+                                    <div class="text-gray-500 text-xs">{{ tr('Difference in Active Now') }}</div>
+                                    <div class="font-bold">{{ $compareSummary['diff']['active_now'] ?? 0 }}</div>
+                                </div>
+
+                                <div>
+                                    <div class="text-gray-500 text-xs">{{ tr('Difference in Average Deduction') }}
+                                    </div>
+                                    <div class="font-bold">
+                                        {{ number_format((float) ($compareSummary['diff']['avg_deduction'] ?? 0), 2) }}%
+                                    </div>
+                                </div>
+                            </div>
+                        </x-ui.card>
+                    </div>
+
+                    <div class="bg-white rounded-3xl shadow-sm border border-gray-100 overflow-hidden relative">
                         <div class="overflow-x-auto">
-                            <x-ui.table>
-                                <x-slot name="head">
-                                    <tr>
-                                        <th class="p-3 text-right w-10">
-                                            <input type="checkbox" wire:model.live="copySelectAll"
-                                                class="rounded cursor-pointer">
+                            <table class="w-full text-start border-collapse min-w-[1200px]">
+                                <thead>
+                                    <tr class="bg-gray-50/50 border-b border-gray-100">
+                                        <th
+                                            class="px-6 py-4 text-[10px] font-black text-gray-400 uppercase tracking-widest text-right">
+                                            {{ tr('Name') }}
                                         </th>
-                                        <th class="p-3 text-right">{{ tr('Name') }}</th>
-                                        <th class="p-3 text-right">{{ tr('Start') }}</th>
-                                        <th class="p-3 text-right">{{ tr('End') }}</th>
-                                        <th class="p-3 text-right">{{ tr('Apply') }}</th>
-                                        <th class="p-3 text-right">{{ tr('Deduction %') }}</th>
-                                        <th class="p-3 text-right">{{ tr('Actions') }}</th>
+                                        <th
+                                            class="px-6 py-4 text-[10px] font-black text-gray-400 uppercase tracking-widest text-center">
+                                            {{ tr('From Start') }}
+                                        </th>
+                                        <th
+                                            class="px-6 py-4 text-[10px] font-black text-gray-400 uppercase tracking-widest text-center">
+                                            {{ tr('To Start') }}
+                                        </th>
+                                        <th
+                                            class="px-6 py-4 text-[10px] font-black text-gray-400 uppercase tracking-widest text-center">
+                                            {{ tr('From End') }}
+                                        </th>
+                                        <th
+                                            class="px-6 py-4 text-[10px] font-black text-gray-400 uppercase tracking-widest text-center">
+                                            {{ tr('To End') }}
+                                        </th>
+                                        <th
+                                            class="px-6 py-4 text-[10px] font-black text-gray-400 uppercase tracking-widest text-center">
+                                            {{ tr('From Apply') }}
+                                        </th>
+                                        <th
+                                            class="px-6 py-4 text-[10px] font-black text-gray-400 uppercase tracking-widest text-center">
+                                            {{ tr('To Apply') }}
+                                        </th>
+                                        <th
+                                            class="px-6 py-4 text-[10px] font-black text-gray-400 uppercase tracking-widest text-center">
+                                            {{ tr('From Deduction %') }}
+                                        </th>
+                                        <th
+                                            class="px-6 py-4 text-[10px] font-black text-gray-400 uppercase tracking-widest text-center">
+                                            {{ tr('To Deduction %') }}
+                                        </th>
+                                        <th
+                                            class="px-6 py-4 text-[10px] font-black text-gray-400 uppercase tracking-widest text-right">
+                                            {{ tr('Status') }}
+                                        </th>
                                     </tr>
-                                </x-slot>
+                                </thead>
 
-                                <x-slot name="body">
-                                    @forelse($copyRows as $r)
-                                        @php
-                                            $apply = (string) ($r->apply_on ?? 'absence');
-                                            $percent = 0.0;
-                                            if ($apply === 'absence') {
-                                                $percent = (float) $r->absence_multiplier * 100.0;
-                                            }
-                                            if ($apply === 'late') {
-                                                $percent = (float) $r->late_multiplier * 100.0;
-                                            }
-                                            $isWithout = $apply === 'none' || $percent <= 0;
-
-                                            $applyLabel =
-                                                $apply === 'absence'
-                                                    ? tr('Absence')
-                                                    : ($apply === 'late'
-                                                        ? tr('Late')
-                                                        : tr('Without Deduction'));
-                                        @endphp
-
-                                        <tr class="border-t">
-                                            <td class="p-3">
-                                                <input type="checkbox" class="rounded cursor-pointer"
-                                                    wire:model.live="copySelected" value="{{ $r->id }}">
+                                <tbody class="divide-y divide-gray-50">
+                                    @forelse($compareRows as $row)
+                                        <tr class="hover:bg-gray-50/40 transition-colors border-t">
+                                            <td class="px-6 py-4 text-right">
+                                                <div class="text-sm font-bold text-gray-800">{{ $row['name'] }}
+                                                </div>
                                             </td>
 
-                                            <td class="p-3">
-                                                <div class="font-semibold">{{ $r->name }}</div>
-                                                @if (!empty($r->description))
-                                                    <div class="text-xs text-gray-500 line-clamp-1">
-                                                        {{ $r->description }}</div>
-                                                @endif
+                                            <td class="px-6 py-4 text-center text-xs font-semibold text-gray-700">
+                                                {{ $row['from_start'] }}
                                             </td>
 
-                                            <td class="p-3">{{ optional($r->start_date)->format('Y-m-d') }}</td>
-                                            <td class="p-3">
-                                                {{ optional($r->end_date ?? $r->start_date)->format('Y-m-d') }}</td>
-
-                                            <td class="p-3">{{ $applyLabel }}</td>
-
-                                            <td class="p-3">
-                                                {{ $isWithout ? '—' : number_format($percent, 2) . '%' }}
+                                            <td class="px-6 py-4 text-center text-xs font-semibold text-gray-700">
+                                                {{ $row['to_start'] }}
                                             </td>
 
-                                            <td class="p-3 text-right">
-                                                <x-ui.secondary-button type="button"
-                                                    wire:click="copyOneDay({{ $r->id }})" :arrow="false"
-                                                    :fullWidth="false"
-                                                    class="!px-3 !py-1.5 !text-xs !rounded-lg !gap-2 cursor-pointer">
-                                                    <i class="fas fa-copy text-xs"></i>
-                                                    <span>{{ tr('Copy') }}</span>
-                                                </x-ui.secondary-button>
+                                            <td class="px-6 py-4 text-center text-xs font-semibold text-gray-700">
+                                                {{ $row['from_end'] }}
+                                            </td>
+
+                                            <td class="px-6 py-4 text-center text-xs font-semibold text-gray-700">
+                                                {{ $row['to_end'] }}
+                                            </td>
+
+                                            <td class="px-6 py-4 text-center text-xs font-semibold text-gray-700">
+                                                {{ $row['from_apply'] }}
+                                            </td>
+
+                                            <td class="px-6 py-4 text-center text-xs font-semibold text-gray-700">
+                                                {{ $row['to_apply'] }}
+                                            </td>
+
+                                            <td class="px-6 py-4 text-center text-xs font-semibold text-gray-700">
+                                                {{ $row['from_percent'] }}
+                                            </td>
+
+                                            <td class="px-6 py-4 text-center text-xs font-semibold text-gray-700">
+                                                {{ $row['to_percent'] }}
+                                            </td>
+
+                                            <td class="px-6 py-4 text-right">
+                                                <span
+                                                    class="inline-flex rounded-full px-2.5 py-1 text-xs font-semibold bg-gray-100 text-gray-700 whitespace-nowrap">
+                                                    {{ $row['status'] }}
+                                                </span>
                                             </td>
                                         </tr>
                                     @empty
                                         <tr>
-                                            <td class="p-8 text-center text-gray-500" colspan="7">
-                                                {{ tr('No records found for selected year.') }}
+                                            <td colspan="10"
+                                                class="px-6 py-16 text-center border-t border-gray-100">
+                                                <div class="opacity-60 flex flex-col items-center">
+                                                    <div
+                                                        class="w-16 h-16 bg-gray-50 rounded-full flex items-center justify-center text-2xl mb-3 border border-gray-100">
+                                                        <i class="fas fa-calendar-times"></i>
+                                                    </div>
+                                                    <h4 class="text-sm font-bold text-gray-800">
+                                                        {{ tr('No records found for the selected years.') }}
+                                                    </h4>
+                                                </div>
                                             </td>
                                         </tr>
                                     @endforelse
-                                </x-slot>
-                            </x-ui.table>
+                                </tbody>
+                            </table>
                         </div>
-                    </x-ui.card>
-
+                    </div>
                 </div>
             </x-slot>
 
             <x-slot name="footer">
-                <x-ui.secondary-button type="button" wire:click="$set('showCopyModal', false)"
+                <x-ui.secondary-button type="button" wire:click="$set('showCompareModal', false)"
                     class="cursor-pointer">
                     {{ tr('Close') }}
                 </x-ui.secondary-button>
             </x-slot>
         </x-ui.modal>
-
     </div>
 
     {{-- Confirm Dialogs --}}
