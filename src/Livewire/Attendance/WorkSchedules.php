@@ -12,13 +12,10 @@ class WorkSchedules extends Component
 {
     use WithPagination;
 
-    public $activeTab = 'schedules'; 
+    public $activeTab = 'schedules';
     public $search = '';
-    public $filterStatus = 'all'; 
-    public $filterType = 'all'; 
-    public $filterPeriod = 'all';
-    public $filterDateStart = '';
-    public $filterDateEnd = '';
+    public $filterStatus = 'all';
+    public $filterExceptions = 'all';
 
     public $showScheduleModal = false;
     public $isEditing = false;
@@ -50,22 +47,26 @@ class WorkSchedules extends Component
         $this->addPeriod();
     }
 
-    public function addPeriod() {
+    public function addPeriod()
+    {
         if (count($this->scheduleData['periods']) < 4) {
             $this->scheduleData['periods'][] = ['start_time' => '08:00', 'end_time' => '17:00', 'is_night_shift' => false];
         }
     }
 
-    public function removePeriod($index) {
+    public function removePeriod($index)
+    {
         unset($this->scheduleData['periods'][$index]);
         $this->scheduleData['periods'] = array_values($this->scheduleData['periods']);
     }
 
-    public function addException() {
+    public function addException()
+    {
         $this->scheduleData['exceptions'][] = ['day_of_week' => 'friday', 'start_time' => '08:00', 'end_time' => '12:00', 'is_night_shift' => false, 'is_active' => true];
     }
 
-    public function removeException($index) {
+    public function removeException($index)
+    {
         unset($this->scheduleData['exceptions'][$index]);
         $this->scheduleData['exceptions'] = array_values($this->scheduleData['exceptions']);
     }
@@ -86,19 +87,23 @@ class WorkSchedules extends Component
                 'schedule_type' => $schedule->schedule_type,
                 'week_start_day' => $schedule->week_start_day,
                 'week_end_day' => $schedule->week_end_day,
-                'work_days' => (array)$schedule->work_days,
-                'is_default' => (bool)$schedule->is_default,
-                'is_active' => (bool)$schedule->is_active,
-                'periods' => $schedule->periods->map(fn($p) => ['start_time' => substr($p->start_time, 0, 5), 'end_time' => substr($p->end_time, 0, 5), 'is_night_shift' => (bool)$p->is_night_shift])->toArray(),
-                'exceptions' => $schedule->exceptions->map(fn($e) => ['day_of_week' => $e->day_of_week, 'start_time' => substr($e->start_time, 0, 5), 'end_time' => substr($e->end_time, 0, 5), 'is_night_shift' => (bool)$e->is_night_shift, 'is_active' => (bool)$e->is_active])->toArray(),
+                'work_days' => (array) $schedule->work_days,
+                'is_default' => (bool) $schedule->is_default,
+                'is_active' => (bool) $schedule->is_active,
+                'periods' => $schedule->periods->map(fn($p) => ['start_time' => substr($p->start_time, 0, 5), 'end_time' => substr($p->end_time, 0, 5), 'is_night_shift' => (bool) $p->is_night_shift])->toArray(),
+                'exceptions' => $schedule->exceptions->map(fn($e) => ['day_of_week' => $e->day_of_week, 'start_time' => substr($e->start_time, 0, 5), 'end_time' => substr($e->end_time, 0, 5), 'is_night_shift' => (bool) $e->is_night_shift, 'is_active' => (bool) $e->is_active])->toArray(),
             ];
         } else {
             $this->reset(['isEditing', 'selectedId']);
             $this->scheduleData = [
-                'name' => '', 'description' => '', 'schedule_type' => 'full_time',
-                'week_start_day' => 'saturday', 'week_end_day' => 'friday',
+                'name' => '',
+                'description' => '',
+                'schedule_type' => 'full_time',
+                'week_start_day' => 'saturday',
+                'week_end_day' => 'friday',
                 'work_days' => ['saturday', 'sunday', 'monday', 'tuesday', 'wednesday', 'thursday'],
-                'is_default' => false, 'is_active' => true,
+                'is_default' => false,
+                'is_active' => true,
                 'periods' => [['start_time' => '08:00', 'end_time' => '17:00', 'is_night_shift' => false]],
                 'exceptions' => [],
             ];
@@ -134,7 +139,8 @@ class WorkSchedules extends Component
 
         if (!empty($this->scheduleData['exceptions'])) {
             foreach ($this->scheduleData['exceptions'] as $exc) {
-                if (empty($exc['is_active'])) continue;
+                if (empty($exc['is_active']))
+                    continue;
 
                 $start = $exc['start_time'] ?? null;
                 $end = $exc['end_time'] ?? null;
@@ -151,45 +157,48 @@ class WorkSchedules extends Component
 
         $companyId = auth()->user()->saas_company_id;
         $this->service->saveSchedule($companyId, $this->scheduleData, $this->selectedId);
- 
+
         $this->showScheduleModal = false;
-        $this->resetPage(); 
+        $this->resetPage();
         $this->dispatch('toast', type: 'success', message: tr('Work schedule saved successfully.'));
     }
- 
+
     public function clearAllFilters()
     {
-        $this->reset(['search', 'filterStatus', 'filterType', 'filterPeriod', 'filterDateStart', 'filterDateEnd']);
+        $this->reset(['search', 'filterStatus', 'filterExceptions']);
         $this->resetPage();
     }
- 
     public function exportSchedules()
     {
         $this->authorize('settings.attendance.view');
         $companyId = auth()->user()->saas_company_id;
 
         $filename = "work_schedules_" . now()->format('Y_m_d_His') . ".csv";
-        
+
         $headers = [
-            "Content-type"        => "text/csv",
+            "Content-type" => "text/csv",
             "Content-Disposition" => "attachment; filename=$filename",
-            "Pragma"              => "no-cache",
-            "Cache-Control"       => "must-revalidate, post-check=0, pre-check=0",
-            "Expires"             => "0"
+            "Pragma" => "no-cache",
+            "Cache-Control" => "must-revalidate, post-check=0, pre-check=0",
+            "Expires" => "0"
         ];
 
         $columns = [tr('Name'), tr('Type'), tr('Status'), tr('Work Days'), tr('Periods Count')];
 
-        $callback = function() use ($companyId, $columns) {
+        $callback = function () use ($companyId, $columns) {
             $file = fopen('php://output', 'w');
-            fprintf($file, chr(0xEF).chr(0xBB).chr(0xBF)); // UTF-8 BOM
+            fprintf($file, chr(0xEF) . chr(0xBB) . chr(0xBF)); // UTF-8 BOM
             fputcsv($file, $columns);
 
             $schedules = WorkSchedule::where('saas_company_id', $companyId)
                 ->when($this->search, fn($q) => $q->where('name', 'like', "%{$this->search}%"))
                 ->when($this->filterStatus !== 'all', fn($q) => $q->where('is_active', $this->filterStatus === 'active'))
-                ->when($this->filterType !== 'all', fn($q) => $q->where('schedule_type', $this->filterType))
+                ->when($this->filterExceptions === 'with_exceptions', fn($q) => $q->whereHas('exceptions', fn($ex) => $ex->where('is_active', true)))
+                ->when($this->filterExceptions === 'without_exceptions', fn($q) => $q->whereDoesntHave('exceptions', fn($ex) => $ex->where('is_active', true)))
                 ->with('periods')
+                ->withCount([
+                    'exceptions as active_exceptions_count' => fn($q) => $q->where('is_active', true),
+                ])
                 ->get();
 
             foreach ($schedules as $s) {
@@ -197,7 +206,7 @@ class WorkSchedules extends Component
                     $s->name,
                     tr(ucfirst($s->schedule_type)),
                     $s->is_active ? tr('Active') : tr('Inactive'),
-                    implode(', ', array_map(fn($d) => tr(ucfirst($d)), (array)$s->work_days)),
+                    implode(', ', array_map(fn($d) => tr(ucfirst($d)), (array) $s->work_days)),
                     $s->periods->count()
                 ]);
             }
@@ -218,9 +227,9 @@ class WorkSchedules extends Component
     {
         $this->authorize('settings.attendance.manage');
         $companyId = auth()->user()->saas_company_id;
-        
+
         $schedule = WorkSchedule::where('saas_company_id', $companyId)->find($id);
-        
+
         if (!$schedule) {
             $this->dispatch('toast', type: 'error', message: tr('Schedule not found.'));
             return;
@@ -239,7 +248,7 @@ class WorkSchedules extends Component
         }
 
         $schedule->forceDelete();
-        $this->resetPage(); 
+        $this->resetPage();
         $this->dispatch('toast', type: 'success', message: tr('Deleted permanently from database.'));
     }
 
@@ -248,14 +257,17 @@ class WorkSchedules extends Component
         $this->authorize('settings.attendance.manage');
         $companyId = auth()->user()->saas_company_id;
         $s = WorkSchedule::where('saas_company_id', $companyId)->find($id);
-        if ($s) { $s->is_active = !$s->is_active; $s->save(); }
+        if ($s) {
+            $s->is_active = !$s->is_active;
+            $s->save();
+        }
     }
 
     public function copySchedule($id)
     {
         $this->authorize('settings.attendance.manage');
         $companyId = auth()->user()->saas_company_id;
-        
+
         $schedule = WorkSchedule::where('saas_company_id', $companyId)
             ->with(['periods', 'exceptions'])
             ->findOrFail($id);
@@ -289,19 +301,31 @@ class WorkSchedules extends Component
 
     public function render()
     {
-        $query = WorkSchedule::query()->where('saas_company_id', auth()->user()->saas_company_id);
-        
-        $schedules = $query->when($this->search, fn($q) => $q->where('name', 'like', "%{$this->search}%"))
+        $query = WorkSchedule::query()
+            ->where('saas_company_id', auth()->user()->saas_company_id)
+            ->with('periods')
+            ->withCount([
+                'exceptions as active_exceptions_count' => fn($q) => $q->where('is_active', true),
+            ]);
+
+        $schedules = $query
+            ->when($this->search, fn($q) => $q->where('name', 'like', "%{$this->search}%"))
             ->when($this->filterStatus !== 'all', fn($q) => $q->where('is_active', $this->filterStatus === 'active'))
-            ->when($this->filterType !== 'all', fn($q) => $q->where('schedule_type', $this->filterType))
+            ->when($this->filterExceptions === 'with_exceptions', fn($q) => $q->whereHas('exceptions', fn($ex) => $ex->where('is_active', true)))
+            ->when($this->filterExceptions === 'without_exceptions', fn($q) => $q->whereDoesntHave('exceptions', fn($ex) => $ex->where('is_active', true)))
             ->latest()
             ->paginate(10);
 
         return view('systemsettings::livewire.attendance.work-schedules', [
             'schedules' => $schedules,
             'daysOfWeek' => [
-                'saturday' => tr('Saturday'), 'sunday' => tr('Sunday'), 'monday' => tr('Monday'),
-                'tuesday' => tr('Tuesday'), 'wednesday' => tr('Wednesday'), 'thursday' => tr('Thursday'), 'friday' => tr('Friday'),
+                'saturday' => tr('Saturday'),
+                'sunday' => tr('Sunday'),
+                'monday' => tr('Monday'),
+                'tuesday' => tr('Tuesday'),
+                'wednesday' => tr('Wednesday'),
+                'thursday' => tr('Thursday'),
+                'friday' => tr('Friday'),
             ]
         ])->layout('layouts.company-admin');
     }
