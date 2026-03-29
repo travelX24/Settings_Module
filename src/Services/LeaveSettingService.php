@@ -34,14 +34,17 @@ class LeaveSettingService
         return $policy;
     }
 
-    /**
-     * Save/Update Permission Settings.
-     */
-    public function savePermissionSettings(array $data): PermissionPolicy
+    public function savePermissionSettings(array $data, int $yearId): PermissionPolicy
     {
         $companyId = auth()->user()->saas_company_id;
-        $policy = PermissionPolicy::firstOrNew(['company_id' => $companyId]);
-        $policy->fill(array_merge($data, ['company_id' => $companyId]));
+        $policy = PermissionPolicy::firstOrNew([
+            'company_id' => $companyId,
+            'policy_year_id' => $yearId
+        ]);
+        $policy->fill(array_merge($data, [
+            'company_id' => $companyId,
+            'policy_year_id' => $yearId
+        ]));
         $policy->save();
         return $policy;
     }
@@ -56,5 +59,60 @@ class LeaveSettingService
         $new->name = $newName;
         $new->save();
         return $new;
+    }
+
+    /**
+     * Ensure default year and annual leave policy exist for a company.
+     */
+    public function ensureDefaultConfiguration(int $companyId): void
+    {
+        $currentYearValue = (int)date('Y');
+        
+        // 1. Ensure current year exists & is active
+        $yearRecord = LeavePolicyYear::firstOrCreate(
+            ['company_id' => $companyId, 'year' => $currentYearValue],
+            [
+                'starts_on' => "$currentYearValue-01-01",
+                'ends_on' => "$currentYearValue-12-31",
+                'is_active' => true
+            ]
+        );
+
+        // 2. Ensure default Annual Leave exists for this year
+        $exists = LeavePolicy::where('policy_year_id', $yearRecord->id)
+            ->where(function ($q) {
+                $q->where('name', 'like', '%Annual%')
+                  ->orWhere('name', 'like', '%إجازة سنوية%')
+                  ->orWhere('name', 'like', '%سنوية%')
+                  ->orWhere('leave_type', 'annual');
+            })
+            ->exists();
+
+        if (!$exists) {
+            $otherinfo = \Athka\Saas\Models\SaasCompanyOtherinfo::where('company_id', $companyId)->first();
+            $days = $otherinfo->default_annual_leave_days ?? 30;
+
+            LeavePolicy::create([
+                'company_id' => $companyId,
+                'policy_year_id' => $yearRecord->id,
+                'name' => 'إجازة سنوية',
+                'leave_type' => 'annual',
+                'days_per_year' => $days,
+                'gender' => 'all',
+                'is_active' => true,
+                'show_in_app' => true,
+                'requires_attachment' => false,
+                'description' => 'إجازة سنوية افتراضية (' . $days . ' يوماً)',
+                'settings' => [
+                    'accrual_method' => 'annual_grant',
+                    'monthly_accrual_rate' => round($days / 12, 2),
+                    'allow_carryover' => true,
+                    'carryover_days' => 15,
+                    'weekend_policy' => 'exclude',
+                    'deduction_policy' => 'balance_only',
+                    'meta' => ['system_key' => 'annual_default']
+                ]
+            ]);
+        }
     }
 }

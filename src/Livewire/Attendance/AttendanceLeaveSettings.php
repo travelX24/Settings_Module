@@ -12,6 +12,9 @@ use Athka\SystemSettings\Models\LeavePolicy;
 use Athka\SystemSettings\Models\PermissionPolicy;
 use Athka\SystemSettings\Livewire\Attendance\Traits\HandleLeavePolicies;
 use Athka\SystemSettings\Livewire\Attendance\Traits\HandlePermissionPolicies;
+use Athka\Saas\Models\SaasCompanyOtherinfo;
+use Athka\Attendance\Models\AttendanceLeaveBalance;
+use Athka\Attendance\Models\AttendanceLeaveRequest;
 
 class AttendanceLeaveSettings extends Component
 {
@@ -88,10 +91,26 @@ class AttendanceLeaveSettings extends Component
             $activeYear = LeavePolicyYear::where('company_id', $companyId)->latest('year')->first();
         }
 
+        // ✅ If still no year found, ensure default configuration is created
+        if (!$activeYear) {
+            $this->leaveSettingService->ensureDefaultConfiguration($companyId);
+            $activeYear = LeavePolicyYear::where('company_id', $companyId)->where('is_active', true)->first();
+        }
+
         $this->selectedYearId = $activeYear ? $activeYear->id : null;
 
-        // Load Permission Settings
-        $permPolicy = PermissionPolicy::where('company_id', $companyId)->first();
+        $this->loadPermissionSettings();
+    }
+
+    public function loadPermissionSettings()
+    {
+        if (!$this->selectedYearId) return;
+
+        $companyId = auth()->user()->saas_company_id;
+        $permPolicy = PermissionPolicy::where('company_id', $companyId)
+            ->where('policy_year_id', $this->selectedYearId)
+            ->first();
+
         if ($permPolicy) {
             $this->perm_approval_required = (bool)$permPolicy->approval_required;
             $this->perm_show_in_app = (bool)$permPolicy->show_in_app;
@@ -102,6 +121,15 @@ class AttendanceLeaveSettings extends Component
             // Convert minutes to hours for UI
             $this->perm_monthly_limit_hours = (string)($permPolicy->monthly_limit_minutes / 60);
             $this->perm_max_request_hours = (string)($permPolicy->max_request_minutes / 60);
+        } else {
+            // Default UI Values when no settings exist for this year
+            $this->perm_approval_required = true;
+            $this->perm_show_in_app = true;
+            $this->perm_requires_attachment = false;
+            $this->perm_deduction_policy = 'not_allowed_after_limit';
+            $this->perm_attachment_types = ['pdf', 'jpg', 'png'];
+            $this->perm_monthly_limit_hours = '0';
+            $this->perm_max_request_hours = '0';
         }
     }
 
@@ -113,7 +141,10 @@ class AttendanceLeaveSettings extends Component
                 ->where('year', '<', $current->year)
                 ->orderBy('year', 'desc')
                 ->first();
-            if ($prev) $this->selectedYearId = $prev->id;
+            if ($prev) {
+                $this->selectedYearId = $prev->id;
+                $this->loadPermissionSettings();
+            }
         }
     }
 
@@ -125,7 +156,10 @@ class AttendanceLeaveSettings extends Component
                 ->where('year', '>', $current->year)
                 ->orderBy('year', 'asc')
                 ->first();
-            if ($next) $this->selectedYearId = $next->id;
+            if ($next) {
+                $this->selectedYearId = $next->id;
+                $this->loadPermissionSettings();
+            }
         }
     }
 
@@ -177,8 +211,33 @@ class AttendanceLeaveSettings extends Component
     public function deleteYear($id)
     {
         $this->authorize('settings.attendance.manage');
-        LeavePolicyYear::destroy($id);
-        $this->dispatch('toast', type: 'success', message: tr('Year deleted.'));
+        
+        // 1. Check for Leave Policies linked to this year
+        if (LeavePolicy::where('policy_year_id', $id)->exists()) {
+            $this->dispatch('toast', type: 'error', message: tr('Cannot delete year: It contains leave policies. Please delete the policies first.'));
+            return;
+        }
+
+        // 2. Check for Employee Balances linked to this year
+        if (AttendanceLeaveBalance::where('policy_year_id', $id)->exists()) {
+            $this->dispatch('toast', type: 'error', message: tr('Cannot delete year: It has active employee balances linked to it.'));
+            return;
+        }
+
+        // 3. Check for Leave Requests linked to this year
+        if (AttendanceLeaveRequest::where('policy_year_id', $id)->exists()) {
+            $this->dispatch('toast', type: 'error', message: tr('Cannot delete year: There are leave requests registered in this year.'));
+            return;
+        }
+
+        // Safely delete if no dependencies found
+        $deleted = LeavePolicyYear::destroy($id);
+        
+        if ($deleted) {
+            $this->dispatch('toast', type: 'success', message: tr('Year deleted successfully.'));
+        } else {
+            $this->dispatch('toast', type: 'error', message: tr('Failed to delete year. It might have already been removed or is protected.'));
+        }
     }
 
     public function setYearActive($id)
@@ -188,6 +247,7 @@ class AttendanceLeaveSettings extends Component
         LeavePolicyYear::where('company_id', $companyId)->update(['is_active' => false]);
         LeavePolicyYear::where('id', $id)->update(['is_active' => true]);
         $this->selectedYearId = $id;
+        $this->loadPermissionSettings();
         $this->dispatch('toast', type: 'success', message: tr('Active year updated.'));
     }
 
