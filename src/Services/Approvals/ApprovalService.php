@@ -145,6 +145,7 @@ class ApprovalService
         if ($existing) return;
 
         // 1. Find Policy
+        // 1. Find Policy
         $policy = DB::table('approval_policies')
             ->where('company_id', $companyId)
             ->where('operation_key', $src['operation_key'])
@@ -152,9 +153,11 @@ class ApprovalService
             ->first();
 
         if (!$policy) {
+            \Log::info("[APPROVAL_DEBUG] No policy found for company: {$companyId} and operation: {$src['operation_key']}");
             // No policy? Default to direct manager if possible
             $managerId = $this->resolveDirectManagerId((int)$request->{$src['employeeCol']});
             if ($managerId > 0) {
+                \Log::info("[APPROVAL_DEBUG] Defaulting to direct manager: {$managerId}");
                 ApprovalTask::create([
                     'company_id' => $companyId,
                     'operation_key' => $src['operation_key'],
@@ -165,9 +168,13 @@ class ApprovalService
                     'approver_employee_id' => $managerId,
                     'status' => 'pending',
                 ]);
+            } else {
+                \Log::info("[APPROVAL_DEBUG] No direct manager found for employee: {$request->{$src['employeeCol']}}");
             }
             return;
         }
+
+        \Log::info("[APPROVAL_DEBUG] Policy found: " . json_encode($policy));
 
         // 2. Fetch steps
         $steps = DB::table('approval_policy_steps')
@@ -175,20 +182,30 @@ class ApprovalService
             ->orderBy('position')
             ->get();
 
-        if ($steps->isEmpty()) return;
+        \Log::info("[APPROVAL_DEBUG] Steps count for policy {$policy->id}: " . count($steps));
+
+        if ($steps->isEmpty()) {
+            \Log::info("[APPROVAL_DEBUG] No steps found for policy ID: {$policy->id}");
+            return;
+        }
 
         foreach ($steps as $step) {
             $approverId = 0;
+            \Log::info("[APPROVAL_DEBUG] Processing step position {$step->position}, type: {$step->approver_type}");
+
             if ($step->approver_type === 'direct_manager') {
                 $approverId = $this->resolveDirectManagerId((int)$request->{$src['employeeCol']});
+                \Log::info("[APPROVAL_DEBUG] Resolved direct manager: {$approverId}");
             } elseif ($step->approver_type === 'user') {
-                // Map user_id to employee_id (users table has employee_id, but employees table doesn't have user_id)
                 $approverId = DB::table('users')->where('id', $step->approver_id)->value('employee_id') ?: 0;
+                \Log::info("[APPROVAL_DEBUG] Resolved user ID {$step->approver_id} to employee ID: {$approverId}");
             } elseif ($step->approver_type === 'employee') {
                 $approverId = $step->approver_id;
+                \Log::info("[APPROVAL_DEBUG] Step is specific employee: {$approverId}");
             }
 
             if ($approverId > 0) {
+                \Log::info("[APPROVAL_DEBUG] Creating task for approver: {$approverId}");
                 ApprovalTask::create([
                     'company_id' => $companyId,
                     'operation_key' => $src['operation_key'],
@@ -199,6 +216,8 @@ class ApprovalService
                     'approver_employee_id' => $approverId,
                     'status' => ($step->position === 1) ? 'pending' : 'waiting',
                 ]);
+            } else {
+                \Log::warning("[APPROVAL_DEBUG] COULD NOT RESOLVE APPROVER for step {$step->position}");
             }
         }
     }

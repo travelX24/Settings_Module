@@ -18,6 +18,7 @@ class ApprovalSettingService
             'job_titles' => $this->simpleList('job_titles', $companyId),
             'branches' => $this->simpleList('branches', $companyId),
             'employees' => $this->simpleList('employees', $companyId),
+            'users' => $this->simpleList('users', $companyId),
         ];
     }
 

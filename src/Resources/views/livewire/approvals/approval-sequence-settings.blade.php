@@ -434,7 +434,7 @@
                                                 class="w-full"
                                             >
                                                 <option value="0">—</option>
-                                                @foreach($employees as $e)
+                                                @foreach(($t === 'user' ? ($lookups['users'] ?? []) : $employees) as $e)
                                                     <option value="{{ is_array($e) ? $e['id'] : $e->id }}">{{ is_array($e) ? $e['name'] : $e->name }}</option>
                                                 @endforeach
                                             </x-ui.select>
