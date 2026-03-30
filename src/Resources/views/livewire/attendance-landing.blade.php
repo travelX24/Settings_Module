@@ -8,16 +8,6 @@
         class="!flex-col {{ $isRtl ? '!items-end !justify-end' : '!items-start !justify-start' }} !gap-1" titleSize="xl" />
 @endsection
 
-@section('topbar-actions')
-    <div class="flex w-full {{ $isRtl ? 'justify-start' : 'justify-end' }}">
-        <x-ui.secondary-button href="{{ route('company-admin.settings.general') }}" :arrow="false" :fullWidth="false"
-            class="!px-4 !py-2 !text-sm !rounded-xl !gap-2">
-            <i class="fas {{ $isRtl ? 'fa-arrow-right' : 'fa-arrow-left' }} text-xs"></i>
-            <span>{{ tr('Back') }}</span>
-        </x-ui.secondary-button>
-    </div>
-@endsection
-
 <div class="space-y-6">
     {{-- Settings Buttons Grid --}}
     <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
