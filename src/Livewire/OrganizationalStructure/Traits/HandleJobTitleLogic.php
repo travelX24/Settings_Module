@@ -16,7 +16,23 @@ trait HandleJobTitleLogic
         $this->authorize('settings.organizational.manage');
         $companyId = $this->getCompanyId();
 
-        $this->validate(['name' => 'required|string|max:255', 'code' => 'nullable|string|max:50']);
+        $this->validate([
+            'name' => [
+                'required', 'string', 'max:255',
+                \Illuminate\Validation\Rule::unique('job_titles')->where(function ($query) use ($companyId) {
+                    return $query->where('saas_company_id', $companyId);
+                })->ignore($this->editingId)
+            ],
+            'code' => 'nullable|string|max:50'
+        ]);
+
+        if (!$this->is_active && $this->editingId) {
+            $jt = JobTitle::find($this->editingId);
+            if ($jt && $jt->is_active && $jt->employees()->exists()) {
+                $this->addError('is_active', tr('Cannot deactivate because there are linked employees.'));
+                return;
+            }
+        }
 
         $this->orgService->saveJobTitle($companyId, [
             'name' => $this->name,
@@ -27,7 +43,6 @@ trait HandleJobTitleLogic
 
         $this->showModal = false;
         $this->resetForm();
-        $this->resetPage();
         $this->loadStats();
         $this->dispatch('toast', type: 'success', message: tr('Job title saved successfully'));
     }
@@ -43,7 +58,6 @@ trait HandleJobTitleLogic
         }
 
         $jt->delete();
-        $this->resetPage();
         $this->loadStats();
         $this->dispatch('toast', type: 'success', message: tr('Deleted successfully'));
     }
@@ -52,6 +66,12 @@ trait HandleJobTitleLogic
     {
         $this->authorize('settings.organizational.manage');
         $jt = JobTitle::findOrFail($id);
+        
+        if ($jt->is_active && $jt->employees()->exists()) {
+            $this->dispatch('toast', type: 'error', title: tr('Deactivation Blocked'), message: tr('Cannot deactivate because there are linked employees.'));
+            return;
+        }
+
         $jt->update(['is_active' => !$jt->is_active]);
         $this->loadStats();
         $this->dispatch('toast', type: 'success', message: tr('Status updated successfully'));

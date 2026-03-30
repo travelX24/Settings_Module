@@ -4,6 +4,7 @@ namespace Athka\SystemSettings\Livewire\Attendance;
 
 use Livewire\Component;
 use Livewire\WithPagination;
+use App\Services\ExcelExportService;
 use Livewire\WithFileUploads;
 use Livewire\Attributes\Url;
 use Athka\SystemSettings\Services\LeaveSettingService;
@@ -333,7 +334,7 @@ class AttendanceLeaveSettings extends Component
         $this->compareExpanded[$key] = !($this->compareExpanded[$key] ?? false);
     }
 
-    public function exportPolicies()
+    public function exportPolicies(ExcelExportService $exporter)
     {
         $filters = [
             'search' => $this->search,
@@ -344,32 +345,22 @@ class AttendanceLeaveSettings extends Component
 
         $policies = $this->leaveSettingService->getPolicies($filters, 1000);
 
-        $fileName = 'LeavePolicies_' . now()->format('Ymd_His') . '.csv';
-        $headers = [
-            'Content-Type' => 'text/csv; charset=UTF-8',
-            'Content-Disposition' => "attachment; filename=\"$fileName\"",
-        ];
+        $fileName = 'LeavePolicies_' . now()->format('Ymd_His');
+        $headers = [tr('Leave'), tr('Days'), tr('Year'), tr('Gender'), tr('Status'), tr('Show in App'), tr('Attachments')];
 
-        $callback = function() use ($policies) {
-            $file = fopen('php://output', 'w');
-            fprintf($file, chr(0xEF).chr(0xBB).chr(0xBF)); // BOM for Excel
-            fputcsv($file, [tr('Leave'), tr('Days'), tr('Year'), tr('Gender'), tr('Status'), tr('Show in App'), tr('Attachments')]);
+        $data = $policies->map(function($row) {
+            return [
+                $row->name,
+                $row->days_per_year,
+                $row->year?->year ?? '',
+                $row->gender,
+                $row->is_active ? tr('Active') : tr('Inactive'),
+                $row->show_in_app ? tr('Yes') : tr('No'),
+                $row->requires_attachment ? tr('Yes') : tr('No'),
+            ];
+        })->toArray();
 
-            foreach ($policies as $row) {
-                fputcsv($file, [
-                    $row->name,
-                    $row->days_per_year,
-                    $row->year?->year ?? '',
-                    $row->gender,
-                    $row->is_active ? tr('Active') : tr('Inactive'),
-                    $row->show_in_app ? tr('Yes') : tr('No'),
-                    $row->requires_attachment ? tr('Yes') : tr('No'),
-                ]);
-            }
-            fclose($file);
-        };
-
-        return response()->stream($callback, 200, $headers);
+        return $exporter->export($fileName, $headers, $data);
     }
 
     public function render()

@@ -4,6 +4,7 @@ namespace Athka\SystemSettings\Livewire\Attendance;
 
 use Livewire\Component;
 use Livewire\WithPagination;
+use App\Services\ExcelExportService;
 use Athka\SystemSettings\Models\WorkSchedule;
 use Athka\SystemSettings\Services\WorkScheduleService;
 use Illuminate\Support\Facades\DB;
@@ -168,53 +169,33 @@ class WorkSchedules extends Component
         $this->reset(['search', 'filterStatus', 'filterExceptions']);
         $this->resetPage();
     }
-    public function exportSchedules()
+    public function exportSchedules(ExcelExportService $exporter)
     {
         $this->authorize('settings.attendance.view');
         $companyId = auth()->user()->saas_company_id;
 
-        $filename = "work_schedules_" . now()->format('Y_m_d_His') . ".csv";
+        $filename = "work_schedules_" . now()->format('Y_m_d_His');
+        $headers = [tr('Name'), tr('Type'), tr('Status'), tr('Work Days'), tr('Periods Count')];
 
-        $headers = [
-            "Content-type" => "text/csv",
-            "Content-Disposition" => "attachment; filename=$filename",
-            "Pragma" => "no-cache",
-            "Cache-Control" => "must-revalidate, post-check=0, pre-check=0",
-            "Expires" => "0"
-        ];
+        $schedules = WorkSchedule::where('saas_company_id', $companyId)
+            ->when($this->search, fn($q) => $q->where('name', 'like', "%{$this->search}%"))
+            ->when($this->filterStatus !== 'all', fn($q) => $q->where('is_active', $this->filterStatus === 'active'))
+            ->when($this->filterExceptions === 'with_exceptions', fn($q) => $q->whereHas('exceptions', fn($ex) => $ex->where('is_active', true)))
+            ->when($this->filterExceptions === 'without_exceptions', fn($q) => $q->whereDoesntHave('exceptions', fn($ex) => $ex->where('is_active', true)))
+            ->with('periods')
+            ->get();
 
-        $columns = [tr('Name'), tr('Type'), tr('Status'), tr('Work Days'), tr('Periods Count')];
+        $data = $schedules->map(function ($s) {
+            return [
+                $s->name,
+                tr(ucfirst($s->schedule_type)),
+                $s->is_active ? tr('Active') : tr('Inactive'),
+                implode(', ', array_map(fn($d) => tr(ucfirst($d)), (array) $s->work_days)),
+                $s->periods->count()
+            ];
+        })->toArray();
 
-        $callback = function () use ($companyId, $columns) {
-            $file = fopen('php://output', 'w');
-            fprintf($file, chr(0xEF) . chr(0xBB) . chr(0xBF)); // UTF-8 BOM
-            fputcsv($file, $columns);
-
-            $schedules = WorkSchedule::where('saas_company_id', $companyId)
-                ->when($this->search, fn($q) => $q->where('name', 'like', "%{$this->search}%"))
-                ->when($this->filterStatus !== 'all', fn($q) => $q->where('is_active', $this->filterStatus === 'active'))
-                ->when($this->filterExceptions === 'with_exceptions', fn($q) => $q->whereHas('exceptions', fn($ex) => $ex->where('is_active', true)))
-                ->when($this->filterExceptions === 'without_exceptions', fn($q) => $q->whereDoesntHave('exceptions', fn($ex) => $ex->where('is_active', true)))
-                ->with('periods')
-                ->withCount([
-                    'exceptions as active_exceptions_count' => fn($q) => $q->where('is_active', true),
-                ])
-                ->get();
-
-            foreach ($schedules as $s) {
-                fputcsv($file, [
-                    $s->name,
-                    tr(ucfirst($s->schedule_type)),
-                    $s->is_active ? tr('Active') : tr('Inactive'),
-                    implode(', ', array_map(fn($d) => tr(ucfirst($d)), (array) $s->work_days)),
-                    $s->periods->count()
-                ]);
-            }
-
-            fclose($file);
-        };
-
-        return response()->stream($callback, 200, $headers);
+        return $exporter->export($filename, $headers, $data);
     }
 
     public function confirmDelete($id)

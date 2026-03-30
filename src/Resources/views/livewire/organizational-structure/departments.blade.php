@@ -189,9 +189,21 @@
 
                                 <div class="text-sm">
                                     <div class="text-gray-500 mb-1">{{ tr('Description') }}</div>
-                                    <div class="text-gray-700 line-clamp-2">
-                                        {{ $department->description ?? '-' }}
-                                    </div>
+                                    @if($department->description && mb_strlen($department->description) > 60)
+                                        <div x-data="{ expanded: false }" class="text-gray-700 w-full">
+                                            <div :class="expanded ? 'whitespace-normal break-words' : 'line-clamp-2'" class="transition-all duration-300">
+                                                {{ $department->description }}
+                                            </div>
+                                            <button @click="expanded = !expanded" class="text-xs font-semibold text-[color:var(--brand-via)] hover:underline mt-1 focus:outline-none">
+                                                <span x-show="!expanded">{{ tr('Read more') }}</span>
+                                                <span x-show="expanded" x-cloak>{{ tr('Show less') }}</span>
+                                            </button>
+                                        </div>
+                                    @else
+                                        <div class="text-gray-700 whitespace-normal break-words">
+                                            {{ $department->description ?? '-' }}
+                                        </div>
+                                    @endif
                                 </div>
 
                                 <div class="pt-2">
@@ -202,11 +214,6 @@
                             </div>
                         </x-ui.card>
                     @endforeach
-                </div>
-
-                {{-- Pagination for Cards View --}}
-                <div class="mt-6 border-t border-gray-200 pt-4">
-                    {{ $departments->onEachSide(1)->links() }}
                 </div>
                 
             </div>
@@ -223,8 +230,8 @@
                         tr('Status'),
                         tr('Actions')
                     ]"
-                    :perPage="10"
-                    :enablePagination="true"
+                    :perPage="15"
+                    :enablePagination="false"
                 >
                     @foreach($departments as $department)
                         <tr
@@ -276,9 +283,21 @@
                             </td>
 
                             <td class="py-4 px-6 align-top">
-                                <div class="text-sm text-gray-500 max-w-xs line-clamp-2">
-                                    {{ $department->description ?? '-' }}
-                                </div>
+                                @if($department->description && mb_strlen($department->description) > 60)
+                                    <div x-data="{ expanded: false }" class="text-sm text-gray-500 max-w-xs">
+                                        <div :class="expanded ? 'whitespace-normal break-words' : 'line-clamp-2'" class="transition-all duration-300">
+                                            {{ $department->description }}
+                                        </div>
+                                        <button @click="expanded = !expanded" class="text-xs font-semibold text-[color:var(--brand-via)] hover:underline mt-1 focus:outline-none">
+                                            <span x-show="!expanded">{{ tr('Read more') }}</span>
+                                            <span x-show="expanded" x-cloak>{{ tr('Show less') }}</span>
+                                        </button>
+                                    </div>
+                                @else
+                                    <div class="text-sm text-gray-500 max-w-xs whitespace-normal break-words">
+                                        {{ $department->description ?? '-' }}
+                                    </div>
+                                @endif
                             </td>
 
                             <td class="py-4 px-6 align-top whitespace-nowrap">
@@ -321,6 +340,11 @@
                         </tr>
                     @endforeach
                 </x-ui.table>
+            </div>
+
+            {{-- Server-Side Pagination (Applied to both views) --}}
+            <div class="mt-6 border-t border-gray-200 pt-4">
+                {{ $departments->onEachSide(1)->links() }}
             </div>
 
         @else

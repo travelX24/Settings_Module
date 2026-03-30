@@ -4,6 +4,7 @@ namespace Athka\SystemSettings\Livewire\Attendance;
 
 use Livewire\Component;
 use Livewire\WithPagination;
+use App\Services\ExcelExportService;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Schema;
 use Illuminate\Support\Str;
@@ -279,11 +280,10 @@ class AttendanceHolidays extends Component
         $this->resetPage();
     }
 
-    public function exportCsv()
+    public function exportExcel(ExcelExportService $exporter)
     {
         $this->authorize('settings.attendance.view');
         
-        // This is a simplified CSV export logic
         $companyId = $this->resolveCompanyId();
         $q = OfficialHolidayOccurrence::query()->with('template');
         
@@ -291,7 +291,6 @@ class AttendanceHolidays extends Component
             $q->where('company_id', $companyId);
         }
 
-        // Apply filters (matching index query)
         if ($this->search !== '') {
             $q->whereHas('template', fn ($qq) => $qq->where('name', 'like', '%' . $this->search . '%'));
         }
@@ -310,36 +309,21 @@ class AttendanceHolidays extends Component
 
         $records = $q->orderBy('start_date')->get();
         
-        $filename = "official_holidays_" . now()->format('Y-m-d') . ".csv";
-        $headers = [
-            "Content-type"        => "text/csv",
-            "Content-Disposition" => "attachment; filename=$filename",
-            "Pragma"              => "no-cache",
-            "Cache-Control"       => "must-revalidate, post-check=0, pre-check=0",
-            "Expires"             => "0"
-        ];
+        $filename = "official_holidays_" . now()->format('Y-m-d');
+        $headers = [tr('Name'), tr('Calendar'), tr('Start Date'), tr('End Date'), tr('Duration (days)'), tr('Status')];
 
-        $columns = [tr('Name'), tr('Calendar'), tr('Start Date'), tr('End Date'), tr('Duration (days)'), tr('Status')];
+        $data = $records->map(function ($row) {
+            return [
+                $row->template?->name,
+                tr(ucfirst($row->template?->calendar_type)),
+                $row->start_date?->format('Y-m-d') ?? '-',
+                $row->end_date?->format('Y-m-d') ?? '-',
+                $row->duration_days,
+                $row->template?->is_active ? tr('Active') : tr('Inactive'),
+            ];
+        })->toArray();
 
-        $callback = function() use($records, $columns) {
-            $file = fopen('php://output', 'w');
-            fprintf($file, chr(0xEF).chr(0xBB).chr(0xBF)); // UTF-8 BOM
-            fputcsv($file, $columns);
-
-            foreach ($records as $row) {
-                fputcsv($file, [
-                    $row->template?->name,
-                    $row->template?->calendar_type,
-                    $row->start_date?->format('Y-m-d'),
-                    $row->end_date?->format('Y-m-d'),
-                    $row->duration_days,
-                    $row->template?->is_active ? tr('Active') : tr('Inactive'),
-                ]);
-            }
-            fclose($file);
-        };
-
-        return response()->stream($callback, 200, $headers);
+        return $exporter->export($filename, $headers, $data);
     }
 
     public function render()

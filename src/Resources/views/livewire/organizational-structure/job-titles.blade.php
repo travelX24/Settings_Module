@@ -90,9 +90,21 @@
                                         {{ $jobTitle->name }}
                                     </div>
 
-                                    <div class="text-xs text-gray-500 mt-0.5 line-clamp-2">
-                                        {{ $jobTitle->description ?? '-' }}
-                                    </div>
+                                    @if($jobTitle->description && mb_strlen($jobTitle->description) > 60)
+                                        <div x-data="{ expanded: false }" class="mt-0.5">
+                                            <div :class="expanded ? 'whitespace-normal break-words' : 'line-clamp-2'" class="text-xs text-gray-500 transition-all duration-300">
+                                                {{ $jobTitle->description }}
+                                            </div>
+                                            <button @click="expanded = !expanded" class="text-[10px] font-semibold text-[color:var(--brand-via)] hover:underline mt-1 focus:outline-none">
+                                                <span x-show="!expanded">{{ tr('Read more') }}</span>
+                                                <span x-show="expanded" x-cloak>{{ tr('Show less') }}</span>
+                                            </button>
+                                        </div>
+                                    @else
+                                        <div class="text-xs text-gray-500 mt-0.5 whitespace-normal break-words">
+                                            {{ $jobTitle->description ?? '-' }}
+                                        </div>
+                                    @endif
                                     @if($jobTitle->code)
                                         <div class="mt-1">
                                             <span class="px-1.5 py-0.5 text-[10px] font-bold bg-gray-100 text-gray-600 rounded"># {{ $jobTitle->code }}</span>
@@ -193,9 +205,21 @@
                             </td>
 
                             <td class="py-4 px-6 align-top">
-                                <div class="text-sm text-gray-500 max-w-xs whitespace-normal break-words">
-                                    {{ $jobTitle->description ?? '-' }}
-                                </div>
+                                @if($jobTitle->description && mb_strlen($jobTitle->description) > 60)
+                                    <div x-data="{ expanded: false }" class="text-sm text-gray-500 max-w-xs">
+                                        <div :class="expanded ? 'whitespace-normal break-words' : 'line-clamp-2'" class="transition-all duration-300">
+                                            {{ $jobTitle->description }}
+                                        </div>
+                                        <button @click="expanded = !expanded" class="text-xs font-semibold text-[color:var(--brand-via)] hover:underline mt-1 focus:outline-none">
+                                            <span x-show="!expanded">{{ tr('Read more') }}</span>
+                                            <span x-show="expanded" x-cloak>{{ tr('Show less') }}</span>
+                                        </button>
+                                    </div>
+                                @else
+                                    <div class="text-sm text-gray-500 max-w-xs whitespace-normal break-words">
+                                        {{ $jobTitle->description ?? '-' }}
+                                    </div>
+                                @endif
                             </td>
 
                             <td class="py-4 px-6 align-top whitespace-nowrap">

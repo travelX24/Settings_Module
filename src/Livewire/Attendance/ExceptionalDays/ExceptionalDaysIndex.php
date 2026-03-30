@@ -7,6 +7,7 @@ use Athka\SystemSettings\Services\ExceptionalDayService;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Schema;
 use Illuminate\Validation\Rule;
+use App\Services\ExcelExportService;
 use Livewire\Component;
 use Livewire\WithPagination;
 
@@ -997,64 +998,50 @@ class ExceptionalDaysIndex extends Component
 
         return implode(' / ', $changes);
     }
-    public function exportCsv()
+    public function exportExcel(ExcelExportService $exporter)
     {
         $companyId = $this->companyId();
         $rows = $this->exceptionalDayService->getRowsQuery($companyId, $this->getFilters())->get();
 
-        $filename = 'exceptional-days-' . now()->format('Ymd-His') . '.csv';
+        $filename = 'exceptional-days-' . now()->format('Ymd-His');
+        $headers = [
+            tr('Name'),
+            tr('Description'),
+            tr('Period Type'),
+            tr('Start Date'),
+            tr('End Date'),
+            tr('Apply'),
+            tr('Deduction %'),
+            tr('Grace Hours'),
+            tr('Scope Type'),
+            tr('Notify Policy'),
+            tr('Is Active'),
+            tr('Created At'),
+        ];
 
-        return response()->streamDownload(function () use ($rows) {
-            echo "\xEF\xBB\xBF";
+        $data = $rows->map(function ($r) {
+            $apply = (string) $r->apply_on;
+            $percent = 0.0;
+            if ($apply === 'absence') $percent = (float) $r->absence_multiplier * 100.0;
+            if ($apply === 'late') $percent = (float) $r->late_multiplier * 100.0;
 
-            $out = fopen('php://output', 'w');
+            return [
+                $r->name,
+                $r->description ?? '-',
+                tr(ucfirst($r->period_type)),
+                optional($r->start_date)->toDateString() ?? '-',
+                optional($r->end_date)->toDateString() ?? '-',
+                tr(ucfirst($apply)),
+                number_format($percent, 2) . '%',
+                (string) ((int) $r->grace_hours),
+                tr(ucfirst($r->scope_type ?? 'all')),
+                tr(ucfirst($r->notify_policy)),
+                $r->is_active ? tr('Active') : tr('Inactive'),
+                optional($r->created_at)->toDateTimeString() ?? '-',
+            ];
+        })->toArray();
 
-            fputcsv($out, [
-                'Name',
-                'Description',
-                'Period Type',
-                'Start Date',
-                'End Date',
-                'Apply',
-                'Deduction %',
-                'Grace Hours',
-                'Scope Type',
-                'Notify Policy',
-                'Notified At',
-                'Is Active',
-                'Created By',
-                'Created At',
-            ]);
-
-            foreach ($rows as $r) {
-                $apply = (string) $r->apply_on;
-
-                $percent = 0.0;
-                if ($apply === 'absence')
-                    $percent = (float) $r->absence_multiplier * 100.0;
-                if ($apply === 'late')
-                    $percent = (float) $r->late_multiplier * 100.0;
-
-                fputcsv($out, [
-                    $r->name,
-                    $r->description,
-                    $r->period_type,
-                    optional($r->start_date)->toDateString(),
-                    optional($r->end_date)->toDateString(),
-                    $apply,
-                    number_format($percent, 2, '.', ''),
-                    (string) ((int) $r->grace_hours),
-                    (string) ($r->scope_type ?? 'all'),
-                    $r->notify_policy,
-                    optional($r->notified_at)?->toDateTimeString(),
-                    $r->is_active ? 1 : 0,
-                    $r->created_by,
-                    optional($r->created_at)?->toDateTimeString(),
-                ]);
-            }
-
-            fclose($out);
-        }, $filename);
+        return $exporter->export($filename, $headers, $data);
     }
 
     public function render()

@@ -37,6 +37,14 @@ trait HandleDepartmentLogic
                 return;
             }
         }
+        
+        if (!$this->is_active && $this->editingId) {
+            $dept = Department::find($this->editingId);
+            if ($dept && $dept->is_active && $dept->employees()->exists()) {
+                $this->addError('is_active', tr('Cannot deactivate because there are linked employees.'));
+                return;
+            }
+        }
 
         $this->orgService->saveDepartment($companyId, [
             'name' => $this->name,
@@ -74,6 +82,12 @@ trait HandleDepartmentLogic
     {
         $this->authorize('settings.organizational.manage');
         $dept = Department::findOrFail($id);
+        
+        if ($dept->is_active && $dept->employees()->exists()) {
+            $this->dispatch('toast', type: 'error', title: tr('Deactivation Blocked'), message: tr('Cannot deactivate because there are linked employees.'));
+            return;
+        }
+
         $dept->update(['is_active' => !$dept->is_active]);
         $this->loadStats();
         $this->dispatch('toast', type: 'success', message: tr('Status updated successfully'));

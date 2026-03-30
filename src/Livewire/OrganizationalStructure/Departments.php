@@ -4,6 +4,7 @@ namespace Athka\SystemSettings\Livewire\OrganizationalStructure;
 
 use Livewire\Component;
 use Livewire\WithPagination;
+use App\Services\ExcelExportService;
 use Athka\SystemSettings\Models\Department;
 use Athka\SystemSettings\Services\OrganizationService;
 use Athka\SystemSettings\Livewire\OrganizationalStructure\Traits\HandleDepartmentLogic;
@@ -61,10 +62,14 @@ class Departments extends Component
             'departments' => $departments,
             'managers' => $this->orgService->getManagersList($companyId, app()->getLocale()),
             'parentDepartments' => Department::forCompany($companyId)
-                ->where('id', '!=', $this->editingId)
+                ->when($this->editingId, fn($q) => $q->where('id', '!=', $this->editingId))
                 ->whereNull('parent_id') // Only root departments can be parents
                 ->get(),
-            'rootDepartments' => Department::forCompany($companyId)->root()->get(),
+            'rootDepartments' => Department::forCompany($companyId)
+                ->root()
+                ->get()
+                ->map(fn($d) => ['value' => $d->id, 'label' => $d->name])
+                ->toArray(),
         ]);
     }
 
@@ -96,48 +101,34 @@ class Departments extends Component
         $this->editingId = null;
     }
 
-    public function export()
+    public function export(ExcelExportService $exporter)
     {
         $companyId = $this->getCompanyId();
         $departments = Department::forCompany($companyId)->with(['manager', 'parent'])->get();
         
-        $filename = tr('Departments') . '_' . date('Y-m-d') . '.csv';
-        $headers = [
-            'Content-Type' => 'text/csv; charset=UTF-8',
-            'Content-Disposition' => "attachment; filename=\"{$filename}\""
-        ];
+        $filename = tr('Departments') . '_' . date('Y-m-d');
+        $locale = app()->getLocale();
 
-        $callback = function () use ($departments) {
-            $file = fopen('php://output', 'w');
-            
-            // إضافة BOM لضمان ظهور اللغة العربية بشكل صحيح في Excel
-            fprintf($file, chr(0xEF).chr(0xBB).chr(0xBF));
-
-            fputcsv($file, [tr('Name'), tr('Code'), tr('Manager'), tr('Parent'), tr('Status')]);
-            
-            $locale = app()->getLocale();
-
-            foreach ($departments as $d) {
-                // اختيار اسم المدير بناءً على اللغة
-                $managerName = '-';
-                if ($d->manager) {
-                    $managerName = ($locale === 'ar') 
-                        ? ($d->manager->name_ar ?? $d->manager->name_en) 
-                        : ($d->manager->name_en ?? $d->manager->name_ar);
-                }
-
-                fputcsv($file, [
-                    $d->name, 
-                    $d->code, 
-                    $managerName, 
-                    $d->parent?->name ?? '-', 
-                    $d->is_active ? tr('Active') : tr('Inactive')
-                ]);
+        $headers = [tr('Name'), tr('Code'), tr('Manager'), tr('Parent'), tr('Status')];
+        
+        $data = $departments->map(function ($d) use ($locale) {
+            $managerName = '-';
+            if ($d->manager) {
+                $managerName = ($locale === 'ar') 
+                    ? ($d->manager->name_ar ?? $d->manager->name_en) 
+                    : ($d->manager->name_en ?? $d->manager->name_ar);
             }
-            fclose($file);
-        };
 
-        return response()->stream($callback, 200, $headers);
+            return [
+                $d->name, 
+                $d->code ?? '-', 
+                $managerName, 
+                $d->parent?->name ?? '-', 
+                $d->is_active ? tr('Active') : tr('Inactive')
+            ];
+        })->toArray();
+
+        return $exporter->export($filename, $headers, $data);
     }
 
     public function resetForm()

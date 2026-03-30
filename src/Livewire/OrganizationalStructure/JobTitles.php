@@ -3,6 +3,7 @@
 namespace Athka\SystemSettings\Livewire\OrganizationalStructure;
 
 use Livewire\Component;
+use App\Services\ExcelExportService;
 use Athka\SystemSettings\Models\JobTitle;
 use Athka\SystemSettings\Services\OrganizationService;
 use Athka\SystemSettings\Livewire\OrganizationalStructure\Traits\HandleJobTitleLogic;
@@ -71,36 +72,23 @@ class JobTitles extends Component
         $this->editingId = null;
     }
 
-    public function export()
+    public function export(ExcelExportService $exporter)
     {
         $companyId = $this->getCompanyId();
         $jobTitles = JobTitle::forCompany($companyId)->get();
         
-        $filename = tr('Job Titles') . '_' . date('Y-m-d') . '.csv';
-        $headers = [
-            'Content-Type' => 'text/csv; charset=UTF-8',
-            'Content-Disposition' => "attachment; filename=\"{$filename}\""
-        ];
+        $filename = tr('Job Titles') . '_' . date('Y-m-d');
+        $headers = [tr('Name'), tr('Code'), tr('Status')];
+        
+        $data = $jobTitles->map(function ($jt) {
+            return [
+                $jt->name, 
+                $jt->code ?? '-', 
+                $jt->is_active ? tr('Active') : tr('Inactive')
+            ];
+        })->toArray();
 
-        $callback = function () use ($jobTitles) {
-            $file = fopen('php://output', 'w');
-            
-            // إضافة BOM لضمان ظهور اللغة العربية بشكل صحيح في Excel
-            fprintf($file, chr(0xEF).chr(0xBB).chr(0xBF));
-
-            fputcsv($file, [tr('Name'), tr('Code'), tr('Status')]);
-            
-            foreach ($jobTitles as $jt) {
-                fputcsv($file, [
-                    $jt->name, 
-                    $jt->code, 
-                    $jt->is_active ? tr('Active') : tr('Inactive')
-                ]);
-            }
-            fclose($file);
-        };
-
-        return response()->stream($callback, 200, $headers);
+        return $exporter->export($filename, $headers, $data);
     }
 
     public function resetForm()
