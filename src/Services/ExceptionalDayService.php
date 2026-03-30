@@ -90,24 +90,24 @@ class ExceptionalDayService
                 });
             })
             ->when($departmentId, function ($qq) use ($departmentId) {
-                $deptId = (int) $departmentId;
-                $qq->where(function ($q2) use ($deptId) {
-                    $q2->where('scope_type', 'all')
-                        ->orWhere(function ($q3) use ($deptId) {
-                            $q3->where('scope_type', 'departments')
-                                ->whereJsonContains('include->departments', $deptId);
-                        });
-                });
+                $deptIdInt = (int) $departmentId;
+                $deptIdStr = (string) $departmentId;
+
+                $qq->where('scope_type', 'departments')
+                    ->where(function ($q2) use ($deptIdInt, $deptIdStr) {
+                        $q2->whereJsonContains('include->departments', $deptIdStr)
+                            ->orWhereJsonContains('include->departments', $deptIdInt);
+                    });
             })
             ->when($branchId, function ($qq) use ($branchId) {
-                $bid = (int) $branchId;
-                $qq->where(function ($q2) use ($bid) {
-                    $q2->where('scope_type', 'all')
-                        ->orWhere(function ($q3) use ($bid) {
-                            $q3->where('scope_type', 'branches')
-                                ->whereJsonContains('include->branches', $bid);
-                        });
-                });
+                $branchIdInt = (int) $branchId;
+                $branchIdStr = (string) $branchId;
+
+                $qq->where('scope_type', 'branches')
+                    ->where(function ($q2) use ($branchIdInt, $branchIdStr) {
+                        $q2->whereJsonContains('include->branches', $branchIdStr)
+                            ->orWhereJsonContains('include->branches', $branchIdInt);
+                    });
             })
             ->when($contractType, function ($qq) use ($contractType) {
                 $qq->where(function ($q2) use ($contractType) {
