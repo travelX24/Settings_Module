@@ -481,30 +481,22 @@
 
                             @if (($form['period_type'] ?? 'single') === 'single')
                                 <div>
-                                    <div class="text-xs text-gray-600 mb-1">{{ tr('Date') }}</div>
-                                    <x-ui.company-date-picker model="form.start_date" />
-                                    @error('form.start_date')
-                                        <div class="text-xs text-red-600 mt-1">{{ $message }}</div>
-                                    @enderror
-                                </div>
-                            @else
-                                <div class="md:col-span-2 grid grid-cols-1 md:grid-cols-2 gap-3">
                                     <div>
-                                        <div class="text-xs text-gray-600 mb-1">{{ tr('From') }}</div>
+                                        <div class="text-xs text-gray-600 mb-1">{{ tr('Date') }}</div>
                                         <x-ui.company-date-picker model="form.start_date" />
-                                        @error('form.start_date')
-                                            <div class="text-xs text-red-600 mt-1">{{ $message }}</div>
-                                        @enderror
                                     </div>
+                                @else
+                                    <div class="md:col-span-2 grid grid-cols-1 md:grid-cols-2 gap-3">
+                                        <div>
+                                            <div class="text-xs text-gray-600 mb-1">{{ tr('From') }}</div>
+                                            <x-ui.company-date-picker model="form.start_date" />
+                                        </div>
 
-                                    <div>
-                                        <div class="text-xs text-gray-600 mb-1">{{ tr('To') }}</div>
-                                        <x-ui.company-date-picker model="form.end_date" />
-                                        @error('form.end_date')
-                                            <div class="text-xs text-red-600 mt-1">{{ $message }}</div>
-                                        @enderror
+                                        <div>
+                                            <div class="text-xs text-gray-600 mb-1">{{ tr('To') }}</div>
+                                            <x-ui.company-date-picker model="form.end_date" />
+                                        </div>
                                     </div>
-                                </div>
                             @endif
 
                         </div>
