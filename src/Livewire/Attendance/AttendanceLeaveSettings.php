@@ -41,7 +41,7 @@ class AttendanceLeaveSettings extends Component
     {
         $type = $this->getCompanyCalendarType();
         $years = [];
-        
+
         if ($type === 'hijri') {
             // Hijri range e.g., 1440 to 1460
             for ($i = 1440; $i <= 1460; $i++) {
@@ -55,24 +55,100 @@ class AttendanceLeaveSettings extends Component
         }
         return $years;
     }
-    
+    protected function applyCalendarTypeToYearQuery($query)
+    {
+        $type = $this->getCompanyCalendarType();
+
+        return $type === 'hijri'
+            ? $query->whereBetween('year', [1300, 1600])
+            : $query->whereBetween('year', [1900, 2500]);
+    }
+
+    public function getCurrentCalendarYearProperty(): int
+    {
+        if ($this->getCompanyCalendarType() === 'hijri' && class_exists(\IntlCalendar::class)) {
+            $tz = \IntlTimeZone::createTimeZone('UTC');
+            $cal = \IntlCalendar::createInstance($tz, 'en_US@calendar=islamic-umalqura');
+
+            return (int) $cal->get(\IntlCalendar::FIELD_YEAR);
+        }
+
+        return (int) now()->year;
+    }
+
+    public function getYearRangeHintProperty(): string
+    {
+        return $this->getCompanyCalendarType() === 'hijri'
+            ? tr('Dates are auto-set according to the selected Hijri year. Only the current company year can be active.')
+            : tr('Dates are auto-set to Jan 1 → Dec 31. Only the current company year can be active.');
+    }
+
+    protected function ensureAnnualDefaultPolicyForYear(LeavePolicyYear $year): void
+    {
+        $annualConstraint = function ($query) {
+            $query->where('settings->meta->system_key', 'annual_default')
+                ->orWhere('name', 'سنوية')
+                ->orWhere('name', 'Annual');
+        };
+
+        $exists = LeavePolicy::where('company_id', $year->company_id)
+            ->where('policy_year_id', $year->id)
+            ->where($annualConstraint)
+            ->exists();
+
+        if ($exists) {
+            return;
+        }
+
+        $source = LeavePolicy::where('company_id', $year->company_id)
+            ->where('policy_year_id', '!=', $year->id)
+            ->where($annualConstraint)
+            ->orderByDesc('policy_year_id')
+            ->first();
+
+        if (!$source) {
+            $this->leaveSettingService->ensureDefaultConfiguration($year->company_id);
+
+            $source = LeavePolicy::where('company_id', $year->company_id)
+                ->where('policy_year_id', '!=', $year->id)
+                ->where($annualConstraint)
+                ->orderByDesc('policy_year_id')
+                ->first();
+        }
+
+        if (!$source) {
+            return;
+        }
+
+        $newPolicy = $source->replicate();
+        $newPolicy->company_id = $year->company_id;
+        $newPolicy->policy_year_id = $year->id;
+
+        $settings = (array) ($newPolicy->settings ?? []);
+        $settings['meta'] = array_merge((array) data_get($settings, 'meta', []), [
+            'system_key' => 'annual_default',
+        ]);
+
+        $newPolicy->settings = $settings;
+        $newPolicy->save();
+    }
     public string $search = '';
-    
+
     #[Url(except: 'leaves')]
     public string $tab = 'leaves';
-    
+
     #[Url]
     public string $filterStatus = 'all';
-    
+
     #[Url]
     public string $filterGender = 'all';
-    
+
     #[Url]
     public string $filterShowInApp = 'all';
-    
+
     #[Url]
     public string $filterAttachments = 'all';
-    
+
     #[Url]
     public string $filterYearId = 'all';
 
@@ -83,7 +159,7 @@ class AttendanceLeaveSettings extends Component
     public $name, $leave_type = 'annual', $days_per_year = 30, $editingId;
     public $gender = 'all', $is_active = true, $show_in_app = true, $requires_attachment = false, $description = '';
     public bool $editingNameLocked = false;
-    
+
     // Settings fields
     public $accrual_method = 'annual_grant', $monthly_accrual_rate = 2.5, $allow_carryover = true, $carryover_days = 15;
     public $weekend_policy = 'exclude', $deduction_policy = 'balance_only';
@@ -116,21 +192,32 @@ class AttendanceLeaveSettings extends Component
     public function mount()
     {
         $this->authorize('settings.attendance.view');
-        
+
         // Ensure tab is synced from request if not already via URL attribute
         $this->tab = request()->query('tab', $this->tab ?: 'leaves');
-        
+
         $companyId = auth()->user()->saas_company_id;
-        $activeYear = LeavePolicyYear::where('company_id', $companyId)->where('is_active', true)->first();
-        
+
+        $yearQuery = $this->applyCalendarTypeToYearQuery(
+            LeavePolicyYear::where('company_id', $companyId)
+        );
+
+        $activeYear = (clone $yearQuery)->where('is_active', true)->first();
+
         if (!$activeYear) {
-            $activeYear = LeavePolicyYear::where('company_id', $companyId)->latest('year')->first();
+            $activeYear = (clone $yearQuery)->orderBy('year', 'desc')->first();
         }
 
         // ✅ If still no year found, ensure default configuration is created
         if (!$activeYear) {
             $this->leaveSettingService->ensureDefaultConfiguration($companyId);
-            $activeYear = LeavePolicyYear::where('company_id', $companyId)->where('is_active', true)->first();
+
+            $yearQuery = $this->applyCalendarTypeToYearQuery(
+                LeavePolicyYear::where('company_id', $companyId)
+            );
+
+            $activeYear = (clone $yearQuery)->where('is_active', true)->first()
+                ?: (clone $yearQuery)->orderBy('year', 'desc')->first();
         }
 
         $this->selectedYearId = $activeYear ? $activeYear->id : null;
@@ -140,7 +227,8 @@ class AttendanceLeaveSettings extends Component
 
     public function loadPermissionSettings()
     {
-        if (!$this->selectedYearId) return;
+        if (!$this->selectedYearId)
+            return;
 
         $companyId = auth()->user()->saas_company_id;
         $permPolicy = PermissionPolicy::where('company_id', $companyId)
@@ -148,15 +236,15 @@ class AttendanceLeaveSettings extends Component
             ->first();
 
         if ($permPolicy) {
-            $this->perm_approval_required = (bool)$permPolicy->approval_required;
-            $this->perm_show_in_app = (bool)$permPolicy->show_in_app;
-            $this->perm_requires_attachment = (bool)$permPolicy->requires_attachment;
+            $this->perm_approval_required = (bool) $permPolicy->approval_required;
+            $this->perm_show_in_app = (bool) $permPolicy->show_in_app;
+            $this->perm_requires_attachment = (bool) $permPolicy->requires_attachment;
             $this->perm_deduction_policy = $permPolicy->deduction_policy ?? 'not_allowed_after_limit';
             $this->perm_attachment_types = $permPolicy->attachment_types ?? ['pdf', 'jpg', 'png'];
-            
+
             // Convert minutes to hours for UI
-            $this->perm_monthly_limit_hours = (string)($permPolicy->monthly_limit_minutes / 60);
-            $this->perm_max_request_hours = (string)($permPolicy->max_request_minutes / 60);
+            $this->perm_monthly_limit_hours = (string) ($permPolicy->monthly_limit_minutes / 60);
+            $this->perm_max_request_hours = (string) ($permPolicy->max_request_minutes / 60);
         } else {
             // Default UI Values when no settings exist for this year
             $this->perm_approval_required = true;
@@ -173,7 +261,9 @@ class AttendanceLeaveSettings extends Component
     {
         $current = LeavePolicyYear::find($this->selectedYearId);
         if ($current) {
-            $prev = LeavePolicyYear::where('company_id', $current->company_id)
+            $prev = $this->applyCalendarTypeToYearQuery(
+                LeavePolicyYear::where('company_id', $current->company_id)
+            )
                 ->where('year', '<', $current->year)
                 ->orderBy('year', 'desc')
                 ->first();
@@ -188,7 +278,9 @@ class AttendanceLeaveSettings extends Component
     {
         $current = LeavePolicyYear::find($this->selectedYearId);
         if ($current) {
-            $next = LeavePolicyYear::where('company_id', $current->company_id)
+            $next = $this->applyCalendarTypeToYearQuery(
+                LeavePolicyYear::where('company_id', $current->company_id)
+            )
                 ->where('year', '>', $current->year)
                 ->orderBy('year', 'asc')
                 ->first();
@@ -219,7 +311,7 @@ class AttendanceLeaveSettings extends Component
     public function saveYear()
     {
         $this->authorize('settings.attendance.manage');
-        
+
         $rules = [
             'newYear' => 'required|integer',
             'copyFromYearId' => 'nullable|exists:leave_policy_years,id',
@@ -244,29 +336,36 @@ class AttendanceLeaveSettings extends Component
 
         // Basic date setting based on calendar type
         if ($type === 'hijri') {
-            $startsOn = $yearValue . "-01-01"; 
-            $endsOn   = $yearValue . "-12-29"; 
+            $startsOn = $yearValue . "-01-01";
+            $endsOn = $yearValue . "-12-29";
         } else {
             $startsOn = $yearValue . "-01-01";
-            $endsOn   = $yearValue . "-12-31";
+            $endsOn = $yearValue . "-12-31";
         }
 
         $year = LeavePolicyYear::create([
             'company_id' => $companyId,
-            'year'       => $yearValue,
-            'starts_on'  => $startsOn,
-            'ends_on'    => $endsOn,
-            'is_active'  => false
+            'year' => $yearValue,
+            'starts_on' => $startsOn,
+            'ends_on' => $endsOn,
+            'is_active' => false,
         ]);
 
         if ($this->copyFromYearId) {
             $policies = LeavePolicy::where('policy_year_id', $this->copyFromYearId)->get();
+
             foreach ($policies as $p) {
                 $newP = $p->replicate();
                 $newP->policy_year_id = $year->id;
                 $newP->save();
             }
         }
+
+        $this->ensureAnnualDefaultPolicyForYear($year);
+
+        $this->selectedYearId = $year->id;
+        $this->showAllYears = false;
+        $this->loadPermissionSettings();
 
         $this->newYear = '';
         $this->copyFromYearId = '';
@@ -277,7 +376,7 @@ class AttendanceLeaveSettings extends Component
     public function deleteYear($id)
     {
         $this->authorize('settings.attendance.manage');
-        
+
         // 1. Check for Leave Policies linked to this year
         if (LeavePolicy::where('policy_year_id', $id)->exists()) {
             $this->dispatch('toast', type: 'error', message: tr('Cannot delete year: It contains leave policies. Please delete the policies first.'));
@@ -298,7 +397,7 @@ class AttendanceLeaveSettings extends Component
 
         // Safely delete if no dependencies found
         $deleted = LeavePolicyYear::destroy($id);
-        
+
         if ($deleted) {
             $this->dispatch('toast', type: 'success', message: tr('Year deleted successfully.'));
         } else {
@@ -348,7 +447,7 @@ class AttendanceLeaveSettings extends Component
         $fileName = 'LeavePolicies_' . now()->format('Ymd_His');
         $headers = [tr('Leave'), tr('Days'), tr('Year'), tr('Gender'), tr('Status'), tr('Show in App'), tr('Attachments')];
 
-        $data = $policies->map(function($row) {
+        $data = $policies->map(function ($row) {
             return [
                 $row->name,
                 $row->days_per_year,
@@ -366,8 +465,12 @@ class AttendanceLeaveSettings extends Component
     public function render()
     {
         $companyId = auth()->user()->saas_company_id;
-        $years = LeavePolicyYear::where('company_id', $companyId)->orderBy('year', 'desc')->get();
 
+        $years = $this->applyCalendarTypeToYearQuery(
+            LeavePolicyYear::where('company_id', $companyId)
+        )
+            ->orderBy('year', 'desc')
+            ->get();
         $filters = [
             'search' => $this->search,
             'status' => $this->filterStatus,

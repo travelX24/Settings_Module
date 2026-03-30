@@ -941,7 +941,7 @@
                                         </div>
 
                                         <div class="flex items-center gap-2">
-                                            @if (!$y->is_active && (int) $y->year === (int) now()->year)
+                                            @if (!$y->is_active && (int) $y->year === (int) $this->currentCalendarYear)
                                                 <button wire:click="setYearActive({{ (int) $y->id }})"
                                                     class="w-8 h-8 rounded-xl bg-gray-50 text-gray-400 hover:bg-emerald-50 hover:text-emerald-600 border border-gray-100 transition-all flex items-center justify-center disabled:opacity-50 cursor-pointer"
                                                     title="{{ tr('Set Active') }}"
@@ -949,7 +949,6 @@
                                                     <i class="fas fa-bolt text-xs"></i>
                                                 </button>
                                             @endif
-
 
                                             <button type="button"
                                                 @click.stop="$dispatch('open-confirm-delete-leave-year', { id: {{ (int) $y->id }} })"
@@ -990,9 +989,8 @@
                                 </x-ui.select>
 
                                 <div class="md:col-span-2 text-[11px] text-gray-500 font-semibold">
-                                    {{ tr('Dates are auto-set to Jan 1 → Dec 31. Only the current year can be active.') }}
+                                    {{ $this->yearRangeHint }}
                                 </div>
-
                             </div>
                         </div>
                     </div>
