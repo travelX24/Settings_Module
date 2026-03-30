@@ -72,8 +72,9 @@ class CalendarSettings extends Component
             ]
         );
 
-        // ✅ مسح الكاش لضمان ظهور التغيير فوراً في جميع الواجهات
+        // ✅ مسح جميع مفاتيح كاش نوع التقويم المستخدمة حالياً لضمان انعكاس التغيير فوراً
         cache()->forget("company_{$companyId}_calendar_type");
+        cache()->forget("company_calendar_type_{$companyId}");
 
         // Keep UI state in sync with DB (so user sees what is actually saved)
         $this->saved_calendar_type = $data['calendar_type'];
@@ -107,28 +108,34 @@ class CalendarSettings extends Component
         $user = auth()->user();
 
         $id = (int) ($user->company_id ?? 0);
-        if ($id > 0) return $id;
+        if ($id > 0)
+            return $id;
 
         $id = (int) ($user->company?->id ?? 0);
-        if ($id > 0) return $id;
+        if ($id > 0)
+            return $id;
 
         foreach (['company_id', 'current_company_id', 'saas_company_id', 'current_saas_company_id'] as $key) {
             $val = session($key);
-            if (is_numeric($val) && (int) $val > 0) return (int) $val;
-            if (is_object($val) && isset($val->id) && (int) $val->id > 0) return (int) $val->id;
+            if (is_numeric($val) && (int) $val > 0)
+                return (int) $val;
+            if (is_object($val) && isset($val->id) && (int) $val->id > 0)
+                return (int) $val->id;
         }
 
         $host = request()->getHost();
         $slug = Str::before($host, '.');
 
         if (Schema::hasTable('saas_companies')) {
-            if ($slug && ! in_array($slug, ['localhost', '127', 'www'], true)) {
+            if ($slug && !in_array($slug, ['localhost', '127', 'www'], true)) {
                 $found = DB::table('saas_companies')->where('slug', $slug)->value('id');
-                if ($found) return (int) $found;
+                if ($found)
+                    return (int) $found;
             }
 
             $found = DB::table('saas_companies')->where('primary_domain', $host)->value('id');
-            if ($found) return (int) $found;
+            if ($found)
+                return (int) $found;
         }
 
         return 0;

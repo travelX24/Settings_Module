@@ -17,8 +17,12 @@ class ExceptionalDayService
         $q = AttendanceExceptionalDay::query()->where('company_id', $companyId);
 
         $today = now()->toDateString();
-        $year = $filters['year'] ?? null;
-        $month = $filters['month'] ?? null;
+        $yearStartDate = $filters['yearStartDate'] ?? null;
+        $yearEndDate = $filters['yearEndDate'] ?? null;
+        $monthStartDate = $filters['monthStartDate'] ?? null;
+        $monthEndDate = $filters['monthEndDate'] ?? null;
+        $dateFrom = $filters['dateFrom'] ?? null;
+        $dateTo = $filters['dateTo'] ?? null;
         $search = $filters['search'] ?? '';
         $status = $filters['status'] ?? 'all';
         $deductionType = $filters['deductionType'] ?? 'all';
@@ -32,8 +36,27 @@ class ExceptionalDayService
         $minFactor = ($minPercent !== null) ? ($minPercent / 100.0) : null;
         $maxFactor = ($maxPercent !== null) ? ($maxPercent / 100.0) : null;
 
-        $q->when($year, fn($qq) => $qq->whereYear('start_date', $year))
-            ->when($month, fn($qq) => $qq->whereMonth('start_date', $month))
+        $q->when($yearStartDate && $yearEndDate, function ($qq) use ($yearStartDate, $yearEndDate) {
+            $qq->whereBetween('start_date', [$yearStartDate, $yearEndDate]);
+        })
+            ->when($monthStartDate && $monthEndDate, function ($qq) use ($monthStartDate, $monthEndDate) {
+                $qq->whereBetween('start_date', [$monthStartDate, $monthEndDate]);
+            })
+            ->when($dateFrom || $dateTo, function ($qq) use ($dateFrom, $dateTo) {
+                $from = $dateFrom ?: '0001-01-01';
+                $to = $dateTo ?: '9999-12-31';
+
+                $qq->where(function ($q2) use ($from, $to) {
+                    $q2->whereDate('start_date', '<=', $to)
+                        ->where(function ($q3) use ($from) {
+                            $q3->whereDate('end_date', '>=', $from)
+                                ->orWhere(function ($q4) use ($from) {
+                                    $q4->whereNull('end_date')
+                                        ->whereDate('start_date', '>=', $from);
+                                });
+                        });
+                });
+            })
             ->when($search !== '', function ($qq) use ($search) {
                 $s = trim($search);
                 $qq->where(function ($q2) use ($s) {

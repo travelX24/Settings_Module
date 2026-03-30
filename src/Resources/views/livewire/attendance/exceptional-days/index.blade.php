@@ -93,20 +93,37 @@
         <x-ui.card class="!p-4">
             <div class="grid grid-cols-1 md:grid-cols-6 gap-3 w-full">
 
-                <div>
+                <div class="md:col-span-6">
+                    <div class="flex items-center gap-2 text-xs font-semibold text-gray-700">
+                        <i class="fas fa-calendar-alt text-[11px] text-violet-500"></i>
+                        <span>{{ tr('Calendar Navigation') }}</span>
+                    </div>
+                    <div class="mt-1 text-[11px] text-gray-500">
+                        {{ tr('Use year and month to browse records by the company calendar, or choose a direct date range below.') }}
+                    </div>
+                </div>
+
+                <div class="md:col-span-3">
                     <div class="mb-1 text-xs text-gray-500">{{ tr('Year') }}</div>
                     <x-ui.select wire:model.live="year">
                         @foreach ($this->availableYears as $y)
                             <option value="{{ $y }}" {{ $year == $y ? 'selected' : '' }}>
-                                {{ $y }}</option>
+                                {{ $y }}
+                            </option>
                         @endforeach
                     </x-ui.select>
                 </div>
 
-                <div>
+                <div class="md:col-span-3">
                     <div class="mb-1 text-xs text-gray-500">{{ tr('Month') }}</div>
-                    <x-ui.input type="number" :placeholder="tr('Month')" wire:model.live.debounce.0ms.number="month"
-                        min="1" max="12" />
+                    <x-ui.select wire:model.live="month">
+                        @foreach ($this->availableMonths as $monthNumber => $monthLabel)
+                            <option value="{{ $monthNumber }}"
+                                {{ (int) $month === (int) $monthNumber ? 'selected' : '' }}>
+                                {{ $monthLabel }}
+                            </option>
+                        @endforeach
+                    </x-ui.select>
                 </div>
 
                 <div>
@@ -170,7 +187,15 @@
                         @endforeach
                     </x-ui.select>
                 </div>
+                <div class="md:col-span-3">
+                    <div class="mb-1 text-xs text-gray-500">{{ tr('From Date') }}</div>
+                    <x-ui.company-date-picker model="fromDate" />
+                </div>
 
+                <div class="md:col-span-3">
+                    <div class="mb-1 text-xs text-gray-500">{{ tr('To Date') }}</div>
+                    <x-ui.company-date-picker model="toDate" />
+                </div>
                 <div class="md:col-span-6">
                     <div class="mb-1 text-xs text-gray-500">{{ tr('Search') }}</div>
                     <x-ui.search-box wire:model.live.debounce.300ms="search" :placeholder="tr('Search by name/description...')" />
@@ -188,9 +213,12 @@
                         $wire.maxMultiplier !== null ||
                         $wire.departmentId !== null ||
                         $wire.branchId !== null ||
-                        ($wire.contractType && $wire.contractType !== null && $wire.contractType !== '');
+                        ($wire.contractType && $wire.contractType !== null && $wire.contractType !== '') ||
+                        ($wire.fromDate && $wire.fromDate !== '') ||
+                        ($wire.toDate && $wire.toDate !== '');
                 }
-            }" x-show="hasFilters()" x-transition class="flex items-center justify-end mt-2">
+            }" x-show="hasFilters()" x-transition
+                class="flex items-center justify-end mt-2">
                 <button type="button" wire:click="clearAllFilters" wire:loading.attr="disabled"
                     wire:target="clearAllFilters"
                     class="inline-flex items-center gap-2 px-3 py-1.5 text-xs font-semibold text-gray-600 hover:text-gray-900 transition-colors disabled:opacity-50 cursor-pointer">

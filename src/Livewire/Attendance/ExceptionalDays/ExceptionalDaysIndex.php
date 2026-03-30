@@ -27,7 +27,8 @@ class ExceptionalDaysIndex extends Component
     public ?int $departmentId = null;
     public ?int $branchId = null;
     public ?string $contractType = null;
-
+    public ?string $fromDate = null;
+    public ?string $toDate = null;
     public bool $showModal = false;
     public ?int $editingId = null;
 
@@ -89,12 +90,12 @@ class ExceptionalDaysIndex extends Component
     public function mount(): void
     {
         $this->authorize('settings.attendance.view');
-        
+
         $type = $this->getCompanyCalendarType();
         if ($type === 'hijri') {
             // Get current Hijri year
             if (class_exists(\IntlCalendar::class)) {
-                $tz  = \IntlTimeZone::createTimeZone('UTC');
+                $tz = \IntlTimeZone::createTimeZone('UTC');
                 $cal = \IntlCalendar::createInstance($tz, 'en_US@calendar=islamic-umalqura');
                 $this->year = (int) $cal->get(\IntlCalendar::FIELD_YEAR);
                 $this->month = (int) $cal->get(\IntlCalendar::FIELD_MONTH) + 1;
@@ -154,6 +155,15 @@ class ExceptionalDaysIndex extends Component
         $this->resetPage();
     }
 
+    public function updatingFromDate()
+    {
+        $this->resetPage();
+    }
+
+    public function updatingToDate()
+    {
+        $this->resetPage();
+    }
     public function clearAllFilters(): void
     {
         // Reset filter fields to defaults
@@ -165,16 +175,18 @@ class ExceptionalDaysIndex extends Component
         $this->departmentId = null;
         $this->branchId = null;
         $this->contractType = null;
+        $this->fromDate = null;
+        $this->toDate = null;
 
         // Reset year/month to current
         $type = $this->getCompanyCalendarType();
         if ($type === 'hijri' && class_exists(\IntlCalendar::class)) {
-            $tz  = \IntlTimeZone::createTimeZone('UTC');
+            $tz = \IntlTimeZone::createTimeZone('UTC');
             $cal = \IntlCalendar::createInstance($tz, 'en_US@calendar=islamic-umalqura');
-            $this->year  = (int) $cal->get(\IntlCalendar::FIELD_YEAR);
+            $this->year = (int) $cal->get(\IntlCalendar::FIELD_YEAR);
             $this->month = (int) $cal->get(\IntlCalendar::FIELD_MONTH) + 1;
         } else {
-            $this->year  = (int) now()->year;
+            $this->year = (int) now()->year;
             $this->month = (int) now()->month;
         }
 
@@ -371,10 +383,46 @@ class ExceptionalDaysIndex extends Component
         }
         return $years;
     }
+    public function getAvailableMonthsProperty(): array
+    {
+        $isArabic = app()->getLocale() === 'ar';
 
+        if ($this->getCompanyCalendarType() === 'hijri') {
+            return [
+                1 => $isArabic ? 'محرم' : 'Muharram',
+                2 => $isArabic ? 'صفر' : 'Safar',
+                3 => $isArabic ? 'ربيع الأول' : 'Rabi I',
+                4 => $isArabic ? 'ربيع الآخر' : 'Rabi II',
+                5 => $isArabic ? 'جمادى الأولى' : 'Jumada I',
+                6 => $isArabic ? 'جمادى الآخرة' : 'Jumada II',
+                7 => $isArabic ? 'رجب' : 'Rajab',
+                8 => $isArabic ? 'شعبان' : 'Shaban',
+                9 => $isArabic ? 'رمضان' : 'Ramadan',
+                10 => $isArabic ? 'شوال' : 'Shawwal',
+                11 => $isArabic ? 'ذو القعدة' : 'Dhul Qadah',
+                12 => $isArabic ? 'ذو الحجة' : 'Dhul Hijjah',
+            ];
+        }
+
+        return [
+            1 => $isArabic ? 'يناير' : 'January',
+            2 => $isArabic ? 'فبراير' : 'February',
+            3 => $isArabic ? 'مارس' : 'March',
+            4 => $isArabic ? 'أبريل' : 'April',
+            5 => $isArabic ? 'مايو' : 'May',
+            6 => $isArabic ? 'يونيو' : 'June',
+            7 => $isArabic ? 'يوليو' : 'July',
+            8 => $isArabic ? 'أغسطس' : 'August',
+            9 => $isArabic ? 'سبتمبر' : 'September',
+            10 => $isArabic ? 'أكتوبر' : 'October',
+            11 => $isArabic ? 'نوفمبر' : 'November',
+            12 => $isArabic ? 'ديسمبر' : 'December',
+        ];
+    }
     public function formatCompanyDate(?string $gregorianYmd): string
     {
-        if (!$gregorianYmd) return '—';
+        if (!$gregorianYmd)
+            return '—';
         $type = $this->getCompanyCalendarType();
         $d = \Carbon\Carbon::parse($gregorianYmd)->startOfDay();
         if ($type !== 'hijri' || !class_exists(\IntlDateFormatter::class)) {
@@ -382,15 +430,81 @@ class ExceptionalDaysIndex extends Component
         }
         $fmt = new \IntlDateFormatter(
             'en_US@calendar=islamic-umalqura',
-            \IntlDateFormatter::NONE, \IntlDateFormatter::NONE,
-            'UTC', \IntlDateFormatter::TRADITIONAL, 'yyyy-MM-dd'
+            \IntlDateFormatter::NONE,
+            \IntlDateFormatter::NONE,
+            'UTC',
+            \IntlDateFormatter::TRADITIONAL,
+            'yyyy-MM-dd'
         );
         return (string) $fmt->format($d->getTimestamp());
     }
 
+    private function getCalendarDateRangeForYear(int $year): array
+    {
+        if ($this->getCompanyCalendarType() !== 'hijri' || !class_exists(\IntlCalendar::class)) {
+            $start = \Carbon\Carbon::create($year, 1, 1)->startOfYear();
+            $end = \Carbon\Carbon::create($year, 12, 31)->endOfDay();
+
+            return [$start->toDateString(), $end->toDateString()];
+        }
+
+        $tz = \IntlTimeZone::createTimeZone('UTC');
+
+        $startCal = \IntlCalendar::createInstance($tz, 'en_US@calendar=islamic-umalqura');
+        $startCal->setLenient(false);
+        $startCal->clear();
+        $startCal->set($year, 0, 1, 0, 0, 0);
+
+        $nextCal = \IntlCalendar::createInstance($tz, 'en_US@calendar=islamic-umalqura');
+        $nextCal->setLenient(false);
+        $nextCal->clear();
+        $nextCal->set($year + 1, 0, 1, 0, 0, 0);
+
+        $start = \Carbon\Carbon::createFromTimestampUTC((int) ($startCal->getTime() / 1000))->toDateString();
+        $end = \Carbon\Carbon::createFromTimestampUTC((int) (($nextCal->getTime() / 1000) - 1))->toDateString();
+
+        return [$start, $end];
+    }
+
+    private function getCalendarDateRangeForMonth(int $year, int $month): array
+    {
+        if ($this->getCompanyCalendarType() !== 'hijri' || !class_exists(\IntlCalendar::class)) {
+            $start = \Carbon\Carbon::create($year, $month, 1)->startOfMonth();
+            $end = \Carbon\Carbon::create($year, $month, 1)->endOfMonth();
+
+            return [$start->toDateString(), $end->toDateString()];
+        }
+
+        $tz = \IntlTimeZone::createTimeZone('UTC');
+
+        $startCal = \IntlCalendar::createInstance($tz, 'en_US@calendar=islamic-umalqura');
+        $startCal->setLenient(false);
+        $startCal->clear();
+        $startCal->set($year, max(0, $month - 1), 1, 0, 0, 0);
+
+        $nextYear = $month >= 12 ? $year + 1 : $year;
+        $nextMonth = $month >= 12 ? 0 : $month;
+
+        $nextCal = \IntlCalendar::createInstance($tz, 'en_US@calendar=islamic-umalqura');
+        $nextCal->setLenient(false);
+        $nextCal->clear();
+        $nextCal->set($nextYear, $nextMonth, 1, 0, 0, 0);
+
+        $start = \Carbon\Carbon::createFromTimestampUTC((int) ($startCal->getTime() / 1000))->toDateString();
+        $end = \Carbon\Carbon::createFromTimestampUTC((int) (($nextCal->getTime() / 1000) - 1))->toDateString();
+
+        return [$start, $end];
+    }
     private function getFilters(): array
     {
-        return [
+        $dateFrom = $this->fromDate;
+        $dateTo = $this->toDate;
+
+        if ($dateFrom && $dateTo && $dateFrom > $dateTo) {
+            [$dateFrom, $dateTo] = [$dateTo, $dateFrom];
+        }
+
+        $filters = [
             'year' => $this->year,
             'month' => $this->month,
             'search' => $this->search,
@@ -401,9 +515,24 @@ class ExceptionalDaysIndex extends Component
             'departmentId' => $this->departmentId,
             'branchId' => $this->branchId,
             'contractType' => $this->contractType,
+            'dateFrom' => $dateFrom,
+            'dateTo' => $dateTo,
         ];
-    }
 
+        if (!$dateFrom && !$dateTo && $this->year) {
+            [$yearStartDate, $yearEndDate] = $this->getCalendarDateRangeForYear((int) $this->year);
+            $filters['yearStartDate'] = $yearStartDate;
+            $filters['yearEndDate'] = $yearEndDate;
+        }
+
+        if (!$dateFrom && !$dateTo && $this->year && $this->month) {
+            [$monthStartDate, $monthEndDate] = $this->getCalendarDateRangeForMonth((int) $this->year, (int) $this->month);
+            $filters['monthStartDate'] = $monthStartDate;
+            $filters['monthEndDate'] = $monthEndDate;
+        }
+
+        return $filters;
+    }
     private function validateScopeSelections(): bool
     {
         $type = (string) ($this->form['scope_type'] ?? 'all');
@@ -837,15 +966,18 @@ class ExceptionalDaysIndex extends Component
         $companyId = $this->companyId();
         $today = now()->toDateString();
 
+        [$fromStartDate, $fromEndDate] = $this->getCalendarDateRangeForYear((int) $this->compareFromYear);
+        [$toStartDate, $toEndDate] = $this->getCalendarDateRangeForYear((int) $this->compareToYear);
+
         $fromRows = AttendanceExceptionalDay::query()
             ->where('company_id', $companyId)
-            ->whereYear('start_date', (int) $this->compareFromYear)
+            ->whereBetween('start_date', [$fromStartDate, $fromEndDate])
             ->orderBy('start_date')
             ->get();
 
         $toRows = AttendanceExceptionalDay::query()
             ->where('company_id', $companyId)
-            ->whereYear('start_date', (int) $this->compareToYear)
+            ->whereBetween('start_date', [$toStartDate, $toEndDate])
             ->orderBy('start_date')
             ->get();
 
@@ -877,11 +1009,11 @@ class ExceptionalDaysIndex extends Component
             return [
                 'name' => $from->name ?? $to->name ?? '—',
 
-                'from_start' => ($from && $from->start_date) ? $from->start_date->format('Y-m-d') : '—',
-                'to_start' => ($to && $to->start_date) ? $to->start_date->format('Y-m-d') : '—',
+                'from_start' => ($from && $from->start_date) ? $this->formatCompanyDate($from->start_date->toDateString()) : '—',
+                'to_start' => ($to && $to->start_date) ? $this->formatCompanyDate($to->start_date->toDateString()) : '—',
 
-                'from_end' => $fromEnd ? $fromEnd->format('Y-m-d') : '—',
-                'to_end' => $toEnd ? $toEnd->format('Y-m-d') : '—',
+                'from_end' => $fromEnd ? $this->formatCompanyDate($fromEnd->toDateString()) : '—',
+                'to_end' => $toEnd ? $this->formatCompanyDate($toEnd->toDateString()) : '—',
 
                 'from_apply' => $from ? $this->applyLabel($from) : '—',
                 'to_apply' => $to ? $this->applyLabel($to) : '—',
@@ -1022,15 +1154,17 @@ class ExceptionalDaysIndex extends Component
         $data = $rows->map(function ($r) {
             $apply = (string) $r->apply_on;
             $percent = 0.0;
-            if ($apply === 'absence') $percent = (float) $r->absence_multiplier * 100.0;
-            if ($apply === 'late') $percent = (float) $r->late_multiplier * 100.0;
+            if ($apply === 'absence')
+                $percent = (float) $r->absence_multiplier * 100.0;
+            if ($apply === 'late')
+                $percent = (float) $r->late_multiplier * 100.0;
 
             return [
                 $r->name,
                 $r->description ?? '-',
                 tr(ucfirst($r->period_type)),
-                optional($r->start_date)->toDateString() ?? '-',
-                optional($r->end_date)->toDateString() ?? '-',
+                $this->formatCompanyDate(optional($r->start_date)->toDateString()) ?? '-',
+                $this->formatCompanyDate(optional($r->end_date)->toDateString()) ?? '-',
                 tr(ucfirst($apply)),
                 number_format($percent, 2) . '%',
                 (string) ((int) $r->grace_hours),
@@ -1062,10 +1196,17 @@ class ExceptionalDaysIndex extends Component
         $selectedYear = (int) ($this->year ?: now()->year);
         $selectedMonth = (int) ($this->month ?: now()->month);
 
+        $today = now()->toDateString();
+        $selectedYear = (int) ($this->year ?: now()->year);
+        $selectedMonth = (int) ($this->month ?: now()->month);
+
+        [$selectedYearStartDate, $selectedYearEndDate] = $this->getCalendarDateRangeForYear($selectedYear);
+        [$selectedMonthStartDate, $selectedMonthEndDate] = $this->getCalendarDateRangeForMonth($selectedYear, $selectedMonth);
+
         $stats = [
             'total_year' => AttendanceExceptionalDay::query()
                 ->where('company_id', $companyId)
-                ->whereYear('start_date', $selectedYear)
+                ->whereBetween('start_date', [$selectedYearStartDate, $selectedYearEndDate])
                 ->count(),
 
             'active_now' => AttendanceExceptionalDay::query()
@@ -1080,8 +1221,7 @@ class ExceptionalDaysIndex extends Component
 
             'upcoming_month' => AttendanceExceptionalDay::query()
                 ->where('company_id', $companyId)
-                ->whereYear('start_date', $selectedYear)
-                ->whereMonth('start_date', $selectedMonth)
+                ->whereBetween('start_date', [$selectedMonthStartDate, $selectedMonthEndDate])
                 ->whereDate('start_date', '>', $today)
                 ->count(),
         ];
