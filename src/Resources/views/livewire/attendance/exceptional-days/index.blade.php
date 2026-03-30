@@ -96,8 +96,9 @@
                 <div>
                     <div class="mb-1 text-xs text-gray-500">{{ tr('Year') }}</div>
                     <x-ui.select wire:model.live="year">
-                        @foreach($this->availableYears as $y)
-                            <option value="{{ $y }}" {{ $year == $y ? 'selected' : '' }}>{{ $y }}</option>
+                        @foreach ($this->availableYears as $y)
+                            <option value="{{ $y }}" {{ $year == $y ? 'selected' : '' }}>
+                                {{ $y }}</option>
                         @endforeach
                     </x-ui.select>
                 </div>
@@ -178,30 +179,21 @@
             </div>
 
             {{-- Clear Filters Button --}}
-            <div
-                x-data="{
-                    hasFilters() {
-                        return ($wire.status && $wire.status !== 'all') ||
-                               ($wire.search && $wire.search.trim() !== '') ||
-                               ($wire.deductionType && $wire.deductionType !== 'all') ||
-                               $wire.minMultiplier !== null ||
-                               $wire.maxMultiplier !== null ||
-                               $wire.departmentId !== null ||
-                               $wire.branchId !== null ||
-                               ($wire.contractType && $wire.contractType !== null && $wire.contractType !== '');
-                    }
-                }"
-                x-show="hasFilters()"
-                x-transition
-                class="flex items-center justify-end mt-2"
-            >
-                <button
-                    type="button"
-                    wire:click="clearAllFilters"
-                    wire:loading.attr="disabled"
+            <div x-data="{
+                hasFilters() {
+                    return ($wire.status && $wire.status !== 'all') ||
+                        ($wire.search && $wire.search.trim() !== '') ||
+                        ($wire.deductionType && $wire.deductionType !== 'all') ||
+                        $wire.minMultiplier !== null ||
+                        $wire.maxMultiplier !== null ||
+                        $wire.departmentId !== null ||
+                        $wire.branchId !== null ||
+                        ($wire.contractType && $wire.contractType !== null && $wire.contractType !== '');
+                }
+            }" x-show="hasFilters()" x-transition class="flex items-center justify-end mt-2">
+                <button type="button" wire:click="clearAllFilters" wire:loading.attr="disabled"
                     wire:target="clearAllFilters"
-                    class="inline-flex items-center gap-2 px-3 py-1.5 text-xs font-semibold text-gray-600 hover:text-gray-900 transition-colors disabled:opacity-50 cursor-pointer"
-                >
+                    class="inline-flex items-center gap-2 px-3 py-1.5 text-xs font-semibold text-gray-600 hover:text-gray-900 transition-colors disabled:opacity-50 cursor-pointer">
                     <i class="fas fa-times" wire:loading.remove wire:target="clearAllFilters"></i>
                     <i class="fas fa-spinner fa-spin" wire:loading wire:target="clearAllFilters"></i>
                     <span wire:loading.remove wire:target="clearAllFilters">{{ tr('Clear all filters') }}</span>
@@ -229,202 +221,206 @@
         </div>
 
         {{-- Table --}}
-        <div class="bg-white rounded-3xl shadow-sm border border-gray-100 overflow-visible relative mt-2">
-            <table class="w-full text-start border-collapse table-fixed">
-                <thead>
-                    <tr class="bg-gray-50/50 border-b border-gray-100">
-                        <th
-                            class="w-10 px-6 py-4 text-[10px] font-black text-gray-400 uppercase tracking-widest text-right">
-                            <input type="checkbox" wire:model.live="selectPage" class="rounded cursor-pointer">
-                        </th>
-                        <th
-                            class="px-6 py-4 text-[10px] font-black text-gray-400 uppercase tracking-widest text-right">
-                            {{ tr('Name') }}</th>
-                        <th
-                            class="px-6 py-4 text-[10px] font-black text-gray-400 uppercase tracking-widest text-center">
-                            {{ tr('Period') }}</th>
-                        <th
-                            class="px-6 py-4 text-[10px] font-black text-gray-400 uppercase tracking-widest text-center">
-                            {{ tr('Start') }}</th>
-                        <th
-                            class="px-6 py-4 text-[10px] font-black text-gray-400 uppercase tracking-widest text-center">
-                            {{ tr('End') }}</th>
-                        <th
-                            class="px-6 py-4 text-[10px] font-black text-gray-400 uppercase tracking-widest text-center">
-                            {{ tr('Apply') }}</th>
-                        <th
-                            class="px-6 py-4 text-[10px] font-black text-gray-400 uppercase tracking-widest text-center">
-                            {{ tr('Deduction %') }}</th>
-                        <th
-                            class="px-6 py-4 text-[10px] font-black text-gray-400 uppercase tracking-widest text-center">
-                            {{ tr('Grace Hours') }}</th>
-                        <th
-                            class="px-6 py-4 text-[10px] font-black text-gray-400 uppercase tracking-widest text-center">
-                            {{ tr('Scope') }}</th>
-                        <th
-                            class="px-6 py-4 text-[10px] font-black text-gray-400 uppercase tracking-widest text-center">
-                            {{ tr('Notified') }}</th>
-                        <th
-                            class="px-6 py-4 text-[10px] font-black text-gray-400 uppercase tracking-widest text-center">
-                            {{ tr('Created By') }}</th>
-                        <th
-                            class="px-6 py-4 text-[10px] font-black text-gray-400 uppercase tracking-widest text-center">
-                            {{ tr('Created At') }}</th>
-                        <th
-                            class="px-6 py-4 text-[10px] font-black text-gray-400 uppercase tracking-widest text-center">
-                            {{ tr('Active') }}</th>
-                        <th
-                            class="px-6 py-4 text-[10px] font-black text-gray-400 uppercase tracking-widest text-right">
-                            {{ tr('Actions') }}</th>
-                    </tr>
-                </thead>
-                <tbody class="divide-y divide-gray-50">
-                    @forelse($rows as $row)
-                        @php
-                            $apply = (string) ($row->apply_on ?? 'absence');
+        <x-ui.server-table :paginator="$rows" pageName="page">
+            <x-slot name="head">
+                <tr class="bg-gray-50/50 border-b border-gray-100">
+                    <th
+                        class="w-10 px-6 py-4 text-[10px] font-black text-gray-400 uppercase tracking-widest text-right">
+                        <input type="checkbox" wire:model.live="selectPage" class="rounded cursor-pointer">
+                    </th>
+                    <th class="px-6 py-4 text-[10px] font-black text-gray-400 uppercase tracking-widest text-right">
+                        {{ tr('Name') }}
+                    </th>
+                    <th class="px-6 py-4 text-[10px] font-black text-gray-400 uppercase tracking-widest text-center">
+                        {{ tr('Period') }}
+                    </th>
+                    <th class="px-6 py-4 text-[10px] font-black text-gray-400 uppercase tracking-widest text-center">
+                        {{ tr('Start') }}
+                    </th>
+                    <th class="px-6 py-4 text-[10px] font-black text-gray-400 uppercase tracking-widest text-center">
+                        {{ tr('End') }}
+                    </th>
+                    <th class="px-6 py-4 text-[10px] font-black text-gray-400 uppercase tracking-widest text-center">
+                        {{ tr('Apply') }}
+                    </th>
+                    <th class="px-6 py-4 text-[10px] font-black text-gray-400 uppercase tracking-widest text-center">
+                        {{ tr('Deduction %') }}
+                    </th>
+                    <th class="px-6 py-4 text-[10px] font-black text-gray-400 uppercase tracking-widest text-center">
+                        {{ tr('Grace Hours') }}
+                    </th>
+                    <th class="px-6 py-4 text-[10px] font-black text-gray-400 uppercase tracking-widest text-center">
+                        {{ tr('Scope') }}
+                    </th>
+                    <th class="px-6 py-4 text-[10px] font-black text-gray-400 uppercase tracking-widest text-center">
+                        {{ tr('Notified') }}
+                    </th>
+                    <th class="px-6 py-4 text-[10px] font-black text-gray-400 uppercase tracking-widest text-center">
+                        {{ tr('Created By') }}
+                    </th>
+                    <th class="px-6 py-4 text-[10px] font-black text-gray-400 uppercase tracking-widest text-center">
+                        {{ tr('Created At') }}
+                    </th>
+                    <th class="px-6 py-4 text-[10px] font-black text-gray-400 uppercase tracking-widest text-center">
+                        {{ tr('Active') }}
+                    </th>
+                    <th class="px-6 py-4 text-[10px] font-black text-gray-400 uppercase tracking-widest text-right">
+                        {{ tr('Actions') }}
+                    </th>
+                </tr>
+            </x-slot>
 
+            <x-slot name="body">
+                @forelse($rows as $row)
+                    @php
+                        $apply = (string) ($row->apply_on ?? 'absence');
+
+                        $percent = 0.0;
+                        if ($apply === 'absence') {
+                            $percent = (float) $row->absence_multiplier * 100.0;
+                        }
+                        if ($apply === 'late') {
+                            $percent = (float) $row->late_multiplier * 100.0;
+                        }
+
+                        if ($apply === 'none') {
                             $percent = 0.0;
-                            if ($apply === 'absence') {
-                                $percent = (float) $row->absence_multiplier * 100.0;
-                            }
-                            if ($apply === 'late') {
-                                $percent = (float) $row->late_multiplier * 100.0;
-                            }
+                        }
 
-                            if ($apply === 'none') {
-                                $percent = 0.0;
-                            }
+                        $applyLabel =
+                            $apply === 'absence'
+                                ? tr('Absence')
+                                : ($apply === 'late'
+                                    ? tr('Late')
+                                    : tr('Without Deduction'));
 
-                            $applyLabel =
-                                $apply === 'absence'
-                                    ? tr('Absence')
-                                    : ($apply === 'late'
-                                        ? tr('Late')
-                                        : tr('Without Deduction'));
+                        $scope = (string) ($row->scope_type ?? 'all');
+                        $scopeLabel =
+                            $scope === 'all'
+                                ? tr('All Employees')
+                                : ($scope === 'departments'
+                                    ? tr('Departments')
+                                    : ($scope === 'branches'
+                                        ? tr('Branches')
+                                        : ($scope === 'contract_types'
+                                            ? tr('Contract Types')
+                                            : tr('Employees'))));
 
-                            $scope = (string) ($row->scope_type ?? 'all');
-                            $scopeLabel =
-                                $scope === 'all'
-                                    ? tr('All Employees')
-                                    : ($scope === 'departments'
-                                        ? tr('Departments')
-                                        : ($scope === 'branches'
-                                            ? tr('Branches')
-                                            : ($scope === 'contract_types'
-                                                ? tr('Contract Types')
-                                                : tr('Employees'))));
+                        $isWithout = $apply === 'none' || $percent <= 0;
+                    @endphp
 
-                            $isWithout = $apply === 'none' || $percent <= 0;
-                        @endphp
+                    <tr class="hover:bg-gray-50/40 transition-colors cursor-default border-t">
+                        <td class="px-6 py-4">
+                            <input type="checkbox" wire:model.live="selected" value="{{ $row->id }}"
+                                class="rounded cursor-pointer">
+                        </td>
 
-                        <tr class="hover:bg-gray-50/40 transition-colors cursor-default border-t">
-                            <td class="px-6 py-4">
-                                <input type="checkbox" wire:model.live="selected" value="{{ $row->id }}"
-                                    class="rounded cursor-pointer">
-                            </td>
+                        <td class="px-6 py-4 text-right">
+                            <div class="text-sm font-bold text-gray-800">{{ $row->name }}</div>
+                            @if (!empty($row->description))
+                                <div class="text-[10px] text-gray-400 truncate">{{ $row->description }}</div>
+                            @endif
+                        </td>
 
-                            <td class="px-6 py-4 text-right">
-                                <div class="text-sm font-bold text-gray-800">{{ $row->name }}</div>
-                                @if (!empty($row->description))
-                                    <div class="text-[10px] text-gray-400 truncate">{{ $row->description }}</div>
-                                @endif
-                            </td>
+                        <td class="px-6 py-4 text-center">
+                            <span class="text-xs font-semibold text-gray-700">
+                                {{ $row->period_type === 'single' ? tr('Single Day') : tr('Range') }}
+                            </span>
+                        </td>
 
-                            <td class="px-6 py-4 text-center">
-                                <span class="text-xs font-semibold text-gray-700">
-                                    {{ $row->period_type === 'single' ? tr('Single Day') : tr('Range') }}
-                                </span>
-                            </td>
+                        <td class="px-6 py-4 text-center text-xs font-semibold text-gray-700">
+                            {{ $this->formatCompanyDate(optional($row->start_date)->toDateString()) }}
+                        </td>
 
-                            <td class="px-6 py-4 text-center text-xs font-semibold text-gray-700">{{ $this->formatCompanyDate(optional($row->start_date)->toDateString()) }}</td>
-                            <td class="px-6 py-4 text-center text-xs font-semibold text-gray-700">{{ $this->formatCompanyDate(optional($row->end_date ?? $row->start_date)->toDateString()) }}</td>
+                        <td class="px-6 py-4 text-center text-xs font-semibold text-gray-700">
+                            {{ $this->formatCompanyDate(optional($row->end_date ?? $row->start_date)->toDateString()) }}
+                        </td>
 
-                            <td class="px-6 py-4 text-center text-xs font-semibold text-gray-700">{{ $applyLabel }}
-                            </td>
+                        <td class="px-6 py-4 text-center text-xs font-semibold text-gray-700">
+                            {{ $applyLabel }}
+                        </td>
 
-                            <td class="px-6 py-4 text-center text-xs font-semibold text-gray-700">
-                                {{ $isWithout ? '—' : number_format($percent, 2) . '%' }}
-                            </td>
+                        <td class="px-6 py-4 text-center text-xs font-semibold text-gray-700">
+                            {{ $isWithout ? '—' : number_format($percent, 2) . '%' }}
+                        </td>
 
-                            <td class="px-6 py-4 text-center text-xs font-semibold text-gray-700">
-                                {{ $apply === 'late' && !$isWithout ? (int) $row->grace_hours : '—' }}
-                            </td>
+                        <td class="px-6 py-4 text-center text-xs font-semibold text-gray-700">
+                            {{ $apply === 'late' && !$isWithout ? (int) $row->grace_hours : '—' }}
+                        </td>
 
-                            <td class="px-6 py-4 text-center text-xs font-semibold text-gray-700">{{ $scopeLabel }}
-                            </td>
+                        <td class="px-6 py-4 text-center text-xs font-semibold text-gray-700">
+                            {{ $scopeLabel }}
+                        </td>
 
-                            <td class="px-6 py-4 text-center text-xs font-semibold text-gray-700">
-                                {{ $row->notified_at ? tr('Sent') : tr('Not Sent') }}
-                            </td>
+                        <td class="px-6 py-4 text-center text-xs font-semibold text-gray-700">
+                            {{ $row->notified_at ? tr('Sent') : tr('Not Sent') }}
+                        </td>
 
-                            <td class="px-6 py-4 text-center text-xs font-semibold text-gray-700">
-                                {{ $createdByMap[$row->created_by] ?? ($row->created_by ?? '—') }}
-                            </td>
+                        <td class="px-6 py-4 text-center text-xs font-semibold text-gray-700">
+                            {{ $createdByMap[$row->created_by] ?? ($row->created_by ?? '—') }}
+                        </td>
 
-                            <td class="px-6 py-4 text-center text-xs font-semibold text-gray-700">
-                                {{ $this->formatCompanyDate(optional($row->created_at)->toDateString()) ?? '—' }}
-                            </td>
+                        <td class="px-6 py-4 text-center text-xs font-semibold text-gray-700">
+                            {{ $this->formatCompanyDate(optional($row->created_at)->toDateString()) ?? '—' }}
+                        </td>
 
-                            <td class="px-6 py-4 text-center">
-                                <div class="flex justify-center">
-                                    @can('settings.attendance.manage')
-                                        <button wire:click="toggleActive({{ $row->id }})"
-                                            class="w-9 h-4.5 rounded-full p-1 transition-all relative cursor-pointer {{ $row->is_active ? 'bg-green-500' : 'bg-gray-200' }}">
-                                            <div
-                                                class="w-2.5 h-2.5 bg-white rounded-full shadow-sm transition-all {{ $row->is_active ? (app()->getLocale() == 'ar' ? 'mr-4.5' : 'ml-4.5') : '' }}">
-                                            </div>
-                                        </button>
-                                    @else
-                                        <button disabled
-                                            class="w-9 h-4.5 rounded-full p-1 transition-all relative cursor-not-allowed opacity-50 {{ $row->is_active ? 'bg-green-500' : 'bg-gray-200' }}">
-                                            <div
-                                                class="w-2.5 h-2.5 bg-white rounded-full shadow-sm transition-all {{ $row->is_active ? (app()->getLocale() == 'ar' ? 'mr-4.5' : 'ml-4.5') : '' }}">
-                                            </div>
-                                        </button>
-                                    @endcan
-                                </div>
-                            </td>
-
-                            <td class="px-6 py-4 text-right">
+                        <td class="px-6 py-4 text-center">
+                            <div class="flex justify-center">
                                 @can('settings.attendance.manage')
-                                    <x-ui.actions-menu>
-                                        <x-ui.dropdown-item wire:click="openEdit({{ $row->id }})"
-                                            class="cursor-pointer">
-                                            <i class="fas fa-edit me-2 text-blue-500"></i> {{ tr('Edit') }}
-                                        </x-ui.dropdown-item>
-                                        <x-ui.dropdown-item danger
-                                            onclick="window.dispatchEvent(new CustomEvent('open-confirm-exceptional-day-delete', { detail: { id: {{ $row->id }} } }));"
-                                            class="cursor-pointer">
-                                            <i class="fas fa-trash-alt me-2 text-red-500"></i> {{ tr('Delete') }}
-                                        </x-ui.dropdown-item>
-                                    </x-ui.actions-menu>
+                                    <button wire:click="toggleActive({{ $row->id }})"
+                                        class="w-9 h-4.5 rounded-full p-1 transition-all relative cursor-pointer {{ $row->is_active ? 'bg-green-500' : 'bg-gray-200' }}">
+                                        <div
+                                            class="w-2.5 h-2.5 bg-white rounded-full shadow-sm transition-all {{ $row->is_active ? (app()->getLocale() == 'ar' ? 'mr-4.5' : 'ml-4.5') : '' }}">
+                                        </div>
+                                    </button>
+                                @else
+                                    <button disabled
+                                        class="w-9 h-4.5 rounded-full p-1 transition-all relative cursor-not-allowed opacity-50 {{ $row->is_active ? 'bg-green-500' : 'bg-gray-200' }}">
+                                        <div
+                                            class="w-2.5 h-2.5 bg-white rounded-full shadow-sm transition-all {{ $row->is_active ? (app()->getLocale() == 'ar' ? 'mr-4.5' : 'ml-4.5') : '' }}">
+                                        </div>
+                                    </button>
                                 @endcan
-                            </td>
-                        </tr>
-                    @empty
-                        <tr>
-                            <td colspan="14" class="px-6 py-24 text-center border-t border-gray-100">
-                                <div class="opacity-20 flex flex-col items-center">
-                                    <div
-                                        class="w-24 h-24 bg-gray-50 rounded-full flex items-center justify-center text-4xl mb-4 border border-gray-100">
-                                        <i class="fas fa-calendar-times"></i>
-                                    </div>
-                                    <h4 class="text-base font-bold text-gray-800">
-                                        {{ tr('No Exceptional Days Found') }}</h4>
-                                    <p class="text-xs max-w-[250px] mt-2 leading-relaxed">
-                                        {{ tr('No exceptional days have been defined yet. Start by creating the first exceptional day.') }}
-                                    </p>
-                                </div>
-                            </td>
-                        </tr>
-                    @endforelse
-                </tbody>
-            </table>
+                            </div>
+                        </td>
 
-            <div class="border-t p-4">
-                {{ $rows->links() }}
-            </div>
-        </div>
+                        <td class="px-6 py-4 text-right">
+                            @can('settings.attendance.manage')
+                                <x-ui.actions-menu>
+                                    <x-ui.dropdown-item wire:click="openEdit({{ $row->id }})"
+                                        class="cursor-pointer">
+                                        <i class="fas fa-edit me-2 text-blue-500"></i> {{ tr('Edit') }}
+                                    </x-ui.dropdown-item>
+
+                                    <x-ui.dropdown-item danger
+                                        onclick="window.dispatchEvent(new CustomEvent('open-confirm-exceptional-day-delete', { detail: { id: {{ $row->id }} } }));"
+                                        class="cursor-pointer">
+                                        <i class="fas fa-trash-alt me-2 text-red-500"></i> {{ tr('Delete') }}
+                                    </x-ui.dropdown-item>
+                                </x-ui.actions-menu>
+                            @endcan
+                        </td>
+                    </tr>
+                @empty
+                    <tr>
+                        <td colspan="14" class="px-6 py-24 text-center border-t border-gray-100">
+                            <div class="opacity-20 flex flex-col items-center">
+                                <div
+                                    class="w-24 h-24 bg-gray-50 rounded-full flex items-center justify-center text-4xl mb-4 border border-gray-100">
+                                    <i class="fas fa-calendar-times"></i>
+                                </div>
+                                <h4 class="text-base font-bold text-gray-800">
+                                    {{ tr('No Exceptional Days Found') }}
+                                </h4>
+                                <p class="text-xs max-w-[250px] mt-2 leading-relaxed">
+                                    {{ tr('No exceptional days have been defined yet. Start by creating the first exceptional day.') }}
+                                </p>
+                            </div>
+                        </td>
+                    </tr>
+                @endforelse
+            </x-slot>
+        </x-ui.server-table>
 
         {{-- Modal Create/Edit --}}
         <x-ui.modal wire:model="showModal" maxWidth="4xl">
@@ -714,8 +710,9 @@
                         <div>
                             <div class="text-xs text-gray-600 mb-1">{{ tr('From Year') }}</div>
                             <x-ui.select wire:model.live="compareFromYear">
-                                @foreach($this->availableYears as $y)
-                                    <option value="{{ $y }}" {{ $compareFromYear == $y ? 'selected' : '' }}>{{ $y }}</option>
+                                @foreach ($this->availableYears as $y)
+                                    <option value="{{ $y }}"
+                                        {{ $compareFromYear == $y ? 'selected' : '' }}>{{ $y }}</option>
                                 @endforeach
                             </x-ui.select>
                         </div>
@@ -893,18 +890,8 @@
                                                 {{ $row['from_start'] }}
                                             </td>
 
-<<<<<<< HEAD
                                             <td class="px-6 py-4 text-center text-xs font-semibold text-gray-700">
                                                 {{ $row['to_start'] }}
-=======
-                                            <td class="p-3">{{ $this->formatCompanyDate(optional($r->start_date)->toDateString()) }}</td>
-                                            <td class="p-3">{{ $this->formatCompanyDate(optional($r->end_date ?? $r->start_date)->toDateString()) }}</td>
-
-                                            <td class="p-3">{{ $applyLabel }}</td>
-
-                                            <td class="p-3">
-                                                {{ $isWithout ? '—' : number_format($percent, 2) . '%' }}
->>>>>>> 778a058 (تعديلات في الفلتره وغيرها)
                                             </td>
 
                                             <td class="px-6 py-4 text-center text-xs font-semibold text-gray-700">
