@@ -82,13 +82,6 @@
                         </x-ui.select>
                     </div>
 
-                    <x-ui.filter-select model="filterStatus" :label="tr('Status')" :placeholder="tr('All Statuses')" :options="[
-                        ['value' => 'all', 'label' => tr('All Statuses')],
-                        ['value' => 'active', 'label' => tr('Active')],
-                        ['value' => 'inactive', 'label' => tr('Inactive')],
-                    ]"
-                        width="full" :defer="false" :applyOnChange="true" />
-
                     <div class="md:col-span-2">
                         <div class="grid grid-cols-2 gap-2">
                             <x-ui.company-date-picker model="filterDateStart" :label="tr('From')" />
@@ -102,7 +95,6 @@
                         hasFilters() {
                             return ($wire.search && $wire.search.trim() !== '') ||
                                 $wire.filterCalendar !== 'all' ||
-                                $wire.filterStatus !== 'all' ||
                                 ($wire.filterDateStart && $wire.filterDateStart !== '') ||
                                 ($wire.filterDateEnd && $wire.filterDateEnd !== '');
                         }

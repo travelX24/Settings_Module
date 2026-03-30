@@ -17,7 +17,6 @@ class AttendanceHolidays extends Component
 
     public string $search = '';
     public string $filterCalendar = 'all';
-    public string $filterStatus = 'all';
     public int $filterYear = 0;
     public string $filterDateStart = '';
     public string $filterDateEnd = '';
@@ -137,10 +136,9 @@ class AttendanceHolidays extends Component
         $this->editGregorianAuto = $this->editStartDate ?: '';
         $this->editDisplayHijriAuto = $this->holidayService->hijriFromGregorian($this->editStartDate);
     }
-
     public function clearAllFilters(): void
     {
-        $this->reset(['search', 'filterCalendar', 'filterStatus', 'filterDateStart', 'filterDateEnd']);
+        $this->reset(['search', 'filterCalendar', 'filterDateStart', 'filterDateEnd']);
         $this->filterYear = $this->currentCalendarYear();
         $this->resetPage();
     }
@@ -195,10 +193,6 @@ class AttendanceHolidays extends Component
 
         if ($this->filterCalendar !== 'all') {
             $q->whereHas('template', fn($qq) => $qq->where('calendar_type', $this->filterCalendar));
-        }
-
-        if ($this->filterStatus !== 'all') {
-            $q->whereHas('template', fn($qq) => $qq->where('is_active', $this->filterStatus === 'active'));
         }
 
         if ($this->filterDateStart !== '') {
@@ -365,9 +359,7 @@ class AttendanceHolidays extends Component
         if ($this->filterCalendar !== 'all') {
             $q->whereHas('template', fn($qq) => $qq->where('calendar_type', $this->filterCalendar));
         }
-        if ($this->filterStatus !== 'all') {
-            $q->whereHas('template', fn($qq) => $qq->where('is_active', $this->filterStatus === 'active'));
-        }
+
         if ($this->filterDateStart !== '') {
             $q->whereDate('start_date', '>=', $this->filterDateStart);
         }
