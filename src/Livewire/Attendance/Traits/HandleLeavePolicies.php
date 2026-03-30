@@ -6,10 +6,50 @@ use Athka\SystemSettings\Models\LeavePolicy;
 
 trait HandleLeavePolicies
 {
-    public function openCreate()
+    protected function resetCreateLeaveForm(): void
     {
         $this->resetValidation();
-        $this->reset(['name', 'leave_type', 'days_per_year', 'editingId', 'description']);
+        $this->resetErrorBag();
+
+        $this->editingId = null;
+        $this->editingNameLocked = false;
+
+        // Basic information
+        $this->name = '';
+        $this->leave_type = 'annual';
+        $this->days_per_year = 30;
+        $this->description = '';
+        $this->gender = 'all';
+        $this->is_active = true;
+        $this->show_in_app = true;
+        $this->requires_attachment = false;
+
+        // Additional settings
+        $this->accrual_method = 'annual_grant';
+        $this->monthly_accrual_rate = 2.5;
+        $this->allow_carryover = true;
+        $this->carryover_days = 15;
+        $this->weekend_policy = 'exclude';
+        $this->deduction_policy = 'balance_only';
+        $this->max_balance = 0;
+        $this->duration_unit = 'full_day';
+        $this->notice_min_days = 0;
+        $this->notice_max_advance_days = 0;
+        $this->allow_retroactive = false;
+
+        // Notes
+        $this->note_required = false;
+        $this->note_text = '';
+        $this->note_ack_required = false;
+
+        // Attachments / exclusions
+        $this->attachment_types = ['pdf', 'jpg', 'png'];
+        $this->selected_leave_excluded_contract_types = [];
+    }
+
+    public function openCreate()
+    {
+        $this->resetCreateLeaveForm();
         $this->createOpen = true;
     }
 
@@ -81,7 +121,7 @@ trait HandleLeavePolicies
         $this->show_in_app = $policy->show_in_app;
         $this->requires_attachment = $policy->requires_attachment;
         $this->description = $policy->description;
-        
+
         $settings = $policy->settings ?? [];
         $this->accrual_method = $settings['accrual_method'] ?? 'annual_grant';
         $this->monthly_accrual_rate = $settings['monthly_accrual_rate'] ?? 2.5;
