@@ -91,9 +91,9 @@
 
         {{-- Filters --}}
         <x-ui.card class="!p-4">
-            <div class="grid grid-cols-1 md:grid-cols-6 gap-3 w-full">
+            <div class="grid grid-cols-1 md:grid-cols-12 gap-3 w-full">
 
-                <div class="md:col-span-6">
+                <div class="md:col-span-12">
                     <div class="flex items-center gap-2 text-xs font-semibold text-gray-700">
                         <i class="fas fa-calendar-alt text-[11px] text-violet-500"></i>
                         <span>{{ tr('Calendar Navigation') }}</span>
@@ -103,7 +103,8 @@
                     </div>
                 </div>
 
-                <div class="md:col-span-3">
+                {{-- الصف الأول: السنة + الشهر + الحالة + تطبيق النوع + الحد الأدنى + الحد الأقصى --}}
+                <div class="md:col-span-2">
                     <div class="mb-1 text-xs text-gray-500">{{ tr('Year') }}</div>
                     <x-ui.select wire:model.live="year">
                         @foreach ($this->availableYears as $y)
@@ -114,7 +115,7 @@
                     </x-ui.select>
                 </div>
 
-                <div class="md:col-span-3">
+                <div class="md:col-span-2">
                     <div class="mb-1 text-xs text-gray-500">{{ tr('Month') }}</div>
                     <x-ui.select wire:model.live="month">
                         @foreach ($this->availableMonths as $monthNumber => $monthLabel)
@@ -126,7 +127,7 @@
                     </x-ui.select>
                 </div>
 
-                <div>
+                <div class="md:col-span-2">
                     <div class="mb-1 text-xs text-gray-500">{{ tr('Status') }}</div>
                     <x-ui.select wire:model.live="status">
                         <option value="all">{{ tr('All') }}</option>
@@ -136,7 +137,7 @@
                     </x-ui.select>
                 </div>
 
-                <div>
+                <div class="md:col-span-2">
                     <div class="mb-1 text-xs text-gray-500">{{ tr('Apply Type') }}</div>
                     <x-ui.select wire:model.live="deductionType">
                         <option value="all">{{ tr('All Types') }}</option>
@@ -146,19 +147,20 @@
                     </x-ui.select>
                 </div>
 
-                <div>
+                <div class="md:col-span-2">
                     <div class="mb-1 text-xs text-gray-500">{{ tr('Min Deduction %') }}</div>
                     <x-ui.input type="number" step="0.01" min="0" max="1000"
                         wire:model.live.debounce.0ms="minMultiplier" :placeholder="tr('Min %')" />
                 </div>
 
-                <div>
+                <div class="md:col-span-2">
                     <div class="mb-1 text-xs text-gray-500">{{ tr('Max Deduction %') }}</div>
                     <x-ui.input type="number" step="0.01" min="0" max="1000"
                         wire:model.live.debounce.0ms="maxMultiplier" :placeholder="tr('Max %')" />
                 </div>
 
-                <div class="md:col-span-2">
+                {{-- الصف الثاني: قسم الهدف + فرع الهدف + نوع العقد المستهدف --}}
+                <div class="md:col-span-4">
                     <div class="mb-1 text-xs text-gray-500">{{ tr('Target Department') }}</div>
                     <x-ui.select wire:model.live="departmentId">
                         <option value="">{{ tr('All Departments') }}</option>
@@ -168,7 +170,7 @@
                     </x-ui.select>
                 </div>
 
-                <div class="md:col-span-2">
+                <div class="md:col-span-4">
                     <div class="mb-1 text-xs text-gray-500">{{ tr('Target Branch') }}</div>
                     <x-ui.select wire:model.live="branchId">
                         <option value="">{{ tr('All Branches') }}</option>
@@ -178,7 +180,7 @@
                     </x-ui.select>
                 </div>
 
-                <div class="md:col-span-2">
+                <div class="md:col-span-4">
                     <div class="mb-1 text-xs text-gray-500">{{ tr('Target Contract Type') }}</div>
                     <x-ui.select wire:model.live="contractType">
                         <option value="">{{ tr('All Contract Types') }}</option>
@@ -187,22 +189,24 @@
                         @endforeach
                     </x-ui.select>
                 </div>
-                <div class="md:col-span-3">
+
+                {{-- الصف الثالث: من تاريخ + حتى تاريخ + بحث --}}
+                <div class="md:col-span-4">
                     <div class="mb-1 text-xs text-gray-500">{{ tr('From Date') }}</div>
                     <x-ui.company-date-picker model="fromDate" />
                 </div>
 
-                <div class="md:col-span-3">
+                <div class="md:col-span-4">
                     <div class="mb-1 text-xs text-gray-500">{{ tr('To Date') }}</div>
                     <x-ui.company-date-picker model="toDate" />
                 </div>
-                <div class="md:col-span-6">
+
+                <div class="md:col-span-4">
                     <div class="mb-1 text-xs text-gray-500">{{ tr('Search') }}</div>
                     <x-ui.search-box wire:model.live.debounce.300ms="search" :placeholder="tr('Search by name/description...')" />
                 </div>
 
             </div>
-
             {{-- Clear Filters Button --}}
             <div x-data="{
                 hasFilters() {
