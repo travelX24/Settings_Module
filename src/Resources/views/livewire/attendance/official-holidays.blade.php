@@ -31,10 +31,37 @@
                 </div>
 
                 <div class="flex flex-wrap items-center gap-2 sm:shrink-0">
-                    <x-ui.secondary-button :fullWidth="false" wire:click="exportCsv" wire:loading.attr="disabled"
+                    {{-- Clear Filters Button --}}
+                    <div
+                        x-data="{
+                            hasFilters() {
+                                return ($wire.search && $wire.search.trim() !== '') ||
+                                       ($wire.filterCalendar && $wire.filterCalendar !== 'all') ||
+                                       ($wire.filterDateStart && $wire.filterDateStart !== '') ||
+                                       ($wire.filterDateEnd && $wire.filterDateEnd !== '');
+                            }
+                        }"
+                        x-show="hasFilters()"
+                        x-transition
+                        class="flex items-center"
+                    >
+                        <button
+                            type="button"
+                            wire:click="clearAllFilters"
+                            wire:loading.attr="disabled"
+                            wire:target="clearAllFilters"
+                            class="inline-flex items-center gap-2 px-3 py-1.5 text-xs font-semibold text-gray-600 hover:text-gray-900 transition-colors disabled:opacity-50 border-e border-gray-100 pe-4"
+                        >
+                            <i class="fas fa-times" wire:loading.remove wire:target="clearAllFilters"></i>
+                            <i class="fas fa-spinner fa-spin" wire:loading wire:target="clearAllFilters"></i>
+                            <span wire:loading.remove wire:target="clearAllFilters">{{ tr('Clear filters') }}</span>
+                        </button>
+                    </div>
+
+                    <x-ui.secondary-button :fullWidth="false" wire:click="exportExcel" wire:loading.attr="disabled"
                         class="!border-amber-200 !bg-amber-50/50 !text-amber-700 hover:!bg-amber-100 cursor-pointer">
-                        <i class="fas fa-file-export" wire:loading.remove wire:target="exportCsv"></i>
-                        <i class="fas fa-circle-notch fa-spin" wire:loading wire:target="exportCsv"></i>
+                        <i class="fas fa-file-export" wire:loading.remove wire:target="exportExcel"></i>
+                        <i class="fas fa-circle-notch fa-spin" wire:loading wire:target="exportExcel"></i>
                         <span class="ms-2 leading-none">{{ tr('Export') }}</span>
                     </x-ui.secondary-button>
 
@@ -90,26 +117,6 @@
                         </div>
                     </div>
 
-                    {{-- Clear Filters --}}
-                    <div x-data="{
-                        hasFilters() {
-                            return ($wire.search && $wire.search.trim() !== '') ||
-                                $wire.filterCalendar !== 'all' ||
-                                ($wire.filterDateStart && $wire.filterDateStart !== '') ||
-                                ($wire.filterDateEnd && $wire.filterDateEnd !== '');
-                        }
-                    }" x-show="hasFilters()" x-transition
-                        class="md:col-span-4 flex items-center justify-end">
-                        <button type="button" wire:click="clearAllFilters" wire:loading.attr="disabled"
-                            wire:target="clearAllFilters"
-                            class="inline-flex items-center gap-2 px-3 py-1.5 text-xs font-semibold text-gray-600 hover:text-gray-900 transition-colors disabled:opacity-50 cursor-pointer">
-                            <i class="fas fa-times" wire:loading.remove wire:target="clearAllFilters"></i>
-                            <i class="fas fa-spinner fa-spin" wire:loading wire:target="clearAllFilters"></i>
-                            <span wire:loading.remove
-                                wire:target="clearAllFilters">{{ tr('Clear all filters') }}</span>
-                            <span wire:loading wire:target="clearAllFilters">{{ tr('Clearing...') }}</span>
-                        </button>
-                    </div>
                 </div>
             </div>
         </div>

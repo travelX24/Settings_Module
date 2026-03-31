@@ -13,9 +13,11 @@
     </div>
 
     @php
-        $lateRecurring = collect($penalties)->where('violation_type', 'late_arrival')->sortBy('recurrence_count');
-        $earlyRecurring = collect($penalties)->where('violation_type', 'early_departure')->sortBy('recurrence_count');
-        $absenceRecurring = collect($absencePolicies)->sortBy('recurrence_count');
+        $lateRecurring = collect($penalties)->where('violation_type', 'late_arrival')->where('recurrence_count', '>', 1)->sortBy('recurrence_count');
+        $earlyRecurring = collect($penalties)->where('violation_type', 'early_departure')->where('recurrence_count', '>', 1)->sortBy('recurrence_count');
+        $absenceRecurring = collect($penalties)->where('violation_type', 'unexcused_absence')->where('recurrence_count', '>', 1)
+            ->merge(collect($absencePolicies)->where('recurrence_count', '>', 1))
+            ->sortBy('recurrence_count');
     @endphp
 
     {{-- Late Arrival Recurring --}}
@@ -42,6 +44,6 @@
             <i class="fas fa-calendar-times text-red-400"></i>
             {{ tr('Unexcused Absence Recurring Violations') }}
         </h4>
-        @include('systemsettings::livewire.attendance.partials.sections.penalty-table', ['items' => $absencePolicies, 'type' => 'absence'])
+        @include('systemsettings::livewire.attendance.partials.sections.penalty-table', ['items' => $absenceRecurring, 'type' => 'absence'])
     </div>
 </div>

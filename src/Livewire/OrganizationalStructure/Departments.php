@@ -73,6 +73,13 @@ class Departments extends Component
         ]);
     }
 
+    public function clearAllFilters()
+    {
+        $this->search = '';
+        $this->rootDepartmentId = 'all';
+        $this->resetPage();
+    }
+
     public function openAddModal()
     {
         $this->authorize('settings.organizational.manage');

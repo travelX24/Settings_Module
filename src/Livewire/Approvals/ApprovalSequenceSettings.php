@@ -26,6 +26,14 @@ class ApprovalSequenceSettings extends Component
     public function updatingFilterStatus() { $this->resetPage(); }
     public function updatingFilterBranchId() { $this->resetPage(); }
 
+    public function clearAllFilters()
+    {
+        $this->search = '';
+        $this->filterStatus = 'all';
+        $this->filterBranchId = '';
+        $this->resetPage();
+    }
+
     // Form
     public string $name = '';
     public bool $is_active = true;

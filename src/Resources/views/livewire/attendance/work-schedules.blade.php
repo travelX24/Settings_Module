@@ -27,6 +27,32 @@
                 </div>
 
                 <div class="flex flex-wrap items-center gap-2 sm:shrink-0">
+                    {{-- Clear Filters Button --}}
+                    <div
+                        x-data="{
+                            hasFilters() {
+                                return ($wire.search && $wire.search.trim() !== '') ||
+                                       ($wire.filterStatus && $wire.filterStatus !== 'all') ||
+                                       ($wire.filterExceptions && $wire.filterExceptions !== 'all');
+                            }
+                        }"
+                        x-show="hasFilters()"
+                        x-transition
+                        class="flex items-center"
+                    >
+                        <button
+                            type="button"
+                            wire:click="clearAllFilters"
+                            wire:loading.attr="disabled"
+                            wire:target="clearAllFilters"
+                            class="inline-flex items-center gap-2 px-3 py-1.5 text-xs font-semibold text-gray-600 hover:text-gray-900 transition-colors disabled:opacity-50 border-e border-gray-100 pe-4"
+                        >
+                            <i class="fas fa-times" wire:loading.remove wire:target="clearAllFilters"></i>
+                            <i class="fas fa-spinner fa-spin" wire:loading wire:target="clearAllFilters"></i>
+                            <span wire:loading.remove wire:target="clearAllFilters">{{ tr('Clear filters') }}</span>
+                        </button>
+                    </div>
+
                     <x-ui.secondary-button wire:click="exportSchedules" :fullWidth="false"
                         class="!border-amber-200 !bg-amber-50/50 !text-amber-700 hover:!bg-amber-100 cursor-pointer">
                         <i class="fas fa-file-export"></i>
@@ -69,19 +95,6 @@
                             ['value' => 'with_exceptions', 'label' => tr('Has Exceptions')],
                             ['value' => 'without_exceptions', 'label' => tr('No Exceptions')],
                         ]" width="full" :defer="false" :applyOnChange="true" />
-                </div>
-
-                {{-- Clear Filters Button --}}
-                <div x-show="$wire.search.trim() !== '' || $wire.filterStatus !== 'all' || $wire.filterExceptions !== 'all'"
-                    x-transition class="flex items-center justify-end">
-                    <button type="button" wire:click="clearAllFilters" wire:loading.attr="disabled"
-                        wire:target="clearAllFilters"
-                        class="inline-flex items-center gap-2 px-3 py-1.5 text-xs font-semibold text-gray-600 hover:text-gray-900 transition-colors disabled:opacity-50 cursor-pointer">
-                        <i class="fas fa-times" wire:loading.remove wire:target="clearAllFilters"></i>
-                        <i class="fas fa-spinner fa-spin" wire:loading wire:target="clearAllFilters"></i>
-                        <span wire:loading.remove wire:target="clearAllFilters">{{ tr('Clear all filters') }}</span>
-                        <span wire:loading wire:target="clearAllFilters">{{ tr('Clearing...') }}</span>
-                    </button>
                 </div>
             </div>
         </div>

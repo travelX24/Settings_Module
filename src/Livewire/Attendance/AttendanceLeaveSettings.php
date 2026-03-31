@@ -257,6 +257,17 @@ class AttendanceLeaveSettings extends Component
         }
     }
 
+    public function clearAllFilters()
+    {
+        $this->search = '';
+        $this->filterStatus = 'all';
+        $this->filterGender = 'all';
+        $this->filterShowInApp = 'all';
+        $this->filterAttachments = 'all';
+        $this->filterYearId = 'all';
+        $this->resetPage();
+    }
+
     public function prevYear()
     {
         $current = LeavePolicyYear::find($this->selectedYearId);

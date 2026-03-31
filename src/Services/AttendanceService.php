@@ -50,7 +50,7 @@ class AttendanceService
     /**
      * Record a check-in event.
      */
-    public function recordCheckIn(AttendanceDailyLog $log, string $method, ?float $lat, ?float $lng, $schedule, int $lateGraceMins = 15): array
+    public function recordCheckIn(AttendanceDailyLog $log, string $method, ?float $lat, ?float $lng, $schedule, int $lateGraceMins = 15, string $trackingMode = "check_in_out"): array
     {
         $now = now();
         $dateStr = Carbon::parse($log->attendance_date)->toDateString();
@@ -104,7 +104,7 @@ class AttendanceService
         }
 
         // Insert Detail
-        DB::table('attendance_daily_details')->insert([
+        $detailId = DB::table('attendance_daily_details')->insertGetId([
             'daily_log_id' => $log->id,
             'work_schedule_period_id' => $matchedPeriodId,
             'check_in_time' => $nowTime,
@@ -119,6 +119,19 @@ class AttendanceService
             $log->check_in_time = $nowTime;
         }
         
+        // Handle automatic check-out if policy is check_in_only
+        if ($trackingMode === 'check_in_only') {
+            // If they only need to check in, we mark them as having completed the full session 
+            // by setting check-out to the scheduled time (or now if no schedule found)
+            $checkoutTime = $log->scheduled_check_out ? Carbon::parse($log->scheduled_check_out)->format('H:i:s') : $nowTime;
+            
+            DB::table('attendance_daily_details')->where('id', $detailId)->update([
+                'check_out_time' => $checkoutTime,
+                'updated_at' => $now,
+            ]);
+            $log->check_out_time = $checkoutTime;
+        }
+
         // Let the model handle status and other calculations
         $log->save();
 
@@ -128,8 +141,16 @@ class AttendanceService
     /**
      * Record a check-out event.
      */
-    public function recordCheckOut(AttendanceDailyLog $log, string $method, ?float $lat, ?float $lng): array
+    public function recordCheckOut($log, string $method, ?float $lat, ?float $lng): array
     {
+        if (!$log instanceof AttendanceDailyLog) {
+            $logId = is_object($log) ? ($log->id ?? null) : $log;
+            if ($logId) $log = AttendanceDailyLog::find($logId);
+        }
+
+        if (!$log instanceof AttendanceDailyLog) {
+            return ['ok' => false, 'code' => 'invalid_log', 'message' => tr('No attendance record found.')];
+        }
         $now = now();
         $nowTime = $now->format('H:i:s');
 
@@ -140,7 +161,16 @@ class AttendanceService
             ->first();
 
         if (!$openSession) {
-             return ['ok' => false, 'code' => 'no_check_in_record', 'message' => tr('No open attendance record found currently.')];
+             // Fallback: If no open session, but employee is checking out late, 
+             // we look for a detail with the latest check-in time of today that might have been auto-closed
+             $openSession = DB::table('attendance_daily_details')
+                ->where('daily_log_id', $log->id)
+                ->orderByDesc('id')
+                ->first();
+
+             if (!$openSession) {
+                return ['ok' => false, 'code' => 'no_check_in_record', 'message' => tr('No attendance record found for today. Please register check-in first.')];
+             }
         }
 
         DB::table('attendance_daily_details')->where('id', $openSession->id)->update([

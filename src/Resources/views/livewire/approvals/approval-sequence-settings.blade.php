@@ -130,6 +130,32 @@
                     </x-ui.select>
                 </div>
 
+                {{-- Clear Filters Button --}}
+                <div
+                    x-data="{
+                        hasFilters() {
+                            return ($wire.search && $wire.search.trim() !== '') ||
+                                   ($wire.filterBranchId && $wire.filterBranchId !== '') ||
+                                   ($wire.filterStatus && $wire.filterStatus !== 'all');
+                        }
+                    }"
+                    x-show="hasFilters()"
+                    x-transition
+                    class="flex items-center"
+                >
+                    <button
+                        type="button"
+                        wire:click="clearAllFilters"
+                        wire:loading.attr="disabled"
+                        wire:target="clearAllFilters"
+                        class="inline-flex items-center gap-2 px-3 py-1.5 text-xs font-semibold text-gray-600 hover:text-gray-900 transition-colors disabled:opacity-50 border-e border-gray-100 pe-4 me-2 mb-1"
+                    >
+                        <i class="fas fa-times" wire:loading.remove wire:target="clearAllFilters"></i>
+                        <i class="fas fa-spinner fa-spin" wire:loading wire:target="clearAllFilters"></i>
+                        <span wire:loading.remove wire:target="clearAllFilters">{{ tr('Clear filters') }}</span>
+                    </button>
+                </div>
+
                 {{-- View Toggle --}}
                 <x-ui.view-toggle :label="tr('View')" />
 

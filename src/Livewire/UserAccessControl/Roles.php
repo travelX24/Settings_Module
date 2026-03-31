@@ -17,6 +17,15 @@ class Roles extends Component
     public $search = '';
     public $showModal = false;
     public $editingId = null;
+
+    public function updatingSearch() { $this->resetPage(); }
+
+    public function clearAllFilters()
+    {
+        $this->search = '';
+        $this->filterBranchId = '';
+        $this->resetPage();
+    }
     
     // Form Fields
     public $name = '';

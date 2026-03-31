@@ -168,6 +168,27 @@
                     </div>
                 </div>
 
+                {{-- Clear Filters Button --}}
+                <div x-data="{
+                    hasFilters() {
+                        return ($wire.filterStatus && $wire.filterStatus !== 'all') ||
+                            ($wire.filterGender && $wire.filterGender !== 'all') ||
+                            ($wire.filterShowInApp && $wire.filterShowInApp !== 'all') ||
+                            ($wire.filterAttachments && $wire.filterAttachments !== 'all') ||
+                            ($wire.filterYearId && $wire.filterYearId !== 'all') ||
+                            ($wire.search && $wire.search.trim() !== '');
+                    }
+                }" x-show="hasFilters()" x-transition class="flex items-center justify-end mt-2">
+                    <button type="button" wire:click="clearAllFilters" wire:loading.attr="disabled"
+                        wire:target="clearAllFilters"
+                        class="inline-flex items-center gap-2 px-3 py-1.5 text-xs font-semibold text-gray-600 hover:text-gray-900 transition-colors disabled:opacity-50 cursor-pointer">
+                        <i class="fas fa-times" wire:loading.remove wire:target="clearAllFilters"></i>
+                        <i class="fas fa-spinner fa-spin" wire:loading wire:target="clearAllFilters"></i>
+                        <span wire:loading.remove wire:target="clearAllFilters">{{ tr('Clear all filters') }}</span>
+                        <span wire:loading wire:target="clearAllFilters">{{ tr('Clearing...') }}</span>
+                    </button>
+                </div>
+
             </div>
         </x-ui.card>
 

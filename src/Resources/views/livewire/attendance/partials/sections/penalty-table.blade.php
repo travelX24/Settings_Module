@@ -19,10 +19,22 @@
                         @if($type === 'absence')
                             {{ tr('Unexcused Absence') }}
                         @else
-                            {{ ($item['violation_type'] ?? '') === 'late_arrival' ? tr('Late Arrival') : tr('Early Departure') }}
+                            @php
+                                $vType = $item['violation_type'] ?? '';
+                            @endphp
+                            @if($vType === 'late_arrival')
+                                {{ tr('Late Arrival') }}
+                            @elseif($vType === 'early_departure')
+                                {{ tr('Early Departure') }}
+                            @elseif($vType === 'unexcused_absence')
+                                {{ tr('Unexcused Absence') }}
+                            @elseif($vType === 'auto_checkout')
+                                {{ tr('Auto Checkout') }}
+                            @else
+                                {{ $vType ?: tr('Unknown') }}
+                            @endif
                         @endif
                     </span>
-                </td>
                 <td class="px-6 py-3 text-center">
                     <span class="px-3 py-1 bg-gray-100 rounded-full text-[10px] font-bold text-gray-500">
                         {{ $item['threshold_minutes'] ?? ($item['late_minutes'] ?? 0) }} {{ tr('min') }}

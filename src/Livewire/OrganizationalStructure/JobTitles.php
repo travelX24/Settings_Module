@@ -47,6 +47,11 @@ class JobTitles extends Component
         ]);
     }
 
+    public function clearAllFilters()
+    {
+        $this->search = '';
+    }
+
     public function openAddModal()
     {
         $this->authorize('settings.organizational.manage');

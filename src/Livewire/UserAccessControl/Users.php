@@ -27,6 +27,13 @@ class Users extends Component
 
     public function updatingSearch() { $this->resetPage(); }
 
+    public function clearAllFilters()
+    {
+        $this->search = '';
+        $this->filterBranchId = '';
+        $this->resetPage();
+    }
+
     // Form Fields
     public $name = '', $email = '', $role = '', $access_scope = 'all_branches', $access_type = 'system_and_app', $is_active = true;
     public $selectedEmployeeId = null;

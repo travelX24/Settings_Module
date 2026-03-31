@@ -145,7 +145,7 @@ class DailyAttendanceController extends Controller
         // [Security] Force set attendance_date as clean string to prevent double time specification
         $log->attendance_date = $dateStr;
 
-        $res = $this->attendanceService->recordCheckIn($log, $data['method'], $data['lat'], $data['lng'], $schedule);
+        $res = $this->attendanceService->recordCheckIn($log, $data['method'], $data['lat'], $data['lng'], $schedule, 15, $prep->data->tracking_mode ?? 'check_in_out');
         return response()->json($res);
     }
 

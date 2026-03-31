@@ -213,11 +213,11 @@
                     return ($wire.status && $wire.status !== 'all') ||
                         ($wire.search && $wire.search.trim() !== '') ||
                         ($wire.deductionType && $wire.deductionType !== 'all') ||
-                        $wire.minMultiplier !== null ||
-                        $wire.maxMultiplier !== null ||
-                        $wire.departmentId !== null ||
-                        $wire.branchId !== null ||
-                        ($wire.contractType && $wire.contractType !== null && $wire.contractType !== '') ||
+                        ($wire.minMultiplier && $wire.minMultiplier !== '') ||
+                        ($wire.maxMultiplier && $wire.maxMultiplier !== '') ||
+                        ($wire.departmentId && $wire.departmentId !== '') ||
+                        ($wire.branchId && $wire.branchId !== '') ||
+                        ($wire.contractType && $wire.contractType !== '') ||
                         ($wire.fromDate && $wire.fromDate !== '') ||
                         ($wire.toDate && $wire.toDate !== '');
                 }
@@ -228,8 +228,7 @@
                     class="inline-flex items-center gap-2 px-3 py-1.5 text-xs font-semibold text-gray-600 hover:text-gray-900 transition-colors disabled:opacity-50 cursor-pointer">
                     <i class="fas fa-times" wire:loading.remove wire:target="clearAllFilters"></i>
                     <i class="fas fa-spinner fa-spin" wire:loading wire:target="clearAllFilters"></i>
-                    <span wire:loading.remove wire:target="clearAllFilters">{{ tr('Clear all filters') }}</span>
-                    <span wire:loading wire:target="clearAllFilters">{{ tr('Clearing...') }}</span>
+                    <span wire:loading.remove wire:target="clearAllFilters">{{ tr('Clear filters') }}</span>
                 </button>
             </div>
         </x-ui.card>
