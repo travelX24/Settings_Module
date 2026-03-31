@@ -450,6 +450,8 @@ class AttendanceLeaveSettings extends Component
             'search' => $this->search,
             'status' => $this->filterStatus,
             'gender' => $this->filterGender,
+            'show_in_app' => $this->filterShowInApp,
+            'requires_attachment' => $this->filterAttachments,
             'year_id' => $this->showAllYears ? 'all' : $this->selectedYearId,
         ];
 
@@ -486,6 +488,8 @@ class AttendanceLeaveSettings extends Component
             'search' => $this->search,
             'status' => $this->filterStatus,
             'gender' => $this->filterGender,
+            'show_in_app' => $this->filterShowInApp,
+            'requires_attachment' => $this->filterAttachments,
             'year_id' => $this->showAllYears ? 'all' : $this->selectedYearId,
         ];
 

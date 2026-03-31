@@ -118,7 +118,7 @@
                 <div class="grid grid-cols-1 xl:grid-cols-12 gap-4 items-end">
                     {{-- Filters --}}
                     <div class="xl:col-span-8 {{ $isRtl ? 'xl:order-2' : '' }}">
-                        <div class="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-5 gap-4">
+                        <div class="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-4">
                             <x-ui.filter-select model="filterStatus" :label="tr('Status')" :placeholder="tr('All Statuses')"
                                 :options="[
                                     ['value' => 'all', 'label' => tr('All Statuses')],
@@ -149,14 +149,6 @@
                                     ['value' => 'yes', 'label' => tr('Required')],
                                     ['value' => 'no', 'label' => tr('Not required')],
                                 ]" width="full" :defer="false" :applyOnChange="true"
-                                class="cursor-pointer" />
-
-                            <x-ui.filter-select model="filterYearId" :label="tr('Year')" :placeholder="tr('All Years')"
-                                :options="collect($years)
-                                    ->map(fn($y) => ['value' => (string) $y->id, 'label' => (string) $y->year])
-                                    ->prepend(['value' => 'all', 'label' => tr('All Years')])
-                                    ->values()
-                                    ->all()" width="full" :defer="false" :applyOnChange="true"
                                 class="cursor-pointer" />
                         </div>
                     </div>
@@ -370,30 +362,6 @@
                                     <option value="female">{{ tr('Female') }}</option>
                                 </x-ui.select>
                             </div>
-
-                            <div class="md:col-span-2 grid grid-cols-1 sm:grid-cols-3 gap-3">
-                                <label
-                                    class="flex items-center gap-2 text-sm font-semibold text-gray-700 cursor-pointer">
-                                    <input type="checkbox" wire:model.defer="is_active" class="cursor-pointer"
-                                        @cannot('settings.attendance.manage') disabled @endcannot>
-                                    <span>{{ tr('Active') }}</span>
-                                </label>
-
-                                <label
-                                    class="flex items-center gap-2 text-sm font-semibold text-gray-700 cursor-pointer">
-                                    <input type="checkbox" wire:model.defer="show_in_app" class="cursor-pointer"
-                                        @cannot('settings.attendance.manage') disabled @endcannot>
-                                    <span>{{ tr('Show in App') }}</span>
-                                </label>
-
-                                <label
-                                    class="flex items-center gap-2 text-sm font-semibold text-gray-700 cursor-pointer">
-                                    <input type="checkbox" wire:model.defer="requires_attachment"
-                                        class="cursor-pointer"
-                                        @cannot('settings.attendance.manage') disabled @endcannot>
-                                    <span>{{ tr('Requires attachment') }}</span>
-                                </label>
-                            </div>
                         </div>
                     </div>
 
@@ -504,6 +472,16 @@
                                 <div class="text-sm font-black text-gray-900 mb-2">{{ tr('Attachments Settings') }}
                                 </div>
 
+                                <div class="mb-3">
+                                    <label
+                                        class="flex items-center gap-2 text-sm font-semibold text-gray-700 cursor-pointer">
+                                        <input type="checkbox" wire:model.defer="requires_attachment"
+                                            class="cursor-pointer"
+                                            @cannot('settings.attendance.manage') disabled @endcannot>
+                                        <span>{{ tr('Requires attachment') }}</span>
+                                    </label>
+                                </div>
+
                                 <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
                                     <div>
                                         <label
@@ -549,6 +527,27 @@
                                         </div>
                                     </div>
 
+                                </div>
+                            </div>
+
+                            {{-- General Settings --}}
+                            <div class="md:col-span-2 pt-3 border-t border-gray-100">
+                                <div class="text-sm font-black text-gray-900 mb-2">{{ tr('General Settings') }}</div>
+
+                                <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                                    <label
+                                        class="flex items-center gap-2 text-sm font-semibold text-gray-700 cursor-pointer">
+                                        <input type="checkbox" wire:model.defer="is_active" class="cursor-pointer"
+                                            @cannot('settings.attendance.manage') disabled @endcannot>
+                                        <span>{{ tr('Active') }}</span>
+                                    </label>
+
+                                    <label
+                                        class="flex items-center gap-2 text-sm font-semibold text-gray-700 cursor-pointer">
+                                        <input type="checkbox" wire:model.defer="show_in_app" class="cursor-pointer"
+                                            @cannot('settings.attendance.manage') disabled @endcannot>
+                                        <span>{{ tr('Show in App') }}</span>
+                                    </label>
                                 </div>
                             </div>
 
@@ -634,33 +633,6 @@
                                         disabled :hint="tr('Annual policy gender is fixed to All.')" />
                                 </div>
                             @endif
-
-
-
-
-                            <div class="md:col-span-2 grid grid-cols-1 sm:grid-cols-3 gap-3">
-                                <label
-                                    class="flex items-center gap-2 text-sm font-semibold text-gray-700 cursor-pointer">
-                                    <input type="checkbox" wire:model.defer="is_active" class="cursor-pointer"
-                                        @cannot('settings.attendance.manage') disabled @endcannot>
-                                    <span>{{ tr('Active') }}</span>
-                                </label>
-
-                                <label
-                                    class="flex items-center gap-2 text-sm font-semibold text-gray-700 cursor-pointer">
-                                    <input type="checkbox" wire:model.defer="show_in_app" class="cursor-pointer"
-                                        @cannot('settings.attendance.manage') disabled @endcannot>
-                                    <span>{{ tr('Show in App') }}</span>
-                                </label>
-
-                                <label
-                                    class="flex items-center gap-2 text-sm font-semibold text-gray-700 cursor-pointer">
-                                    <input type="checkbox" wire:model.defer="requires_attachment"
-                                        class="cursor-pointer"
-                                        @cannot('settings.attendance.manage') disabled @endcannot>
-                                    <span>{{ tr('Requires attachment') }}</span>
-                                </label>
-                            </div>
                         </div>
                     </div>
 
@@ -826,6 +798,16 @@
                                 <div class="text-sm font-black text-gray-900 mb-2">{{ tr('Attachments Settings') }}
                                 </div>
 
+                                <div class="mb-3">
+                                    <label
+                                        class="flex items-center gap-2 text-sm font-semibold text-gray-700 cursor-pointer">
+                                        <input type="checkbox" wire:model.defer="requires_attachment"
+                                            class="cursor-pointer"
+                                            @cannot('settings.attendance.manage') disabled @endcannot>
+                                        <span>{{ tr('Requires attachment') }}</span>
+                                    </label>
+                                </div>
+
                                 <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
                                     <div>
                                         <label
@@ -871,6 +853,27 @@
                                         </div>
                                     </div>
 
+                                </div>
+                            </div>
+
+                            {{-- General Settings --}}
+                            <div class="md:col-span-2 pt-3 border-t border-gray-100">
+                                <div class="text-sm font-black text-gray-900 mb-2">{{ tr('General Settings') }}</div>
+
+                                <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                                    <label
+                                        class="flex items-center gap-2 text-sm font-semibold text-gray-700 cursor-pointer">
+                                        <input type="checkbox" wire:model.defer="is_active" class="cursor-pointer"
+                                            @cannot('settings.attendance.manage') disabled @endcannot>
+                                        <span>{{ tr('Active') }}</span>
+                                    </label>
+
+                                    <label
+                                        class="flex items-center gap-2 text-sm font-semibold text-gray-700 cursor-pointer">
+                                        <input type="checkbox" wire:model.defer="show_in_app" class="cursor-pointer"
+                                            @cannot('settings.attendance.manage') disabled @endcannot>
+                                        <span>{{ tr('Show in App') }}</span>
+                                    </label>
                                 </div>
                             </div>
 

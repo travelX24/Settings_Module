@@ -18,6 +18,14 @@ class LeaveSettingService
             ->when($filters['search'], fn($q) => $q->where('name', 'like', "%{$filters['search']}%"))
             ->when($filters['status'] !== 'all', fn($q) => $q->where('is_active', $filters['status'] === 'active'))
             ->when($filters['gender'] !== 'all', fn($q) => $q->where('gender', $filters['gender']))
+            ->when(
+                isset($filters['show_in_app']) && $filters['show_in_app'] !== 'all',
+                fn($q) => $q->where('show_in_app', $filters['show_in_app'] === 'yes')
+            )
+            ->when(
+                isset($filters['requires_attachment']) && $filters['requires_attachment'] !== 'all',
+                fn($q) => $q->where('requires_attachment', $filters['requires_attachment'] === 'yes')
+            )
             ->when(isset($filters['year_id']) && $filters['year_id'] !== 'all', fn($q) => $q->where('policy_year_id', $filters['year_id']))
             ->latest()
             ->paginate($perPage);
