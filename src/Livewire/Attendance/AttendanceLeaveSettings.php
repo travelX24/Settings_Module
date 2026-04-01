@@ -381,6 +381,7 @@ class AttendanceLeaveSettings extends Component
         $this->newYear = '';
         $this->copyFromYearId = '';
         $this->dispatch('toast', type: 'success', message: tr('New year configuration created successfully.'));
+        $this->dispatch('year-added');
         $this->reset(['newYear', 'copyFromYearId', 'yearsOpen']);
     }
 
