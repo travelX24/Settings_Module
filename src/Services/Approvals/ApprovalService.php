@@ -204,7 +204,7 @@ class ApprovalService
                     'request_employee_id' => $request->{$src['employeeCol']},
                     'position' => $step->position,
                     'approver_employee_id' => $approverId,
-                    'status' => ($step->position === 1) ? 'pending' : 'waiting',
+                    'status' => ((int) $step->position === 1) ? 'pending' : 'waiting',
                 ]);
             } else {
 
