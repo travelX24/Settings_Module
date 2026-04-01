@@ -5,6 +5,7 @@ namespace Athka\SystemSettings\Http\Controllers\Api\Employee;
 use Illuminate\Http\Request;
 use Illuminate\Routing\Controller;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Schema;
 use Athka\SystemSettings\Models\ApprovalTask;
 use Athka\SystemSettings\Services\EmployeeService;
 use Athka\SystemSettings\Services\Approvals\ApprovalService;
@@ -197,8 +198,33 @@ class ApprovalInboxController extends Controller
 
         // Leave Specifics
         if ($task->approvable_type === 'leaves') {
-            $policy = DB::table('attendance_leave_policies')->where('id', $data['leave_policy_id'] ?? 0)->first(['name_ar', 'name_en']);
-            $data['leave_type'] = $policy ? ($isAr ? $policy->name_ar : $policy->name_en) : 'Leave';
+            $policy = null;
+            $policyId = (int) ($data['leave_policy_id'] ?? 0);
+
+            if ($policyId > 0) {
+                // Some environments use different leave policy table names.
+                foreach (['attendance_leave_policies', 'leave_policies', 'attendance_policies'] as $policyTable) {
+                    if (!Schema::hasTable($policyTable)) {
+                        continue;
+                    }
+
+                    $select = ['id'];
+                    foreach (['name_ar', 'name_en', 'name'] as $col) {
+                        if (Schema::hasColumn($policyTable, $col)) {
+                            $select[] = $col;
+                        }
+                    }
+
+                    $policy = DB::table($policyTable)->where('id', $policyId)->first($select);
+                    if ($policy) {
+                        break;
+                    }
+                }
+            }
+
+            $policyNameAr = $policy->name_ar ?? $policy->name ?? null;
+            $policyNameEn = $policy->name_en ?? $policy->name ?? null;
+            $data['leave_type'] = $policy ? ($isAr ? ($policyNameAr ?: $policyNameEn) : ($policyNameEn ?: $policyNameAr)) : 'Leave';
             $data['requested_days'] = (string) ($data['requested_days'] ?? '0');
         }
 
