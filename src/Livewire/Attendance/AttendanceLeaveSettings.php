@@ -39,18 +39,25 @@ class AttendanceLeaveSettings extends Component
 
     public function getAvailableYearsProperty()
     {
+        $companyId = auth()->user()->saas_company_id;
+        $existingYears = LeavePolicyYear::where('company_id', $companyId)->pluck('year')->toArray();
+
         $type = $this->getCompanyCalendarType();
         $years = [];
 
         if ($type === 'hijri') {
             // Hijri range e.g., 1440 to 1460
             for ($i = 1440; $i <= 1460; $i++) {
-                $years[] = ['value' => $i, 'label' => $i];
+                if (!in_array($i, $existingYears)) {
+                    $years[] = ['value' => $i, 'label' => (string)$i];
+                }
             }
         } else {
             // Gregorian range e.g., 2020 to 2040
             for ($i = 2020; $i <= 2040; $i++) {
-                $years[] = ['value' => $i, 'label' => $i];
+                if (!in_array($i, $existingYears)) {
+                    $years[] = ['value' => $i, 'label' => (string)$i];
+                }
             }
         }
         return $years;
@@ -178,7 +185,7 @@ class AttendanceLeaveSettings extends Component
     public array $compareExpanded = [];
 
     // Permission state
-    public bool $perm_approval_required = true, $perm_show_in_app = true, $perm_requires_attachment = false;
+    public bool $perm_approval_required = true, $perm_show_in_app = true, $perm_is_active = true, $perm_requires_attachment = false;
     public string $perm_monthly_limit_hours = '0', $perm_max_request_hours = '0', $perm_deduction_policy = 'not_allowed_after_limit';
     public array $perm_attachment_types = ['pdf', 'jpg', 'png'];
 
@@ -238,6 +245,7 @@ class AttendanceLeaveSettings extends Component
         if ($permPolicy) {
             $this->perm_approval_required = (bool) $permPolicy->approval_required;
             $this->perm_show_in_app = (bool) $permPolicy->show_in_app;
+            $this->perm_is_active = (bool) ($permPolicy->is_active ?? true);
             $this->perm_requires_attachment = (bool) $permPolicy->requires_attachment;
             $this->perm_deduction_policy = $permPolicy->deduction_policy ?? 'not_allowed_after_limit';
             $this->perm_attachment_types = $permPolicy->attachment_types ?? ['pdf', 'jpg', 'png'];
@@ -249,6 +257,7 @@ class AttendanceLeaveSettings extends Component
             // Default UI Values when no settings exist for this year
             $this->perm_approval_required = true;
             $this->perm_show_in_app = true;
+            $this->perm_is_active = true;
             $this->perm_requires_attachment = false;
             $this->perm_deduction_policy = 'not_allowed_after_limit';
             $this->perm_attachment_types = ['pdf', 'jpg', 'png'];
@@ -310,12 +319,15 @@ class AttendanceLeaveSettings extends Component
     public function openYears()
     {
         $this->authorize('settings.attendance.manage');
+        $this->resetValidation();
+        $this->reset(['newYear', 'copyFromYearId']);
         $this->yearsOpen = true;
     }
 
     public function closeYears()
     {
         $this->yearsOpen = false;
+        $this->resetValidation();
         $this->reset(['newYear', 'copyFromYearId']);
     }
 
@@ -431,12 +443,15 @@ class AttendanceLeaveSettings extends Component
     public function openCompare()
     {
         $this->authorize('settings.attendance.manage');
+        $this->resetValidation();
+        $this->reset(['compareYearAId', 'compareYearBId', 'compareExpanded']);
         $this->compareOpen = true;
     }
 
     public function closeCompare()
     {
         $this->compareOpen = false;
+        $this->resetValidation();
         $this->reset(['compareYearAId', 'compareYearBId', 'compareExpanded']);
     }
 

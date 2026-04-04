@@ -53,6 +53,12 @@ trait HandleLeavePolicies
         $this->createOpen = true;
     }
 
+    public function closeCreate()
+    {
+        $this->createOpen = false;
+        $this->resetCreateLeaveForm();
+    }
+
     public function saveCreate()
     {
         $this->savePolicy();
@@ -60,6 +66,9 @@ trait HandleLeavePolicies
 
     public function saveEdit()
     {
+        if (!$this->editingId) {
+            return;
+        }
         $this->savePolicy();
     }
 
@@ -105,12 +114,14 @@ trait HandleLeavePolicies
         $this->leaveSettingService->savePolicy($data, $this->editingId ?: null);
 
         $this->reset(['createOpen', 'editOpen', 'editingId']);
+        $this->resetCreateLeaveForm();
         $this->dispatch('toast', type: 'success', message: tr('Policy saved successfully.'));
     }
 
     public function openEdit($id)
     {
         $this->authorize('settings.attendance.manage');
+        $this->resetValidation();
         $policy = LeavePolicy::findOrFail($id);
         $this->editingId = $id;
         $this->name = $policy->name;
@@ -146,6 +157,12 @@ trait HandleLeavePolicies
             || trim((string) $this->name) === 'Annual';
 
         $this->editOpen = true;
+    }
+
+    public function closeEdit()
+    {
+        $this->editOpen = false;
+        $this->resetCreateLeaveForm();
     }
 
     public function confirmDelete($id)

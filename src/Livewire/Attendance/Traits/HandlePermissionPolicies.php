@@ -21,6 +21,7 @@ trait HandlePermissionPolicies
             'max_request_minutes' => (int)($this->perm_max_request_hours * 60),
             'deduction_policy' => $this->perm_deduction_policy,
             'show_in_app' => $this->perm_show_in_app,
+            'is_active' => $this->perm_is_active,
             'requires_attachment' => $this->perm_requires_attachment,
             'attachment_types' => $this->perm_attachment_types,
         ], $this->selectedYearId);

@@ -16,6 +16,7 @@ class PermissionPolicy extends Model
         'max_request_minutes',
         'deduction_policy',
         'show_in_app',
+        'is_active',
         'requires_attachment',
         'attachment_types',
         'attachment_max_mb',
@@ -25,6 +26,7 @@ class PermissionPolicy extends Model
     protected $casts = [
         'approval_required' => 'boolean',
         'show_in_app' => 'boolean',
+        'is_active' => 'boolean',
         'requires_attachment' => 'boolean',
         'attachment_types' => 'array',
         'settings' => 'array',

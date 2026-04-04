@@ -97,6 +97,28 @@ class ApprovalService
     }
 
     /**
+     * Check if an employee has ANY approvers setup (either via Policy or Direct Manager).
+     */
+    public function hasApproversForEmployee(string $operationKey, int $employeeId, int $companyId): bool
+    {
+        $policy = DB::table('approval_policies')
+            ->where('company_id', $companyId)
+            ->where('operation_key', $operationKey)
+            ->where('is_active', true)
+            ->first();
+
+        if (!$policy) {
+            // No policy means no strict workflow defined.
+            return false;
+        }
+
+        // Has policy, check if it has steps
+        return DB::table('approval_policy_steps')
+            ->where('policy_id', $policy->id)
+            ->exists();
+    }
+
+    /**
      * Summary of pending tasks.
      */
     public function getTaskSummary(int $employeeId, int $companyId): array

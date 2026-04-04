@@ -83,8 +83,9 @@
                         </x-ui.secondary-button>
 
                         <button type="button" wire:click="toggleAllYears"
-                            class="text-xs font-bold text-gray-500 hover:text-gray-900 transition-colors ms-2 cursor-pointer">
-                            {{ $showAllYears ? tr('Show single year') : tr('Show all years') }}
+                            class="flex items-center gap-2 text-xs font-bold transition-all ms-2 px-3 py-2 rounded-xl border {{ $showAllYears ? 'bg-[color:var(--brand-via)]/10 text-[color:var(--brand-via)] border-[color:var(--brand-via)]/30 hover:bg-[color:var(--brand-via)]/20' : 'bg-white text-gray-600 border-gray-200 hover:border-gray-300 hover:bg-gray-50 hover:text-gray-900 shadow-sm' }} cursor-pointer">
+                            <i class="fas {{ $showAllYears ? 'fa-calendar-day' : 'fa-bars-staggered' }}"></i>
+                            <span>{{ $showAllYears ? tr('Show single year') : tr('Show all years') }}</span>
                         </button>
                     </div>
 
@@ -933,8 +934,39 @@
 
                 <x-slot:content>
                     <div class="py-2 space-y-6">
+                        {{-- Add new year --}}
+                        <div class="space-y-4">
+                            <div class="flex items-center gap-2 mb-1">
+                                <span class="w-1 h-3 bg-brand-500 rounded-full"></span>
+                                <h4 class="text-xs font-black text-gray-700 uppercase tracking-wider">
+                                    {{ tr('Add New Year') }}</h4>
+                            </div>
+
+                            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                <x-ui.select label="{{ tr('Year') }}" wire:model.defer="newYear"
+                                    :disabled="!auth()->user()->can('settings.attendance.manage')">
+                                    <option value="">{{ tr('Select year') }}</option>
+                                    @foreach ($this->availableYears as $y)
+                                        <option value="{{ $y['value'] }}">{{ $y['label'] }}</option>
+                                    @endforeach
+                                </x-ui.select>
+
+                                <x-ui.select label="{{ tr('Copy from year (optional)') }}"
+                                    wire:model.defer="copyFromYearId" :disabled="!auth()->user()->can('settings.attendance.manage')">
+                                    <option value="">{{ tr('Do not copy') }}</option>
+                                    @foreach ($years as $y)
+                                        <option value="{{ (int) $y->id }}">{{ $y->year }}</option>
+                                    @endforeach
+                                </x-ui.select>
+
+                                <div class="md:col-span-2 text-[11px] text-gray-500 font-semibold">
+                                    {{ $this->yearRangeHint }}
+                                </div>
+                            </div>
+                        </div>
+
                         {{-- Existing years list --}}
-                        <div class="space-y-3">
+                        <div class="space-y-3 pt-4 border-t border-gray-100">
                             <div class="flex items-center gap-2 mb-1">
                                 <span class="w-1 h-3 bg-gray-500 rounded-full"></span>
                                 <h4 class="text-xs font-black text-gray-700 uppercase tracking-wider">
@@ -984,37 +1016,6 @@
                                         </div>
                                     </div>
                                 @endforeach
-                            </div>
-                        </div>
-
-                        {{-- Add new year --}}
-                        <div class="space-y-4 pt-4 border-t border-gray-100">
-                            <div class="flex items-center gap-2 mb-1">
-                                <span class="w-1 h-3 bg-brand-500 rounded-full"></span>
-                                <h4 class="text-xs font-black text-gray-700 uppercase tracking-wider">
-                                    {{ tr('Add New Year') }}</h4>
-                            </div>
-
-                            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-                                <x-ui.select label="{{ tr('Year') }}" wire:model.defer="newYear"
-                                    :disabled="!auth()->user()->can('settings.attendance.manage')">
-                                    <option value="">{{ tr('Select year') }}</option>
-                                    @foreach ($this->availableYears as $y)
-                                        <option value="{{ $y['value'] }}">{{ $y['label'] }}</option>
-                                    @endforeach
-                                </x-ui.select>
-
-                                <x-ui.select label="{{ tr('Copy from year (optional)') }}"
-                                    wire:model.defer="copyFromYearId" :disabled="!auth()->user()->can('settings.attendance.manage')">
-                                    <option value="">{{ tr('Do not copy') }}</option>
-                                    @foreach ($years as $y)
-                                        <option value="{{ (int) $y->id }}">{{ $y->year }}</option>
-                                    @endforeach
-                                </x-ui.select>
-
-                                <div class="md:col-span-2 text-[11px] text-gray-500 font-semibold">
-                                    {{ $this->yearRangeHint }}
-                                </div>
                             </div>
                         </div>
                     </div>
@@ -1239,6 +1240,16 @@
                                                                                 {{ $a->requires_attachment ? tr('Yes') : tr('No') }}
                                                                             </div>
 
+                                                                            <div>
+                                                                                <b>{{ tr('Gender') }}:</b>
+                                                                                {{ $a->gender === 'male' ? tr('Male') : ($a->gender === 'female' ? tr('Female') : tr('All')) }}
+                                                                            </div>
+
+                                                                            <div class="col-span-2">
+                                                                                <b>{{ tr('Description') }}:</b>
+                                                                                {{ $a->description ?: '—' }}
+                                                                            </div>
+
                                                                             @php $sA = $a->settings ?? []; @endphp
                                                                             @if ($a->leave_type === 'annual')
                                                                                 <div>
@@ -1281,6 +1292,20 @@
                                                                             </div>
 
                                                                             <div class="col-span-2">
+                                                                                <b>{{ tr('Contract Type Exclusions') }}:</b>
+                                                                                @php
+                                                                                    $exclA = $a->excluded_contract_types ?? [];
+                                                                                    $exclLabsA = array_intersect_key($contractList, array_flip($exclA));
+                                                                                @endphp
+                                                                                {{ count($exclLabsA) > 0 ? implode(', ', $exclLabsA) : tr('None') }}
+                                                                            </div>
+
+                                                                            <div class="col-span-2">
+                                                                                <b>{{ tr('Note text') }}:</b>
+                                                                                {{ data_get($a->settings, 'note_text', '—') ?: '—' }}
+                                                                            </div>
+
+                                                                            <div class="col-span-2">
                                                                                 <b>{{ tr('Attachment types') }}:</b>
                                                                                 @php $tA = $sA['attachments.types'] ?? $sA['attachment_types'] ?? []; @endphp
                                                                                 {{ is_array($tA) ? implode(', ', $tA) : (string) $tA }}
@@ -1306,6 +1331,16 @@
                                                                             <div>
                                                                                 <b>{{ tr('Requires attachment') }}:</b>
                                                                                 {{ $b->requires_attachment ? tr('Yes') : tr('No') }}
+                                                                            </div>
+
+                                                                            <div>
+                                                                                <b>{{ tr('Gender') }}:</b>
+                                                                                {{ $b->gender === 'male' ? tr('Male') : ($b->gender === 'female' ? tr('Female') : tr('All')) }}
+                                                                            </div>
+
+                                                                            <div class="col-span-2">
+                                                                                <b>{{ tr('Description') }}:</b>
+                                                                                {{ $b->description ?: '—' }}
                                                                             </div>
 
                                                                             @php $sB = $b->settings ?? []; @endphp
@@ -1347,6 +1382,20 @@
                                                                             </div>
                                                                             <div><b>{{ tr('Mandatory note') }}:</b>
                                                                                 {{ $sB['note_required'] ?? false ? tr('Yes') : tr('No') }}
+                                                                            </div>
+
+                                                                            <div class="col-span-2">
+                                                                                <b>{{ tr('Contract Type Exclusions') }}:</b>
+                                                                                @php
+                                                                                    $exclB = $b->excluded_contract_types ?? [];
+                                                                                    $exclLabsB = array_intersect_key($contractList, array_flip($exclB));
+                                                                                @endphp
+                                                                                {{ count($exclLabsB) > 0 ? implode(', ', $exclLabsB) : tr('None') }}
+                                                                            </div>
+
+                                                                            <div class="col-span-2">
+                                                                                <b>{{ tr('Note text') }}:</b>
+                                                                                {{ data_get($b->settings, 'note_text', '—') ?: '—' }}
                                                                             </div>
 
                                                                             <div class="col-span-2">
@@ -1420,25 +1469,6 @@
                 </div>
 
                 <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    <div class="md:col-span-2 grid grid-cols-1 sm:grid-cols-3 gap-3">
-                        <label class="flex items-center gap-2 text-sm font-semibold text-gray-700 cursor-pointer">
-                            <input type="checkbox" wire:model.defer="perm_approval_required" class="cursor-pointer"
-                                @cannot('settings.attendance.manage') disabled @endcannot>
-                            <span>{{ tr('Approval required') }}</span>
-                        </label>
-
-                        <label class="flex items-center gap-2 text-sm font-semibold text-gray-700 cursor-pointer">
-                            <input type="checkbox" wire:model.defer="perm_show_in_app" class="cursor-pointer"
-                                @cannot('settings.attendance.manage') disabled @endcannot>
-                            <span>{{ tr('Show in App') }}</span>
-                        </label>
-
-                        <label class="flex items-center gap-2 text-sm font-semibold text-gray-700 cursor-pointer">
-                            <input type="checkbox" wire:model.defer="perm_requires_attachment" class="cursor-pointer"
-                                @cannot('settings.attendance.manage') disabled @endcannot>
-                            <span>{{ tr('Requires attachment') }}</span>
-                        </label>
-                    </div>
 
                     <div>
                         <x-ui.input type="number" step="0.25" min="1"
@@ -1464,6 +1494,14 @@
                     {{-- Attachments section --}}
                     <div class="md:col-span-2 pt-3 border-t border-gray-100">
                         <div class="text-sm font-black text-gray-900 mb-2">{{ tr('Attachments Settings') }}</div>
+
+                        <div class="mb-3">
+                            <label class="flex items-center gap-2 text-sm font-semibold text-gray-700 cursor-pointer">
+                                <input type="checkbox" wire:model.live="perm_requires_attachment" class="cursor-pointer"
+                                    @cannot('settings.attendance.manage') disabled @endcannot>
+                                <span>{{ tr('Requires attachment') }}</span>
+                            </label>
+                        </div>
 
                         <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
                             <div>
@@ -1511,6 +1549,31 @@
                                     {{ tr('Fixed size for all permission attachments.') }}
                                 </div>
                             </div>
+                        </div>
+                    </div>
+
+                    {{-- General Settings --}}
+                    <div class="md:col-span-2 pt-3 border-t border-gray-100">
+                        <div class="text-sm font-black text-gray-900 mb-2">{{ tr('General Settings') }}</div>
+
+                        <div class="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                            <label class="flex items-center gap-2 text-sm font-semibold text-gray-700 cursor-pointer">
+                                <input type="checkbox" wire:model.defer="perm_is_active" class="cursor-pointer"
+                                    @cannot('settings.attendance.manage') disabled @endcannot>
+                                <span>{{ tr('Active') }}</span>
+                            </label>
+
+                            <label class="flex items-center gap-2 text-sm font-semibold text-gray-700 cursor-pointer">
+                                <input type="checkbox" wire:model.defer="perm_approval_required" class="cursor-pointer"
+                                    @cannot('settings.attendance.manage') disabled @endcannot>
+                                <span>{{ tr('Approval required') }}</span>
+                            </label>
+
+                            <label class="flex items-center gap-2 text-sm font-semibold text-gray-700 cursor-pointer">
+                                <input type="checkbox" wire:model.defer="perm_show_in_app" class="cursor-pointer"
+                                    @cannot('settings.attendance.manage') disabled @endcannot>
+                                <span>{{ tr('Show in App') }}</span>
+                            </label>
                         </div>
                     </div>
 
