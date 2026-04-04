@@ -68,6 +68,7 @@ class AttendanceService
 
         $status = 'present';
         $matchedPeriodId = null;
+        $matchedPeriodEndTime = null;
 
         if ($schedule && $schedule->periods) {
             $isWithinPeriod = false;
@@ -77,6 +78,7 @@ class AttendanceService
                 
                 if ($now->between($pStartAllowed, $pEnd)) {
                     $matchedPeriodId = $p->id;
+                    $matchedPeriodEndTime = $p->end_time;
                     $isWithinPeriod = true;
 
                     // Check if period already used
@@ -121,9 +123,11 @@ class AttendanceService
         
         // Handle automatic check-out if policy is check_in_only
         if ($trackingMode === 'check_in_only') {
-            // If they only need to check in, we mark them as having completed the full session 
-            // by setting check-out to the scheduled time (or now if no schedule found)
-            $checkoutTime = $log->scheduled_check_out ? Carbon::parse($log->scheduled_check_out)->format('H:i:s') : $nowTime;
+            if (!empty($matchedPeriodEndTime)) {
+                $checkoutTime = Carbon::parse($dateStr . ' ' . substr((string)$matchedPeriodEndTime, 0, 5))->format('H:i:s');
+            } else {
+                $checkoutTime = $log->scheduled_check_out ? Carbon::parse($log->scheduled_check_out)->format('H:i:s') : $nowTime;
+            }
             
             DB::table('attendance_daily_details')->where('id', $detailId)->update([
                 'check_out_time' => $checkoutTime,
