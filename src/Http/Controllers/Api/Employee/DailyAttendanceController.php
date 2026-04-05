@@ -78,17 +78,18 @@ class DailyAttendanceController extends Controller
         }
         $holidays = $this->scheduleService->getHolidays($companyId, $from->toDateString(), $to->toDateString());
 
-        $data = $logs->map(function($log) use ($schedulesByDate, $holidays) {
-            // Load details if using Eloquent
+        $data = $logs->map(function($log) use ($schedulesByDate, $holidays, $employee) {
             $details = property_exists($log, 'details') ? $log->details : DB::table('attendance_daily_details')->where('daily_log_id', $log->id)->get();
+            $metrics = $this->scheduleService->getMetricsForDate($log->attendance_date->toDateString(), $schedulesByDate[$log->attendance_date->toDateString()] ?? null, $holidays, $employee);
 
             return [
                 'id' => (int) $log->id,
                 'date' => Carbon::parse($log->attendance_date)->toDateString(),
                 'check_in_time' => $log->check_in_time ? Carbon::parse($log->check_in_time)->format('H:i') : null,
                 'check_out_time' => $log->check_out_time ? Carbon::parse($log->check_out_time)->format('H:i') : null,
-                'attendance_status' => (string) $log->attendance_status,
-                'status' => (string) $log->attendance_status, // Keep for backward compatibility
+                'attendance_status' => $metrics['status'] === 'holiday' ? 'holiday' : (string) $log->attendance_status,
+                'status' => $metrics['status'] === 'holiday' ? 'holiday' : (string) $log->attendance_status,
+                'holiday_name' => $metrics['holiday_name'] ?? null,
                 'compliance_percentage' => (float) $log->compliance_percentage,
                 'actual_hours' => (float) $log->actual_hours,
                 'scheduled_hours' => (float) $log->scheduled_hours,
@@ -98,9 +99,8 @@ class DailyAttendanceController extends Controller
                     'check_in' => $d->check_in_time ? Carbon::parse($d->check_in_time)->format('H:i') : null,
                     'check_out' => $d->check_out_time ? Carbon::parse($d->check_out_time)->format('H:i') : null,
                 ]),
-                'periods' => collect($this->scheduleService->getMetricsForDate($log->attendance_date->toDateString(), $schedulesByDate[$log->attendance_date->toDateString()] ?? null, $holidays)['periods'] ?? [])
+                'periods' => collect($metrics['periods'] ?? [])
                     ->map(fn($p) => $p['start_time'] . ' - ' . $p['end_time'])
-                    ->values()
                     ->all(),
             ];
         });
@@ -139,6 +139,17 @@ class DailyAttendanceController extends Controller
         }
 
         $dateStr = now()->toDateString();
+        $exceptionalDay = $this->scheduleService->getExceptionalDay($companyId, $dateStr, $employee);
+
+        if ($exceptionalDay && (bool)($exceptionalDay->is_holiday ?? true)) {
+            $isOfficial = (bool)($exceptionalDay->is_official_holiday ?? false);
+            $typeLabel = $isOfficial ? tr('Official Holiday') : tr('Exceptional Day');
+            $msgPart = tr('Cannot check-in');
+            
+            $msg = $msgPart . '. ' . $typeLabel . ': ' . ($exceptionalDay->name ?? '');
+            return response()->json(['ok' => false, 'code' => 'exceptional_day', 'message' => $msg], 422);
+        }
+
         $schedule = $this->scheduleService->getEffectiveSchedule($companyId, $employee);
         $log = $this->attendanceService->ensureLog($companyId, $employee->id, $dateStr, $schedule, $this->scheduleService->getHolidays($companyId, $dateStr, $dateStr));
 

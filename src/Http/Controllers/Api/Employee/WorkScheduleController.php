@@ -46,7 +46,6 @@ class WorkScheduleController extends Controller
             $to = $from->copy()->addDays(62);
         }
 
-        $schedule = $this->scheduleService->getEffectiveSchedule($companyId, $employee);
         $holidays = $this->scheduleService->getHolidays($companyId, $from->toDateString(), $to->toDateString());
 
         $days = [];
@@ -54,7 +53,10 @@ class WorkScheduleController extends Controller
 
         while ($cursor->lte($to)) {
             $dateStr = $cursor->toDateString();
-            $metrics = $this->scheduleService->getMetricsForDate($dateStr, $schedule, $holidays);
+            
+            // Resolve the specific schedule for THIS date
+            $effectiveSchedule = $this->scheduleService->getEffectiveSchedule($companyId, $employee, $dateStr);
+            $metrics = $this->scheduleService->getMetricsForDate($dateStr, $effectiveSchedule, $holidays);
 
             $days[] = [
                 'date' => $dateStr,
@@ -70,6 +72,9 @@ class WorkScheduleController extends Controller
             $cursor->addDay();
         }
 
+        // For the top-level 'schedule' info, we can show the one from the start date
+        $initialSchedule = $this->scheduleService->getEffectiveSchedule($companyId, $employee, $from->toDateString());
+
         return response()->json([
             'ok' => true,
             'data' => [
@@ -77,10 +82,10 @@ class WorkScheduleController extends Controller
                     'start' => $from->toDateString(),
                     'end' => $to->toDateString(),
                 ],
-                'schedule' => $schedule ? [
-                    'id' => (int) $schedule->id,
-                    'name' => (string) $schedule->name,
-                    'work_days' => $schedule->work_days,
+                'schedule' => $initialSchedule ? [
+                    'id' => (int) $initialSchedule->id,
+                    'name' => (string) $initialSchedule->name,
+                    'work_days' => $initialSchedule->work_days,
                 ] : null,
                 'days' => $days,
             ],

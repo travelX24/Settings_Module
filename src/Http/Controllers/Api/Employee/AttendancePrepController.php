@@ -181,6 +181,28 @@ class AttendancePrepController extends Controller
                 'location_in_branch' => (string) ($d->location_in_branch ?? ''),
             ])->values();
 
+        // ✅ exceptional day check (today)
+        $exceptionalDayInfo = null;
+        if ($employee && class_exists(\Athka\SystemSettings\Services\WorkScheduleService::class)) {
+            $wsService = app(\Athka\SystemSettings\Services\WorkScheduleService::class);
+            $exceptionalDay = $wsService->getExceptionalDay($companyId, now()->toDateString(), $employee);
+            $officialHolidays = $wsService->getHolidays($companyId, now()->toDateString(), now()->toDateString());
+            $officialHoliday = $officialHolidays->first();
+
+            if ($exceptionalDay || $officialHoliday) {
+                $isHoliday = $exceptionalDay ? (bool)($exceptionalDay->is_holiday ?? true) : true;
+                $name = $exceptionalDay ? $exceptionalDay->name : ($officialHoliday->template?->name ?? 'Holiday');
+                $msgPart = (app()->getLocale() == 'ar' ? 'اليوم هو يوم استثنائي (عطلة)' : tr('Today is an exceptional day'));
+
+                $exceptionalDayInfo = [
+                    'id'   => $exceptionalDay ? $exceptionalDay->id : $officialHoliday->id,
+                    'name' => $name,
+                    'is_holiday' => $isHoliday,
+                    'message' => $msgPart . ': ' . $name
+                ];
+            }
+        }
+
         return response()->json([
             'ok' => true,
             'data' => [
@@ -189,6 +211,7 @@ class AttendancePrepController extends Controller
                 'methods' => $methods,
                 'gps_locations' => $gpsLocations,
                 'devices' => $devices,
+                'exceptional_day' => $exceptionalDayInfo,
             ],
         ]);
     }

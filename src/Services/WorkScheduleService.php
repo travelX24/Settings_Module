@@ -4,6 +4,7 @@ namespace Athka\SystemSettings\Services;
 
 use Athka\SystemSettings\Models\WorkSchedule;
 use Athka\SystemSettings\Models\OfficialHolidayOccurrence;
+use Athka\SystemSettings\Models\AttendanceExceptionalDay;
 use Athka\Employees\Models\Employee;
 use Illuminate\Support\Facades\DB;
 use Carbon\Carbon;
@@ -21,7 +22,6 @@ class WorkScheduleService
         if ($employee) {
             $assignment = DB::table('employee_work_schedules')
                 ->where('employee_id', $employee->id)
-                ->where('is_active', true)
                 ->where('start_date', '<=', $resolveDate)
                 ->where(function ($q) use ($resolveDate) {
                     $q->whereNull('end_date')
@@ -144,19 +144,86 @@ class WorkScheduleService
     }
 
     /**
+     * Check if a specific date is a company-wide exceptional day for an employee.
+     */
+    public function getExceptionalDay(int $companyId, string $date, $employee = null)
+    {
+        $day = Carbon::parse($date);
+
+        // ✅ Check Official Holidays first
+        if (class_exists(\Athka\SystemSettings\Models\OfficialHolidayOccurrence::class)) {
+            $holiday = \Athka\SystemSettings\Models\OfficialHolidayOccurrence::query()
+                ->where('company_id', $companyId)
+                ->whereDate('start_date', '<=', $date)
+                ->whereDate('end_date', '>=', $date)
+                ->first();
+
+            if ($holiday) {
+                return (object) [
+                    'id'                  => $holiday->id,
+                    'name'                => $holiday->name,
+                    'name_ar'             => $holiday->name_ar ?? $holiday->name,
+                    'name_en'             => $holiday->name_en ?? $holiday->name,
+                    'is_holiday'          => true,
+                    'is_official_holiday' => true,
+                ];
+            }
+        }
+        
+        $exceptions = AttendanceExceptionalDay::query()
+            ->where('company_id', $companyId)
+            ->where('is_active', true)
+            ->whereDate('start_date', '<=', $date)
+            ->whereDate('end_date', '>=', $date)
+            ->get();
+
+        foreach ($exceptions as $ce) {
+            $applyOn = $ce->apply_on ?: 'everyone';
+            if ($applyOn === 'everyone') return $ce;
+
+            if (!$employee) continue;
+
+            $include = is_array($ce->include) ? $ce->include : (json_decode($ce->include, true) ?: []);
+            
+            if ($applyOn === 'employees' || $applyOn === 'absence') {
+                $targetIds = $include['employees'] ?? [];
+                if (in_array((string)$employee->id, $targetIds)) return $ce;
+            }
+            
+            if ($applyOn === 'departments') {
+                $targetIds = $include['departments'] ?? [];
+                if (in_array((string)$employee->department_id, $targetIds)) return $ce;
+            }
+
+            if ($applyOn === 'locations' || $applyOn === 'branches') {
+                $targetIds = $include['branches'] ?? $include['locations'] ?? [];
+                if (in_array((string)$employee->branch_id, $targetIds)) return $ce;
+            }
+        }
+
+        return null;
+    }
+
+    /**
      * Get metrics for a specific date (internal usage).
      */
-    public function getMetricsForDate(string $dateStr, ?WorkSchedule $schedule, $holidays): array
+    public function getMetricsForDate(string $dateStr, ?WorkSchedule $schedule, $holidays, ?Employee $employee = null): array
     {
         $dayKey = $this->getDayKey(Carbon::parse($dateStr));
-        $isHoliday = $holidays->first(fn($h) => $dateStr >= (string)$h->start_date && $dateStr <= (string)$h->end_date);
+        $isHoliday = $holidays->first(fn($h) => $dateStr >= Carbon::parse($h->start_date)->toDateString() && $dateStr <= Carbon::parse($h->end_date)->toDateString());
+        
+        // Also check for Company-Wide Exceptional Days
+        $companyId = $schedule ? $schedule->saas_company_id : ($employee ? $employee->saas_company_id : null);
+        $exceptionalDay = $companyId ? $this->getExceptionalDay((int)$companyId, $dateStr, $employee) : null;
 
         $scheduledMinutes = 0;
         $periodsOut = collect();
         $isWorkday = false;
-        $holidayName = $isHoliday ? ($isHoliday->template?->name ?? 'Holiday') : null;
+        
+        $holidayName = $isHoliday ? ($isHoliday->template?->name ?? 'Holiday') : ($exceptionalDay ? '⭐ ' . tr('Exceptional Day') . ': ' . $exceptionalDay->name : null);
+        $isHolidayFinal = $isHoliday || $exceptionalDay;
 
-        if ($schedule && !$isHoliday) {
+        if ($schedule && !$isHolidayFinal) {
             $isWorkday = in_array($dayKey, (array)$schedule->work_days);
             
             if ($schedule->exceptions) {
@@ -183,8 +250,8 @@ class WorkScheduleService
         $lastCheckOut = $periodsOut->isNotEmpty() ? $periodsOut->last()['end_time'] : null;
 
         return [
-            'status' => $isHoliday ? 'holiday' : ($isWorkday && $periodsOut->isNotEmpty() ? 'workday' : 'off'),
-            'is_holiday' => (bool)$isHoliday,
+            'status' => $isHolidayFinal ? 'holiday' : ($isWorkday && $periodsOut->isNotEmpty() ? 'workday' : 'off'),
+            'is_holiday' => (bool)$isHolidayFinal,
             'holiday_name' => $holidayName,
             'is_workday' => $isWorkday,
             'day_key' => $dayKey,
