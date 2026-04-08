@@ -108,7 +108,8 @@
                                     <i class="fas fa-edit mr-2 w-5 text-blue-500"></i>
                                     {{ tr('Edit') }}
                                 </x-ui.dropdown-item>
-                                @if(($user->access_type ?? 'system_and_app') !== 'hr_app_only')
+                                @php $isSysAdmin = $user->roles && $user->roles->whereIn('name', ['company-admin', 'saas-admin', 'super-admin', 'system-admin'])->isNotEmpty(); @endphp
+                                @if(($user->access_type ?? 'system_and_app') !== 'hr_app_only' && !$isSysAdmin)
                                     <x-ui.dropdown-item wire:click="openPermModal({{ $user->id }})">
                                         <i class="fas fa-sliders-h mr-2 w-5 text-amber-500"></i>
                                         {{ tr('Custom Permissions') }}
@@ -337,7 +338,8 @@
                                     <i class="fas fa-edit mr-2 w-5 text-blue-500"></i>
                                     {{ tr('Edit') }}
                                 </x-ui.dropdown-item>
-                                @if(($user->access_type ?? 'system_and_app') !== 'hr_app_only')
+                                @php $isSysAdmin = $user->roles && $user->roles->whereIn('name', ['company-admin', 'saas-admin', 'super-admin', 'system-admin'])->isNotEmpty(); @endphp
+                                @if(($user->access_type ?? 'system_and_app') !== 'hr_app_only' && !$isSysAdmin)
                                     <x-ui.dropdown-item wire:click="openPermModal({{ $user->id }})">
                                         <i class="fas fa-sliders-h mr-2 w-5 text-amber-500"></i>
                                         {{ tr('Custom Permissions') }}

@@ -165,8 +165,17 @@
                         </td>
 
                         <td class="px-6 py-4 text-center">
-                            <span class="text-xs font-semibold text-gray-700">
+                            <span class="text-xs font-semibold text-gray-700 tabular-nums">
                                 {{ $row->display_hijri ?: '—' }}
+                                @if ($row->end_date && $row->start_date && $row->end_date->format('Y-m-d') !== $row->start_date->format('Y-m-d'))
+                                    @php
+                                        $endHijri = app(\Athka\SystemSettings\Services\HolidayService::class)->hijriFromGregorian($row->end_date->format('Y-m-d'));
+                                    @endphp
+                                    @if ($endHijri)
+                                        <span class="mx-1 text-gray-300">→</span>
+                                        {{ $endHijri }}
+                                    @endif
+                                @endif
                             </span>
                         </td>
 

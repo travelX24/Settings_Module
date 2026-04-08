@@ -46,10 +46,6 @@
                     </th>
 
                     <th class="px-6 py-4 text-[10px] font-black text-gray-400 border-b border-gray-100 uppercase tracking-widest text-center">
-                        {{ tr('Branch') }}
-                    </th>
-
-                    <th class="px-6 py-4 text-[10px] font-black text-gray-400 border-b border-gray-100 uppercase tracking-widest text-center">
                         {{ tr('Policy') }}
                     </th>
                     <th class="px-6 py-4 text-[10px] font-black text-gray-400 border-b border-gray-100 uppercase tracking-widest text-center">{{ tr('Employees') }}</th>
@@ -73,12 +69,6 @@
                     </td>
                     <td class="px-6 py-4">
                         <p class="text-[11px] text-gray-500 line-clamp-2 leading-relaxed">{{ $group['description'] }}</p>
-                    </td>
-
-                    <td class="px-6 py-4 text-center">
-                        <span class="px-3 py-1 rounded-full text-[10px] font-black border bg-gray-50 text-gray-600 border-gray-100">
-                            {{ $group['branch_name'] ?? '-' }}
-                        </span>
                     </td>
 
                     <td class="px-6 py-4 text-center">

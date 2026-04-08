@@ -111,6 +111,10 @@ trait HandleLeavePolicies
             ]
         ];
 
+        if ($this->editingNameLocked) {
+            $data['settings']['meta'] = ['system_key' => 'annual_default'];
+        }
+
         $this->leaveSettingService->savePolicy($data, $this->editingId ?: null);
 
         $this->reset(['createOpen', 'editOpen', 'editingId']);
@@ -154,6 +158,7 @@ trait HandleLeavePolicies
 
         $this->editingNameLocked = (string) data_get($settings, 'meta.system_key', '') === 'annual_default'
             || trim((string) $this->name) === 'سنوية'
+            || trim((string) $this->name) === 'إجازة سنوية'
             || trim((string) $this->name) === 'Annual';
 
         $this->editOpen = true;

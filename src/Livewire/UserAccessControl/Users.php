@@ -147,6 +147,25 @@ class Users extends Component
             'access_scope' => tr('Scope'),
         ]);
 
+        if (!$this->editingId) {
+            $companyId = $this->getCompanyId();
+            $company = \Athka\Saas\Models\SaasCompany::with('settings')->find($companyId);
+            
+            if ($company && $company->settings) {
+                $allowed = (int) $company->settings->allowed_users;
+                // Exclude the current creating count if needed, but it's simpler to just count existing
+                $currentCount = \App\Models\User::where('saas_company_id', $companyId)->count();
+                
+                if ($currentCount >= $allowed) {
+                    $this->dispatch('toast', [
+                        'type' => 'error', 
+                        'message' => tr('You have reached the maximum number of allowed users for your subscription.')
+                    ]);
+                    return;
+                }
+            }
+        }
+
         $data = [
             'name' => $this->name,
             'email' => $this->email,
@@ -188,6 +207,11 @@ class Users extends Component
         $user = User::where('saas_company_id', $this->getCompanyId())
             ->with('roles')
             ->findOrFail($userId);
+
+        if ($user->roles->whereIn('name', ['company-admin', 'saas-admin', 'super-admin', 'system-admin'])->isNotEmpty()) {
+            $this->dispatch('toast', ['type' => 'error', 'message' => tr('System administrator permissions cannot be customized.')]);
+            return;
+        }
 
         $this->permUserId = $userId;
         $this->permUserName = $user->name;
@@ -301,7 +325,10 @@ class Users extends Component
             'roles' => Role::where('name', '!=', 'saas-admin')
                 ->where(function ($q) use ($companyId) {
                     $q->where('saas_company_id', $companyId)
-                      ->orWhereNull('saas_company_id');
+                      ->orWhere(function($subQ) {
+                          $subQ->whereNull('saas_company_id')
+                               ->whereIn('name', ['company-admin', 'system-admin', 'super-admin']);
+                      });
                 })->get(),
             'foundEmployees' => Employee::forCompany($companyId)
                 ->where(function($query) {

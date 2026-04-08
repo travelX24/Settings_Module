@@ -263,7 +263,7 @@
                             @php
                                 $isAnnualDefault =
                                     (string) data_get($row->settings ?? [], 'meta.system_key', '') ===
-                                        'annual_default' || trim((string) $row->name) === 'سنوية';
+                                        'annual_default' || trim((string) $row->name) === 'سنوية' || trim((string) $row->name) === 'إجازة سنوية';
                             @endphp
 
                             <td class="px-6 py-4 text-end">

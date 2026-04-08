@@ -175,7 +175,10 @@ class Roles extends Component
         $roles = Role::where('name', '!=', 'saas-admin')
             ->where(function ($q) {
                 $q->where('saas_company_id', $this->getCompanyId())
-                  ->orWhereNull('saas_company_id');
+                  ->orWhere(function($subQ) {
+                      $subQ->whereNull('saas_company_id')
+                           ->whereIn('name', ['company-admin', 'system-admin', 'super-admin']);
+                  });
             })
             ->when($this->search, fn($q) => $q->where('name', 'like', "%{$this->search}%"))
             ->withCount(['users' => fn($q) => $q->where('saas_company_id', $this->getCompanyId())])
