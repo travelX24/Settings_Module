@@ -12,9 +12,12 @@ class LeaveSettingService
     /**
      * Get filtered policies.
      */
-    public function getPolicies(array $filters, int $perPage = 10)
+    public function getPolicies(int $companyId, array $filters, int $perPage = 10)
     {
+        $calendarType = $this->getCompanyCalendarType($companyId);
+
         return LeavePolicy::query()
+            ->where('company_id', $companyId)
             ->when($filters['search'], fn($q) => $q->where('name', 'like', "%{$filters['search']}%"))
             ->when($filters['status'] !== 'all', fn($q) => $q->where('is_active', $filters['status'] === 'active'))
             ->when($filters['gender'] !== 'all', fn($q) => $q->where('gender', $filters['gender']))
@@ -26,9 +29,44 @@ class LeaveSettingService
                 isset($filters['requires_attachment']) && $filters['requires_attachment'] !== 'all',
                 fn($q) => $q->where('requires_attachment', $filters['requires_attachment'] === 'yes')
             )
-            ->when(isset($filters['year_id']) && $filters['year_id'] !== 'all', fn($q) => $q->where('policy_year_id', $filters['year_id']))
+            ->when(
+                isset($filters['year_id']) && $filters['year_id'] !== 'all',
+                fn($q) => $q->where('policy_year_id', $filters['year_id']),
+                function ($q) use ($calendarType) {
+                    // When year_id is 'all', we still restrict to the company's calendar type
+                    $q->whereHas('year', function ($yq) use ($calendarType) {
+                        if ($calendarType === 'hijri') {
+                            $yq->whereBetween('year', [1300, 1600]);
+                        } else {
+                            $yq->whereBetween('year', [1900, 2500]);
+                        }
+                    });
+                }
+            )
             ->latest()
             ->paginate($perPage);
+    }
+
+    private function getCompanyCalendarType(int $companyId): string
+    {
+        return \Illuminate\Support\Facades\Cache::remember("company_calendar_type_{$companyId}", 3600, function () use ($companyId) {
+            $row = \Illuminate\Support\Facades\DB::table('operational_calendars')
+                ->where('company_id', $companyId)
+                ->first(['calendar_type']);
+            return strtolower((string) ($row->calendar_type ?? 'gregorian'));
+        });
+    }
+
+    public function getCurrentCalendarYear(int $companyId): int
+    {
+        if ($this->getCompanyCalendarType($companyId) === 'hijri' && class_exists(\IntlCalendar::class)) {
+            $tz = \IntlTimeZone::createTimeZone('UTC');
+            $cal = \IntlCalendar::createInstance($tz, 'en_US@calendar=islamic-umalqura');
+
+            return (int) $cal->get(\IntlCalendar::FIELD_YEAR);
+        }
+
+        return (int) now()->year;
     }
 
     /**
@@ -74,14 +112,15 @@ class LeaveSettingService
      */
     public function ensureDefaultConfiguration(int $companyId): void
     {
-        $currentYearValue = (int)date('Y');
+        $currentYearValue = $this->getCurrentCalendarYear($companyId);
+        $calendarType = $this->getCompanyCalendarType($companyId);
         
         // 1. Ensure current year exists & is active
         $yearRecord = LeavePolicyYear::firstOrCreate(
             ['company_id' => $companyId, 'year' => $currentYearValue],
             [
-                'starts_on' => "$currentYearValue-01-01",
-                'ends_on' => "$currentYearValue-12-31",
+                'starts_on' => $calendarType === 'hijri' ? "$currentYearValue-01-01" : "$currentYearValue-01-01",
+                'ends_on' => $calendarType === 'hijri' ? "$currentYearValue-12-29" : "$currentYearValue-12-31",
                 'is_active' => true
             ]
         );

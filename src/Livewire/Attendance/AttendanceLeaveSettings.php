@@ -462,6 +462,7 @@ class AttendanceLeaveSettings extends Component
 
     public function exportPolicies(ExcelExportService $exporter)
     {
+        $companyId = auth()->user()->saas_company_id;
         $filters = [
             'search' => $this->search,
             'status' => $this->filterStatus,
@@ -471,7 +472,7 @@ class AttendanceLeaveSettings extends Component
             'year_id' => $this->showAllYears ? 'all' : $this->selectedYearId,
         ];
 
-        $policies = $this->leaveSettingService->getPolicies($filters, 1000);
+        $policies = $this->leaveSettingService->getPolicies($companyId, $filters, 1000);
 
         $fileName = 'LeavePolicies_' . now()->format('Ymd_His');
         $headers = [tr('Leave'), tr('Days'), tr('Year'), tr('Gender'), tr('Status'), tr('Show in App'), tr('Attachments')];
@@ -527,7 +528,7 @@ class AttendanceLeaveSettings extends Component
         }
 
         return view('systemsettings::livewire.attendance.leave-settings', [
-            'rows' => $this->leaveSettingService->getPolicies($filters),
+            'rows' => $this->leaveSettingService->getPolicies($companyId, $filters),
             'years' => $years,
             'selectedYearId' => $this->selectedYearId,
             'showAllYears' => $this->showAllYears,

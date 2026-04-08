@@ -484,22 +484,21 @@
 
                             @if (($form['period_type'] ?? 'single') === 'single')
                                 <div>
+                                    <div class="text-xs text-gray-600 mb-1">{{ tr('Date') }}</div>
+                                    <x-ui.company-date-picker model="form.start_date" />
+                                </div>
+                            @else
+                                <div class="md:col-span-2 grid grid-cols-1 md:grid-cols-2 gap-3">
                                     <div>
-                                        <div class="text-xs text-gray-600 mb-1">{{ tr('Date') }}</div>
+                                        <div class="text-xs text-gray-600 mb-1">{{ tr('From') }}</div>
                                         <x-ui.company-date-picker model="form.start_date" />
                                     </div>
-                                @else
-                                    <div class="md:col-span-2 grid grid-cols-1 md:grid-cols-2 gap-3">
-                                        <div>
-                                            <div class="text-xs text-gray-600 mb-1">{{ tr('From') }}</div>
-                                            <x-ui.company-date-picker model="form.start_date" />
-                                        </div>
 
-                                        <div>
-                                            <div class="text-xs text-gray-600 mb-1">{{ tr('To') }}</div>
-                                            <x-ui.company-date-picker model="form.end_date" />
-                                        </div>
+                                    <div>
+                                        <div class="text-xs text-gray-600 mb-1">{{ tr('To') }}</div>
+                                        <x-ui.company-date-picker model="form.end_date" />
                                     </div>
+                                </div>
                             @endif
 
                         </div>
@@ -599,7 +598,7 @@
                             @if (($form['scope_type'] ?? 'all') === 'departments')
                                 <div>
                                     <div class="text-xs text-gray-600 mb-1">{{ tr('Departments') }}</div>
-                                    <x-ui.select multiple wire:model.defer="form.include.departments">
+                                    <x-ui.select multiple wire:model.live="form.include.departments">
                                         @foreach ($departmentsOptions as $d)
                                             <option value="{{ $d->id }}">{{ $d->name }}</option>
                                         @endforeach
@@ -697,7 +696,7 @@
                 </x-ui.secondary-button>
 
                 @can('settings.attendance.manage')
-                    <x-ui.primary-button type="button" wire:click="save" loading="save" class="cursor-pointer">
+                    <x-ui.primary-button type="button" wire:click="save" loading="save" :fullWidth="false" class="cursor-pointer">
                         <i class="fas fa-save me-2" wire:loading.remove wire:target="save"></i>
                         {{ tr('Save') }}
                     </x-ui.primary-button>

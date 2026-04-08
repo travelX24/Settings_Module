@@ -108,7 +108,7 @@ class ExceptionalDaysIndex extends Component
             $this->month = (int) now()->month;
         }
 
-        $this->compareFromYear = (int) now()->subYear()->year;
+        $this->compareFromYear = ($type === 'hijri') ? ($this->year - 1) : (int) now()->subYear()->year;
         $this->compareToYear = (int) $this->year;
         $this->compareSummary = [];
         $this->compareRows = [];
@@ -1130,7 +1130,7 @@ class ExceptionalDaysIndex extends Component
 
         return implode(' / ', $changes);
     }
-    public function exportExcel(ExcelExportService $exporter)
+    public function exportCsv(ExcelExportService $exporter)
     {
         $companyId = $this->companyId();
         $rows = $this->exceptionalDayService->getRowsQuery($companyId, $this->getFilters())->get();
@@ -1227,7 +1227,8 @@ class ExceptionalDaysIndex extends Component
         ];
 
         $allowedBranchIds = $this->exceptionalDayService->currentUserAllowedBranchIds($companyId);
-        $opts = $this->exceptionalDayService->loadScopeOptions($companyId, app()->getLocale(), $allowedBranchIds);
+        $parentDeptIds = $this->form['include']['departments'] ?? [];
+        $opts = $this->exceptionalDayService->loadScopeOptions($companyId, app()->getLocale(), $allowedBranchIds, $parentDeptIds);
 
         return view('settings-module::livewire.attendance.exceptional-days.index', [
             'rows' => $rows,

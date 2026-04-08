@@ -237,7 +237,7 @@ class ExceptionalDayService
     /**
      * Load scope options (departments, employees, etc) for dropdowns
      */
-    public function loadScopeOptions(int $companyId, string $locale = 'en', ?array $allowedBranchIds = null): array
+    public function loadScopeOptions(int $companyId, string $locale = 'en', ?array $allowedBranchIds = null, ?array $parentDeptIds = null): array
     {
         $departments = [];
         $sections = [];
@@ -250,17 +250,21 @@ class ExceptionalDayService
         if (Schema::hasTable('departments')) {
             $companyCol = $this->companyColumnFor('departments');
             $nameExpr = $this->coalesceNameExpr('departments', $isArabic ? ['name_ar', 'name', 'name_en'] : ['name_en', 'name', 'name_ar']);
+            
+            // Main Departments (No parent)
             $departments = DB::table('departments')
+                ->where('is_active', 1)
+                ->whereNull('parent_id')
                 ->when($companyCol, fn($q) => $q->where($companyCol, $companyId))
                 ->select('id', DB::raw("{$nameExpr} as name"))
                 ->orderByRaw("{$nameExpr} asc")
                 ->get()->toArray();
-        }
 
-        if (Schema::hasTable('sections')) {
-            $companyCol = $this->companyColumnFor('sections');
-            $nameExpr = $this->coalesceNameExpr('sections', $isArabic ? ['name_ar', 'name', 'name_en'] : ['name_en', 'name', 'name_ar']);
-            $sections = DB::table('sections')
+            // Sections/Sub-departments (Have parent)
+            $sections = DB::table('departments')
+                ->where('is_active', 1)
+                ->whereNotNull('parent_id')
+                ->when($parentDeptIds, fn($q) => $q->whereIn('parent_id', $parentDeptIds))
                 ->when($companyCol, fn($q) => $q->where($companyCol, $companyId))
                 ->select('id', DB::raw("{$nameExpr} as name"))
                 ->orderByRaw("{$nameExpr} asc")
@@ -273,6 +277,7 @@ class ExceptionalDayService
             $branchCol = $this->employeeBranchColumn();
 
             $employees = DB::table('employees')
+                ->where('status', 'ACTIVE')
                 ->when($companyCol, fn($q) => $q->where($companyCol, $companyId))
                 ->when($allowedBranchIds !== null, function ($q) use ($allowedBranchIds, $branchCol) {
                     if (!$branchCol) {
