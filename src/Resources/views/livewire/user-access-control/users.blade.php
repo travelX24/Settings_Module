@@ -115,6 +115,12 @@
                                         {{ tr('Custom Permissions') }}
                                     </x-ui.dropdown-item>
                                 @endif
+                                @if(!empty($user->device_id))
+                                    <x-ui.dropdown-item @click="$dispatch('open-confirm-confirm-reset-device', {{ $user->id }})">
+                                        <i class="fas fa-mobile-alt mr-2 w-5 text-purple-500"></i>
+                                        {{ tr('Reset Device') }}
+                                    </x-ui.dropdown-item>
+                                @endif
                                 <x-ui.dropdown-item
                                     @click="$dispatch('open-confirm-confirm-toggle-status', {{ $user->id }})"
                                     :danger="$user->is_active ?? true"
@@ -345,6 +351,12 @@
                                         {{ tr('Custom Permissions') }}
                                     </x-ui.dropdown-item>
                                 @endif
+                                @if(!empty($user->device_id))
+                                    <x-ui.dropdown-item @click="$dispatch('open-confirm-confirm-reset-device', {{ $user->id }})">
+                                        <i class="fas fa-mobile-alt mr-2 w-5 text-purple-500"></i>
+                                        {{ tr('Reset Device') }}
+                                    </x-ui.dropdown-item>
+                                @endif
                                 <x-ui.dropdown-item @click="$dispatch('open-confirm-confirm-toggle-status', {{ $user->id }})" :danger="$user->is_active ?? true">
                                     @if($user->is_active ?? true)
                                         <i class="fas fa-user-slash mr-2 w-5 text-red-500"></i>
@@ -492,6 +504,16 @@
         :cancelText="tr('Cancel')"
         confirmAction="wire:toggleStatus(__ID__)"
         type="warning"
+    />
+
+    <x-ui.confirm-dialog
+        id="confirm-reset-device"
+        :title="tr('Confirm Device Reset')"
+        :message="tr('Are you sure you want to reset this user\'s device? This will allow them to log in from a different phone.')"
+        :confirmText="tr('Reset')"
+        :cancelText="tr('Cancel')"
+        confirmAction="wire:resetDeviceId(__ID__)"
+        type="danger"
     />
 
     {{-- Custom Permissions Modal --}}

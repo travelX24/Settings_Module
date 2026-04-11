@@ -201,6 +201,14 @@ class Users extends Component
         $this->dispatch('toast', ['type' => 'success', 'message' => tr('Status updated')]);
     }
 
+    public function resetDeviceId($id)
+    {
+        $this->authorize('uac.users.manage');
+        $user = User::where('saas_company_id', $this->getCompanyId())->findOrFail($id);
+        $user->update(['device_id' => null]);
+        $this->dispatch('toast', ['type' => 'success', 'message' => tr('Device binding reset successfully')]);
+    }
+
     public function openPermModal(int $userId)
     {
         $this->authorize('uac.users.manage');
