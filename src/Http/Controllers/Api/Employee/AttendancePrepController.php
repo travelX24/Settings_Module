@@ -145,12 +145,15 @@ class AttendancePrepController extends Controller
 
         if (!empty($employeeGroupIds)) {
             $gpsQ->where(function ($q) use ($employeeGroupIds, $employee) {
-                $q->whereIn('employee_group_id', $employeeGroupIds);
+                // المجموعات الخاصة بالموظف أو المواقع العامة (الموحدة)
+                $q->whereIn('employee_group_id', $employeeGroupIds)
+                  ->orWhereNull('employee_group_id');
 
-                // branch match لو عند الموظف department_id
+                // الفروع الخاصة بالموظف أو المواقع العامة (الموحدة)
                 if ($employee && isset($employee->department_id)) {
                     $q->orWhere('branch_id', (int) $employee->department_id);
                 }
+                $q->orWhereNull('branch_id');
             });
         }
 
