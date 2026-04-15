@@ -64,10 +64,100 @@ class CalendarSettings extends Component
             'calendar_type' => ['required', 'in:hijri,gregorian'],
         ]);
 
+        if ($this->saved_calendar_type !== $data['calendar_type']) {
+            $yearsCount = \Athka\SystemSettings\Models\LeavePolicyYear::where('company_id', $companyId)->count();
+            if ($yearsCount > 0) {
+                $this->performCalendarConversion($data['calendar_type']);
+                return;
+            }
+        }
+        
+        $this->executeCalendarChange($data['calendar_type']);
+    }
+
+    private function performCalendarConversion(string $newType): void
+    {
+        $companyId = $this->resolveCompanyId();
+        
+        $years = \Athka\SystemSettings\Models\LeavePolicyYear::where('company_id', $companyId)->get();
+        
+        foreach ($years as $year) {
+            $oldVal = (int) $year->year;
+            $newVal = $this->convertYearValue($oldVal, $this->saved_calendar_type, $newType);
+            
+            // Generate valid starts_on and ends_on loosely based on new type
+            if ($newType === 'hijri') {
+                $startsOn = $newVal . "-01-01";
+                $endsOn = $newVal . "-12-29";
+            } else {
+                $startsOn = $newVal . "-01-01";
+                $endsOn = $newVal . "-12-31";
+            }
+            
+            // Handle uniqueness to prevent duplications if any
+            while (\Athka\SystemSettings\Models\LeavePolicyYear::where('company_id', $companyId)->where('year', $newVal)->where('id', '!=', $year->id)->exists()) {
+                $newVal++;
+                if ($newType === 'hijri') {
+                    $startsOn = $newVal . "-01-01";
+                    $endsOn = $newVal . "-12-29";
+                } else {
+                    $startsOn = $newVal . "-01-01";
+                    $endsOn = $newVal . "-12-31";
+                }
+            }
+            
+            $year->update([
+                'year' => $newVal,
+                'starts_on' => $startsOn,
+                'ends_on' => $endsOn,
+            ]);
+        }
+
+        $this->executeCalendarChange($newType);
+    }
+    
+    private function convertYearValue(int $year, string $from, string $to): int
+    {
+        if ($from === 'gregorian' && $to === 'hijri') {
+            if ($year >= 1900 && $year <= 2500) {
+                if (class_exists(\IntlCalendar::class)) {
+                    $tz = \IntlTimeZone::createTimeZone('UTC');
+                    $cal = \IntlCalendar::createInstance($tz, 'en_US@calendar=islamic-umalqura');
+                    $greg = \IntlCalendar::createInstance($tz, 'en_US@calendar=gregorian');
+                    $greg->set($year, 0, 1);
+                    $cal->setTime($greg->getTime());
+                    return (int) $cal->get(\IntlCalendar::FIELD_YEAR);
+                }
+                return (int) round(($year - 622) * 33 / 32); 
+            }
+        } elseif ($from === 'hijri' && $to === 'gregorian') {
+            if ($year >= 1300 && $year <= 1600) {
+                 if (class_exists(\IntlCalendar::class)) {
+                     $tz = \IntlTimeZone::createTimeZone('UTC');
+                     $cal = \IntlCalendar::createInstance($tz, 'en_US@calendar=islamic-umalqura');
+                     $cal->set(\IntlCalendar::FIELD_YEAR, $year);
+                     $cal->set(\IntlCalendar::FIELD_MONTH, 0); 
+                     $cal->set(\IntlCalendar::FIELD_DAY_OF_MONTH, 1); 
+                     
+                     $greg = \IntlCalendar::createInstance($tz, 'en_US@calendar=gregorian');
+                     $greg->setTime($cal->getTime());
+                     return (int) $greg->get(\IntlCalendar::FIELD_YEAR);
+                 }
+                 return (int) round(($year * 32 / 33) + 622);
+            }
+        }
+        
+        return $year;
+    }
+
+    private function executeCalendarChange(string $type): void
+    {
+        $companyId = $this->resolveCompanyId();
+
         OperationalCalendar::updateOrCreate(
             ['company_id' => $companyId],
             [
-                'calendar_type' => $data['calendar_type'],
+                'calendar_type' => $type,
                 'working_days' => json_encode([6, 0, 1, 2, 3]) // السبت-الخميس
             ]
         );
@@ -77,9 +167,9 @@ class CalendarSettings extends Component
         cache()->forget("company_calendar_type_{$companyId}");
 
         // Keep UI state in sync with DB (so user sees what is actually saved)
-        $this->saved_calendar_type = $data['calendar_type'];
+        $this->saved_calendar_type = $type;
         $this->saved_updated_human = now()->diffForHumans();
-        $this->calendar_type = $data['calendar_type'];
+        $this->calendar_type = $type;
 
         $this->toast(
             'success',
