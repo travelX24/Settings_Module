@@ -178,6 +178,7 @@ class ApprovalSequenceSettings extends Component
             'leaves'           => tr('Leaves'),
             'leave_exceptions' => tr('Leave Exceptions'),
             'permissions'      => tr('Permissions'),
+            'missions'         => tr('Missions'),
             'overtime'         => tr('Overtime'),
             'expenses'         => tr('Expenses'),
         ];
