@@ -56,16 +56,6 @@ class AttendanceService
         $dateStr = Carbon::parse($log->attendance_date)->toDateString();
         $nowTime = $now->format('H:i:s');
 
-        // Check for open sessions
-        $openSession = DB::table('attendance_daily_details')
-            ->where('daily_log_id', $log->id)
-            ->whereNull('check_out_time')
-            ->first();
-
-        if ($openSession) {
-            return ['ok' => false, 'code' => 'already_checked_in', 'message' => tr('You already have an open attendance session.')];
-        }
-
         $status = 'present';
         $matchedPeriodId = null;
         $matchedPeriodEndTime = null;
@@ -73,26 +63,16 @@ class AttendanceService
         if ($schedule && $schedule->periods) {
             $isWithinPeriod = false;
             foreach ($schedule->periods as $p) {
-                $pStartAllowed = Carbon::parse(Carbon::parse($dateStr)->toDateString() . " " . substr((string)$p->start_time, 0, 5))->subMinutes(30);
-                $pEnd = Carbon::parse(Carbon::parse($dateStr)->toDateString() . " " . substr((string)$p->end_time, 0, 5));
+                $pStartAllowed = Carbon::parse($dateStr . " " . substr((string)$p->start_time, 0, 5))->subMinutes(30);
+                $pEnd = Carbon::parse($dateStr . " " . substr((string)$p->end_time, 0, 5));
                 
                 if ($now->between($pStartAllowed, $pEnd)) {
                     $matchedPeriodId = $p->id;
                     $matchedPeriodEndTime = $p->end_time;
                     $isWithinPeriod = true;
 
-                    // Check if period already used
-                    $alreadyUsed = DB::table('attendance_daily_details')
-                        ->where('daily_log_id', $log->id)
-                        ->where('work_schedule_period_id', $p->id)
-                        ->exists();
-
-                    if ($alreadyUsed) {
-                        return ['ok' => false, 'code' => 'period_already_completed', 'message' => tr('You have already completed attendance registration for this period.')];
-                    }
-
                     // Late calculation
-                    $realStart = Carbon::parse(Carbon::parse($dateStr)->toDateString() . " " . substr((string)$p->start_time, 0, 5));
+                    $realStart = Carbon::parse($dateStr . " " . substr((string)$p->start_time, 0, 5));
                     if ($now->greaterThan($realStart->addMinutes($lateGraceMins))) {
                         $status = 'late';
                     }
@@ -102,6 +82,43 @@ class AttendanceService
 
             if (!$isWithinPeriod) {
                 return ['ok' => false, 'code' => 'too_early_for_checkin', 'message' => tr('You cannot check-in more than 30 minutes before the period starts.')];
+            }
+        }
+
+        // Check for open sessions AFTER identifying current period
+        $openSession = DB::table('attendance_daily_details')
+            ->where('daily_log_id', $log->id)
+            ->whereNull('check_out_time')
+            ->first();
+
+        if ($openSession) {
+            // If the open session is for a different period (previous one), auto-close it
+            if ($matchedPeriodId && $openSession->work_schedule_period_id != $matchedPeriodId) {
+                $prevPeriod = DB::table('work_schedule_periods')->where('id', $openSession->work_schedule_period_id)->first();
+                $autoOutTime = $prevPeriod ? $prevPeriod->end_time : ($log->scheduled_check_out ?? "16:00:00");
+                
+                DB::table('attendance_daily_details')->where('id', $openSession->id)->update([
+                    'check_out_time' => $autoOutTime,
+                    'meta_data' => json_encode(array_merge(
+                        json_decode($openSession->meta_data ?? '{}', true),
+                        ['auto_closed' => true, 'closed_at_checkin' => $nowTime]
+                    ), JSON_UNESCAPED_UNICODE),
+                    'updated_at' => $now,
+                ]);
+            } else {
+                return ['ok' => false, 'code' => 'already_checked_in', 'message' => tr('You already have an open attendance session.')];
+            }
+        }
+
+        // One more check: has this period already been used?
+        if ($matchedPeriodId) {
+            $alreadyUsed = DB::table('attendance_daily_details')
+                ->where('daily_log_id', $log->id)
+                ->where('work_schedule_period_id', $matchedPeriodId)
+                ->exists();
+
+            if ($alreadyUsed) {
+                return ['ok' => false, 'code' => 'period_already_completed', 'message' => tr('You have already completed attendance registration for this period.')];
             }
         }
 
@@ -135,6 +152,9 @@ class AttendanceService
             ]);
             $log->check_out_time = $checkoutTime;
         }
+
+        // Force reload details relation to include the auto-closed session before calculation
+        $log->unsetRelation('details');
 
         // Let the model handle status and other calculations
         $log->save();
