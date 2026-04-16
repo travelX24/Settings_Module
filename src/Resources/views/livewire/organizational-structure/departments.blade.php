@@ -255,7 +255,7 @@
                         tr('Status'),
                         tr('Actions')
                     ]"
-                    :perPage="15"
+                    :perPage="10"
                     :enablePagination="false"
                 >
                     @foreach($departments as $department)

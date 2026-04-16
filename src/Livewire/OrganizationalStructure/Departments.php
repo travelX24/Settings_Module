@@ -51,7 +51,7 @@ class Departments extends Component
             ->withCount('employees')
             ->orderBy('name');
 
-        $departments = $query->paginate(15);
+        $departments = $query->paginate(10);
         
         $departments->getCollection()->transform(function($dept) use ($companyId) {
             $dept->employees_count_display = $this->orgService->getCumulativeEmployeeCount($dept->id, $companyId);

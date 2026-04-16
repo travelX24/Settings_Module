@@ -163,7 +163,15 @@ class ApprovalInboxController extends Controller
         if (!$src) return null;
 
         $rawData = DB::table($src['table'])->where($src['idCol'], $task->approvable_id)->first();
-        if (!$rawData) return null;
+        if (!$rawData) {
+            return [
+                'id' => $task->approvable_id,
+                'status' => 'not_found',
+                'reason' => 'Original request data missing',
+                'creator' => 'Unknown',
+                'type_label' => $task->approvable_type,
+            ];
+        }
 
         $data = (array) $rawData;
         $isAr = str_contains($request->header('Accept-Language', 'ar'), 'ar');

@@ -274,27 +274,57 @@ class CurrenciesManager extends Component
 
     protected function buildCurrencyCatalog(): array
     {
-        $locale = app()->getLocale();
+        $locale = app()->isLocale('ar') ? 'ar' : 'en';
 
         if (class_exists(IntlCurrencies::class)) {
-            $names = IntlCurrencies::getNames($locale);
+            try {
+                $names = IntlCurrencies::getNames($locale);
 
-            $out = [];
-            foreach ($names as $code => $name) {
-                $symbol = IntlCurrencies::getSymbol($code, $locale) ?: $code;
-                $out[$code] = ['name' => $name, 'symbol' => $symbol];
+                $out = [];
+                foreach ($names as $code => $name) {
+                    $symbol = IntlCurrencies::getSymbol($code, $locale) ?: $code;
+                    $out[$code] = ['name' => $name, 'symbol' => $symbol];
+                }
+
+                if (!empty($out)) {
+                    ksort($out);
+                    return $out;
+                }
+            } catch (\Exception $e) {
+                // Fallback
             }
-
-            ksort($out);
-            return $out;
         }
 
-        return [
-            'USD' => ['name' => 'US Dollar', 'symbol' => '$'],
-            'EUR' => ['name' => 'Euro', 'symbol' => '€'],
-            'SAR' => ['name' => 'Saudi Riyal', 'symbol' => 'ر.س'],
-            'YER' => ['name' => 'Yemeni Rial', 'symbol' => 'ر.ي'],
+        // Robust Fallback with direct Arabic support
+        $isAr = ($locale === 'ar');
+        $fallback = [
+            'USD' => ['name' => $isAr ? 'دولار أمريكي' : 'US Dollar', 'symbol' => '$'],
+            'EUR' => ['name' => $isAr ? 'يورو' : 'Euro', 'symbol' => '€'],
+            'SAR' => ['name' => $isAr ? 'ريال سعودي' : 'Saudi Riyal', 'symbol' => 'ر.س'],
+            'YER' => ['name' => $isAr ? 'ريال يمني' : 'Yemeni Rial', 'symbol' => 'ر.ي'],
+            'AED' => ['name' => $isAr ? 'درهم إماراتي' : 'UAE Dirham', 'symbol' => 'د.إ'],
+            'EGP' => ['name' => $isAr ? 'جنيه مصري' : 'Egyptian Pound', 'symbol' => 'ج.م'],
+            'GBP' => ['name' => $isAr ? 'جنيه إسترليني' : 'British Pound', 'symbol' => '£'],
+            'KWD' => ['name' => $isAr ? 'دينار كويتي' : 'Kuwaiti Dinar', 'symbol' => 'د.ك'],
+            'QAR' => ['name' => $isAr ? 'ريال قطري' : 'Qatari Rial', 'symbol' => 'ر.ق'],
+            'BHD' => ['name' => $isAr ? 'دينار بحريني' : 'Bahraini Dinar', 'symbol' => 'د.ب'],
+            'OMR' => ['name' => $isAr ? 'ريال عماني' : 'Omani Rial', 'symbol' => 'ر.ع'],
+            'TRY' => ['name' => $isAr ? 'ليرة تركية' : 'Turkish Lira', 'symbol' => '₺'],
+            'JOD' => ['name' => $isAr ? 'دينار أردني' : 'Jordanian Dinar', 'symbol' => 'د.أ'],
+            'IQD' => ['name' => $isAr ? 'دينار عراقي' : 'Iraqi Dinar', 'symbol' => 'د.ع'],
+            'LYD' => ['name' => $isAr ? 'دينار ليبي' : 'Libyan Dinar', 'symbol' => 'د.ل'],
+            'DZD' => ['name' => $isAr ? 'دينار جزائري' : 'Algerian Dinar', 'symbol' => 'د.ج'],
+            'MAD' => ['name' => $isAr ? 'درهم مغربي' : 'Moroccan Dirham', 'symbol' => 'د.م.'],
+            'TND' => ['name' => $isAr ? 'دينار تونسي' : 'Tunisian Dinar', 'symbol' => 'د.ت'],
+            'LBP' => ['name' => $isAr ? 'ليرة لبانية' : 'Lebanese Pound', 'symbol' => 'ل.ل'],
+            'SYP' => ['name' => $isAr ? 'ليرة سورية' : 'Syrian Pound', 'symbol' => 'ل.س'],
+            'JPY' => ['name' => $isAr ? 'ين ياباني' : 'Japanese Yen', 'symbol' => '¥'],
+            'CNY' => ['name' => $isAr ? 'يوان صيني' : 'Chinese Yuan', 'symbol' => '¥'],
+            'RUB' => ['name' => $isAr ? 'روبل روسي' : 'Russian Ruble', 'symbol' => '₽'],
         ];
+
+        ksort($fallback);
+        return $fallback;
     }
 
     protected function metaFor(string $code): ?array
