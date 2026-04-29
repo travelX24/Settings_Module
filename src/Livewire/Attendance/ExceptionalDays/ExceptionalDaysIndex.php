@@ -95,7 +95,7 @@ class ExceptionalDaysIndex extends Component
         if ($type === 'hijri') {
             // Get current Hijri year
             if (class_exists(\IntlCalendar::class)) {
-                $tz = \IntlTimeZone::createTimeZone('UTC');
+                $tz = \IntlTimeZone::createTimeZone(config('app.timezone', 'UTC'));
                 $cal = \IntlCalendar::createInstance($tz, 'en_US@calendar=islamic-umalqura');
                 $this->year = (int) $cal->get(\IntlCalendar::FIELD_YEAR);
                 $this->month = (int) $cal->get(\IntlCalendar::FIELD_MONTH) + 1;
@@ -181,7 +181,7 @@ class ExceptionalDaysIndex extends Component
         // Reset year/month to current
         $type = $this->getCompanyCalendarType();
         if ($type === 'hijri' && class_exists(\IntlCalendar::class)) {
-            $tz = \IntlTimeZone::createTimeZone('UTC');
+            $tz = \IntlTimeZone::createTimeZone(config('app.timezone', 'UTC'));
             $cal = \IntlCalendar::createInstance($tz, 'en_US@calendar=islamic-umalqura');
             $this->year = (int) $cal->get(\IntlCalendar::FIELD_YEAR);
             $this->month = (int) $cal->get(\IntlCalendar::FIELD_MONTH) + 1;
@@ -432,7 +432,7 @@ class ExceptionalDaysIndex extends Component
             'en_US@calendar=islamic-umalqura',
             \IntlDateFormatter::NONE,
             \IntlDateFormatter::NONE,
-            'UTC',
+            config('app.timezone', 'UTC'),
             \IntlDateFormatter::TRADITIONAL,
             'yyyy-MM-dd'
         );
@@ -448,7 +448,7 @@ class ExceptionalDaysIndex extends Component
             return [$start->toDateString(), $end->toDateString()];
         }
 
-        $tz = \IntlTimeZone::createTimeZone('UTC');
+        $tz = \IntlTimeZone::createTimeZone(config('app.timezone', 'UTC'));
 
         $startCal = \IntlCalendar::createInstance($tz, 'en_US@calendar=islamic-umalqura');
         $startCal->setLenient(false);
@@ -475,7 +475,7 @@ class ExceptionalDaysIndex extends Component
             return [$start->toDateString(), $end->toDateString()];
         }
 
-        $tz = \IntlTimeZone::createTimeZone('UTC');
+        $tz = \IntlTimeZone::createTimeZone(config('app.timezone', 'UTC'));
 
         $startCal = \IntlCalendar::createInstance($tz, 'en_US@calendar=islamic-umalqura');
         $startCal->setLenient(false);

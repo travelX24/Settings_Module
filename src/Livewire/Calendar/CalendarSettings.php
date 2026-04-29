@@ -64,14 +64,8 @@ class CalendarSettings extends Component
             'calendar_type' => ['required', 'in:hijri,gregorian'],
         ]);
 
-        if ($this->saved_calendar_type !== $data['calendar_type']) {
-            $yearsCount = \Athka\SystemSettings\Models\LeavePolicyYear::where('company_id', $companyId)->count();
-            if ($yearsCount > 0) {
-                $this->performCalendarConversion($data['calendar_type']);
-                return;
-            }
-        }
-        
+        // ✅ تم إيقاف عملية التحويل التلقائي للسنوات لتجنب التضارب وفقدان البيانات
+        // السنوات ستبقى كما هي في قاعدة البيانات، وسيتم فلترتها برمجياً حسب نوع التقويم المختار
         $this->executeCalendarChange($data['calendar_type']);
     }
 

@@ -108,7 +108,14 @@ class Users extends Component
         $this->name = $user->name;
         $this->email = $user->email;
         $this->role = $user->roles->first()?->name ?? '';
-        $this->is_locked_role = in_array($this->role, ['company-admin', 'saas-admin']);
+
+        // Identify the primary user (the one with the lowest ID in the company)
+        $primaryUserId = User::where('saas_company_id', $user->saas_company_id)
+            ->orderBy('id', 'asc')
+            ->value('id');
+
+        // Only lock the role if it's the primary user OR a system-level role
+        $this->is_locked_role = ((int)$user->id === (int)$primaryUserId) || in_array($this->role, ['saas-admin', 'super-admin', 'system-admin']);
         $this->access_scope = $user->access_scope ?? 'all_branches';
         $this->access_type = $user->access_type ?? 'system_and_app';
         $this->is_active = $user->is_active;

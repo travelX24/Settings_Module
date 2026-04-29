@@ -205,26 +205,25 @@ class AttendanceLeaveSettings extends Component
 
         $companyId = auth()->user()->saas_company_id;
 
+        // 1. Ensure current year exists for the current calendar type
+        $currentYearValue = $this->getCurrentCalendarYearProperty();
+        $this->leaveSettingService->ensureDefaultConfiguration($companyId);
+
         $yearQuery = $this->applyCalendarTypeToYearQuery(
             LeavePolicyYear::where('company_id', $companyId)
         );
 
+        // 2. Try to find the active year for this calendar type
         $activeYear = (clone $yearQuery)->where('is_active', true)->first();
 
+        // 3. If no active year for this calendar type, try to find the current year
         if (!$activeYear) {
-            $activeYear = (clone $yearQuery)->orderBy('year', 'desc')->first();
+            $activeYear = (clone $yearQuery)->where('year', $currentYearValue)->first();
         }
 
-        // ✅ If still no year found, ensure default configuration is created
+        // 4. If still no active year, take the latest one for this calendar type
         if (!$activeYear) {
-            $this->leaveSettingService->ensureDefaultConfiguration($companyId);
-
-            $yearQuery = $this->applyCalendarTypeToYearQuery(
-                LeavePolicyYear::where('company_id', $companyId)
-            );
-
-            $activeYear = (clone $yearQuery)->where('is_active', true)->first()
-                ?: (clone $yearQuery)->orderBy('year', 'desc')->first();
+            $activeYear = (clone $yearQuery)->orderBy('year', 'desc')->first();
         }
 
         $this->selectedYearId = $activeYear ? $activeYear->id : null;

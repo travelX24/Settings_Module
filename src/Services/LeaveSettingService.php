@@ -114,24 +114,57 @@ class LeaveSettingService
     {
         $currentYearValue = $this->getCurrentCalendarYear($companyId);
         $calendarType = $this->getCompanyCalendarType($companyId);
-        
-        // 1. Ensure current year exists & is active
-        $yearRecord = LeavePolicyYear::firstOrCreate(
-            ['company_id' => $companyId, 'year' => $currentYearValue],
-            [
-                'starts_on' => $calendarType === 'hijri' ? "$currentYearValue-01-01" : "$currentYearValue-01-01",
-                'ends_on' => $calendarType === 'hijri' ? "$currentYearValue-12-29" : "$currentYearValue-12-31",
-                'is_active' => true
-            ]
-        );
 
-        // 2. Ensure default Annual Leave exists for this year
+        // 1. Check if ANY year of the same calendar type exists
+        $anyYearExists = LeavePolicyYear::where('company_id', $companyId)
+            ->where(function ($q) use ($calendarType) {
+                if ($calendarType === 'hijri') {
+                    $q->whereBetween('year', [1300, 1600]);
+                } else {
+                    $q->whereBetween('year', [1900, 2500]);
+                }
+            })->exists();
+
+        // 2. Ensure current year exists for the specific calendar type
+        $yearRecord = LeavePolicyYear::where('company_id', $companyId)
+            ->where('year', $currentYearValue)
+            ->where(function ($q) use ($calendarType) {
+                if ($calendarType === 'hijri') {
+                    $q->whereBetween('year', [1300, 1600]);
+                } else {
+                    $q->whereBetween('year', [1900, 2500]);
+                }
+            })
+            ->first();
+
+        if (!$yearRecord) {
+            // Determine if it should be active (only if no other year of this type is active)
+            $hasActiveOfSameType = LeavePolicyYear::where('company_id', $companyId)
+                ->where('is_active', true)
+                ->where(function ($q) use ($calendarType) {
+                    if ($calendarType === 'hijri') {
+                        $q->whereBetween('year', [1300, 1600]);
+                    } else {
+                        $q->whereBetween('year', [1900, 2500]);
+                    }
+                })->exists();
+
+            $yearRecord = LeavePolicyYear::create([
+                'company_id' => $companyId,
+                'year' => $currentYearValue,
+                'starts_on' => "$currentYearValue-01-01",
+                'ends_on' => $calendarType === 'hijri' ? "$currentYearValue-12-29" : "$currentYearValue-12-31",
+                'is_active' => !$hasActiveOfSameType // Only make it active if none exists
+            ]);
+        }
+
+        // 3. Ensure default Annual Leave exists for this year
         $exists = LeavePolicy::where('policy_year_id', $yearRecord->id)
             ->where(function ($q) {
                 $q->where('name', 'like', '%Annual%')
-                  ->orWhere('name', 'like', '%إجازة سنوية%')
-                  ->orWhere('name', 'like', '%سنوية%')
-                  ->orWhere('leave_type', 'annual');
+                    ->orWhere('name', 'like', '%إجازة سنوية%')
+                    ->orWhere('name', 'like', '%سنوية%')
+                    ->orWhere('leave_type', 'annual');
             })
             ->exists();
 
