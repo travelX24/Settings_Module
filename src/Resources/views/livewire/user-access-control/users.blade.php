@@ -108,7 +108,11 @@
                                     <i class="fas fa-edit mr-2 w-5 text-blue-500"></i>
                                     {{ tr('Edit') }}
                                 </x-ui.dropdown-item>
-                                @php $isSysAdmin = $user->roles && $user->roles->whereIn('name', ['company-admin', 'saas-admin', 'super-admin', 'system-admin'])->isNotEmpty(); @endphp
+                                @php 
+                                    $isPrimary = ((int)$user->id === (int)($primaryUserId ?? 0));
+                                    $isGlobalAdmin = $user->roles && $user->roles->whereIn('name', ['saas-admin', 'super-admin', 'system-admin'])->isNotEmpty();
+                                    $isSysAdmin = $isPrimary || $isGlobalAdmin;
+                                @endphp
                                 @if(($user->access_type ?? 'system_and_app') !== 'hr_app_only' && !$isSysAdmin)
                                     <x-ui.dropdown-item wire:click="openPermModal({{ $user->id }})">
                                         <i class="fas fa-sliders-h mr-2 w-5 text-amber-500"></i>
@@ -344,7 +348,11 @@
                                     <i class="fas fa-edit mr-2 w-5 text-blue-500"></i>
                                     {{ tr('Edit') }}
                                 </x-ui.dropdown-item>
-                                @php $isSysAdmin = $user->roles && $user->roles->whereIn('name', ['company-admin', 'saas-admin', 'super-admin', 'system-admin'])->isNotEmpty(); @endphp
+                                @php 
+                                    $isPrimary = ((int)$user->id === (int)($primaryUserId ?? 0));
+                                    $isGlobalAdmin = $user->roles && $user->roles->whereIn('name', ['saas-admin', 'super-admin', 'system-admin'])->isNotEmpty();
+                                    $isSysAdmin = $isPrimary || $isGlobalAdmin;
+                                @endphp
                                 @if(($user->access_type ?? 'system_and_app') !== 'hr_app_only' && !$isSysAdmin)
                                     <x-ui.dropdown-item wire:click="openPermModal({{ $user->id }})">
                                         <i class="fas fa-sliders-h mr-2 w-5 text-amber-500"></i>

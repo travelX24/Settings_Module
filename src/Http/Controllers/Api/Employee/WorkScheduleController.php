@@ -47,6 +47,7 @@ class WorkScheduleController extends Controller
         }
 
         $holidays = $this->scheduleService->getHolidays($companyId, $from->toDateString(), $to->toDateString());
+        $requests = $this->scheduleService->getEmployeeRequests($employee->id, $from->toDateString(), $to->toDateString());
 
         $days = [];
         $cursor = $from->copy();
@@ -54,9 +55,9 @@ class WorkScheduleController extends Controller
         while ($cursor->lte($to)) {
             $dateStr = $cursor->toDateString();
             
-            // Resolve the specific schedule for THIS date
-            $effectiveSchedule = $this->scheduleService->getEffectiveSchedule($companyId, $employee, $dateStr);
-            $metrics = $this->scheduleService->getMetricsForDate($dateStr, $effectiveSchedule, $holidays);
+            // Resolve the specific schedule for THIS date (no fallback to match web exactly)
+            $effectiveSchedule = $this->scheduleService->getEffectiveSchedule($companyId, $employee, $dateStr, false);
+            $metrics = $this->scheduleService->getMetricsForDate($dateStr, $effectiveSchedule, $holidays, $employee, $requests);
 
             $days[] = [
                 'date' => $dateStr,
@@ -64,9 +65,11 @@ class WorkScheduleController extends Controller
                 'status' => $metrics['status'],
                 'is_holiday' => $metrics['is_holiday'],
                 'holiday_name' => $metrics['holiday_name'],
+                'leave_name' => $metrics['leave_name'],
                 'is_workday' => $metrics['is_workday'],
                 'total_minutes' => $metrics['total_minutes'],
                 'periods' => $metrics['periods'],
+                'permissions' => $metrics['permissions'],
             ];
 
             $cursor->addDay();

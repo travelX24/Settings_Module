@@ -60,8 +60,9 @@ class AttendanceService
         $matchedPeriodId = null;
         $matchedPeriodEndTime = null;
 
+        $isWithinPeriod = false;
+
         if ($schedule && $schedule->periods) {
-            $isWithinPeriod = false;
             foreach ($schedule->periods as $p) {
                 $pStartAllowed = Carbon::parse($dateStr . " " . substr((string)$p->start_time, 0, 5))->subMinutes(30);
                 $pEnd = Carbon::parse($dateStr . " " . substr((string)$p->end_time, 0, 5));
@@ -79,35 +80,63 @@ class AttendanceService
                     break;
                 }
             }
-
-            if (!$isWithinPeriod) {
-                return ['ok' => false, 'code' => 'too_early_for_checkin', 'message' => tr('You cannot check-in more than 30 minutes before the period starts.')];
-            }
         }
 
-        // Check for open sessions AFTER identifying current period
+        // ─── Check & Auto-Close open sessions ──────────────────────────────
+        // This MUST happen before the too_early_for_checkin gate so that an
+        // employee who forgot to check out from period 1 can still trigger
+        // check-in for period 2 (or get unblocked between periods).
         $openSession = DB::table('attendance_daily_details')
             ->where('daily_log_id', $log->id)
             ->whereNull('check_out_time')
             ->first();
 
         if ($openSession) {
-            // If the open session is for a different period (previous one), auto-close it
-            if ($matchedPeriodId && $openSession->work_schedule_period_id != $matchedPeriodId) {
-                $prevPeriod = DB::table('work_schedule_periods')->where('id', $openSession->work_schedule_period_id)->first();
-                $autoOutTime = $prevPeriod ? $prevPeriod->end_time : ($log->scheduled_check_out ?? "16:00:00");
-                
+            $shouldAutoClose = false;
+
+            // Case 1: We matched a NEW period — the open session is from a different one
+            if ($matchedPeriodId && (int)$openSession->work_schedule_period_id !== (int)$matchedPeriodId) {
+                $shouldAutoClose = true;
+            }
+
+            // Case 2: We're NOT within any period window BUT the open session's period has already ended
+            // (employee is stuck between periods — auto-close the old session)
+            if (!$isWithinPeriod && !$shouldAutoClose && $openSession->work_schedule_period_id) {
+                $openPeriodRow = DB::table('work_schedule_periods')
+                    ->where('id', $openSession->work_schedule_period_id)
+                    ->first();
+                if ($openPeriodRow) {
+                    $openPeriodEnd = Carbon::parse($dateStr . " " . substr((string)$openPeriodRow->end_time, 0, 5));
+                    if ($now->gt($openPeriodEnd)) {
+                        $shouldAutoClose = true;
+                    }
+                }
+            }
+
+            if ($shouldAutoClose) {
+                $prevPeriod = DB::table('work_schedule_periods')
+                    ->where('id', $openSession->work_schedule_period_id)
+                    ->first();
+                $autoOutTime = $prevPeriod ? $prevPeriod->end_time : ($log->scheduled_check_out ?? '16:00:00');
+
                 DB::table('attendance_daily_details')->where('id', $openSession->id)->update([
                     'check_out_time' => $autoOutTime,
-                    'meta_data' => json_encode(array_merge(
+                    'meta_data'      => json_encode(array_merge(
                         json_decode($openSession->meta_data ?? '{}', true),
                         ['auto_closed' => true, 'closed_at_checkin' => $nowTime]
                     ), JSON_UNESCAPED_UNICODE),
-                    'updated_at' => $now,
+                    'updated_at'     => $now,
                 ]);
+                $openSession = null; // session closed — proceed with check-in
             } else {
+                // Session is still active for the CURRENT period — block duplicate check-in
                 return ['ok' => false, 'code' => 'already_checked_in', 'message' => tr('You already have an open attendance session.')];
             }
+        }
+
+        // ─── Period window gate (after auto-close) ─────────────────────────
+        if (!$isWithinPeriod) {
+            return ['ok' => false, 'code' => 'too_early_for_checkin', 'message' => tr('You cannot check-in more than 30 minutes before the period starts.')];
         }
 
         // One more check: has this period already been used?

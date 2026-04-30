@@ -96,16 +96,54 @@ class ApprovalService
         return (int) DB::table('employees')->where('id', $employeeId)->value($col);
     }
 
+    public function resolvePolicyForEmployee(string $operationKey, int $employeeId, int $companyId)
+    {
+        $policies = DB::table('approval_policies')
+            ->where('company_id', $companyId)
+            ->where('operation_key', $operationKey)
+            ->where('is_active', true)
+            ->get();
+
+        if ($policies->isEmpty()) {
+            return null;
+        }
+
+        $employee = DB::table('employees')->where('id', $employeeId)->first();
+        if (!$employee) return null;
+
+        foreach ($policies as $policy) {
+            if ($policy->scope_type === 'all') {
+                return $policy;
+            }
+
+            $scopes = DB::table('approval_policy_scopes')
+                ->where('policy_id', $policy->id)
+                ->pluck('scope_id')
+                ->map(fn($id) => (string)$id)
+                ->toArray();
+
+            if ($policy->scope_type === 'employees' && in_array((string)$employeeId, $scopes, true)) {
+                return $policy;
+            }
+
+            if ($policy->scope_type === 'departments' && in_array((string)$employee->department_id, $scopes, true)) {
+                return $policy;
+            }
+
+            if ($policy->scope_type === 'branches' && in_array((string)$employee->branch_id, $scopes, true)) {
+                return $policy;
+            }
+        }
+
+        return null;
+    }
+
     /**
      * Check if an employee has ANY approvers setup (either via Policy or Direct Manager).
      */
     public function hasApproversForEmployee(string $operationKey, int $employeeId, int $companyId): bool
     {
-        $policy = DB::table('approval_policies')
-            ->where('company_id', $companyId)
-            ->where('operation_key', $operationKey)
-            ->where('is_active', true)
-            ->first();
+        $policy = $this->resolvePolicyForEmployee($operationKey, $employeeId, $companyId);
 
         if (!$policy) {
             // No policy means no strict workflow defined.
@@ -167,12 +205,7 @@ class ApprovalService
         if ($existing) return;
 
         // 1. Find Policy
-        // 1. Find Policy
-        $policy = DB::table('approval_policies')
-            ->where('company_id', $companyId)
-            ->where('operation_key', $src['operation_key'])
-            ->where('is_active', true)
-            ->first();
+        $policy = $this->resolvePolicyForEmployee($src['operation_key'], (int)$request->{$src['employeeCol']}, $companyId);
 
         if (!$policy) {
             // No policy? Default to direct manager if possible

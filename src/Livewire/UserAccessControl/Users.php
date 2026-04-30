@@ -223,8 +223,15 @@ class Users extends Component
             ->with('roles')
             ->findOrFail($userId);
 
-        if ($user->roles->whereIn('name', ['company-admin', 'saas-admin', 'super-admin', 'system-admin'])->isNotEmpty()) {
-            $this->dispatch('toast', ['type' => 'error', 'message' => tr('System administrator permissions cannot be customized.')]);
+        $primaryUserId = User::where('saas_company_id', $user->saas_company_id)
+            ->orderBy('id', 'asc')
+            ->value('id');
+
+        $isPrimary = ((int)$user->id === (int)$primaryUserId);
+        $isGlobalAdmin = $user->roles->whereIn('name', ['saas-admin', 'super-admin', 'system-admin'])->isNotEmpty();
+
+        if ($isPrimary || $isGlobalAdmin) {
+            $this->dispatch('toast', ['type' => 'error', 'message' => tr('Primary administrator permissions cannot be customized.')]);
             return;
         }
 
@@ -335,6 +342,10 @@ class Users extends Component
             $selectedEmp = Employee::with(['department', 'jobTitle'])->find($this->selectedEmployeeId);
         }
 
+        $primaryUserId = User::where('saas_company_id', $companyId)
+            ->orderBy('id', 'asc')
+            ->value('id');
+
         return view('systemsettings::livewire.user-access-control.users', [
             'users' => $users,
             'roles' => Role::where('name', '!=', 'saas-admin')
@@ -358,7 +369,8 @@ class Users extends Component
             'display_job_title' => $selectedEmp?->jobTitle?->name ?? '-',
             'permissionGroups' => $this->uacService->getPermissionGroups(),
             'permissionsMap' => collect($this->uacService->getPermissionGroups())->flatMap(fn($g) => $g)->toArray(),
-            'permissionTabs' => $this->uacService->getPermissionTabs()
+            'permissionTabs' => $this->uacService->getPermissionTabs(),
+            'primaryUserId' => $primaryUserId
         ]);
     }
 }

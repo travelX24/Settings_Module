@@ -14,7 +14,7 @@ class WorkScheduleService
     /**
      * Get the effective schedule for a company/employee.
      */
-    public function getEffectiveSchedule(int $companyId, ?Employee $employee = null, ?string $date = null): ?WorkSchedule
+    public function getEffectiveSchedule(int $companyId, ?Employee $employee = null, ?string $date = null, bool $fallback = true): ?WorkSchedule
     {
         $resolveDate = $date ?: now()->toDateString();
 
@@ -39,6 +39,8 @@ class WorkScheduleService
             }
         }
 
+        if (!$fallback) return null;
+
         // 2. Fallback to default company schedule
         $schedule = WorkSchedule::query()
             ->with(['periods', 'exceptions'])
@@ -62,6 +64,7 @@ class WorkScheduleService
     public function getHolidays(int $companyId, string $from, string $to)
     {
         return OfficialHolidayOccurrence::query()
+            ->with('template')
             ->where('company_id', $companyId)
             ->whereDate('start_date', '<=', $to)
             ->whereDate('end_date', '>=', $from)
@@ -205,9 +208,63 @@ class WorkScheduleService
     }
 
     /**
+     * Get employee requests (Leaves, Missions, Permissions) for a range.
+     */
+    public function getEmployeeRequests(int $employeeId, string $from, string $to): array
+    {
+        $requests = [
+            'leaves' => collect(),
+            'missions' => collect(),
+            'permissions' => collect(),
+        ];
+
+        // Leaves
+        if (class_exists(\Athka\Attendance\Models\AttendanceLeaveRequest::class)) {
+            $requests['leaves'] = \Athka\Attendance\Models\AttendanceLeaveRequest::query()
+                ->where('employee_id', $employeeId)
+                ->where('status', 'approved')
+                ->where(function ($q) use ($from, $to) {
+                    $q->whereBetween('start_date', [$from, $to])
+                      ->orWhereBetween('end_date', [$from, $to])
+                      ->orWhere(function ($qq) use ($from, $to) {
+                          $qq->where('start_date', '<=', $from)->where('end_date', '>=', $to);
+                      });
+                })
+                ->with('policy')
+                ->get();
+        }
+
+        // Missions
+        if (class_exists(\Athka\Attendance\Models\AttendanceMissionRequest::class)) {
+            $requests['missions'] = \Athka\Attendance\Models\AttendanceMissionRequest::query()
+                ->where('employee_id', $employeeId)
+                ->where('status', 'approved')
+                ->where(function ($q) use ($from, $to) {
+                    $q->whereBetween('start_date', [$from, $to])
+                      ->orWhereBetween('end_date', [$from, $to])
+                      ->orWhere(function ($qq) use ($from, $to) {
+                          $qq->where('start_date', '<=', $from)->where('end_date', '>=', $to);
+                      });
+                })
+                ->get();
+        }
+
+        // Permissions (Exits)
+        if (class_exists(\Athka\Attendance\Models\AttendancePermissionRequest::class)) {
+            $requests['permissions'] = \Athka\Attendance\Models\AttendancePermissionRequest::query()
+                ->where('employee_id', $employeeId)
+                ->where('status', 'approved')
+                ->whereBetween('permission_date', [$from, $to])
+                ->get();
+        }
+
+        return $requests;
+    }
+
+    /**
      * Get metrics for a specific date (internal usage).
      */
-    public function getMetricsForDate(string $dateStr, ?WorkSchedule $schedule, $holidays, ?Employee $employee = null): array
+    public function getMetricsForDate(string $dateStr, ?WorkSchedule $schedule, $holidays, ?Employee $employee = null, array $requests = []): array
     {
         $dayKey = $this->getDayKey(Carbon::parse($dateStr));
         $isHoliday = $holidays->first(fn($h) => $dateStr >= Carbon::parse($h->start_date)->toDateString() && $dateStr <= Carbon::parse($h->end_date)->toDateString());
@@ -220,10 +277,36 @@ class WorkScheduleService
         $periodsOut = collect();
         $isWorkday = false;
         
-        $holidayName = $isHoliday ? ($isHoliday->template?->name ?? 'Holiday') : ($exceptionalDay ? '⭐ ' . tr('Exceptional Day') . ': ' . $exceptionalDay->name : null);
+        $holidayName = $isHoliday ? ($isHoliday->template?->name ?? tr('Holiday')) : ($exceptionalDay ? ($exceptionalDay->name_ar ?: $exceptionalDay->name) : null);
         $isHolidayFinal = $isHoliday || $exceptionalDay;
 
-        if ($schedule && !$isHolidayFinal) {
+        // --- Handle Leaves ---
+        $leaves = $requests['leaves'] ?? collect();
+        $leave = $leaves->first(function($l) use ($dateStr) {
+            $d = Carbon::parse($dateStr);
+            return $d->between(Carbon::parse($l->start_date)->startOfDay(), Carbon::parse($l->end_date)->startOfDay());
+        });
+
+        // --- Handle Missions ---
+        $missions = $requests['missions'] ?? collect();
+        $mission = $missions->first(function($m) use ($dateStr) {
+            $d = Carbon::parse($dateStr);
+            return $d->between(Carbon::parse($m->start_date)->startOfDay(), Carbon::parse($m->end_date)->startOfDay());
+        });
+
+        // --- Handle Permissions (Exits) ---
+        $dayPermissions = ($requests['permissions'] ?? collect())->filter(fn($p) => (string)$p->permission_date === $dateStr);
+
+        $leaveName = null;
+
+        if ($leave) {
+            $leaveName = $leave->policy?->name ?: tr('Leave');
+        } elseif ($mission) {
+            $missionLabel = tr('Mission') . ($mission->destination ? ': ' . $mission->destination : '');
+            $holidayName = $missionLabel;
+        }
+
+        if ($schedule && !$isHolidayFinal && !$leave && !$mission) {
             $isWorkday = in_array($dayKey, (array)$schedule->work_days);
             
             if ($schedule->exceptions) {
@@ -249,10 +332,42 @@ class WorkScheduleService
         $firstCheckIn = $periodsOut->isNotEmpty() ? $periodsOut->first()['start_time'] : null;
         $lastCheckOut = $periodsOut->isNotEmpty() ? $periodsOut->last()['end_time'] : null;
 
+        // If it's a partial leave, we can augment the periods
+        if ($leave && $leave->type === 'partial' && $leave->from_time && $leave->to_time) {
+            $periodsOut = $periodsOut->map(function($p) use ($leave) {
+                // Simplified: If the period overlaps with leave, mark it? 
+                // Actually Flutter expects each period to be either work or leave.
+                // For now, we'll just keep it simple as the mobile UI handles full-day status too.
+                return $p;
+            });
+        }
+
+        $permissionsOut = $dayPermissions->map(fn($p) => [
+            'from_time' => substr((string)$p->from_time, 0, 5),
+            'to_time' => substr((string)$p->to_time, 0, 5),
+            'minutes' => (int)$p->total_minutes,
+        ])->values();
+
+        // Final Status Determination (Priority)
+        // Order: Leave > Mission > Holiday/Exceptional > Workday > Off
+        // If no schedule is assigned and no other events exist, set to 'no_schedule' to show empty in UI
+        $finalStatus = ($schedule === null && !$isHolidayFinal && !$leave && !$mission) ? 'no_schedule' : 'off';
+        
+        if ($leave) {
+            $finalStatus = 'on_leave';
+        } elseif ($mission) {
+            $finalStatus = 'mission';
+        } elseif ($isHolidayFinal) {
+            $finalStatus = 'holiday';
+        } elseif ($isWorkday && $periodsOut->isNotEmpty()) {
+            $finalStatus = 'workday';
+        }
+
         return [
-            'status' => $isHolidayFinal ? 'holiday' : ($isWorkday && $periodsOut->isNotEmpty() ? 'workday' : 'off'),
+            'status' => $finalStatus,
             'is_holiday' => (bool)$isHolidayFinal,
             'holiday_name' => $holidayName,
+            'leave_name' => $leaveName,
             'is_workday' => $isWorkday,
             'day_key' => $dayKey,
             'total_minutes' => $scheduledMinutes,
@@ -260,6 +375,7 @@ class WorkScheduleService
             'check_in' => $firstCheckIn,
             'check_out' => $lastCheckOut,
             'periods' => $periodsOut,
+            'permissions' => $permissionsOut,
         ];
     }
 
