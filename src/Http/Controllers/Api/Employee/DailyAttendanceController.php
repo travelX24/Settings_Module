@@ -85,22 +85,22 @@ class DailyAttendanceController extends Controller
             return [
                 'id' => (int) $log->id,
                 'date' => Carbon::parse($log->attendance_date)->toDateString(),
-                'check_in_time' => $log->check_in_time ? Carbon::parse($log->check_in_time)->format('H:i') : null,
-                'check_out_time' => $log->check_out_time ? Carbon::parse($log->check_out_time)->format('H:i') : null,
+                'check_in_time' => company_time($log->check_in_time),
+                'check_out_time' => company_time($log->check_out_time),
                 'attendance_status' => $metrics['status'] === 'holiday' ? 'holiday' : (string) $log->attendance_status,
                 'status' => $metrics['status'] === 'holiday' ? 'holiday' : (string) $log->attendance_status,
                 'holiday_name' => $metrics['holiday_name'] ?? null,
                 'compliance_percentage' => (float) $log->compliance_percentage,
                 'actual_hours' => (float) $log->actual_hours,
                 'scheduled_hours' => (float) $log->scheduled_hours,
-                'scheduled_check_in' => $log->scheduled_check_in ? Carbon::parse($log->scheduled_check_in)->format('H:i') : null,
-                'scheduled_check_out' => $log->scheduled_check_out ? Carbon::parse($log->scheduled_check_out)->format('H:i') : null,
+                'scheduled_check_in' => company_time($log->scheduled_check_in),
+                'scheduled_check_out' => company_time($log->scheduled_check_out),
                 'punches' => collect($details)->map(fn($d) => [
-                    'check_in' => $d->check_in_time ? Carbon::parse($d->check_in_time)->format('H:i') : null,
-                    'check_out' => $d->check_out_time ? Carbon::parse($d->check_out_time)->format('H:i') : null,
+                    'check_in' => company_time($d->check_in_time),
+                    'check_out' => company_time($d->check_out_time),
                 ]),
                 'periods' => collect($metrics['periods'] ?? [])
-                    ->map(fn($p) => $p['start_time'] . ' - ' . $p['end_time'])
+                    ->map(fn($p) => company_time($p['start_time']) . ' - ' . company_time($p['end_time']))
                     ->all(),
             ];
         });
