@@ -18,8 +18,39 @@ class WorkScheduleService
     {
         $resolveDate = $date ?: now()->toDateString();
 
-        // 1. Try employee-specific assignment
+        // 1. Try employee-specific assignment (Priority 1: Rotations)
         if ($employee) {
+            $rotation = DB::table('employee_shift_rotations')
+                ->where('employee_id', $employee->id)
+                ->where('start_date', '<=', $resolveDate)
+                ->where(function ($q) use ($resolveDate) {
+                    $q->whereNull('end_date')
+                      ->orWhere('end_date', '>=', $resolveDate);
+                })
+                ->where('is_active', true)
+                ->orderByDesc('start_date')
+                ->orderByDesc('id')
+                ->first();
+
+            if ($rotation) {
+                $rotStart = Carbon::parse($rotation->start_date)->startOfDay();
+                $current  = Carbon::parse($resolveDate)->startOfDay();
+                $diffDays = (int) $rotStart->diffInDays($current);
+                $rotDays  = (int) max(1, $rotation->rotation_days ?: 7);
+                
+                $cycleIndex = (int) floor($diffDays / $rotDays);
+                $isA = ($cycleIndex % 2) === 0;
+                
+                $scheduleId = $isA ? (int)$rotation->work_schedule_id_a : (int)$rotation->work_schedule_id_b;
+                
+                $schedule = WorkSchedule::query()
+                    ->with(['periods', 'exceptions'])
+                    ->find($scheduleId);
+                
+                if ($schedule) return $schedule;
+            }
+
+            // Priority 2: Fixed Assignments
             $assignment = DB::table('employee_work_schedules')
                 ->where('employee_id', $employee->id)
                 ->where('start_date', '<=', $resolveDate)
@@ -147,18 +178,44 @@ class WorkScheduleService
     }
 
     /**
-     * Check if a specific date is a company-wide exceptional day for an employee.
+     * Check if a specific date is a company-wide or employee-specific exceptional day.
      */
     public function getExceptionalDay(int $companyId, string $date, $employee = null)
     {
         $day = Carbon::parse($date);
+        $dateStr = $day->toDateString();
 
-        // ✅ Check Official Holidays first
+        // 1. Check for Employee-Specific Exceptions FIRST (Highest Priority)
+        if ($employee && class_exists(\Athka\Attendance\Models\EmployeeWorkScheduleException::class)) {
+            $empExcept = \Athka\Attendance\Models\EmployeeWorkScheduleException::query()
+                ->where('employee_id', $employee->id)
+                ->whereDate('exception_date', $dateStr)
+                ->first();
+
+            if ($empExcept) {
+                $typeLabel = match($empExcept->exception_type) {
+                    'off_day', 'day_off' => tr('Off Day'),
+                    'work_day'           => tr('Work Day'),
+                    'time_override'      => tr('Exception'),
+                    default              => tr('Exception'),
+                };
+
+                return (object) [
+                    'id'         => $empExcept->id,
+                    'name'       => $empExcept->notes ?: $typeLabel,
+                    'name_ar'    => $empExcept->notes ?: $typeLabel,
+                    'name_en'    => $empExcept->notes ?: $typeLabel,
+                    'is_holiday' => in_array($empExcept->exception_type, ['off_day', 'day_off']),
+                ];
+            }
+        }
+
+        // 2. Check Official Holidays
         if (class_exists(\Athka\SystemSettings\Models\OfficialHolidayOccurrence::class)) {
             $holiday = \Athka\SystemSettings\Models\OfficialHolidayOccurrence::query()
                 ->where('company_id', $companyId)
-                ->whereDate('start_date', '<=', $date)
-                ->whereDate('end_date', '>=', $date)
+                ->whereDate('start_date', '<=', $dateStr)
+                ->whereDate('end_date', '>=', $dateStr)
                 ->first();
 
             if ($holiday) {
@@ -173,32 +230,37 @@ class WorkScheduleService
             }
         }
         
+        // 3. Check Company-Wide Exceptional Days
         $exceptions = AttendanceExceptionalDay::query()
             ->where('company_id', $companyId)
             ->where('is_active', true)
-            ->whereDate('start_date', '<=', $date)
-            ->whereDate('end_date', '>=', $date)
+            ->whereDate('start_date', '<=', $dateStr)
+            ->whereDate('end_date', '>=', $dateStr)
             ->get();
 
         foreach ($exceptions as $ce) {
-            $applyOn = $ce->apply_on ?: 'everyone';
-            if ($applyOn === 'everyone') return $ce;
+            $scopeType = $ce->scope_type ?: 'all';
+            
+            // If scope is ALL, it applies to everyone immediately
+            if ($scopeType === 'all') {
+                return $ce;
+            }
 
             if (!$employee) continue;
 
             $include = is_array($ce->include) ? $ce->include : (json_decode($ce->include, true) ?: []);
             
-            if ($applyOn === 'employees' || $applyOn === 'absence') {
+            if ($scopeType === 'employees') {
                 $targetIds = $include['employees'] ?? [];
                 if (in_array((string)$employee->id, $targetIds)) return $ce;
             }
             
-            if ($applyOn === 'departments') {
+            if ($scopeType === 'departments') {
                 $targetIds = $include['departments'] ?? [];
                 if (in_array((string)$employee->department_id, $targetIds)) return $ce;
             }
 
-            if ($applyOn === 'locations' || $applyOn === 'branches') {
+            if ($scopeType === 'branches' || $scopeType === 'locations') {
                 $targetIds = $include['branches'] ?? $include['locations'] ?? [];
                 if (in_array((string)$employee->branch_id, $targetIds)) return $ce;
             }
@@ -278,7 +340,19 @@ class WorkScheduleService
         $isWorkday = false;
         
         $holidayName = $isHoliday ? ($isHoliday->template?->name ?? tr('Holiday')) : ($exceptionalDay ? ($exceptionalDay->name_ar ?: $exceptionalDay->name) : null);
-        $isHolidayFinal = $isHoliday || $exceptionalDay;
+        
+        $isExceptionalHoliday = false;
+        if ($exceptionalDay) {
+            if (isset($exceptionalDay->is_holiday)) {
+                $isExceptionalHoliday = (bool) $exceptionalDay->is_holiday;
+            } elseif (isset($exceptionalDay->absence_multiplier)) {
+                $isExceptionalHoliday = ((float)$exceptionalDay->absence_multiplier <= 0);
+            } else {
+                $isExceptionalHoliday = true; // Fallback for backward compatibility
+            }
+        }
+
+        $isHolidayFinal = $isHoliday || $isExceptionalHoliday;
 
         // --- Handle Leaves ---
         $leaves = $requests['leaves'] ?? collect();
@@ -327,6 +401,14 @@ class WorkScheduleService
             foreach ($periodsOut as $p) {
                 $scheduledMinutes += $this->calculateMinutes($dateStr, $p['start_time'], $p['end_time'], $p['is_night_shift']);
             }
+        }
+
+        // --- Handle time overrides from employee-specific exceptions ---
+        if ($exceptionalDay && isset($exceptionalDay->id) && !$isExceptionalHoliday && property_exists($exceptionalDay, 'start_time') && $exceptionalDay->start_time) {
+             // If we have a time override and it's not a holiday, use its periods
+             $periodsOut = collect([$this->formatPeriod($exceptionalDay)]);
+             $isWorkday = true;
+             $scheduledMinutes = $this->calculateMinutes($dateStr, $exceptionalDay->start_time, $exceptionalDay->end_time, $exceptionalDay->is_night_shift ?? false);
         }
 
         $firstCheckIn = $periodsOut->isNotEmpty() ? $periodsOut->first()['start_time'] : null;

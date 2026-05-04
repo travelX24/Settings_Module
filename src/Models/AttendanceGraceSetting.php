@@ -43,7 +43,7 @@ class AttendanceGraceSetting extends Model
         return static::globalDefault()->first() ?? static::create([
             'late_grace_minutes' => 15,
             'early_leave_grace_minutes' => 10,
-            'auto_checkout_after_minutes' => 120,
+            'auto_checkout_after_minutes' => 2, // stored in HOURS (UI label is hours)
             'is_global_default' => true,
         ]);
     }

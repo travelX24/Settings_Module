@@ -3,6 +3,7 @@
 namespace Athka\SystemSettings\Livewire\OrganizationalStructure\Traits;
 
 use Athka\SystemSettings\Models\JobTitle;
+use Illuminate\Validation\Rule;
 
 trait HandleJobTitleLogic
 {
@@ -19,11 +20,22 @@ trait HandleJobTitleLogic
         $this->validate([
             'name' => [
                 'required', 'string', 'max:255',
-                \Illuminate\Validation\Rule::unique('job_titles')->where(function ($query) use ($companyId) {
+                Rule::unique('job_titles')->where(function ($query) use ($companyId) {
                     return $query->where('saas_company_id', $companyId);
                 })->ignore($this->editingId)
             ],
-            'code' => 'nullable|string|max:50'
+            'code' => [
+                'nullable',
+                'string',
+                'max:50',
+                Rule::unique('job_titles', 'code')
+                    ->where('saas_company_id', $companyId)
+                    ->ignore($this->editingId)
+            ]
+        ], [
+            'name.required' => tr('اسم المسمى الوظيفي مطلوب'),
+            'name.unique' => tr('اسم المسمى الوظيفي موجود مسبقاً'),
+            'code.unique' => tr('كود المسمى الوظيفي موجود مسبقاً'),
         ]);
 
         if (!$this->is_active && $this->editingId) {

@@ -3,6 +3,7 @@
 namespace Athka\SystemSettings\Livewire\OrganizationalStructure\Traits;
 
 use Athka\SystemSettings\Models\Department;
+use Illuminate\Validation\Rule;
 
 trait HandleDepartmentLogic
 {
@@ -18,9 +19,19 @@ trait HandleDepartmentLogic
 
         $this->validate([
             'name' => 'required|string|max:255',
-            'code' => 'nullable|string|max:10',
+            'code' => [
+                'nullable',
+                'string',
+                'max:10',
+                Rule::unique('departments', 'code')
+                    ->where('saas_company_id', $companyId)
+                    ->ignore($this->editingId)
+            ],
             'manager_id' => 'nullable|exists:employees,id',
             'parent_id' => 'nullable|exists:departments,id',
+        ], [
+            'name.required' => tr('اسم القسم مطلوب'),
+            'code.unique' => tr('كود القسم موجود مسبقاً'),
         ]);
 
         if ($this->parent_id) {

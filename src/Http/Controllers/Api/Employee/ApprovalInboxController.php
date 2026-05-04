@@ -185,10 +185,25 @@ class ApprovalInboxController extends Controller
         // Creator Info
         $employeeCol = $src['employeeCol'];
         if ($employeeCol && isset($data[$employeeCol])) {
-            $creator = DB::table('employees')->where('id', $data[$employeeCol])->first(['name_ar', 'name_en']);
-            $data['creator'] = $creator ? ($isAr ? $creator->name_ar : $creator->name_en) : 'Unknown';
+            $creator = DB::table('employees')->where('id', $data[$employeeCol])->first(['name_ar', 'name_en', 'department_id', 'job_title_id']);
+            $data['creator'] = $creator ? ($isAr ? ($creator->name_ar ?? $creator->name_en) : ($creator->name_en ?? $creator->name_ar)) : 'Unknown';
+            $data['employee_name'] = $data['creator'];
+            $data['employee'] = $data['creator'];
+
+            if ($creator) {
+                if ($creator->department_id) {
+                    $dept = DB::table('departments')->where('id', $creator->department_id)->first(['name']);
+                    $data['department'] = $dept->name ?? '';
+                }
+                if ($creator->job_title_id) {
+                    $jt = DB::table('job_titles')->where('id', $creator->job_title_id)->first(['name']);
+                    $data['job_title'] = $jt->name ?? '';
+                }
+            }
         } else {
             $data['creator'] = 'Unknown';
+            $data['employee_name'] = 'Unknown';
+            $data['employee'] = 'Unknown';
         }
 
         // Type Label
@@ -208,6 +223,7 @@ class ApprovalInboxController extends Controller
         if ($task->approvable_type === 'leaves') {
             $policy = null;
             $policyId = (int) ($data['leave_policy_id'] ?? 0);
+            $policyTableFound = 'leave_policies';
 
             if ($policyId > 0) {
                 // Some environments use different leave policy table names.
@@ -216,7 +232,7 @@ class ApprovalInboxController extends Controller
                         continue;
                     }
 
-                    $select = ['id'];
+                    $select = ['id', 'days_per_year', 'leave_type', 'policy_year_id'];
                     foreach (['name_ar', 'name_en', 'name'] as $col) {
                         if (Schema::hasColumn($policyTable, $col)) {
                             $select[] = $col;
@@ -225,6 +241,7 @@ class ApprovalInboxController extends Controller
 
                     $policy = DB::table($policyTable)->where('id', $policyId)->first($select);
                     if ($policy) {
+                        $policyTableFound = $policyTable;
                         break;
                     }
                 }
@@ -234,12 +251,50 @@ class ApprovalInboxController extends Controller
             $policyNameEn = $policy->name_en ?? $policy->name ?? null;
             $data['leave_type'] = $policy ? ($isAr ? ($policyNameAr ?: $policyNameEn) : ($policyNameEn ?: $policyNameAr)) : 'Leave';
             $data['requested_days'] = (string) ($data['requested_days'] ?? '0');
+
+            // --- Calculation for Balance and Monthly Stats ---
+            $requesterId = (int) ($data[$employeeCol] ?? 0);
+            if ($requesterId > 0 && $policy) {
+                // 1. Balance Calculation
+                $total = (float)($policy->days_per_year ?? 0);
+                $consumed = DB::table($src['table'])
+                    ->where($employeeCol, $requesterId)
+                    ->where('leave_policy_id', $policyId)
+                    ->where('status', 'approved')
+                    ->sum('requested_days');
+                
+                $totalStr    = ($total == (int)$total) ? (int)$total : $total;
+                $consumedStr = ($consumed == (int)$consumed) ? (int)$consumed : $consumed;
+                $data['balance'] = $totalStr . ' / ' . $consumedStr;
+
+                // 2. Monthly Stats
+                $currentMonth = now()->format('Y-m');
+                $data['monthly_taken_days'] = (float) DB::table($src['table'])
+                    ->where($employeeCol, $requesterId)
+                    ->where('leave_policy_id', $policyId)
+                    ->where('status', 'approved')
+                    ->where('start_date', 'like', $currentMonth . '%')
+                    ->sum('requested_days');
+            } else {
+                $data['balance'] = '';
+                $data['monthly_taken_days'] = 0;
+            }
         }
 
         // Permission Specifics
         if ($task->approvable_type === 'permissions') {
             $data['leave_type'] = $isAr ? 'إذن' : 'Permission';
             $data['permission_date'] = (string) ($data['date'] ?? $data['permission_date'] ?? '');
+            
+            $requesterId = (int) ($data[$employeeCol] ?? 0);
+            if ($requesterId > 0) {
+                $currentMonth = now()->format('Y-m');
+                $data['monthly_taken_minutes'] = (int) DB::table($src['table'])
+                    ->where($employeeCol, $requesterId)
+                    ->where('status', 'approved')
+                    ->where('permission_date', 'like', $currentMonth . '%')
+                    ->sum('minutes');
+            }
         }
 
         // Mission Specifics
