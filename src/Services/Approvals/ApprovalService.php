@@ -111,7 +111,18 @@ class ApprovalService
         $employee = DB::table('employees')->where('id', $employeeId)->first();
         if (!$employee) return null;
 
-        foreach ($policies as $policy) {
+        // Sort policies by priority (employee > department > job_title > branch > all)
+        $sortedPolicies = $policies->sortBy(function($policy) {
+            return match ($policy->scope_type) {
+                'employee'   => 1,
+                'department' => 2,
+                'job_title'  => 3,
+                'branch'     => 4,
+                default      => 5, // all
+            };
+        });
+
+        foreach ($sortedPolicies as $policy) {
             if ($policy->scope_type === 'all') {
                 return $policy;
             }
@@ -122,20 +133,36 @@ class ApprovalService
                 ->map(fn($id) => (string)$id)
                 ->toArray();
 
-            if ($policy->scope_type === 'employees' && in_array((string)$employeeId, $scopes, true)) {
+            if ($policy->scope_type === 'employee' && in_array((string)$employeeId, $scopes, true)) {
                 return $policy;
             }
 
-            if ($policy->scope_type === 'departments' && in_array((string)$employee->department_id, $scopes, true)) {
+            if ($policy->scope_type === 'department' && in_array((string)($employee->department_id ?? ''), $scopes, true)) {
                 return $policy;
             }
 
-            if ($policy->scope_type === 'branches' && in_array((string)$employee->branch_id, $scopes, true)) {
+            if ($policy->scope_type === 'job_title' && in_array((string)($employee->job_title_id ?? $employee->job_title ?? ''), $scopes, true)) {
+                return $policy;
+            }
+
+            if ($policy->scope_type === 'branch' && in_array((string)($employee->branch_id ?? ''), $scopes, true)) {
                 return $policy;
             }
         }
 
         return null;
+    }
+
+    /**
+     * Check if any active policies exist for an operation.
+     */
+    public function hasActivePolicies(string $operationKey, int $companyId): bool
+    {
+        return DB::table('approval_policies')
+            ->where('company_id', $companyId)
+            ->where('operation_key', $operationKey)
+            ->where('is_active', true)
+            ->exists();
     }
 
     /**
