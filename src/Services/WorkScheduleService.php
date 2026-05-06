@@ -459,6 +459,7 @@ class WorkScheduleService
     protected function formatPeriod($p): array
     {
         return [
+            'id' => $p->id ?? null,
             'start_time' => substr((string)$p->start_time, 0, 5),
             'end_time' => substr((string)$p->end_time, 0, 5),
             'is_night_shift' => (bool)$p->is_night_shift,
