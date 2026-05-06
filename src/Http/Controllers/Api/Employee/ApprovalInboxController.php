@@ -265,7 +265,8 @@ class ApprovalInboxController extends Controller
                 
                 $totalStr    = ($total == (int)$total) ? (int)$total : $total;
                 $consumedStr = ($consumed == (int)$consumed) ? (int)$consumed : $consumed;
-                $data['balance'] = $totalStr . ' / ' . $consumedStr;
+                $totalStr    = ($total == (int)$total) ? (int)$total : $total;
+                $data['balance'] = $consumedStr . ' / ' . $totalStr;
 
                 // 2. Monthly Stats
                 $currentMonth = now()->format('Y-m');
@@ -294,6 +295,8 @@ class ApprovalInboxController extends Controller
                     ->where('status', 'approved')
                     ->where('permission_date', 'like', $currentMonth . '%')
                     ->sum('minutes');
+            } else {
+                $data['monthly_taken_minutes'] = 0;
             }
         }
 

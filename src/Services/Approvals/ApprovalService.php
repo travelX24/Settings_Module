@@ -168,19 +168,57 @@ class ApprovalService
     /**
      * Check if an employee has ANY approvers setup (either via Policy or Direct Manager).
      */
-    public function hasApproversForEmployee(string $operationKey, int $employeeId, int $companyId): bool
+    public function hasApproversForEmployee(string $operationKey, int $employeeId, int $companyId, &$reason = null): bool
     {
         $policy = $this->resolvePolicyForEmployee($operationKey, $employeeId, $companyId);
 
         if (!$policy) {
-            // No policy means no strict workflow defined.
+            $reason = 'no_matching_policy';
             return false;
         }
 
-        // Has policy, check if it has steps
-        return DB::table('approval_policy_steps')
+        // Fetch steps and verify they can all be resolved
+        $steps = DB::table('approval_policy_steps')
             ->where('policy_id', $policy->id)
-            ->exists();
+            ->orderBy('position')
+            ->get();
+
+        if ($steps->isEmpty()) {
+            $reason = 'no_steps_defined';
+            return false;
+        }
+
+        foreach ($steps as $step) {
+            $approverId = 0;
+            if ($step->approver_type === 'direct_manager') {
+                $approverId = $this->resolveDirectManagerId($employeeId);
+                if ($approverId <= 0) {
+                    $reason = 'missing_direct_manager';
+                    return false;
+                }
+            } elseif ($step->approver_type === 'user') {
+                // If specific user, check if they have a linked employee
+                $approverId = DB::table('users')->where('id', $step->approver_id)->value('employee_id') ?: 0;
+                if ($approverId <= 0) {
+                    $reason = 'invalid_user_approver';
+                    return false;
+                }
+            } elseif ($step->approver_type === 'employee') {
+                $approverId = (int) $step->approver_id;
+                if ($approverId <= 0) {
+                    $reason = 'invalid_employee_approver';
+                    return false;
+                }
+            }
+
+            // Final fallback check
+            if ($approverId <= 0) {
+                $reason = 'unresolvable_approver_step';
+                return false;
+            }
+        }
+
+        return true;
     }
 
     /**
