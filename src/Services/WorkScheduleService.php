@@ -27,7 +27,6 @@ class WorkScheduleService
                     $q->whereNull('end_date')
                       ->orWhere('end_date', '>=', $resolveDate);
                 })
-                ->where('is_active', true)
                 ->orderByDesc('start_date')
                 ->orderByDesc('id')
                 ->first();
@@ -59,6 +58,7 @@ class WorkScheduleService
                       ->orWhere('end_date', '>=', $resolveDate);
                 })
                 ->orderByDesc('start_date')
+                ->orderByDesc('id')
                 ->first();
 
             if ($assignment) {
@@ -81,12 +81,7 @@ class WorkScheduleService
         
         if ($schedule) return $schedule;
         
-        // 3. Fallback to latest schedule
-        return WorkSchedule::query()
-            ->with(['periods', 'exceptions'])
-            ->where('saas_company_id', $companyId)
-            ->orderByDesc('id')
-            ->first();
+        return null;
     }
 
     /**
