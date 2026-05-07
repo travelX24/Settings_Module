@@ -537,7 +537,7 @@
         </x-slot:content>
 
         <x-slot:footer>
-            <x-ui.secondary-button type="button" wire:click="$set('showModal', false)" :fullWidth="false" class="cursor-pointer w-full sm:w-auto">
+            <x-ui.secondary-button type="button" wire:click="closeModal" :fullWidth="false" class="cursor-pointer w-full sm:w-auto">
                 {{ tr('Cancel') }}
             </x-ui.secondary-button>
 

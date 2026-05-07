@@ -54,11 +54,19 @@ class ApprovalSequenceSettings extends Component
         $this->resetSteps();
     }
 
-    public function openCreate(): void
+    public function resetForm(): void
     {
         $this->editingId = null;
         $this->name = '';
+        $this->is_active = true;
+        $this->scope_type = 'all';
+        $this->scope_ids = [];
         $this->resetSteps();
+    }
+
+    public function openCreate(): void
+    {
+        $this->resetForm();
         $this->showModal = true;
     }
 
@@ -109,8 +117,14 @@ class ApprovalSequenceSettings extends Component
             'steps' => $this->steps,
         ], $this->editingId);
 
-        $this->showModal = false;
+        $this->closeModal();
         $this->dispatch('toast', ['type' => 'success', 'message' => tr('Operation successful')]);
+    }
+
+    public function closeModal(): void
+    {
+        $this->showModal = false;
+        $this->resetForm();
     }
 
     public function addStep(): void

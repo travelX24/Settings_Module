@@ -25,7 +25,7 @@ trait HandleJobTitleLogic
                 })->ignore($this->editingId)
             ],
             'code' => [
-                'nullable',
+                'required',
                 'string',
                 'max:50',
                 Rule::unique('job_titles', 'code')
@@ -33,9 +33,10 @@ trait HandleJobTitleLogic
                     ->ignore($this->editingId)
             ]
         ], [
-            'name.required' => tr('اسم المسمى الوظيفي مطلوب'),
-            'name.unique' => tr('اسم المسمى الوظيفي موجود مسبقاً'),
-            'code.unique' => tr('كود المسمى الوظيفي موجود مسبقاً'),
+            'name.required' => tr('Job title name is required'),
+            'name.unique' => tr('Job title name already exists'),
+            'code.required' => tr('Job title code is required'),
+            'code.unique' => tr('Job title code already exists'),
         ]);
 
         if (!$this->is_active && $this->editingId) {

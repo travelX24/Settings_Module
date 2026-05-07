@@ -349,6 +349,7 @@
                             wire:model="code"
                             placeholder="{{ tr('Enter unique job code') }}"
                             hint="{{ tr('Will be used for matching in imports') }}"
+                            required
                             :disabled="!auth()->user()->can('settings.organizational.manage')"
                         />
                     </div>

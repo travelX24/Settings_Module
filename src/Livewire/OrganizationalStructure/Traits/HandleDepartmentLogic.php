@@ -20,7 +20,7 @@ trait HandleDepartmentLogic
         $this->validate([
             'name' => 'required|string|max:255',
             'code' => [
-                'nullable',
+                'required',
                 'string',
                 'max:10',
                 Rule::unique('departments', 'code')
@@ -30,8 +30,9 @@ trait HandleDepartmentLogic
             'manager_id' => 'nullable|exists:employees,id',
             'parent_id' => 'nullable|exists:departments,id',
         ], [
-            'name.required' => tr('اسم القسم مطلوب'),
-            'code.unique' => tr('كود القسم موجود مسبقاً'),
+            'name.required' => tr('Department name is required'),
+            'code.required' => tr('Department code is required'),
+            'code.unique' => tr('Department code already exists'),
         ]);
 
         if ($this->parent_id) {

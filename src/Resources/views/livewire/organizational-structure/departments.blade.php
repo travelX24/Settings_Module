@@ -417,8 +417,8 @@
                             name="code"
                             wire:model="code"
                             placeholder="{{ tr('e.g., MKT') }}"
-                            hint="{{ tr('Optional') }}"
                             maxlength="10"
+                            required
                             :disabled="!auth()->user()->can('settings.organizational.manage')"
                         />
 
