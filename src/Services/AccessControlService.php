@@ -224,7 +224,11 @@ class AccessControlService
 
             // Sync Selected Branches
             if ($data['access_scope'] === 'selected_branches' && isset($data['allowed_branch_ids'])) {
-                $user->allowedBranches()->sync($data['allowed_branch_ids']);
+                $syncData = [];
+                foreach ($data['allowed_branch_ids'] as $branchId) {
+                    $syncData[$branchId] = ['saas_company_id' => $companyId];
+                }
+                $user->allowedBranches()->sync($syncData);
             } else {
                 $user->allowedBranches()->sync([]);
             }
