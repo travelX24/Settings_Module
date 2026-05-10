@@ -31,6 +31,17 @@
                 class="!py-2.5"
                 :disabled="!auth()->user()->can('settings.attendance.manage')"
             />
+            {{-- Warning note --}}
+            <div class="flex items-start gap-2 rounded-xl border border-amber-200 bg-amber-50 px-3 py-2">
+                <i class="fas fa-exclamation-triangle text-amber-500 text-xs mt-0.5 shrink-0"></i>
+                <p class="text-[11px] text-amber-700 font-medium leading-snug">
+                    @if(app()->getLocale() === 'ar')
+                        يُنصح بأن يكون الحد الأقصى لتسجيل الخروج التلقائي أقل من فترة الاستراحة بين فترات العمل في الجدول؛ وإلا سيُسجَّل الخروج عند بداية الفترة التالية بدلاً من الحد الأقصى المحدد. أنت مسؤول عن اختيار القيمة المناسبة.
+                    @else
+                        It is recommended that the max auto-checkout limit be less than the break duration between schedule periods. Otherwise, checkout will be recorded at the next period's check-in time instead of the configured limit. You are responsible for choosing the appropriate value.
+                    @endif
+                </p>
+            </div>
         </div>
     </div>
 

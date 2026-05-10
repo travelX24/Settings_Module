@@ -7,6 +7,7 @@ use Carbon\Carbon;
 use Athka\Employees\Models\Employee;
 use Athka\Attendance\Models\AttendanceDailyLog;
 use Athka\Attendance\Models\AttendanceDailyDetail;
+use Athka\SystemSettings\Models\AttendanceGraceSetting;
 
 class AttendanceService
 {
@@ -117,13 +118,43 @@ class AttendanceService
                 $prevPeriod = DB::table('work_schedule_periods')
                     ->where('id', $openSession->work_schedule_period_id)
                     ->first();
-                $autoOutTime = $prevPeriod ? $prevPeriod->end_time : ($log->scheduled_check_out ?? '16:00:00');
+
+                // ─── Smart Auto-Checkout Time Calculation ───────────────────────
+                // Fetch the company's auto-checkout limit (stored in hours despite the column name)
+                $grace = AttendanceGraceSetting::where('saas_company_id', $log->saas_company_id)->first();
+                $limitHours   = (int) ($grace->auto_checkout_after_minutes ?? 2);
+                $limitMinutes = $limitHours * 60;
+
+                $autoOutMethod = 'fallback';
+                if ($prevPeriod) {
+                    $prevPeriodEnd  = Carbon::parse($dateStr . ' ' . substr((string) $prevPeriod->end_time, 0, 5));
+                    // Break = time elapsed since Period-1 ended (always positive here)
+                    $breakMinutes = (int) $prevPeriodEnd->diffInMinutes($now);
+
+                    if ($breakMinutes < $limitMinutes) {
+                        // Case 1: Break < limit → employee returned within the window.
+                        // Auto-checkout = moment the employee checked in for Period 2.
+                        $autoOutTime = $nowTime;
+                        $autoOutMethod = 'next_period_checkin';
+                    } else {
+                        // Case 2: Break ≥ limit → cap the session at Period-1 end + limit.
+                        $autoOutTime = $prevPeriodEnd->copy()->addHours($limitHours)->format('H:i:s');
+                        $autoOutMethod = 'period_end_plus_limit';
+                    }
+                } else {
+                    // No period record found — fallback to scheduled checkout or now
+                    $autoOutTime = $log->scheduled_check_out ?? $nowTime;
+                }
 
                 DB::table('attendance_daily_details')->where('id', $openSession->id)->update([
                     'check_out_time' => $autoOutTime,
                     'meta_data'      => json_encode(array_merge(
                         json_decode($openSession->meta_data ?? '{}', true),
-                        ['auto_closed' => true, 'closed_at_checkin' => $nowTime]
+                        [
+                            'auto_closed'      => true,
+                            'closed_at_checkin'=> $nowTime,
+                            'auto_out_method'  => $autoOutMethod,
+                        ]
                     ), JSON_UNESCAPED_UNICODE),
                     'updated_at'     => $now,
                 ]);
