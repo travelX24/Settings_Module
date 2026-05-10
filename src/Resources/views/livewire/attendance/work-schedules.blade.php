@@ -102,197 +102,199 @@
 
     {{-- Table Collection --}}
     <div class="bg-white rounded-3xl shadow-sm border border-gray-100 overflow-visible relative mt-2">
-        <table class="w-full text-start border-collapse table-fixed">
-            <thead>
-                <tr class="bg-gray-50/50 border-b border-gray-100">
-                    <th
-                        class="w-[26%] px-6 py-4 text-[10px] font-black text-gray-400 uppercase tracking-widest text-start">
-                        {{ tr('Schedule Profiling') }}</th>
-                    <th
-                        class="w-[22%] px-6 py-4 text-[10px] font-black text-gray-400 uppercase tracking-widest text-center">
-                        {{ tr('Timing Slot') }}</th>
-                    <th
-                        class="w-[24%] px-6 py-4 text-[10px] font-black text-gray-400 uppercase tracking-widest text-center">
-                        {{ tr('Week Matrix') }}</th>
-                    <th
-                        class="w-[12%] px-6 py-4 text-[10px] font-black text-gray-400 uppercase tracking-widest text-center">
-                        {{ tr('Exceptions') }}</th>
-                    <th
-                        class="w-[10%] px-6 py-4 text-[10px] font-black text-gray-400 uppercase tracking-widest text-center">
-                        {{ tr('State') }}</th>
-                    <th
-                        class="w-[10%] px-6 py-4 text-[10px] font-black text-gray-400 uppercase tracking-widest text-end">
-                        {{ tr('Actions') }}</th>
-                </tr>
-            </thead>
-            <tbody class="divide-y divide-gray-50">
-                @forelse($schedules as $schedule)
-                    <tr wire:key="schedule-row-{{ $schedule->id }}"
-                        class="hover:bg-gray-50/40 transition-colors group/row">
-                        <td class="px-6 py-4">
-                            <div class="flex items-center gap-3">
-                                <div
-                                    class="w-10 h-10 rounded-xl bg-gray-50 text-gray-400 flex items-center justify-center text-sm border border-gray-100 group-hover/row:bg-[color:var(--brand-via)] group-hover/row:text-white group-hover/row:border-[color:var(--brand-via)] transition-all flex-shrink-0">
-                                    <i class="fas fa-calendar-alt"></i>
-                                </div>
-                                <div class="overflow-hidden">
-                                    <div class="flex items-center gap-2">
-                                        <span
-                                            class="text-sm font-bold text-gray-800 truncate">{{ $schedule->name }}</span>
-                                        @if ($schedule->is_default)
-                                            <span
-                                                class="flex-shrink-0 px-1.5 py-0.5 rounded-md bg-amber-50 text-[9px] font-black text-amber-600 border border-amber-100 uppercase">{{ tr('Default') }}</span>
-                                        @endif
-                                    </div>
-                                    <p class="text-[10px] text-gray-400 truncate">
-                                        {{ $schedule->description ?: tr('No description provided') }}</p>
-                                </div>
-                            </div>
-                        </td>
-                        <td class="px-6 py-4 text-center">
-                            <div class="flex flex-col items-center justify-center gap-1.5">
-                                @foreach ($schedule->periods as $period)
+        <div class="w-full overflow-x-auto no-scrollbar">
+            <table class="w-full text-start border-collapse">
+                <thead>
+                    <tr class="bg-gray-50/50 border-b border-gray-100">
+                        <th
+                            class="min-w-[250px] px-6 py-4 text-[10px] font-black text-gray-400 uppercase tracking-widest text-start whitespace-nowrap">
+                            {{ tr('Schedule Profiling') }}</th>
+                        <th
+                            class="min-w-[150px] px-6 py-4 text-[10px] font-black text-gray-400 uppercase tracking-widest text-center whitespace-nowrap">
+                            {{ tr('Timing Slot') }}</th>
+                        <th
+                            class="min-w-[300px] px-6 py-4 text-[10px] font-black text-gray-400 uppercase tracking-widest text-center whitespace-nowrap">
+                            {{ tr('Week Matrix') }}</th>
+                        <th
+                            class="px-6 py-4 text-[10px] font-black text-gray-400 uppercase tracking-widest text-center whitespace-nowrap">
+                            {{ tr('Exceptions') }}</th>
+                        <th
+                            class="px-6 py-4 text-[10px] font-black text-gray-400 uppercase tracking-widest text-center whitespace-nowrap">
+                            {{ tr('State') }}</th>
+                        <th
+                            class="px-6 py-4 text-[10px] font-black text-gray-400 uppercase tracking-widest text-end whitespace-nowrap">
+                            {{ tr('Actions') }}</th>
+                    </tr>
+                </thead>
+                <tbody class="divide-y divide-gray-50">
+                    @forelse($schedules as $schedule)
+                        <tr wire:key="schedule-row-{{ $schedule->id }}"
+                            class="hover:bg-gray-50/40 transition-colors group/row">
+                            <td class="px-6 py-4 whitespace-nowrap">
+                                <div class="flex items-center gap-3">
                                     <div
-                                        class="flex items-center justify-center gap-2 text-[10px] font-black text-gray-600 bg-white px-2.5 py-1 rounded-xl border border-gray-100 shadow-sm w-fit whitespace-nowrap">
-                                        <span>{{ substr($period->start_time, 0, 5) }}</span>
-                                        <i
-                                            class="fas fa-long-arrow-alt-{{ $isRtl ? 'left' : 'right' }} text-[9px] text-[color:var(--brand-via)]/40"></i>
-                                        <span>{{ substr($period->end_time, 0, 5) }}</span>
-                                        @if ($period->is_night_shift)
-                                            <i class="fas fa-moon text-[10px] text-indigo-400 ms-1"
-                                                title="{{ tr('Night Shift') }}"></i>
-                                        @endif
+                                        class="w-10 h-10 rounded-xl bg-gray-50 text-gray-400 flex items-center justify-center text-sm border border-gray-100 group-hover/row:bg-[color:var(--brand-via)] group-hover/row:text-white group-hover/row:border-[color:var(--brand-via)] transition-all flex-shrink-0">
+                                        <i class="fas fa-calendar-alt"></i>
                                     </div>
-                                @endforeach
-                            </div>
-                        </td>
-                        <td class="px-6 py-4 text-center">
-                            @php
-                                $weekDays = [
-                                    'saturday',
-                                    'sunday',
-                                    'monday',
-                                    'tuesday',
-                                    'wednesday',
-                                    'thursday',
-                                    'friday',
-                                ];
-
-                                $dayShortLabels =
-                                    substr($locale, 0, 2) === 'ar'
-                                        ? [
-                                            'saturday' => 'السبت',
-                                            'sunday' => 'الأحد',
-                                            'monday' => 'الإثنين',
-                                            'tuesday' => 'الثلاثاء',
-                                            'wednesday' => 'الأربعاء',
-                                            'thursday' => 'الخميس',
-                                            'friday' => 'الجمعة',
-                                        ]
-                                        : [
-                                            'saturday' => 'Sat',
-                                            'sunday' => 'Sun',
-                                            'monday' => 'Mon',
-                                            'tuesday' => 'Tue',
-                                            'wednesday' => 'Wed',
-                                            'thursday' => 'Thu',
-                                            'friday' => 'Fri',
-                                        ];
-                            @endphp
-
-                            <div
-                                class="flex flex-wrap items-center justify-center gap-1.5 {{ substr($locale, 0, 2) === 'ar' ? 'max-w-[440px]' : 'max-w-[260px]' }} mx-auto">
-                                @foreach ($weekDays as $day)
-                                    @php
-                                        $isActiveDay = in_array($day, $schedule->work_days ?? []);
-                                    @endphp
-
-                                    <div class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg border {{ substr($locale, 0, 2) === 'ar' ? 'text-[9px]' : 'text-[10px]' }} font-black whitespace-nowrap transition-colors
-            {{ $isActiveDay
-                ? 'bg-[color:var(--brand-via)]/10 text-[color:var(--brand-via)] border-[color:var(--brand-via)]/20'
-                : 'bg-gray-50 text-gray-400 border-gray-200' }}"
-                                        title="{{ $daysOfWeek[$day] ?? tr(ucfirst($day)) }}">
-                                        <i
-                                            class="fas {{ $isActiveDay ? 'fa-check-circle' : 'fa-minus-circle' }} text-[9px] flex-shrink-0"></i>
-                                        <span>{{ $dayShortLabels[$day] ?? ($daysOfWeek[$day] ?? tr(ucfirst($day))) }}</span>
-                                    </div>
-                                @endforeach
-                            </div>
-                        </td>
-
-                        <td class="px-6 py-4 text-center">
-                            @if (($schedule->active_exceptions_count ?? 0) > 0)
-                                <div
-                                    class="inline-flex items-center justify-center gap-1.5 px-2.5 py-1 rounded-xl bg-amber-50 text-amber-700 border border-amber-100 text-[10px] font-black whitespace-nowrap">
-                                    <i class="fas fa-calendar-times text-[10px]"></i>
-                                    <span>{{ tr('Has Exceptions') }}</span>
-                                </div>
-                            @else
-                                <div
-                                    class="inline-flex items-center justify-center gap-1.5 px-2.5 py-1 rounded-xl bg-gray-50 text-gray-500 border border-gray-100 text-[10px] font-black whitespace-nowrap">
-                                    <i class="fas fa-check-circle text-[10px]"></i>
-                                    <span>{{ tr('No Exceptions') }}</span>
-                                </div>
-                            @endif
-                        </td>
-
-                        <td class="px-6 py-4 text-center">
-                            <div class="flex justify-center">
-                                @can('settings.attendance.manage')
-                                    <button wire:click="toggleStatus({{ $schedule->id }})"
-                                        class="w-9 h-4.5 rounded-full p-1 transition-all relative cursor-pointer {{ $schedule->is_active ? 'bg-green-500' : 'bg-gray-200' }}">
-                                        <div
-                                            class="w-2.5 h-2.5 bg-white rounded-full shadow-sm transition-all {{ $schedule->is_active ? ($isRtl ? 'mr-4.5' : 'ml-4.5') : '' }}">
+                                    <div class="overflow-hidden">
+                                        <div class="flex items-center gap-2">
+                                            <span
+                                                class="text-sm font-bold text-gray-800 truncate">{{ $schedule->name }}</span>
+                                            @if ($schedule->is_default)
+                                                <span
+                                                    class="flex-shrink-0 px-1.5 py-0.5 rounded-md bg-amber-50 text-[9px] font-black text-amber-600 border border-amber-100 uppercase">{{ tr('Default') }}</span>
+                                            @endif
                                         </div>
-                                    </button>
+                                        <p class="text-[10px] text-gray-400 truncate max-w-[200px]">
+                                            {{ $schedule->description ?: tr('No description provided') }}</p>
+                                    </div>
+                                </div>
+                            </td>
+                            <td class="px-6 py-4 text-center whitespace-nowrap">
+                                <div class="flex flex-col items-center justify-center gap-1.5">
+                                    @foreach ($schedule->periods as $period)
+                                        <div
+                                            class="flex items-center justify-center gap-2 text-[10px] font-black text-gray-600 bg-white px-2.5 py-1 rounded-xl border border-gray-100 shadow-sm w-fit whitespace-nowrap">
+                                            <span>{{ substr($period->start_time, 0, 5) }}</span>
+                                            <i
+                                                class="fas fa-long-arrow-alt-{{ $isRtl ? 'left' : 'right' }} text-[9px] text-[color:var(--brand-via)]/40"></i>
+                                            <span>{{ substr($period->end_time, 0, 5) }}</span>
+                                            @if ($period->is_night_shift)
+                                                <i class="fas fa-moon text-[10px] text-indigo-400 ms-1"
+                                                    title="{{ tr('Night Shift') }}"></i>
+                                            @endif
+                                        </div>
+                                    @endforeach
+                                </div>
+                            </td>
+                            <td class="px-6 py-4 text-center min-w-[300px]">
+                                @php
+                                    $weekDays = [
+                                        'saturday',
+                                        'sunday',
+                                        'monday',
+                                        'tuesday',
+                                        'wednesday',
+                                        'thursday',
+                                        'friday',
+                                    ];
+
+                                    $dayShortLabels =
+                                        substr($locale, 0, 2) === 'ar'
+                                            ? [
+                                                'saturday' => 'السبت',
+                                                'sunday' => 'الأحد',
+                                                'monday' => 'الإثنين',
+                                                'tuesday' => 'الثلاثاء',
+                                                'wednesday' => 'الأربعاء',
+                                                'thursday' => 'الخميس',
+                                                'friday' => 'الجمعة',
+                                            ]
+                                            : [
+                                                'saturday' => 'Sat',
+                                                'sunday' => 'Sun',
+                                                'monday' => 'Mon',
+                                                'tuesday' => 'Tue',
+                                                'wednesday' => 'Wed',
+                                                'thursday' => 'Thu',
+                                                'friday' => 'Fri',
+                                            ];
+                                @endphp
+
+                                <div
+                                    class="flex flex-wrap items-center justify-center gap-1.5 {{ substr($locale, 0, 2) === 'ar' ? 'max-w-[440px]' : 'max-w-[260px]' }} mx-auto">
+                                    @foreach ($weekDays as $day)
+                                        @php
+                                            $isActiveDay = in_array($day, $schedule->work_days ?? []);
+                                        @endphp
+
+                                        <div class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg border {{ substr($locale, 0, 2) === 'ar' ? 'text-[9px]' : 'text-[10px]' }} font-black whitespace-nowrap transition-colors
+                {{ $isActiveDay
+                    ? 'bg-[color:var(--brand-via)]/10 text-[color:var(--brand-via)] border-[color:var(--brand-via)]/20'
+                    : 'bg-gray-50 text-gray-400 border-gray-200' }}"
+                                            title="{{ $daysOfWeek[$day] ?? tr(ucfirst($day)) }}">
+                                            <i
+                                                class="fas {{ $isActiveDay ? 'fa-check-circle' : 'fa-minus-circle' }} text-[9px] flex-shrink-0"></i>
+                                            <span>{{ $dayShortLabels[$day] ?? ($daysOfWeek[$day] ?? tr(ucfirst($day))) }}</span>
+                                        </div>
+                                    @endforeach
+                                </div>
+                            </td>
+
+                            <td class="px-6 py-4 text-center whitespace-nowrap">
+                                @if (($schedule->active_exceptions_count ?? 0) > 0)
+                                    <div
+                                        class="inline-flex items-center justify-center gap-1.5 px-2.5 py-1 rounded-xl bg-amber-50 text-amber-700 border border-amber-100 text-[10px] font-black whitespace-nowrap">
+                                        <i class="fas fa-calendar-times text-[10px]"></i>
+                                        <span>{{ tr('Has Exceptions') }}</span>
+                                    </div>
                                 @else
-                                    <button disabled
-                                        class="w-9 h-4.5 rounded-full p-1 transition-all relative cursor-not-allowed opacity-50 {{ $schedule->is_active ? 'bg-green-500' : 'bg-gray-200' }}">
-                                        <div
-                                            class="w-2.5 h-2.5 bg-white rounded-full shadow-sm {{ $schedule->is_active ? ($isRtl ? 'mr-4.5' : 'ml-4.5') : '' }}">
-                                        </div>
-                                    </button>
-                                @endcan
-                            </div>
-                        </td>
-                        <td class="px-6 py-4 text-end">
-                            @can('settings.attendance.manage')
-                                <x-ui.actions-menu>
-                                    <x-ui.dropdown-item wire:click="copySchedule({{ $schedule->id }})"
-                                        class="cursor-pointer">
-                                        <i class="fas fa-copy me-2 text-amber-500"></i> {{ tr('Duplicate') }}
-                                    </x-ui.dropdown-item>
-                                    <x-ui.dropdown-item wire:click="openScheduleModal({{ $schedule->id }})"
-                                        class="cursor-pointer">
-                                        <i class="fas fa-edit me-2 text-blue-500"></i> {{ tr('Edit Details') }}
-                                    </x-ui.dropdown-item>
-                                    <x-ui.dropdown-item danger
-                                        x-on:click.prevent="$dispatch('open-confirm-schedule-delete', { id: {{ $schedule->id }} })"
-                                        class="cursor-pointer">
-                                        <i class="fas fa-trash-alt me-2 text-red-500"></i> {{ tr('Delete Permanently') }}
-                                    </x-ui.dropdown-item>
-                                </x-ui.actions-menu>
-                            @endcan
-                        </td>
-                    </tr>
-                @empty
-                    <tr>
-                        <td colspan="6" class="px-6 py-24 text-center">
-                            <div class="opacity-20 flex flex-col items-center">
-                                <div
-                                    class="w-24 h-24 bg-gray-50 rounded-full flex items-center justify-center text-4xl mb-4 border border-gray-100">
-                                    <i class="fas fa-calendar-alt"></i>
+                                    <div
+                                        class="inline-flex items-center justify-center gap-1.5 px-2.5 py-1 rounded-xl bg-gray-50 text-gray-500 border border-gray-100 text-[10px] font-black whitespace-nowrap">
+                                        <i class="fas fa-check-circle text-[10px]"></i>
+                                        <span>{{ tr('No Exceptions') }}</span>
+                                    </div>
+                                @endif
+                            </td>
+
+                            <td class="px-6 py-4 text-center whitespace-nowrap">
+                                <div class="flex justify-center">
+                                    @can('settings.attendance.manage')
+                                        <button wire:click="toggleStatus({{ $schedule->id }})"
+                                            class="w-9 h-4.5 rounded-full p-1 transition-all relative cursor-pointer {{ $schedule->is_active ? 'bg-green-500' : 'bg-gray-200' }}">
+                                            <div
+                                                class="w-2.5 h-2.5 bg-white rounded-full shadow-sm transition-all {{ $schedule->is_active ? ($isRtl ? 'mr-4.5' : 'ml-4.5') : '' }}">
+                                            </div>
+                                        </button>
+                                    @else
+                                        <button disabled
+                                            class="w-9 h-4.5 rounded-full p-1 transition-all relative cursor-not-allowed opacity-50 {{ $schedule->is_active ? 'bg-green-500' : 'bg-gray-200' }}">
+                                            <div
+                                                class="w-2.5 h-2.5 bg-white rounded-full shadow-sm {{ $schedule->is_active ? ($isRtl ? 'mr-4.5' : 'ml-4.5') : '' }}">
+                                            </div>
+                                        </button>
+                                    @endcan
                                 </div>
-                                <h4 class="text-base font-bold text-gray-800">{{ tr('No Work Schedules Found') }}</h4>
-                                <p class="text-xs max-w-[250px] mt-2 leading-relaxed">
-                                    {{ tr('No work schedules have been defined yet. Get started by creating your first template.') }}
-                                </p>
-                            </div>
-                        </td>
-                    </tr>
-                @endforelse
-            </tbody>
-        </table>
+                            </td>
+                            <td class="px-6 py-4 text-end whitespace-nowrap">
+                                @can('settings.attendance.manage')
+                                    <x-ui.actions-menu>
+                                        <x-ui.dropdown-item wire:click="copySchedule({{ $schedule->id }})"
+                                            class="cursor-pointer">
+                                            <i class="fas fa-copy me-2 text-amber-500"></i> {{ tr('Duplicate') }}
+                                        </x-ui.dropdown-item>
+                                        <x-ui.dropdown-item wire:click="openScheduleModal({{ $schedule->id }})"
+                                            class="cursor-pointer">
+                                            <i class="fas fa-edit me-2 text-blue-500"></i> {{ tr('Edit Details') }}
+                                        </x-ui.dropdown-item>
+                                        <x-ui.dropdown-item danger
+                                            x-on:click.prevent="$dispatch('open-confirm-schedule-delete', { id: {{ $schedule->id }} })"
+                                            class="cursor-pointer">
+                                            <i class="fas fa-trash-alt me-2 text-red-500"></i> {{ tr('Delete Permanently') }}
+                                        </x-ui.dropdown-item>
+                                    </x-ui.actions-menu>
+                                @endcan
+                            </td>
+                        </tr>
+                    @empty
+                        <tr>
+                            <td colspan="6" class="px-6 py-24 text-center">
+                                <div class="opacity-20 flex flex-col items-center">
+                                    <div
+                                        class="w-24 h-24 bg-gray-50 rounded-full flex items-center justify-center text-4xl mb-4 border border-gray-100">
+                                        <i class="fas fa-calendar-alt"></i>
+                                    </div>
+                                    <h4 class="text-base font-bold text-gray-800">{{ tr('No Work Schedules Found') }}</h4>
+                                    <p class="text-xs max-w-[250px] mt-2 leading-relaxed">
+                                        {{ tr('No work schedules have been defined yet. Get started by creating your first template.') }}
+                                    </p>
+                                </div>
+                            </td>
+                        </tr>
+                    @endforelse
+                </tbody>
+            </table>
+        </div>
 
         @if ($schedules->hasPages())
             <div class="px-6 py-4 bg-gray-50/30 border-t border-gray-100">

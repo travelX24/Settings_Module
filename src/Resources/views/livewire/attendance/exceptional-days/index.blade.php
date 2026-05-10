@@ -252,50 +252,50 @@
         </div>
 
         {{-- Table --}}
-        <x-ui.server-table :paginator="$rows" pageName="page">
+        <x-ui.server-table :paginator="$rows" pageName="page" tableClass="w-full text-start border-collapse">
             <x-slot name="head">
                 <tr class="bg-gray-50/50 border-b border-gray-100">
                     <th
-                        class="w-10 px-6 py-4 text-[10px] font-black text-gray-400 uppercase tracking-widest text-right">
+                        class="w-10 px-6 py-4 text-[10px] font-black text-gray-400 uppercase tracking-widest text-right whitespace-nowrap">
                         <input type="checkbox" wire:model.live="selectPage" class="rounded cursor-pointer">
                     </th>
-                    <th class="px-6 py-4 text-[10px] font-black text-gray-400 uppercase tracking-widest text-right">
+                    <th class="min-w-[200px] px-6 py-4 text-[10px] font-black text-gray-400 uppercase tracking-widest text-right whitespace-nowrap">
                         {{ tr('Name') }}
                     </th>
-                    <th class="px-6 py-4 text-[10px] font-black text-gray-400 uppercase tracking-widest text-center">
+                    <th class="min-w-[120px] px-6 py-4 text-[10px] font-black text-gray-400 uppercase tracking-widest text-center whitespace-nowrap">
                         {{ tr('Period') }}
                     </th>
-                    <th class="px-6 py-4 text-[10px] font-black text-gray-400 uppercase tracking-widest text-center">
+                    <th class="min-w-[150px] px-6 py-4 text-[10px] font-black text-gray-400 uppercase tracking-widest text-center whitespace-nowrap">
                         {{ tr('Start') }}
                     </th>
-                    <th class="px-6 py-4 text-[10px] font-black text-gray-400 uppercase tracking-widest text-center">
+                    <th class="min-w-[150px] px-6 py-4 text-[10px] font-black text-gray-400 uppercase tracking-widest text-center whitespace-nowrap">
                         {{ tr('End') }}
                     </th>
-                    <th class="px-6 py-4 text-[10px] font-black text-gray-400 uppercase tracking-widest text-center">
+                    <th class="min-w-[150px] px-6 py-4 text-[10px] font-black text-gray-400 uppercase tracking-widest text-center whitespace-nowrap">
                         {{ tr('Apply') }}
                     </th>
-                    <th class="px-6 py-4 text-[10px] font-black text-gray-400 uppercase tracking-widest text-center">
+                    <th class="min-w-[120px] px-6 py-4 text-[10px] font-black text-gray-400 uppercase tracking-widest text-center whitespace-nowrap">
                         {{ tr('Deduction %') }}
                     </th>
-                    <th class="px-6 py-4 text-[10px] font-black text-gray-400 uppercase tracking-widest text-center">
+                    <th class="min-w-[120px] px-6 py-4 text-[10px] font-black text-gray-400 uppercase tracking-widest text-center whitespace-nowrap">
                         {{ tr('Grace Hours') }}
                     </th>
-                    <th class="px-6 py-4 text-[10px] font-black text-gray-400 uppercase tracking-widest text-center">
+                    <th class="min-w-[150px] px-6 py-4 text-[10px] font-black text-gray-400 uppercase tracking-widest text-center whitespace-nowrap">
                         {{ tr('Scope') }}
                     </th>
-                    <th class="px-6 py-4 text-[10px] font-black text-gray-400 uppercase tracking-widest text-center">
+                    <th class="min-w-[120px] px-6 py-4 text-[10px] font-black text-gray-400 uppercase tracking-widest text-center whitespace-nowrap">
                         {{ tr('Notified') }}
                     </th>
-                    <th class="px-6 py-4 text-[10px] font-black text-gray-400 uppercase tracking-widest text-center">
+                    <th class="min-w-[150px] px-6 py-4 text-[10px] font-black text-gray-400 uppercase tracking-widest text-center whitespace-nowrap">
                         {{ tr('Created By') }}
                     </th>
-                    <th class="px-6 py-4 text-[10px] font-black text-gray-400 uppercase tracking-widest text-center">
+                    <th class="min-w-[150px] px-6 py-4 text-[10px] font-black text-gray-400 uppercase tracking-widest text-center whitespace-nowrap">
                         {{ tr('Created At') }}
                     </th>
-                    <th class="px-6 py-4 text-[10px] font-black text-gray-400 uppercase tracking-widest text-center">
+                    <th class="min-w-[100px] px-6 py-4 text-[10px] font-black text-gray-400 uppercase tracking-widest text-center whitespace-nowrap">
                         {{ tr('Active') }}
                     </th>
-                    <th class="px-6 py-4 text-[10px] font-black text-gray-400 uppercase tracking-widest text-right">
+                    <th class="min-w-[100px] px-6 py-4 text-[10px] font-black text-gray-400 uppercase tracking-widest text-right whitespace-nowrap">
                         {{ tr('Actions') }}
                     </th>
                 </tr>
@@ -341,61 +341,61 @@
                     @endphp
 
                     <tr class="hover:bg-gray-50/40 transition-colors cursor-default border-t">
-                        <td class="px-6 py-4">
+                        <td class="px-6 py-4 whitespace-nowrap">
                             <input type="checkbox" wire:model.live="selected" value="{{ $row->id }}"
                                 class="rounded cursor-pointer">
                         </td>
 
-                        <td class="px-6 py-4 text-right">
+                        <td class="px-6 py-4 text-right whitespace-nowrap">
                             <div class="text-sm font-bold text-gray-800">{{ $row->name }}</div>
                             @if (!empty($row->description))
                                 <div class="text-[10px] text-gray-400 truncate">{{ $row->description }}</div>
                             @endif
                         </td>
 
-                        <td class="px-6 py-4 text-center">
+                        <td class="px-6 py-4 text-center whitespace-nowrap">
                             <span class="text-xs font-semibold text-gray-700">
                                 {{ $row->period_type === 'single' ? tr('Single Day') : tr('Range') }}
                             </span>
                         </td>
 
-                        <td class="px-6 py-4 text-center text-xs font-semibold text-gray-700">
+                        <td class="px-6 py-4 text-center text-xs font-semibold text-gray-700 whitespace-nowrap">
                             {{ $this->formatCompanyDate(optional($row->start_date)->toDateString()) }}
                         </td>
 
-                        <td class="px-6 py-4 text-center text-xs font-semibold text-gray-700">
+                        <td class="px-6 py-4 text-center text-xs font-semibold text-gray-700 whitespace-nowrap">
                             {{ $this->formatCompanyDate(optional($row->end_date ?? $row->start_date)->toDateString()) }}
                         </td>
 
-                        <td class="px-6 py-4 text-center text-xs font-semibold text-gray-700">
+                        <td class="px-6 py-4 text-center text-xs font-semibold text-gray-700 whitespace-nowrap">
                             {{ $applyLabel }}
                         </td>
 
-                        <td class="px-6 py-4 text-center text-xs font-semibold text-gray-700">
+                        <td class="px-6 py-4 text-center text-xs font-semibold text-gray-700 whitespace-nowrap">
                             {{ $isWithout ? '—' : number_format($percent, 2) . '%' }}
                         </td>
 
-                        <td class="px-6 py-4 text-center text-xs font-semibold text-gray-700">
+                        <td class="px-6 py-4 text-center text-xs font-semibold text-gray-700 whitespace-nowrap">
                             {{ $apply === 'late' && !$isWithout ? (int) $row->grace_hours : '—' }}
                         </td>
 
-                        <td class="px-6 py-4 text-center text-xs font-semibold text-gray-700">
+                        <td class="px-6 py-4 text-center text-xs font-semibold text-gray-700 whitespace-nowrap">
                             {{ $scopeLabel }}
                         </td>
 
-                        <td class="px-6 py-4 text-center text-xs font-semibold text-gray-700">
+                        <td class="px-6 py-4 text-center text-xs font-semibold text-gray-700 whitespace-nowrap">
                             {{ $row->notified_at ? tr('Sent') : tr('Not Sent') }}
                         </td>
 
-                        <td class="px-6 py-4 text-center text-xs font-semibold text-gray-700">
+                        <td class="px-6 py-4 text-center text-xs font-semibold text-gray-700 whitespace-nowrap">
                             {{ $createdByMap[$row->created_by] ?? ($row->created_by ?? '—') }}
                         </td>
 
-                        <td class="px-6 py-4 text-center text-xs font-semibold text-gray-700">
+                        <td class="px-6 py-4 text-center text-xs font-semibold text-gray-700 whitespace-nowrap">
                             {{ $this->formatCompanyDate(optional($row->created_at)->toDateString()) ?? '—' }}
                         </td>
 
-                        <td class="px-6 py-4 text-center">
+                        <td class="px-6 py-4 text-center whitespace-nowrap">
                             <div class="flex justify-center">
                                 @can('settings.attendance.manage')
                                     <button wire:click="toggleActive({{ $row->id }})"
@@ -415,7 +415,7 @@
                             </div>
                         </td>
 
-                        <td class="px-6 py-4 text-right">
+                        <td class="px-6 py-4 text-right whitespace-nowrap">
                             @can('settings.attendance.manage')
                                 <x-ui.actions-menu>
                                     <x-ui.dropdown-item wire:click="openEdit({{ $row->id }})"

@@ -91,7 +91,7 @@
 
                 {{-- Week Config --}}
                 <div class="p-3 bg-gray-50/50 rounded-2xl border border-gray-100 flex flex-col gap-3">
-                    <div class="grid grid-cols-2 gap-3">
+                    <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
                         <x-ui.select
                             label="{{ tr('Week Start') }}"
                             wire:model="scheduleData.week_start_day"
@@ -155,7 +155,7 @@
                         @foreach($scheduleData['periods'] as $idx => $p)
                             <div class="space-y-1">
                                 <div class="flex items-end gap-3 p-2.5 bg-white rounded-xl border border-gray-100 shadow-sm animate-in fade-in slide-in-from-top-1 {{ $errors->has('scheduleData.periods.'.$idx.'.end_time') ? 'border-red-200 bg-red-50/10' : '' }}">
-                                    <div class="flex-1 grid grid-cols-2 gap-3">
+                                    <div class="flex-1 grid grid-cols-1 sm:grid-cols-2 gap-3">
                                         {{-- ✅ changed live -> lazy --}}
                                         <x-ui.input
                                             label="{{ tr('Starts') }}"
@@ -233,7 +233,7 @@
                                 </button>
                             </div>
 
-                            <div class="grid grid-cols-4 gap-2 items-end">
+                            <div class="grid grid-cols-1 sm:grid-cols-4 gap-2 sm:items-end">
                                 <div class="col-span-1">
                                     <x-ui.select label="{{ tr('Day') }}" wire:model.defer="scheduleData.exceptions.{{ $idx }}.day_of_week" class="!py-1 !text-[10px] !bg-white">
                                         @foreach($daysOfWeek as $v => $l)
@@ -382,7 +382,7 @@
     </x-slot:content>
 
     <x-slot:footer>
-        <x-ui.secondary-button wire:click="$set('showScheduleModal', false)" class="!rounded-xl shadow-sm hover:!bg-gray-50 cursor-pointer">
+        <x-ui.secondary-button wire:click="$set('showScheduleModal', false)" class="!rounded-xl shadow-sm hover:!bg-gray-50 cursor-pointer w-full sm:w-auto mt-3 sm:mt-0">
             {{ tr('Discard') }}
         </x-ui.secondary-button>
 
@@ -392,7 +392,7 @@
             loading="save"
             :arrow="false"
             :fullWidth="false"
-            class="!px-12 !rounded-xl shadow-lg shadow-[color:var(--brand-via)]/20 cursor-pointer"
+            class="!px-12 !rounded-xl shadow-lg shadow-[color:var(--brand-via)]/20 cursor-pointer w-full sm:w-auto"
         >
             <i class="fas fa-save me-2"></i> {{ tr('Save Schedule') }}
         </x-ui.primary-button>

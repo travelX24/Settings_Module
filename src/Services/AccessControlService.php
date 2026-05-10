@@ -118,12 +118,7 @@ class AccessControlService
                 'attendance.penalties.waive' => tr('Waive/Cancel Penalties'),
             ],
 
-            // --- Locations ---
-            'Geographic Management' => [
-                'locations.view' => tr('View Work Locations'),
-                'locations.manage' => tr('Manage Work Locations'),
-                'geofencing.manage' => tr('Manage Geofencing Rules'),
-            ],
+
         ];
     }
 
@@ -346,13 +341,7 @@ class AccessControlService
                     'Discipline & Penalties' => $groups['Discipline & Penalties'],
                 ]
             ],
-            'locations' => [
-                'label' => tr('Locations'),
-                'icon' => 'fa-map-marker-alt',
-                'groups' => [
-                    'Geographic Management' => $groups['Geographic Management'],
-                ]
-            ],
+
         ];
     }
 }

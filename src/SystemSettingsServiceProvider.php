@@ -125,10 +125,6 @@ class SystemSettingsServiceProvider extends ServiceProvider
                 \Athka\SystemSettings\Livewire\Attendance\AttendanceLanding::class
             );
 
-            Livewire::component(
-                'systemsettings.location-settings',
-                \Athka\SystemSettings\Livewire\LocationSettings::class
-            );
 
             Livewire::component(
                 'systemsettings.attendance.work-schedules',

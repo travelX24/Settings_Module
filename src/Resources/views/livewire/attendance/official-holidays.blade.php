@@ -123,93 +123,94 @@
     </x-ui.card>
 
     {{-- Table --}}
-    <div class="bg-white rounded-3xl shadow-sm border border-gray-100 overflow-x-auto overflow-y-visible relative mt-2">
-        <table class="w-full text-start border-collapse table-fixed">
-            <thead>
-                <tr class="bg-gray-50/50 border-b border-gray-100">
-                    <th
-                        class="w-[28%] px-6 py-4 text-[10px] font-black text-gray-400 uppercase tracking-widest text-start">
-                        {{ tr('Holiday') }}</th>
-                    <th
-                        class="w-[12%] px-6 py-4 text-[10px] font-black text-gray-400 uppercase tracking-widest text-center">
-                        {{ tr('Calendar') }}</th>
-                    <th
-                        class="w-[20%] px-6 py-4 text-[10px] font-black text-gray-400 uppercase tracking-widest text-center">
-                        {{ tr('Hijri Date') }}</th>
-                    <th
-                        class="w-[20%] px-6 py-4 text-[10px] font-black text-gray-400 uppercase tracking-widest text-center">
-                        {{ tr('Gregorian Date') }}</th>
-                    <th
-                        class="w-[10%] px-6 py-4 text-[10px] font-black text-gray-400 uppercase tracking-widest text-center">
-                        {{ tr('Days') }}</th>
-                    <th
-                        class="w-[10%] px-6 py-4 text-[10px] font-black text-gray-400 uppercase tracking-widest text-end">
-                        {{ tr('Actions') }}</th>
-                </tr>
-            </thead>
-
-            <tbody class="divide-y divide-gray-50">
-                @forelse($rows as $row)
-                    <tr class="hover:bg-gray-50/40 transition-colors">
-                        <td class="px-6 py-4">
-                            <div class="text-sm font-bold text-gray-800 truncate">{{ $row->template?->name ?? '-' }}
-                            </div>
-                            <div class="text-[10px] text-gray-400 truncate">{{ $row->template?->description ?? '' }}
-                            </div>
-                        </td>
-
-                        <td class="px-6 py-4 text-center">
-                            <span class="text-[10px] font-black text-gray-600 uppercase">
-                                {{ $row->template?->calendar_type ?? '-' }}
-                            </span>
-                        </td>
-
-                        <td class="px-6 py-4 text-center">
-                            <span class="text-xs font-semibold text-gray-700 tabular-nums">
-                                {{ $row->display_hijri ?: '—' }}
-                                @if ($row->end_date && $row->start_date && $row->end_date->format('Y-m-d') !== $row->start_date->format('Y-m-d'))
-                                    @php
-                                        $endHijri = app(\Athka\SystemSettings\Services\HolidayService::class)->hijriFromGregorian($row->end_date->format('Y-m-d'));
-                                    @endphp
-                                    @if ($endHijri)
-                                        <span class="mx-1 text-gray-300">→</span>
-                                        {{ $endHijri }}
-                                    @endif
-                                @endif
-                            </span>
-                        </td>
-
-                        <td class="px-6 py-4 text-center">
-                            <span class="text-[11px] font-bold text-gray-700 tabular-nums">
-                                {{ $row->start_date ? $row->start_date->format('Y-m-d') : '—' }}
-                                @if ($row->end_date && $row->end_date->format('Y-m-d') !== $row->start_date?->format('Y-m-d'))
-                                    <span class="mx-1 text-gray-300">→</span>
-                                    {{ $row->end_date->format('Y-m-d') }}
-                                @endif
-                            </span>
-                        </td>
-
-                        <td class="px-6 py-4 text-center">
-                            <span class="text-xs font-bold text-gray-700">{{ $row->duration_days ?? 1 }}</span>
-                        </td>
-
-                        <td class="px-6 py-4 text-end">
-                            @can('settings.attendance.manage')
-                                <x-ui.actions-menu>
-                                    <x-ui.dropdown-item wire:click.stop="openEdit({{ (int) $row->id }})"
-                                        class="cursor-pointer">
-                                        <i class="fas fa-edit me-2 text-blue-500"></i> {{ tr('Edit') }}
-                                    </x-ui.dropdown-item>
-
-                                    <x-ui.dropdown-item danger
-                                        @click.stop="$dispatch('open-confirm-delete-holiday', { id: {{ $row->id }} })"
-                                        class="cursor-pointer">
-                                        <i class="fas fa-trash-alt me-2 text-red-500"></i> {{ tr('Delete') }}
-                                    </x-ui.dropdown-item>
-                                </x-ui.actions-menu>
-                            @endcan
-                        </td>
+    <div class="bg-white rounded-3xl shadow-sm border border-gray-100 overflow-visible relative mt-2">
+        <div class="w-full overflow-x-auto no-scrollbar">
+            <table class="w-full text-start border-collapse">
+                <thead>
+                    <tr class="bg-gray-50/50 border-b border-gray-100">
+                        <th
+                            class="min-w-[200px] px-6 py-4 text-[10px] font-black text-gray-400 uppercase tracking-widest text-start whitespace-nowrap">
+                            {{ tr('Holiday') }}</th>
+                        <th
+                            class="min-w-[100px] px-6 py-4 text-[10px] font-black text-gray-400 uppercase tracking-widest text-center whitespace-nowrap">
+                            {{ tr('Calendar') }}</th>
+                        <th
+                            class="min-w-[150px] px-6 py-4 text-[10px] font-black text-gray-400 uppercase tracking-widest text-center whitespace-nowrap">
+                            {{ tr('Hijri Date') }}</th>
+                        <th
+                            class="min-w-[150px] px-6 py-4 text-[10px] font-black text-gray-400 uppercase tracking-widest text-center whitespace-nowrap">
+                            {{ tr('Gregorian Date') }}</th>
+                        <th
+                            class="min-w-[80px] px-6 py-4 text-[10px] font-black text-gray-400 uppercase tracking-widest text-center whitespace-nowrap">
+                            {{ tr('Days') }}</th>
+                        <th
+                            class="min-w-[100px] px-6 py-4 text-[10px] font-black text-gray-400 uppercase tracking-widest text-end whitespace-nowrap">
+                            {{ tr('Actions') }}</th>
                     </tr>
+                </thead>
+    
+                <tbody class="divide-y divide-gray-50">
+                    @forelse($rows as $row)
+                        <tr class="hover:bg-gray-50/40 transition-colors">
+                            <td class="px-6 py-4 whitespace-nowrap">
+                                <div class="text-sm font-bold text-gray-800 truncate">{{ $row->template?->name ?? '-' }}
+                                </div>
+                                <div class="text-[10px] text-gray-400 truncate">{{ $row->template?->description ?? '' }}
+                                </div>
+                            </td>
+    
+                            <td class="px-6 py-4 text-center whitespace-nowrap">
+                                <span class="text-[10px] font-black text-gray-600 uppercase">
+                                    {{ $row->template?->calendar_type ?? '-' }}
+                                </span>
+                            </td>
+    
+                            <td class="px-6 py-4 text-center whitespace-nowrap">
+                                <span class="text-xs font-semibold text-gray-700 tabular-nums">
+                                    {{ $row->display_hijri ?: '—' }}
+                                    @if ($row->end_date && $row->start_date && $row->end_date->format('Y-m-d') !== $row->start_date->format('Y-m-d'))
+                                        @php
+                                            $endHijri = app(\Athka\SystemSettings\Services\HolidayService::class)->hijriFromGregorian($row->end_date->format('Y-m-d'));
+                                        @endphp
+                                        @if ($endHijri)
+                                            <span class="mx-1 text-gray-300">→</span>
+                                            {{ $endHijri }}
+                                        @endif
+                                    @endif
+                                </span>
+                            </td>
+    
+                            <td class="px-6 py-4 text-center whitespace-nowrap">
+                                <span class="text-[11px] font-bold text-gray-700 tabular-nums">
+                                    {{ $row->start_date ? $row->start_date->format('Y-m-d') : '—' }}
+                                    @if ($row->end_date && $row->end_date->format('Y-m-d') !== $row->start_date?->format('Y-m-d'))
+                                        <span class="mx-1 text-gray-300">→</span>
+                                        {{ $row->end_date->format('Y-m-d') }}
+                                    @endif
+                                </span>
+                            </td>
+    
+                            <td class="px-6 py-4 text-center whitespace-nowrap">
+                                <span class="text-xs font-bold text-gray-700">{{ $row->duration_days ?? 1 }}</span>
+                            </td>
+    
+                            <td class="px-6 py-4 text-end whitespace-nowrap">
+                                @can('settings.attendance.manage')
+                                    <x-ui.actions-menu>
+                                        <x-ui.dropdown-item wire:click.stop="openEdit({{ (int) $row->id }})"
+                                            class="cursor-pointer">
+                                            <i class="fas fa-edit me-2 text-blue-500"></i> {{ tr('Edit') }}
+                                        </x-ui.dropdown-item>
+    
+                                        <x-ui.dropdown-item danger
+                                            @click.stop="$dispatch('open-confirm-delete-holiday', { id: {{ $row->id }} })"
+                                            class="cursor-pointer">
+                                            <i class="fas fa-trash-alt me-2 text-red-500"></i> {{ tr('Delete') }}
+                                        </x-ui.dropdown-item>
+                                    </x-ui.actions-menu>
+                                @endcan
+                            </td>
+                        </tr>
                 @empty
                     <tr>
                         <td colspan="6" class="px-6 py-24 text-center">

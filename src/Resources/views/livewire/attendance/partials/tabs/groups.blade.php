@@ -35,31 +35,31 @@
             </div>
         </div>
 
-    <div class="bg-white rounded-3xl shadow-sm border border-gray-100 mt-2"> {{-- Removed overflow-hidden --}}
+    <div class="bg-white rounded-3xl shadow-sm border border-gray-100 mt-2 w-full overflow-x-auto">
         <table class="w-full text-start border-collapse">
             <thead>
                 <tr class="bg-gray-50/50 border-b border-gray-100">
-                    <th class="px-6 py-4 text-[10px] font-black text-gray-400 border-b border-gray-100 uppercase tracking-widest text-center w-12">#</th>
-                    <th class="px-6 py-4 text-[10px] font-black text-gray-400 border-b border-gray-100 uppercase tracking-widest text-start">{{ tr('Group Name') }}</th>
-                    <th class="px-6 py-4 text-[10px] font-black text-gray-400 border-b border-gray-100 uppercase tracking-widest text-start">
+                    <th class="px-6 py-4 text-[10px] font-black text-gray-400 border-b border-gray-100 uppercase tracking-widest text-center w-12 whitespace-nowrap">#</th>
+                    <th class="px-6 py-4 text-[10px] font-black text-gray-400 border-b border-gray-100 uppercase tracking-widest text-start whitespace-nowrap">{{ tr('Group Name') }}</th>
+                    <th class="px-6 py-4 text-[10px] font-black text-gray-400 border-b border-gray-100 uppercase tracking-widest text-start min-w-[200px]">
                         {{ tr('Description') }}
                     </th>
 
-                    <th class="px-6 py-4 text-[10px] font-black text-gray-400 border-b border-gray-100 uppercase tracking-widest text-center">
+                    <th class="px-6 py-4 text-[10px] font-black text-gray-400 border-b border-gray-100 uppercase tracking-widest text-center whitespace-nowrap">
                         {{ tr('Policy') }}
                     </th>
-                    <th class="px-6 py-4 text-[10px] font-black text-gray-400 border-b border-gray-100 uppercase tracking-widest text-center">{{ tr('Employees') }}</th>
-                    <th class="px-6 py-4 text-[10px] font-black text-gray-400 border-b border-gray-100 uppercase tracking-widest text-center">{{ tr('Methods') }}</th>
-                    <th class="px-6 py-4 text-[10px] font-black text-gray-400 border-b border-gray-100 uppercase tracking-widest text-end">{{ tr('Actions') }}</th>
+                    <th class="px-6 py-4 text-[10px] font-black text-gray-400 border-b border-gray-100 uppercase tracking-widest text-center whitespace-nowrap">{{ tr('Employees') }}</th>
+                    <th class="px-6 py-4 text-[10px] font-black text-gray-400 border-b border-gray-100 uppercase tracking-widest text-center whitespace-nowrap">{{ tr('Methods') }}</th>
+                    <th class="px-6 py-4 text-[10px] font-black text-gray-400 border-b border-gray-100 uppercase tracking-widest text-end whitespace-nowrap">{{ tr('Actions') }}</th>
                 </tr>
             </thead>
             <tbody class="divide-y divide-gray-50">
                 @forelse($groups as $index => $group)
                 <tr class="hover:bg-gray-50/30 transition-colors group/row">
-                    <td class="px-6 py-4 text-center">
+                    <td class="px-6 py-4 text-center whitespace-nowrap">
                         <span class="text-xs font-bold text-gray-400">{{ $index + 1 }}</span>
                     </td>
-                    <td class="px-6 py-4">
+                    <td class="px-6 py-4 whitespace-nowrap">
                         <div class="flex items-center gap-3">
                             <div class="w-10 h-10 rounded-xl bg-gradient-to-br from-purple-50 to-blue-50 border border-purple-100 flex items-center justify-center text-purple-600">
                                 <i class="fas fa-users text-sm"></i>
@@ -67,11 +67,11 @@
                             <span class="text-sm font-bold text-gray-800">{{ $group['name'] }}</span>
                         </div>
                     </td>
-                    <td class="px-6 py-4">
+                    <td class="px-6 py-4 min-w-[200px]">
                         <p class="text-[11px] text-gray-500 line-clamp-2 leading-relaxed">{{ $group['description'] }}</p>
                     </td>
 
-                    <td class="px-6 py-4 text-center">
+                    <td class="px-6 py-4 text-center whitespace-nowrap">
                         @php
                             $policyLabel  = $policyTypes[$group['policy']] ?? $group['policy'];
                             $policyCls = match($group['policy']) {
@@ -83,7 +83,7 @@
                         @endphp
                         <span class="px-3 py-1 rounded-full text-[10px] font-black border {{ $policyCls }}">{{ $policyLabel }}</span>
                     </td>
-                    <td class="px-6 py-4 text-center">
+                    <td class="px-6 py-4 text-center whitespace-nowrap">
                         <div class="flex items-center justify-center relative">
                             <div class="relative group/tooltip">
                                 {{-- Subtle Badge --}}
@@ -112,7 +112,7 @@
                             </div>
                         </div>
                     </td>
-                    <td class="px-6 py-4">
+                    <td class="px-6 py-4 whitespace-nowrap">
                         <div class="flex items-center justify-center gap-1">
                             @if(($group['tracking_mode'] ?? '') === 'automatic')
                                 <div class="px-2 py-0.5 rounded-lg border border-amber-100 bg-amber-50 text-amber-600 flex items-center gap-1 text-[9px] font-black whitespace-nowrap shadow-sm">
@@ -137,7 +137,7 @@
                             @endif
                         </div>
                     </td>
-                    <td class="px-6 py-4 text-end">
+                    <td class="px-6 py-4 text-end whitespace-nowrap">
                         @can('settings.attendance.manage')
                         <div class="flex items-center justify-end gap-2">
                             <button wire:click="editGroup('{{ $group['id'] }}')" class="p-2 text-blue-500 hover:bg-blue-50 rounded-xl transition-colors cursor-pointer">

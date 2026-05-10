@@ -22,9 +22,9 @@
                 titleSize="xl" />
 
             {{-- ✅ Tabs: Leave Settings | Permission Settings --}}
-            <div class="inline-flex rounded-2xl border border-gray-200 bg-white/70 p-1 shadow-sm">
+            <div class="flex w-full sm:inline-flex overflow-x-auto no-scrollbar rounded-2xl border border-gray-200 bg-white/70 p-1 shadow-sm">
                 <a href="{{ request()->fullUrlWithQuery(['tab' => 'leaves']) }}" wire:navigate
-                    class="px-4 py-2 text-xs font-black rounded-xl transition-all cursor-pointer
+                    class="whitespace-nowrap flex-1 sm:flex-none text-center px-4 py-2 text-xs font-black rounded-xl transition-all cursor-pointer
                     {{ $tab === 'leaves'
                         ? 'text-white shadow-sm bg-[color:var(--brand-via)]'
                         : 'text-gray-600 hover:text-gray-900 hover:bg-gray-100/50' }}">
@@ -32,7 +32,7 @@
                 </a>
 
                 <a href="{{ request()->fullUrlWithQuery(['tab' => 'permissions']) }}" wire:navigate
-                    class="px-4 py-2 text-xs font-black rounded-xl transition-all cursor-pointer
+                    class="whitespace-nowrap flex-1 sm:flex-none text-center px-4 py-2 text-xs font-black rounded-xl transition-all cursor-pointer
                     {{ $tab === 'permissions'
                         ? 'text-white shadow-sm bg-[color:var(--brand-via)]'
                         : 'text-gray-600 hover:text-gray-900 hover:bg-gray-100/50' }}">
@@ -56,40 +56,42 @@
             <div class="space-y-4">
 
                 {{-- Year Selector --}}
-                <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
-                    <div class="flex items-center gap-2">
-                        <x-ui.secondary-button :fullWidth="false" wire:click="prevYear" class="cursor-pointer">
-                            <i class="fas {{ $isRtl ? 'fa-chevron-right' : 'fa-chevron-left' }}"></i>
-                        </x-ui.secondary-button>
+                <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+                    <div class="flex flex-col sm:flex-row sm:items-center gap-3">
+                        <div class="flex items-center justify-between sm:justify-start gap-2">
+                            <x-ui.secondary-button :fullWidth="false" wire:click="prevYear" class="cursor-pointer">
+                                <i class="fas {{ $isRtl ? 'fa-chevron-right' : 'fa-chevron-left' }}"></i>
+                            </x-ui.secondary-button>
 
-                        <div
-                            class="px-4 py-2 rounded-2xl bg-gray-50 border border-gray-200 text-sm font-black text-gray-800 flex items-center gap-2">
-                            @if ($showAllYears)
-                                <span>{{ tr('All Years') }}</span>
-                            @else
-                                <span>{{ $selectedYear?->year ?? '—' }}</span>
-                            @endif
+                            <div
+                                class="flex-1 sm:flex-none justify-center px-4 py-2 rounded-2xl bg-gray-50 border border-gray-200 text-sm font-black text-gray-800 flex items-center gap-2">
+                                @if ($showAllYears)
+                                    <span>{{ tr('All Years') }}</span>
+                                @else
+                                    <span>{{ $selectedYear?->year ?? '—' }}</span>
+                                @endif
 
-                            @if (!$showAllYears && $selectedYear?->is_active)
-                                <span
-                                    class="text-[10px] font-black px-2 py-0.5 rounded-full bg-emerald-50 text-emerald-700 border border-emerald-100">
-                                    {{ tr('Active') }}
-                                </span>
-                            @endif
+                                @if (!$showAllYears && $selectedYear?->is_active)
+                                    <span
+                                        class="text-[10px] font-black px-2 py-0.5 rounded-full bg-emerald-50 text-emerald-700 border border-emerald-100">
+                                        {{ tr('Active') }}
+                                    </span>
+                                @endif
+                            </div>
+
+                            <x-ui.secondary-button :fullWidth="false" wire:click="nextYear" class="cursor-pointer">
+                                <i class="fas {{ $isRtl ? 'fa-chevron-left' : 'fa-chevron-right' }}"></i>
+                            </x-ui.secondary-button>
                         </div>
 
-                        <x-ui.secondary-button :fullWidth="false" wire:click="nextYear" class="cursor-pointer">
-                            <i class="fas {{ $isRtl ? 'fa-chevron-left' : 'fa-chevron-right' }}"></i>
-                        </x-ui.secondary-button>
-
                         <button type="button" wire:click="toggleAllYears"
-                            class="flex items-center gap-2 text-xs font-bold transition-all ms-2 px-3 py-2 rounded-xl border {{ $showAllYears ? 'bg-[color:var(--brand-via)]/10 text-[color:var(--brand-via)] border-[color:var(--brand-via)]/30 hover:bg-[color:var(--brand-via)]/20' : 'bg-white text-gray-600 border-gray-200 hover:border-gray-300 hover:bg-gray-50 hover:text-gray-900 shadow-sm' }} cursor-pointer">
+                            class="w-full sm:w-auto flex justify-center items-center gap-2 text-xs font-bold transition-all px-3 py-2 rounded-xl border {{ $showAllYears ? 'bg-[color:var(--brand-via)]/10 text-[color:var(--brand-via)] border-[color:var(--brand-via)]/30 hover:bg-[color:var(--brand-via)]/20' : 'bg-white text-gray-600 border-gray-200 hover:border-gray-300 hover:bg-gray-50 hover:text-gray-900 shadow-sm' }} cursor-pointer">
                             <i class="fas {{ $showAllYears ? 'fa-calendar-day' : 'fa-bars-staggered' }}"></i>
                             <span>{{ $showAllYears ? tr('Show single year') : tr('Show all years') }}</span>
                         </button>
                     </div>
 
-                    <div class="flex flex-wrap items-center gap-2">
+                    <div class="grid grid-cols-1 sm:flex sm:flex-wrap items-center gap-2">
                         @can('settings.attendance.manage')
                             <x-ui.secondary-button :fullWidth="false" wire:click="openYears" class="cursor-pointer">
                                 <i class="fas fa-calendar"></i>
@@ -186,105 +188,105 @@
         </x-ui.card>
 
         {{-- Table --}}
-        <div
-            class="bg-white rounded-3xl shadow-sm border border-gray-100 overflow-x-auto overflow-y-visible relative mt-2">
-            <table class="w-full text-start border-collapse table-fixed">
-                <thead>
-                    <tr class="bg-gray-50/50 border-b border-gray-100">
-                        <th
-                            class="w-[24%] px-6 py-4 text-[10px] font-black text-gray-400 uppercase tracking-widest text-start">
-                            {{ tr('Leave') }}</th>
-                        <th
-                            class="w-[10%] px-6 py-4 text-[10px] font-black text-gray-400 uppercase tracking-widest text-center">
-                            {{ tr('Days') }}</th>
-                        <th
-                            class="w-[10%] px-6 py-4 text-[10px] font-black text-gray-400 uppercase tracking-widest text-center">
-                            {{ tr('Year') }}</th>
-                        <th
-                            class="w-[10%] px-6 py-4 text-[10px] font-black text-gray-400 uppercase tracking-widest text-center">
-                            {{ tr('Gender') }}</th>
-                        <th
-                            class="w-[10%] px-6 py-4 text-[10px] font-black text-gray-400 uppercase tracking-widest text-center">
-                            {{ tr('Status') }}</th>
-                        <th
-                            class="w-[10%] px-6 py-4 text-[10px] font-black text-gray-400 uppercase tracking-widest text-center">
-                            {{ tr('Show in App') }}</th>
-                        <th
-                            class="w-[10%] px-6 py-4 text-[10px] font-black text-gray-400 uppercase tracking-widest text-center">
-                            {{ tr('Attachments') }}</th>
-                        <th
-                            class="w-[6%] px-6 py-4 text-[10px] font-black text-gray-400 uppercase tracking-widest text-end">
-                            {{ tr('Actions') }}</th>
-                    </tr>
-                </thead>
-
-                <tbody class="divide-y divide-gray-50">
-                    @forelse($rows as $row)
-                        <tr wire:key="leave-policy-{{ $row->id }}"
-                            class="hover:bg-gray-50/40 transition-colors cursor-default">
-                            <td class="px-6 py-4">
-                                <div class="text-sm font-bold text-gray-800 truncate">{{ $row->name }}</div>
-                                <div class="text-[10px] text-gray-400 truncate">{{ $row->description ?? '' }}</div>
-                            </td>
-
-                            <td class="px-6 py-4 text-center">
-                                <span class="text-xs font-bold text-gray-800">{{ $row->days_per_year }}</span>
-                            </td>
-
-                            <td class="px-6 py-4 text-center">
-                                <span class="text-xs font-semibold text-gray-700">{{ $row->year?->year ?? '—' }}</span>
-                            </td>
-
-                            <td class="px-6 py-4 text-center">
-                                <span class="text-xs font-semibold text-gray-700">{{ $row->gender }}</span>
-                            </td>
-
-                            <td class="px-6 py-4 text-center">
-                                <span
-                                    class="text-xs font-bold {{ $row->is_active ? 'text-emerald-600' : 'text-gray-400' }}">
-                                    {{ $row->is_active ? tr('Active') : tr('Inactive') }}
-                                </span>
-                            </td>
-
-                            <td class="px-6 py-4 text-center">
-                                <span
-                                    class="text-xs font-bold {{ $row->show_in_app ? 'text-emerald-600' : 'text-gray-400' }}">
-                                    {{ $row->show_in_app ? tr('Yes') : tr('No') }}
-                                </span>
-                            </td>
-
-                            <td class="px-6 py-4 text-center">
-                                <span
-                                    class="text-xs font-bold {{ $row->requires_attachment ? 'text-amber-600' : 'text-gray-400' }}">
-                                    {{ $row->requires_attachment ? tr('Yes') : tr('No') }}
-                                </span>
-                            </td>
-
-                            @php
-                                $isAnnualDefault =
-                                    (string) data_get($row->settings ?? [], 'meta.system_key', '') ===
-                                        'annual_default' || trim((string) $row->name) === 'سنوية' || trim((string) $row->name) === 'إجازة سنوية';
-                            @endphp
-
-                            <td class="px-6 py-4 text-end">
-                                @can('settings.attendance.manage')
-                                    <x-ui.actions-menu>
-                                        <x-ui.dropdown-item wire:click="openEdit({{ (int) $row->id }})"
-                                            class="cursor-pointer">
-                                            <i class="fas fa-edit me-2 text-blue-500"></i> {{ tr('Edit') }}
-                                        </x-ui.dropdown-item>
-
-                                        @if (!$isAnnualDefault)
-                                            <x-ui.dropdown-item danger
-                                                @click.stop="$dispatch('open-confirm-delete-leave', { id: '{{ (int) $row->id }}' })"
-                                                class="cursor-pointer">
-                                                <i class="fas fa-trash-alt me-2 text-red-500"></i> {{ tr('Delete') }}
-                                            </x-ui.dropdown-item>
-                                        @endif
-                                    </x-ui.actions-menu>
-                                @endcan
-                            </td>
+        <div class="bg-white rounded-3xl shadow-sm border border-gray-100 overflow-visible relative mt-2">
+            <div class="w-full overflow-x-auto no-scrollbar">
+                <table class="w-full text-start border-collapse">
+                    <thead>
+                        <tr class="bg-gray-50/50 border-b border-gray-100">
+                            <th
+                                class="min-w-[200px] px-6 py-4 text-[10px] font-black text-gray-400 uppercase tracking-widest text-start whitespace-nowrap">
+                                {{ tr('Leave') }}</th>
+                            <th
+                                class="min-w-[100px] px-6 py-4 text-[10px] font-black text-gray-400 uppercase tracking-widest text-center whitespace-nowrap">
+                                {{ tr('Days') }}</th>
+                            <th
+                                class="min-w-[100px] px-6 py-4 text-[10px] font-black text-gray-400 uppercase tracking-widest text-center whitespace-nowrap">
+                                {{ tr('Year') }}</th>
+                            <th
+                                class="min-w-[100px] px-6 py-4 text-[10px] font-black text-gray-400 uppercase tracking-widest text-center whitespace-nowrap">
+                                {{ tr('Gender') }}</th>
+                            <th
+                                class="min-w-[100px] px-6 py-4 text-[10px] font-black text-gray-400 uppercase tracking-widest text-center whitespace-nowrap">
+                                {{ tr('Status') }}</th>
+                            <th
+                                class="min-w-[120px] px-6 py-4 text-[10px] font-black text-gray-400 uppercase tracking-widest text-center whitespace-nowrap">
+                                {{ tr('Show in App') }}</th>
+                            <th
+                                class="min-w-[120px] px-6 py-4 text-[10px] font-black text-gray-400 uppercase tracking-widest text-center whitespace-nowrap">
+                                {{ tr('Attachments') }}</th>
+                            <th
+                                class="min-w-[100px] px-6 py-4 text-[10px] font-black text-gray-400 uppercase tracking-widest text-end whitespace-nowrap">
+                                {{ tr('Actions') }}</th>
                         </tr>
+                    </thead>
+    
+                    <tbody class="divide-y divide-gray-50">
+                        @forelse($rows as $row)
+                            <tr wire:key="leave-policy-{{ $row->id }}"
+                                class="hover:bg-gray-50/40 transition-colors cursor-default">
+                                <td class="px-6 py-4 whitespace-nowrap">
+                                    <div class="text-sm font-bold text-gray-800 truncate">{{ $row->name }}</div>
+                                    <div class="text-[10px] text-gray-400 truncate">{{ $row->description ?? '' }}</div>
+                                </td>
+    
+                                <td class="px-6 py-4 text-center whitespace-nowrap">
+                                    <span class="text-xs font-bold text-gray-800">{{ $row->days_per_year }}</span>
+                                </td>
+    
+                                <td class="px-6 py-4 text-center whitespace-nowrap">
+                                    <span class="text-xs font-semibold text-gray-700">{{ $row->year?->year ?? '—' }}</span>
+                                </td>
+    
+                                <td class="px-6 py-4 text-center whitespace-nowrap">
+                                    <span class="text-xs font-semibold text-gray-700">{{ $row->gender }}</span>
+                                </td>
+    
+                                <td class="px-6 py-4 text-center whitespace-nowrap">
+                                    <span
+                                        class="text-xs font-bold {{ $row->is_active ? 'text-emerald-600' : 'text-gray-400' }}">
+                                        {{ $row->is_active ? tr('Active') : tr('Inactive') }}
+                                    </span>
+                                </td>
+    
+                                <td class="px-6 py-4 text-center whitespace-nowrap">
+                                    <span
+                                        class="text-xs font-bold {{ $row->show_in_app ? 'text-emerald-600' : 'text-gray-400' }}">
+                                        {{ $row->show_in_app ? tr('Yes') : tr('No') }}
+                                    </span>
+                                </td>
+    
+                                <td class="px-6 py-4 text-center whitespace-nowrap">
+                                    <span
+                                        class="text-xs font-bold {{ $row->requires_attachment ? 'text-amber-600' : 'text-gray-400' }}">
+                                        {{ $row->requires_attachment ? tr('Yes') : tr('No') }}
+                                    </span>
+                                </td>
+    
+                                @php
+                                    $isAnnualDefault =
+                                        (string) data_get($row->settings ?? [], 'meta.system_key', '') ===
+                                            'annual_default' || trim((string) $row->name) === 'سنوية' || trim((string) $row->name) === 'إجازة سنوية';
+                                @endphp
+    
+                                <td class="px-6 py-4 text-end whitespace-nowrap">
+                                    @can('settings.attendance.manage')
+                                        <x-ui.actions-menu>
+                                            <x-ui.dropdown-item wire:click="openEdit({{ (int) $row->id }})"
+                                                class="cursor-pointer">
+                                                <i class="fas fa-edit me-2 text-blue-500"></i> {{ tr('Edit') }}
+                                            </x-ui.dropdown-item>
+    
+                                            @if (!$isAnnualDefault)
+                                                <x-ui.dropdown-item danger
+                                                    @click.stop="$dispatch('open-confirm-delete-leave', { id: '{{ (int) $row->id }}' })"
+                                                    class="cursor-pointer">
+                                                    <i class="fas fa-trash-alt me-2 text-red-500"></i> {{ tr('Delete') }}
+                                                </x-ui.dropdown-item>
+                                            @endif
+                                        </x-ui.actions-menu>
+                                    @endcan
+                                </td>
+                            </tr>
                     @empty
                         <tr>
                             <td colspan="8" class="px-6 py-24 text-center">

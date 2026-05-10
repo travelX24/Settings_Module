@@ -21,7 +21,6 @@ Route::get('/attendance/holidays', \Athka\SystemSettings\Livewire\Attendance\Att
 Route::get('/attendance/leaves', \Athka\SystemSettings\Livewire\Attendance\AttendanceLeaveSettings::class)
     ->name('attendance.leaves');
 
-Route::get('/location', \Athka\SystemSettings\Livewire\LocationSettings::class)->name('location');
 
 Route::get('/organizational-structure', \Athka\SystemSettings\Livewire\OrganizationalStructure\OrganizationalStructureIndex::class)->name('organizational-structure');
 

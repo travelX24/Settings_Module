@@ -45,11 +45,11 @@
 
     {{-- Tabs Navigation --}}
     <x-ui.card class="!p-0 border-none shadow-sm overflow-hidden bg-white">
-        <div class="flex border-b border-gray-100">
+        <div class="flex overflow-x-auto no-scrollbar border-b border-gray-100">
             <button 
                 type="button"
                 wire:click="setActiveTab('policies')"
-                class="flex-1 py-4 px-6 font-semibold text-sm flex items-center justify-center gap-2 transition-all duration-200 cursor-pointer {{ $activeTab === 'policies' ? 'text-[color:var(--brand-via)] border-b-2 border-[color:var(--brand-via)] bg-white' : 'text-gray-500 hover:text-gray-700 hover:bg-gray-50' }}"
+                class="flex-1 whitespace-nowrap px-4 sm:px-6 py-3 sm:py-4 font-semibold text-sm flex items-center justify-center gap-2 transition-all duration-200 cursor-pointer {{ $activeTab === 'policies' ? 'text-[color:var(--brand-via)] border-b-2 sm:border-b-[3px] border-[color:var(--brand-via)] bg-white' : 'text-gray-500 hover:text-gray-700 hover:bg-gray-50 border-b-2 sm:border-b-[3px] border-transparent' }}"
             >
                 <i class="fas fa-clock"></i>
                 <span>{{ tr('Attendance Tracking') }}</span>
@@ -57,7 +57,7 @@
             <button 
                 type="button"
                 wire:click="setActiveTab('regulations')"
-                class="flex-1 py-4 px-6 font-semibold text-sm flex items-center justify-center gap-2 transition-all duration-200 cursor-pointer {{ $activeTab === 'regulations' ? 'text-[color:var(--brand-via)] border-b-2 border-[color:var(--brand-via)] bg-white' : 'text-gray-500 hover:text-gray-700 hover:bg-gray-50' }}"
+                class="flex-1 whitespace-nowrap px-4 sm:px-6 py-3 sm:py-4 font-semibold text-sm flex items-center justify-center gap-2 transition-all duration-200 cursor-pointer {{ $activeTab === 'regulations' ? 'text-[color:var(--brand-via)] border-b-2 sm:border-b-[3px] border-[color:var(--brand-via)] bg-white' : 'text-gray-500 hover:text-gray-700 hover:bg-gray-50 border-b-2 sm:border-b-[3px] border-transparent' }}"
             >
                 <i class="fas fa-gavel"></i>
                 <span>{{ tr('Regulations & Penalties') }}</span>
@@ -65,7 +65,7 @@
             <button 
                 type="button"
                 wire:click="setActiveTab('groups')"
-                class="flex-1 py-4 px-6 font-semibold text-sm flex items-center justify-center gap-2 transition-all duration-200 cursor-pointer {{ $activeTab === 'groups' ? 'text-[color:var(--brand-via)] border-b-2 border-[color:var(--brand-via)] bg-white' : 'text-gray-500 hover:text-gray-700 hover:bg-gray-50' }}"
+                class="flex-1 whitespace-nowrap px-4 sm:px-6 py-3 sm:py-4 font-semibold text-sm flex items-center justify-center gap-2 transition-all duration-200 cursor-pointer {{ $activeTab === 'groups' ? 'text-[color:var(--brand-via)] border-b-2 sm:border-b-[3px] border-[color:var(--brand-via)] bg-white' : 'text-gray-500 hover:text-gray-700 hover:bg-gray-50 border-b-2 sm:border-b-[3px] border-transparent' }}"
             >
                 <i class="fas fa-users-cog"></i>
                 <span>{{ tr('Groups') }}</span>

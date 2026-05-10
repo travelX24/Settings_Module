@@ -50,36 +50,39 @@
 
         
         {{-- Tabs Header --}}
-        <div class="border-b border-gray-200 bg-gray-50 flex flex-nowrap overflow-x-auto no-scrollbar justify-between">
-            <div class="flex justify-start flex-1 min-w-max">
-                @foreach($this->tabs as $key => $label)
-                    @php($c = (int)($counts[$key] ?? 0))
+        <div class="border-b border-gray-200 bg-gray-50">
+            <div class="flex flex-col sm:flex-row items-center justify-between gap-3 sm:gap-0 pt-2 sm:pt-0 pb-3 sm:pb-0">
+                <div class="flex overflow-x-auto w-full sm:w-auto no-scrollbar justify-start flex-1 border-b sm:border-b-0 border-gray-200 px-2 sm:px-0">
+                    @foreach($this->tabs as $key => $label)
+                        @php($c = (int)($counts[$key] ?? 0))
+                        <button
+                            wire:click="$set('tab', '{{ $key }}')"
+                            class="cursor-pointer px-4 sm:px-6 py-3 sm:py-4 font-semibold text-sm transition-all duration-200 flex items-center gap-2 whitespace-nowrap {{ $tab === $key 
+                                ? 'border-b-2 sm:border-b-[3px] border-[color:var(--brand-via)] text-[color:var(--brand-via)] bg-white' 
+                                : 'text-gray-600 hover:text-gray-900 hover:bg-gray-100 border-b-2 sm:border-b-[3px] border-transparent' }}"
+                        >
+                            <span>{{ $label }}</span>
+                            <span class="inline-flex items-center justify-center px-1.5 py-0.5 text-xs font-semibold rounded-full {{ $tab === $key ? 'bg-brand/10 text-[color:var(--brand-via)] border border-[color:var(--brand-via)]/20' : 'bg-gray-200 text-gray-700' }}">
+                                {{ $c }}
+                            </span>
+                        </button>
+                    @endforeach
+                </div>
+                
+                {{-- Add Button --}}
+                <div class="px-4 w-full sm:w-auto flex justify-end sm:border-s border-gray-200 py-0 sm:py-2">
                     <button
-                        wire:click="$set('tab', '{{ $key }}')"
-                        class="cursor-pointer px-6 py-4 font-semibold text-sm transition-all duration-200 flex items-center gap-2 {{ $tab === $key 
-                            ? 'border-b-2 border-[color:var(--brand-via)] text-[color:var(--brand-via)] bg-white' 
-                            : 'text-gray-600 hover:text-gray-900 hover:bg-gray-100' }}"
+                        type="button"
+                        wire:click="openCreate"
+                        class="cursor-pointer group relative overflow-hidden rounded-xl px-4 py-2 text-sm font-semibold text-white shadow-md bg-gradient-to-r from-[color:var(--brand-from)] via-[color:var(--brand-via)] to-[color:var(--brand-to)] hover:shadow-lg active:scale-[0.98] transition-all duration-300 w-full sm:w-auto text-center justify-center focus:outline-none focus:ring-2 focus:ring-[color:var(--brand-from)]/30"
                     >
-                        <span>{{ $label }}</span>
-                        <span class="inline-flex items-center justify-center px-1.5 py-0.5 text-xs font-semibold rounded-full {{ $tab === $key ? 'bg-brand/10 text-brand' : 'bg-gray-200 text-gray-700' }}">
-                            {{ $c }}
+                        <span class="absolute inset-0 bg-gradient-to-r from-transparent via-white/20 to-transparent -translate-x-full group-hover:translate-x-full transition-transform duration-1000"></span>
+                        <span class="relative flex items-center justify-center gap-2">
+                            <i class="fas fa-plus text-xs"></i>
+                            <span>{{ tr('Add Policy') }}</span>
                         </span>
                     </button>
-                @endforeach
-            </div>
-            
-            {{-- Add Button --}}
-            <div class="px-4 border-l border-gray-200 flex items-center justify-center min-w-max">
-                <button
-                    type="button"
-                    wire:click="openCreate"
-                    class="cursor-pointer group relative overflow-hidden rounded-xl px-4 py-2 text-sm font-semibold text-white shadow-md bg-gradient-to-r from-[color:var(--brand-from)] via-[color:var(--brand-via)] to-[color:var(--brand-to)] hover:shadow-lg active:scale-[0.98] transition-all duration-300"
-                >
-                    <span class="relative flex items-center gap-2">
-                        <i class="fas fa-plus text-xs"></i>
-                        <span>{{ tr('Add Policy') }}</span>
-                    </span>
-                </button>
+                </div>
             </div>
         </div>
 
