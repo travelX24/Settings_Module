@@ -79,7 +79,12 @@ class DailyAttendanceController extends Controller
         $holidays = $this->scheduleService->getHolidays($companyId, $from->toDateString(), $to->toDateString());
 
         $data = $logs->map(function($log) use ($schedulesByDate, $holidays, $employee) {
-            $details = property_exists($log, 'details') ? $log->details : DB::table('attendance_daily_details')->where('daily_log_id', $log->id)->get();
+            // Always fetch details fresh from DB to avoid stale lazy-loaded empty collections
+            $details = DB::table('attendance_daily_details')
+                ->where('daily_log_id', $log->id)
+                ->orderBy('check_in_time')
+                ->get();
+
             $metrics = $this->scheduleService->getMetricsForDate($log->attendance_date->toDateString(), $schedulesByDate[$log->attendance_date->toDateString()] ?? null, $holidays, $employee);
 
             return [
@@ -98,6 +103,7 @@ class DailyAttendanceController extends Controller
                 'punches' => collect($details)->map(fn($d) => [
                     'check_in' => company_time($d->check_in_time),
                     'check_out' => company_time($d->check_out_time),
+                    'status' => $d->attendance_status,
                 ]),
                 'periods' => collect($metrics['periods'] ?? [])
                     ->map(fn($p) => company_time($p['start_time']) . ' - ' . company_time($p['end_time']))
