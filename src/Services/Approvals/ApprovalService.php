@@ -372,8 +372,30 @@ class ApprovalService
         if (!$src) return;
         $uCol = $src['approvalStatusCol'] ?: $src['statusCol'];
         if ($uCol) {
+            // Try to use Eloquent model to trigger observers
+            $modelClass = $this->guessModelForTable($src['table']);
+            if ($modelClass && class_exists($modelClass)) {
+                $row = $modelClass::find($id);
+                if ($row) {
+                    $row->update([$uCol => $status]);
+                    return;
+                }
+            }
+
+            // Fallback to DB table if no model found
             DB::table($src['table'])->where($src['idCol'], $id)->update([$uCol => $status]);
         }
+    }
+
+    protected function guessModelForTable(string $table): ?string
+    {
+        $map = [
+            'attendance_leave_requests'      => \Athka\Attendance\Models\AttendanceLeaveRequest::class,
+            'attendance_leave_cut_requests'  => \Athka\Attendance\Models\AttendanceLeaveCutRequest::class,
+            'attendance_permission_requests' => \Athka\Attendance\Models\AttendancePermissionRequest::class,
+            'attendance_mission_requests'    => \Athka\Attendance\Models\AttendanceMissionRequest::class,
+        ];
+        return $map[$table] ?? null;
     }
 
     protected function handleSuccessiveApprovals(ApprovalTask $task, ?array $src)

@@ -63,7 +63,7 @@ class AttendancePrepController extends Controller
         $graceData = [
             'late_grace_minutes' => (int) ($grace->late_grace_minutes ?? 15),
             'early_leave_grace_minutes' => (int) ($grace->early_leave_grace_minutes ?? 10),
-            'auto_checkout_after_minutes' => (int) ($grace->auto_checkout_after_minutes ?? 120),
+            'auto_checkout_after_minutes' => (int) ($grace->auto_checkout_after_minutes ?? 2),
             'auto_checkout_penalty_enabled' => (bool) ($grace->auto_checkout_penalty_enabled ?? false),
             'auto_checkout_penalty_amount' => (float) ($grace->auto_checkout_penalty_amount ?? 0),
             'auto_checkout_deduction_type' => (string) ($grace->auto_checkout_deduction_type ?? 'fixed'),

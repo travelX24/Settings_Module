@@ -285,6 +285,9 @@ class AttendanceSettings extends Component
             'late_grace_minutes' => $this->gracePeriods['late_arrival'],
             'early_leave_grace_minutes' => $this->gracePeriods['early_departure'],
             'auto_checkout_after_minutes' => $this->gracePeriods['auto_departure'],
+            'auto_checkout_penalty_enabled' => $this->gracePeriods['auto_departure_penalty_enabled'],
+            'auto_checkout_penalty_amount' => $this->gracePeriods['auto_departure_penalty_amount'],
+            'auto_checkout_deduction_type' => $this->gracePeriods['auto_checkout_deduction_type'],
         ]);
         $this->dispatch('toast', type: 'success', message: tr('Grace periods saved.'));
     }

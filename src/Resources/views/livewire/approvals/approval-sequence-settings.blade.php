@@ -180,7 +180,30 @@
                                             @if(($p->scope_type ?? 'all') === 'all')
                                                 <span class="px-2 py-0.5 text-xs font-semibold rounded-full bg-blue-50 text-blue-700 border border-blue-200">{{ tr('All Employees') }}</span>
                                             @else
-                                                <span class="px-2 py-0.5 text-xs font-semibold rounded-full bg-gray-100 text-gray-700 border border-gray-200">{{ tr('Type') }}: {{ $p->scope_type }} ({{ $p->scopes_count }})</span>
+                                                <div class="group relative inline-block">
+                                                    <span class="px-2 py-0.5 text-xs font-semibold rounded-full bg-gray-100 text-gray-700 border border-gray-200 cursor-help transition-all hover:bg-gray-200">{{ tr('Type') }}: {{ $p->scope_type }} ({{ $p->scopes_count }})</span>
+                                                    
+                                                    {{-- Tooltip Card --}}
+                                                    <div class="invisible group-hover:visible opacity-0 group-hover:opacity-100 transition-all duration-300 absolute z-[100] bottom-full left-1/2 -translate-x-1/2 mb-2 w-64">
+                                                        <div class="bg-white rounded-xl shadow-xl border border-gray-100 overflow-hidden">
+                                                            <div class="bg-gray-50 px-3 py-2 border-b border-gray-100 flex items-center gap-2">
+                                                                <i class="fas fa-users text-gray-400 text-xs"></i>
+                                                                <span class="text-[10px] font-bold text-gray-500 uppercase tracking-wider">{{ tr('Target List') }}</span>
+                                                            </div>
+                                                            <div class="p-3 max-h-48 overflow-y-auto no-scrollbar">
+                                                                <div class="flex flex-wrap gap-1.5">
+                                                                    @foreach(explode(', ', $p->scope_names_list) as $name)
+                                                                        <span class="inline-flex items-center px-2 py-0.5 rounded text-[11px] font-medium bg-brand/5 text-brand border border-brand/10">
+                                                                            {{ $name }}
+                                                                        </span>
+                                                                    @endforeach
+                                                                </div>
+                                                            </div>
+                                                            <div class="bg-brand/5 h-1 w-full"></div>
+                                                        </div>
+                                                        <div class="w-3 h-3 bg-white border-r border-b border-gray-100 rotate-45 absolute -bottom-1.5 left-1/2 -translate-x-1/2"></div>
+                                                    </div>
+                                                </div>
                                             @endif
                                         </div>
                                     </div>
@@ -204,7 +227,29 @@
                                         <i class="fas fa-list-ol text-gray-300"></i>
                                         <span>{{ tr('Approvers') }}</span>
                                     </div>
-                                    <span class="font-bold text-gray-700 bg-gray-100 px-2 py-0.5 rounded-lg text-xs">{{ (int) $p->steps_count }}</span>
+                                    <div class="group relative inline-block">
+                                        <span class="font-bold text-gray-700 bg-gray-100 px-2 py-0.5 rounded-lg text-xs cursor-help transition-all hover:bg-gray-200 whitespace-pre">{{ (int) $p->steps_count }}</span>
+                                        
+                                        {{-- Tooltip Card --}}
+                                        <div class="invisible group-hover:visible opacity-0 group-hover:opacity-100 transition-all duration-300 absolute z-[100] bottom-full left-1/2 -translate-x-1/2 mb-2 w-56">
+                                            <div class="bg-white rounded-xl shadow-xl border border-gray-100 overflow-hidden">
+                                                <div class="bg-gray-50 px-3 py-2 border-b border-gray-100 flex items-center gap-2">
+                                                    <i class="fas fa-route text-gray-400 text-xs"></i>
+                                                    <span class="text-[10px] font-bold text-gray-500 uppercase tracking-wider">{{ tr('Approval Sequence') }}</span>
+                                                </div>
+                                                <div class="p-3 space-y-2 max-h-48 overflow-y-auto no-scrollbar">
+                                                    @foreach(explode("\n", $p->step_names_list) as $step)
+                                                        <div class="flex items-center gap-2 text-xs text-gray-700">
+                                                            <div class="w-1.5 h-1.5 rounded-full bg-brand/40"></div>
+                                                            <span class="font-medium">{{ $step }}</span>
+                                                        </div>
+                                                    @endforeach
+                                                </div>
+                                                <div class="bg-brand/5 h-1 w-full"></div>
+                                            </div>
+                                            <div class="w-3 h-3 bg-white border-r border-b border-gray-100 rotate-45 absolute -bottom-1.5 left-1/2 -translate-x-1/2"></div>
+                                        </div>
+                                    </div>
                                 </div>
                             </div>
                         @endforeach
@@ -243,18 +288,62 @@
                                         <span class="px-2 py-1 text-xs font-semibold rounded-full bg-blue-50 text-blue-700 border border-blue-200">{{ tr('All Employees') }}</span>
                                     @else
                                         <div class="flex items-center gap-2">
-                                            <span class="px-2 py-1 text-xs font-semibold rounded-full bg-gray-50 text-gray-700 border border-gray-200">
-                                                {{ tr('Type') }}: {{ $p->scope_type }}
-                                            </span>
-                                            <span class="text-gray-500 text-xs">
-                                                ({{ $p->scopes_count }})
-                                            </span>
+                                            <div class="group relative inline-block">
+                                                <span class="text-gray-500 text-xs cursor-help border-b border-dotted border-gray-400 hover:text-brand transition-colors">
+                                                    ({{ $p->scopes_count }})
+                                                </span>
+                                                
+                                                {{-- Tooltip Card --}}
+                                                <div class="invisible group-hover:visible opacity-0 group-hover:opacity-100 transition-all duration-300 absolute z-[100] bottom-full left-1/2 -translate-x-1/2 mb-2 w-64">
+                                                    <div class="bg-white rounded-xl shadow-xl border border-gray-100 overflow-hidden">
+                                                        <div class="bg-gray-50 px-3 py-2 border-b border-gray-100 flex items-center gap-2">
+                                                            <i class="fas fa-users text-gray-400 text-xs"></i>
+                                                            <span class="text-[10px] font-bold text-gray-500 uppercase tracking-wider">{{ tr('Target List') }}</span>
+                                                        </div>
+                                                        <div class="p-3 max-h-48 overflow-y-auto no-scrollbar whitespace-normal">
+                                                            <div class="flex flex-wrap gap-1.5">
+                                                                @foreach(explode(', ', $p->scope_names_list) as $name)
+                                                                    <span class="inline-flex items-center px-2 py-0.5 rounded text-[11px] font-medium bg-brand/5 text-brand border border-brand/10">
+                                                                        {{ $name }}
+                                                                    </span>
+                                                                @endforeach
+                                                            </div>
+                                                        </div>
+                                                        <div class="bg-brand/5 h-1 w-full"></div>
+                                                    </div>
+                                                    <div class="w-3 h-3 bg-white border-r border-b border-gray-100 rotate-45 absolute -bottom-1.5 left-1/2 -translate-x-1/2"></div>
+                                                </div>
+                                            </div>
                                         </div>
                                     @endif
                                 </td>
 
                                 <td class="py-4 px-6 align-top whitespace-nowrap text-sm">
-                                    <span class="px-2 py-1 text-xs font-semibold rounded-full bg-gray-50 text-gray-700 border border-gray-200">{{ (int) $p->steps_count }}</span>
+                                    <div class="group relative inline-block">
+                                        <span class="px-2 py-1 text-xs font-semibold rounded-full bg-gray-50 text-gray-700 border border-gray-200 cursor-help hover:bg-gray-100 transition-all">
+                                            {{ (int) $p->steps_count }}
+                                        </span>
+
+                                        {{-- Tooltip Card --}}
+                                        <div class="invisible group-hover:visible opacity-0 group-hover:opacity-100 transition-all duration-300 absolute z-[100] bottom-full left-1/2 -translate-x-1/2 mb-2 w-56">
+                                            <div class="bg-white rounded-xl shadow-xl border border-gray-100 overflow-hidden">
+                                                <div class="bg-gray-50 px-3 py-2 border-b border-gray-100 flex items-center gap-2">
+                                                    <i class="fas fa-route text-gray-400 text-xs"></i>
+                                                    <span class="text-[10px] font-bold text-gray-500 uppercase tracking-wider">{{ tr('Approval Sequence') }}</span>
+                                                </div>
+                                                <div class="p-3 space-y-2 max-h-48 overflow-y-auto no-scrollbar whitespace-normal text-right">
+                                                    @foreach(explode("\n", $p->step_names_list) as $step)
+                                                        <div class="flex items-center gap-2 text-xs text-gray-700">
+                                                            <div class="w-1.5 h-1.5 rounded-full bg-brand/40"></div>
+                                                            <span class="font-medium">{{ $step }}</span>
+                                                        </div>
+                                                    @endforeach
+                                                </div>
+                                                <div class="bg-brand/5 h-1 w-full"></div>
+                                            </div>
+                                            <div class="w-3 h-3 bg-white border-r border-b border-gray-100 rotate-45 absolute -bottom-1.5 left-1/2 -translate-x-1/2"></div>
+                                        </div>
+                                    </div>
                                 </td>
 
                                 <td class="py-4 px-6 align-top whitespace-nowrap text-sm">

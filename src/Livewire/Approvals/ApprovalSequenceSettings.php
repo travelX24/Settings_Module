@@ -205,6 +205,7 @@ class ApprovalSequenceSettings extends Component
 
         $policies = ApprovalPolicy::where('company_id', $companyId)
             ->where('operation_key', $this->tab)
+            ->with(['steps', 'scopes'])
             ->withCount(['steps', 'scopes'])
             ->when($this->search, fn($q) => $q->where('name', 'like', "%{$this->search}%"))
             ->when($this->filterStatus !== 'all', function($q) {
@@ -220,6 +221,22 @@ class ApprovalSequenceSettings extends Component
                 });
             })
             ->paginate(10);
+
+        foreach ($policies as $p) {
+            if (($p->scope_type ?? 'all') === 'all') {
+                $p->scope_names_list = tr('All Employees');
+            } else {
+                $lookupKey = $p->scope_type === 'employee' ? 'employees' : ($p->scope_type . 's');
+                $map = collect($lookups[$lookupKey] ?? [])->pluck('name', 'id');
+                $p->scope_names_list = $p->scopes->map(fn($s) => $map[$s->scope_id] ?? ('#' . $s->scope_id))->implode(', ');
+            }
+
+            $userMap = collect($lookups['users'] ?? [])->pluck('name', 'id');
+            $p->step_names_list = $p->steps->map(function($s, $idx) use ($userMap) {
+                $typeLabel = $s->approver_type === 'direct_manager' ? tr('Direct Manager') : ($userMap[$s->approver_id] ?? ('#' . $s->approver_id));
+                return ($idx + 1) . '. ' . $typeLabel;
+            })->implode("\n");
+        }
 
         $counts = ApprovalPolicy::where('company_id', $companyId)
             ->select('operation_key', DB::raw('count(*) as count'))

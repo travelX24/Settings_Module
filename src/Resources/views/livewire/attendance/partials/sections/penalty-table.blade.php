@@ -16,7 +16,7 @@
             <tr class="hover:bg-gray-50/30 transition-colors group cursor-default">
                 <td class="px-6 py-3">
                     <span class="text-xs font-bold text-gray-700">
-                        @if($type === 'absence')
+                        @if(isset($item['absence_reason_type']))
                             {{ tr('Unexcused Absence') }}
                         @else
                             @php
@@ -59,17 +59,13 @@
                 <td class="px-6 py-3 text-end">
                     @can('settings.attendance.manage')
                     <div class="flex items-center justify-end gap-2">
-                        <button wire:click="{{ $type === 'absence' ? 'editAbsencePolicy' : 'editPenalty' }}('{{ $item['id'] }}')" 
+                        <button wire:click="{{ isset($item['absence_reason_type']) ? 'editAbsencePolicy' : 'editPenalty' }}('{{ $item['id'] }}')" 
                             class="p-1.5 text-blue-500 hover:bg-blue-50 rounded-lg transition-colors cursor-pointer"
                             title="{{ tr('Edit') }}">
                             <i class="fas fa-edit text-xs"></i>
                         </button>
                         <button 
-                            @if($type === 'absence')
-                                @click="$dispatch('open-confirm-delete-absence', { id: '{{ $item['id'] }}' })"
-                            @else
-                                @click="$dispatch('open-confirm-delete-penalty', { id: '{{ $item['id'] }}' })"
-                            @endif
+                            @click="$dispatch('open-confirm-delete-{{ isset($item['absence_reason_type']) ? 'absence' : 'penalty' }}', { id: '{{ $item['id'] }}' })"
                             class="p-1.5 text-red-500 hover:bg-red-50 rounded-lg transition-colors cursor-pointer"
                             title="{{ tr('Delete') }}">
                             <i class="fas fa-trash-alt text-xs"></i>
