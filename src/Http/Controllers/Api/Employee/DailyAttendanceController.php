@@ -55,15 +55,21 @@ class DailyAttendanceController extends Controller
         $to   = $end ? Carbon::parse($end)->startOfDay() : (clone $from);
         if ($to->lt($from)) [$from, $to] = [$to, $from];
 
-        $schedule = $this->scheduleService->getEffectiveSchedule($companyId, $employee);
-        $holidays = $this->scheduleService->getHolidays($companyId, $from->toDateString(), $to->toDateString());
+        $fromStr = $from->toDateString();
+        $toStr = $to->toDateString();
+
+        // 🚀 [Optimization] Bulk fetch context data (Holidays and Requests are safe for range)
+        $holidays = $this->scheduleService->getHolidays($companyId, $fromStr, $toStr);
+        $requests = $this->scheduleService->getEmployeeRequests($employee->id, $fromStr, $toStr);
+
+        // Schedule cache to handle mid-month changes accurately and fast
+        $schedulesCache = [];
 
         if ($ensure) {
-            // [Optimization] Fetch existing log dates in bulk to avoid redundant ensureLog queries
             $existingLogs = DB::table('attendance_daily_logs')
                 ->where('saas_company_id', $companyId)
                 ->where('employee_id', $employee->id)
-                ->whereBetween('attendance_date', [$from->toDateString(), $to->toDateString()])
+                ->whereBetween('attendance_date', [$fromStr, $toStr])
                 ->pluck('attendance_date')
                 ->map(fn($d) => Carbon::parse($d)->toDateString())
                 ->toArray();
@@ -71,17 +77,19 @@ class DailyAttendanceController extends Controller
             $cursor = $from->copy();
             while ($cursor->lte($to)) {
                 $dateStr = $cursor->toDateString();
-                // Only call ensureLog if it doesn't exist or if forceSync is on
                 if ($forceSync || !in_array($dateStr, $existingLogs)) {
-                    $this->attendanceService->ensureLog($companyId, $employee->id, $dateStr, $schedule, $holidays, $forceSync);
+                    // Fetch accurate schedule for THIS specific day
+                    if (!isset($schedulesCache[$dateStr])) {
+                        $schedulesCache[$dateStr] = $this->scheduleService->getEffectiveSchedule($companyId, $employee, $dateStr);
+                    }
+                    $this->attendanceService->ensureLog($companyId, $employee->id, $dateStr, $schedulesCache[$dateStr], $holidays, $forceSync);
                 }
                 $cursor->addDay();
             }
         }
 
-        $logs = $this->attendanceService->getLogs($companyId, $employee->id, $from->toDateString(), $to->toDateString());
+        $logs = $this->attendanceService->getLogs($companyId, $employee->id, $fromStr, $toStr);
 
-        // [Optimization] Fetch all details for all logs in one query
         $logIds = $logs->pluck('id')->toArray();
         $allDetails = DB::table('attendance_daily_details')
             ->whereIn('daily_log_id', $logIds)
@@ -89,25 +97,22 @@ class DailyAttendanceController extends Controller
             ->get()
             ->groupBy('daily_log_id');
 
-        // Cache schedules and holidays for the range to optimize
-        $schedulesByDate = [];
-        $cursor = $from->copy();
-        while ($cursor->lte($to)) {
-            $d = $cursor->toDateString();
-            $schedulesByDate[$d] = $this->scheduleService->getEffectiveSchedule($companyId, $employee, $d);
-            $cursor->addDay();
-        }
-        $holidays = $this->scheduleService->getHolidays($companyId, $from->toDateString(), $to->toDateString());
-
-        $data = $logs->map(function($log) use ($schedulesByDate, $holidays, $employee, $allDetails) {
-            // Use pre-fetched details from the collection instead of querying DB again
+        $data = $logs->map(function($log) use ($companyId, $employee, $holidays, $allDetails, $requests, &$schedulesCache) {
+            $dateStr = $log->attendance_date->toDateString();
             $details = $allDetails->get($log->id) ?? collect([]);
 
-            $metrics = $this->scheduleService->getMetricsForDate($log->attendance_date->toDateString(), $schedulesByDate[$log->attendance_date->toDateString()] ?? null, $holidays, $employee);
+            // Ensure we use the correct schedule for this day (with caching)
+            if (!isset($schedulesCache[$dateStr])) {
+                $schedulesCache[$dateStr] = $this->scheduleService->getEffectiveSchedule($companyId, $employee, $dateStr);
+            }
+            $daySchedule = $schedulesCache[$dateStr];
+
+            // 🚀 [Optimization] Pass pre-fetched requests and accurate schedule
+            $metrics = $this->scheduleService->getMetricsForDate($dateStr, $daySchedule, $holidays, $employee, $requests);
 
             return [
                 'id' => (int) $log->id,
-                'date' => Carbon::parse($log->attendance_date)->toDateString(),
+                'date' => $dateStr,
                 'check_in_time' => company_time($log->check_in_time),
                 'check_out_time' => company_time($log->check_out_time),
                 'attendance_status' => in_array($metrics['status'], ['holiday', 'no_schedule']) ? $metrics['status'] : (string) $log->attendance_status,
