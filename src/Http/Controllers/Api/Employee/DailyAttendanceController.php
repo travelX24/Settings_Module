@@ -59,14 +59,35 @@ class DailyAttendanceController extends Controller
         $holidays = $this->scheduleService->getHolidays($companyId, $from->toDateString(), $to->toDateString());
 
         if ($ensure) {
+            // [Optimization] Fetch existing log dates in bulk to avoid redundant ensureLog queries
+            $existingLogs = DB::table('attendance_daily_logs')
+                ->where('saas_company_id', $companyId)
+                ->where('employee_id', $employee->id)
+                ->whereBetween('attendance_date', [$from->toDateString(), $to->toDateString()])
+                ->pluck('attendance_date')
+                ->map(fn($d) => Carbon::parse($d)->toDateString())
+                ->toArray();
+
             $cursor = $from->copy();
             while ($cursor->lte($to)) {
-                $this->attendanceService->ensureLog($companyId, $employee->id, $cursor->toDateString(), $schedule, $holidays, $forceSync);
+                $dateStr = $cursor->toDateString();
+                // Only call ensureLog if it doesn't exist or if forceSync is on
+                if ($forceSync || !in_array($dateStr, $existingLogs)) {
+                    $this->attendanceService->ensureLog($companyId, $employee->id, $dateStr, $schedule, $holidays, $forceSync);
+                }
                 $cursor->addDay();
             }
         }
 
         $logs = $this->attendanceService->getLogs($companyId, $employee->id, $from->toDateString(), $to->toDateString());
+
+        // [Optimization] Fetch all details for all logs in one query
+        $logIds = $logs->pluck('id')->toArray();
+        $allDetails = DB::table('attendance_daily_details')
+            ->whereIn('daily_log_id', $logIds)
+            ->orderBy('check_in_time')
+            ->get()
+            ->groupBy('daily_log_id');
 
         // Cache schedules and holidays for the range to optimize
         $schedulesByDate = [];
@@ -78,12 +99,9 @@ class DailyAttendanceController extends Controller
         }
         $holidays = $this->scheduleService->getHolidays($companyId, $from->toDateString(), $to->toDateString());
 
-        $data = $logs->map(function($log) use ($schedulesByDate, $holidays, $employee) {
-            // Always fetch details fresh from DB to avoid stale lazy-loaded empty collections
-            $details = DB::table('attendance_daily_details')
-                ->where('daily_log_id', $log->id)
-                ->orderBy('check_in_time')
-                ->get();
+        $data = $logs->map(function($log) use ($schedulesByDate, $holidays, $employee, $allDetails) {
+            // Use pre-fetched details from the collection instead of querying DB again
+            $details = $allDetails->get($log->id) ?? collect([]);
 
             $metrics = $this->scheduleService->getMetricsForDate($log->attendance_date->toDateString(), $schedulesByDate[$log->attendance_date->toDateString()] ?? null, $holidays, $employee);
 
@@ -100,7 +118,7 @@ class DailyAttendanceController extends Controller
                 'scheduled_hours' => (float) $log->scheduled_hours,
                 'scheduled_check_in' => company_time($log->scheduled_check_in),
                 'scheduled_check_out' => company_time($log->scheduled_check_out),
-                'punches' => collect($details)->map(fn($d) => [
+                'punches' => $details->map(fn($d) => [
                     'check_in' => company_time($d->check_in_time),
                     'check_out' => company_time($d->check_out_time),
                     'status' => $d->attendance_status,

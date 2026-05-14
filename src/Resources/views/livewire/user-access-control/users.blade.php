@@ -119,12 +119,10 @@
                                         {{ tr('Custom Permissions') }}
                                     </x-ui.dropdown-item>
                                 @endif
-                                @if(!empty($user->device_id))
-                                    <x-ui.dropdown-item @click="$dispatch('open-confirm-confirm-reset-device', {{ $user->id }})">
-                                        <i class="fas fa-mobile-alt mr-2 w-5 text-purple-500"></i>
-                                        {{ tr('Reset Device') }}
-                                    </x-ui.dropdown-item>
-                                @endif
+                                <x-ui.dropdown-item @click="$dispatch('open-confirm-confirm-reset-device', {{ $user->id }})">
+                                    <i class="fas fa-mobile-alt mr-2 w-5 text-purple-500"></i>
+                                    {{ tr('Reset Device') }}
+                                </x-ui.dropdown-item>
                                 <x-ui.dropdown-item
                                     @click="$dispatch('open-confirm-confirm-toggle-status', {{ $user->id }})"
                                     :danger="$user->is_active ?? true"
@@ -359,12 +357,10 @@
                                         {{ tr('Custom Permissions') }}
                                     </x-ui.dropdown-item>
                                 @endif
-                                @if(!empty($user->device_id))
-                                    <x-ui.dropdown-item @click="$dispatch('open-confirm-confirm-reset-device', {{ $user->id }})">
-                                        <i class="fas fa-mobile-alt mr-2 w-5 text-purple-500"></i>
-                                        {{ tr('Reset Device') }}
-                                    </x-ui.dropdown-item>
-                                @endif
+                                <x-ui.dropdown-item @click="$dispatch('open-confirm-confirm-reset-device', {{ $user->id }})">
+                                    <i class="fas fa-mobile-alt mr-2 w-5 text-purple-500"></i>
+                                    {{ tr('Reset Device') }}
+                                </x-ui.dropdown-item>
                                 <x-ui.dropdown-item @click="$dispatch('open-confirm-confirm-toggle-status', {{ $user->id }})" :danger="$user->is_active ?? true">
                                     @if($user->is_active ?? true)
                                         <i class="fas fa-user-slash mr-2 w-5 text-red-500"></i>
