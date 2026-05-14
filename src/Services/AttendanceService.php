@@ -30,7 +30,7 @@ class AttendanceService
 
         if (!$force && $log && !is_null($log->scheduled_hours) && (float)$log->scheduled_hours > 0) {
             $hasOpenSession = $log->details()
-                ->whereNull('check_out')
+                ->whereNull('check_out_time')
                 ->exists();
 
             if (!$hasOpenSession) {
