@@ -20,7 +20,7 @@ return new class extends Migration
             $table->unsignedInteger('radius_meters')->default(100);
             
             // Target (branch OR employee_group - only one can be set)
-            $table->foreignId('branch_id')->nullable()->constrained('departments')->nullOnDelete();
+            $table->foreignId('branch_id')->nullable()->constrained('branches')->nullOnDelete();
             $table->foreignId('employee_group_id')->nullable()->constrained('employee_groups')->nullOnDelete();
             
             $table->boolean('is_active')->default(true);

@@ -37,7 +37,7 @@ class AttendanceGpsLocation extends Model
      */
     public function branch(): BelongsTo
     {
-        return $this->belongsTo(Department::class, 'branch_id');
+        return $this->belongsTo(\Athka\Saas\Models\Branch::class, 'branch_id');
     }
 
     public function employeeGroup(): BelongsTo

@@ -86,6 +86,36 @@
                 address: '...',
                 isFetching: false,
 
+                // Search properties
+                searchQuery: '',
+                searchResults: [],
+                isSearching: false,
+
+                async searchLocation() {
+                    if (this.searchQuery.length < 2) {
+                        this.searchResults = [];
+                        this.isSearching = false;
+                        return;
+                    }
+                    this.isSearching = true;
+                    try {
+                        this.searchResults = await this.$wire.searchLocation(this.searchQuery);
+                    } catch (e) {
+                        console.error('Search Error:', e);
+                    } finally {
+                        this.isSearching = false;
+                    }
+                },
+
+                selectLocation(loc) {
+                    const lat = parseFloat(loc.lat);
+                    const lng = parseFloat(loc.lon);
+                    this.updatePosition(lat, lng);
+                    this.map.setView([lat, lng], 16);
+                    this.searchResults = [];
+                    this.searchQuery = loc.display_name;
+                },
+
                 map: null,
                 marker: null,
                 circle: null,

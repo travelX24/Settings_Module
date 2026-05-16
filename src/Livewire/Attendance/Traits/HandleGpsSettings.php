@@ -37,6 +37,24 @@ trait HandleGpsSettings
         }
     }
 
+    public function searchLocation($query)
+    {
+        try {
+            $response = \Illuminate\Support\Facades\Http::withHeaders([
+                'User-Agent' => 'AthkaHR-App'
+            ])->get("https://nominatim.openstreetmap.org/search", [
+                'format' => 'jsonv2',
+                'q' => $query,
+                'limit' => 5,
+                'addressdetails' => 1
+            ]);
+
+            return $response->json();
+        } catch (\Exception $e) {
+            return [];
+        }
+    }
+
     public function openGpsModal($id = null)
     {
         $this->authorize('settings.attendance.manage');
