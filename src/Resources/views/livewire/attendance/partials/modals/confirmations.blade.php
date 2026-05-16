@@ -159,6 +159,8 @@
                     }).addTo(this.map);
 
                     this.map.on('click', (e) => {
+                        this.searchResults = [];
+                        this.isSearching = false;
                         this.updatePosition(e.latlng.lat, e.latlng.lng);
                     });
 

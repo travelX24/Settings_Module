@@ -225,102 +225,94 @@
                     <div class="relative w-full h-[450px] bg-gray-100 rounded-2xl overflow-hidden border border-gray-200 shadow-inner group">
                         <div id="map-picker-container" class="absolute inset-0 z-10" wire:ignore></div>
                         
-                        {{-- Search Control Overlay (Positioned between Zoom and Sync) --}}
-                        <div class="absolute top-6 left-[65px] right-[190px] z-20">
-                            <div class="relative group/search">
-                                <div class="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
-                                    <i class="fas" :class="isSearching ? 'fa-circle-notch fa-spin text-blue-500' : 'fa-search text-gray-400 group-focus-within/search:text-blue-500'"></i>
+                        {{-- Top Controls Container (Search + Sync) --}}
+                        <div class="absolute top-4 left-16 right-4 z-20 flex items-start gap-3 pointer-events-none">
+                            {{-- Search Bar --}}
+                            <div class="flex-1 pointer-events-auto max-w-2xl">
+                                <div class="relative group/search">
+                                    <div class="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
+                                        <i class="fas" :class="isSearching ? 'fa-circle-notch fa-spin text-blue-500' : 'fa-search text-gray-400 group-focus-within/search:text-blue-500'"></i>
+                                    </div>
+                                    <input 
+                                        type="text" 
+                                        x-model="searchQuery" 
+                                        @input.debounce.500ms="searchLocation()"
+                                        placeholder="{{ tr('Search for a place or address...') }}"
+                                        class="block w-full pl-11 pr-11 py-2.5 bg-white/95 backdrop-blur-xl border border-gray-200/50 rounded-2xl text-xs font-bold shadow-xl focus:ring-4 focus:ring-blue-500/10 focus:border-blue-400 transition-all placeholder:text-gray-400 placeholder:font-medium"
+                                    >
+                                    <button 
+                                        x-show="searchQuery.length > 0" 
+                                        @click="searchQuery = ''; searchResults = []; isSearching = false" 
+                                        class="absolute inset-y-0 right-0 pr-4 flex items-center text-gray-300 hover:text-red-500 transition-colors"
+                                        type="button"
+                                    >
+                                        <i class="fas fa-times-circle text-lg"></i>
+                                    </button>
                                 </div>
-                                <input 
-                                    type="text" 
-                                    x-model="searchQuery" 
-                                    @input.debounce.500ms="searchLocation()"
-                                    placeholder="{{ tr('Search for a place or address...') }}"
-                                    class="block w-full pl-11 pr-11 py-3 bg-white/95 backdrop-blur-xl border border-gray-200/50 rounded-2xl text-sm font-bold shadow-[0_10px_40px_rgba(0,0,0,0.08)] focus:ring-4 focus:ring-blue-500/10 focus:border-blue-400 transition-all placeholder:text-gray-400 placeholder:font-medium"
+
+                                {{-- Search Results Dropdown --}}
+                                <div 
+                                    x-show="searchResults.length > 0 || isSearching" 
+                                    x-transition:enter="transition ease-out duration-300"
+                                    x-transition:enter-start="opacity-0 translate-y-4"
+                                    x-transition:enter-end="opacity-100 translate-y-0"
+                                    class="mt-3 bg-white/98 backdrop-blur-xl rounded-2xl shadow-[0_20px_50px_rgba(0,0,0,0.15)] border border-gray-100 overflow-hidden max-h-80 overflow-y-auto custom-scrollbar z-30"
+                                    @click.away="searchResults = []"
                                 >
+                                    <div class="p-3 border-b border-gray-50 bg-gray-50/50 flex items-center justify-between">
+                                        <span class="text-[10px] font-black text-gray-400 uppercase tracking-widest px-1">
+                                            <span x-show="!isSearching">{{ tr('Found Locations') }}</span>
+                                            <span x-show="isSearching">{{ tr('Searching...') }}</span>
+                                        </span>
+                                        <span x-show="!isSearching" class="text-[10px] font-bold text-blue-500 bg-blue-50 px-2 py-0.5 rounded-full" x-text="searchResults.length"></span>
+                                        <i x-show="isSearching" class="fas fa-circle-notch fa-spin text-blue-500 text-[10px]"></i>
+                                    </div>
+
+                                    <div class="divide-y divide-gray-50">
+                                        <template x-if="isSearching && searchResults.length === 0">
+                                            <div class="p-8 text-center">
+                                                <div class="w-12 h-12 bg-blue-50 rounded-full flex items-center justify-center mx-auto mb-3">
+                                                    <i class="fas fa-search-location text-blue-400 animate-bounce"></i>
+                                                </div>
+                                                <p class="text-xs font-bold text-gray-400">{{ tr('Looking for places...') }}</p>
+                                            </div>
+                                        </template>
+
+                                        <template x-for="result in searchResults" :key="result.place_id">
+                                            <button 
+                                                type="button"
+                                                @click="selectLocation(result)"
+                                                class="w-full text-start px-4 py-3.5 hover:bg-blue-50/50 transition-colors flex items-start gap-4 group"
+                                            >
+                                                <div class="w-10 h-10 rounded-xl bg-blue-50/50 flex items-center justify-center text-blue-500 group-hover:bg-blue-500 group-hover:text-white transition-all shrink-0 shadow-sm">
+                                                    <i class="fas fa-map-marker-alt text-sm"></i>
+                                                </div>
+                                                <div class="flex-1 min-w-0 pt-0.5">
+                                                    <p class="text-[12px] font-bold text-gray-800 truncate mb-0.5" x-text="result.display_name.split(',')[0]"></p>
+                                                    <p class="text-[10px] text-gray-500 truncate font-medium leading-relaxed" x-text="result.display_name"></p>
+                                                </div>
+                                                <div class="self-center opacity-0 group-hover:opacity-100 transition-opacity pr-1">
+                                                    <i class="fas fa-chevron-right text-blue-300 text-[10px]"></i>
+                                                </div>
+                                            </button>
+                                        </template>
+                                    </div>
+                                </div>
+                            </div>
+
+                            {{-- Sync Button --}}
+                            <div class="pointer-events-auto shrink-0">
                                 <button 
-                                    x-show="searchQuery.length > 0" 
-                                    @click="searchQuery = ''; searchResults = []; isSearching = false" 
-                                    class="absolute inset-y-0 right-0 pr-4 flex items-center text-gray-300 hover:text-red-500 transition-colors"
-                                    type="button"
-                                >
-                                    <i class="fas fa-times-circle text-lg"></i>
-                                </button>
-                            </div>
-
-                            {{-- Search Results Dropdown --}}
-                            <div 
-                                x-show="searchResults.length > 0 || isSearching" 
-                                x-transition:enter="transition ease-out duration-300"
-                                x-transition:enter-start="opacity-0 translate-y-4"
-                                x-transition:enter-end="opacity-100 translate-y-0"
-                                class="mt-3 bg-white/98 backdrop-blur-xl rounded-2xl shadow-[0_20px_50px_rgba(0,0,0,0.15)] border border-gray-100 overflow-hidden max-h-80 overflow-y-auto custom-scrollbar z-30"
-                                @click.away="searchResults = []"
-                            >
-                                <div class="p-3 border-b border-gray-50 bg-gray-50/50 flex items-center justify-between">
-                                    <span class="text-[10px] font-black text-gray-400 uppercase tracking-widest px-1">
-                                        <span x-show="!isSearching">{{ tr('Found Locations') }}</span>
-                                        <span x-show="isSearching">{{ tr('Searching...') }}</span>
-                                    </span>
-                                    <span x-show="!isSearching" class="text-[10px] font-bold text-blue-500 bg-blue-50 px-2 py-0.5 rounded-full" x-text="searchResults.length"></span>
-                                    <i x-show="isSearching" class="fas fa-circle-notch fa-spin text-blue-500 text-[10px]"></i>
-                                </div>
-
-                                <div class="divide-y divide-gray-50">
-                                    {{-- Loading Placeholder --}}
-                                    <template x-if="isSearching && searchResults.length === 0">
-                                        <div class="p-8 text-center">
-                                            <div class="w-12 h-12 bg-blue-50 rounded-full flex items-center justify-center mx-auto mb-3">
-                                                <i class="fas fa-search-location text-blue-400 animate-bounce"></i>
-                                            </div>
-                                            <p class="text-xs font-bold text-gray-400">{{ tr('Looking for places...') }}</p>
-                                        </div>
-                                    </template>
-
-                                    {{-- Results --}}
-                                    <template x-for="result in searchResults" :key="result.place_id">
-                                        <button 
-                                            type="button"
-                                            @click="selectLocation(result)"
-                                            class="w-full text-start px-4 py-3.5 hover:bg-blue-50/50 transition-colors flex items-start gap-4 group"
-                                        >
-                                            <div class="w-10 h-10 rounded-xl bg-blue-50/50 flex items-center justify-center text-blue-500 group-hover:bg-blue-500 group-hover:text-white transition-all shrink-0 shadow-sm">
-                                                <i class="fas fa-map-marker-alt text-sm"></i>
-                                            </div>
-                                            <div class="flex-1 min-w-0 pt-0.5">
-                                                <p class="text-[12px] font-bold text-gray-800 truncate mb-0.5" x-text="result.display_name.split(',')[0]"></p>
-                                                <p class="text-[10px] text-gray-500 truncate font-medium leading-relaxed" x-text="result.display_name"></p>
-                                            </div>
-                                            <div class="self-center opacity-0 group-hover:opacity-100 transition-opacity pr-1">
-                                                <i class="fas fa-chevron-right text-blue-300 text-[10px]"></i>
-                                            </div>
-                                        </button>
-                                    </template>
-                                </div>
-                            </div>
-                        </div>
-                        
-                        {{-- Radius Control Overlay --}}
-                        <div class="absolute bottom-6 left-1/2 -translate-x-1/2 bg-white/90 backdrop-blur-md px-6 py-3 rounded-full shadow-lg border border-gray-200 flex items-center gap-4 z-20 w-3/4 max-w-md transition-all hover:scale-105">
-                            <span class="text-xs font-bold text-gray-600 whitespace-nowrap">{{ tr('Geofence Radius') }}</span>
-                            <div class="flex-1 relative flex items-center">
-                                <input type="range" class="w-full h-1.5 bg-gray-200 rounded-lg appearance-none cursor-pointer accent-[color:var(--brand-via)] ml-5" 
-                                    min="10" max="1000" step="10" x-model="radius" @input="updateCircle()"
+                                    type="button" 
+                                    @click="getCurrentLocation()" 
+                                    class="flex items-center gap-2 text-[10px] font-black text-blue-600 hover:text-white hover:bg-blue-600 bg-white/95 backdrop-blur-md px-4 py-2.5 rounded-2xl border border-blue-100 transition-all shadow-xl active:scale-95 disabled:opacity-50" 
                                     @cannot('settings.attendance.manage') disabled @endcannot
                                 >
+                                    <i class="fas fa-location-arrow animate-pulse"></i> 
+                                    <span class="hidden sm:inline">{{ tr('Sync My Location') }}</span>
+                                </button>
                             </div>
-                            <span class="text-xs font-black text-[color:var(--brand-via)] w-12 text-end" x-text="radius + 'm'"></span>
                         </div>
-                        {{-- Sync Button (Repositioned to avoid overlap) --}}
-                        <button 
-                            type="button" 
-                            @click="getCurrentLocation()" 
-                            class="absolute top-6 right-6 z-20 flex items-center gap-2 text-[10px] font-black text-blue-600 hover:text-white hover:bg-blue-600 bg-white/95 backdrop-blur-md px-4 py-2.5 rounded-2xl border border-blue-100 transition-all shadow-[0_10px_20px_rgba(0,0,0,0.05)] active:scale-95 disabled:opacity-50" 
-                            @cannot('settings.attendance.manage') disabled @endcannot
-                        >
-                            <i class="fas fa-location-arrow animate-pulse"></i> 
-                            <span>{{ tr('Sync My Location') }}</span>
-                        </button>
                     </div>
                     
                     <div class="flex items-center justify-between text-[11px] text-gray-400 px-2">
