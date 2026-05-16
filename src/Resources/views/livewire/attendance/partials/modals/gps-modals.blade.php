@@ -313,6 +313,19 @@
                                 </button>
                             </div>
                         </div>
+
+                        {{-- Radius Control Overlay --}}
+                        <div class="absolute bottom-6 left-1/2 -translate-x-1/2 bg-white/90 backdrop-blur-md px-6 py-3 rounded-full shadow-lg border border-gray-200 flex items-center gap-4 z-20 w-3/4 max-w-md transition-all hover:scale-105 pointer-events-auto">
+                            <span class="text-xs font-bold text-gray-600 whitespace-nowrap">{{ tr('Geofence Radius') }}</span>
+                            <div class="flex-1 relative flex items-center">
+                                <input type="range" class="w-full h-1.5 bg-gray-200 rounded-lg appearance-none cursor-pointer accent-[color:var(--brand-via)] ml-5" 
+                                    min="10" max="1000" step="10" x-model="radius" @input="updateCircle()"
+                                    @cannot('settings.attendance.manage') disabled @endcannot
+                                >
+                            </div>
+                            <span class="text-xs font-black text-[color:var(--brand-via)] w-12 text-end" x-text="radius + 'm'"></span>
+                        </div>
+
                     </div>
                     
                     <div class="flex items-center justify-between text-[11px] text-gray-400 px-2">
