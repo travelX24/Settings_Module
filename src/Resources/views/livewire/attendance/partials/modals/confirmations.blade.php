@@ -128,6 +128,13 @@
                                     this.createMap();
                                 } else {
                                     this.map.invalidateSize();
+                                    const currentLat = this.lat || 15.37946;
+                                    const currentLng = this.lng || 44.17241;
+                                    this.map.setView([currentLat, currentLng], 16);
+                                    this.marker.setLatLng([currentLat, currentLng]);
+                                    this.circle.setLatLng([currentLat, currentLng]);
+                                    this.circle.setRadius(this.radius || 100);
+                                    this.fetchAddress(currentLat, currentLng);
                                 }
                             }, 500);
                         }
