@@ -45,8 +45,9 @@ trait HandleGpsSettings
             ])->get("https://nominatim.openstreetmap.org/search", [
                 'format' => 'jsonv2',
                 'q' => $query,
-                'limit' => 5,
-                'addressdetails' => 1
+                'limit' => 15,
+                'addressdetails' => 1,
+                'namedetails' => 1
             ]);
 
             return $response->json();
