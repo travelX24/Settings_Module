@@ -367,9 +367,99 @@
                 </x-ui.table>
             </div>
 
-            {{-- Server-Side Pagination (Applied to both views) --}}
+            {{-- Server-Side Pagination (Applied to both views - Card 232 Design) --}}
+            @php
+                $currentPage = $departments->currentPage();
+                $lastPage = $departments->lastPage();
+                $total = $departments->total();
+                $from = $departments->firstItem() ?? 0;
+                $to = $departments->lastItem() ?? 0;
+
+                $pages = [];
+
+                if ($lastPage <= 7) {
+                    $pages = range(1, $lastPage);
+                } else {
+                    $pages[] = 1;
+
+                    $start = max(2, $currentPage - 1);
+                    $end = min($lastPage - 1, $currentPage + 1);
+
+                    if ($start > 2) {
+                        $pages[] = '...';
+                    }
+
+                    for ($page = $start; $page <= $end; $page++) {
+                        $pages[] = $page;
+                    }
+
+                    if ($end < $lastPage - 1) {
+                        $pages[] = '...';
+                    }
+
+                    $pages[] = $lastPage;
+                }
+
+                $prevDisabled = $currentPage <= 1;
+                $nextDisabled = $currentPage >= $lastPage;
+                
+                $locale = app()->getLocale();
+                $isRtl = in_array(substr($locale, 0, 2), ['ar', 'fa', 'ur', 'he']);
+            @endphp
+
             <div class="mt-6 border-t border-gray-200 pt-4">
-                {{ $departments->onEachSide(1)->links() }}
+                <div class="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
+                    <div class="text-sm text-gray-600">
+                        <span>
+                            {{ tr('Showing') }}
+                            <span class="font-semibold">{{ $from }}</span>
+                            {{ tr('to') }}
+                            <span class="font-semibold">{{ $to }}</span>
+                            {{ tr('of') }}
+                            <span class="font-semibold">{{ $total }}</span>
+                            {{ tr('results') }}
+                        </span>
+                    </div>
+
+                    <div class="flex items-center gap-2">
+                        <button
+                            type="button"
+                            wire:click="previousPage('page')"
+                            @disabled($prevDisabled)
+                            class="px-4 py-2 text-sm font-medium bg-white border border-gray-300 rounded-md transition-colors duration-200 {{ $prevDisabled ? 'opacity-50 cursor-not-allowed' : 'hover:bg-gray-100 cursor-pointer' }}"
+                        >
+                            <i class="fas fa-chevron-{{ $isRtl ? 'right' : 'left' }} me-1"></i>
+                            <span>{{ tr('Previous') }}</span>
+                        </button>
+
+                        <div class="flex items-center gap-1">
+                            @foreach($pages as $page)
+                                @if($page === '...')
+                                    <span class="px-2 text-sm text-gray-400">…</span>
+                                @else
+                                    <button
+                                        type="button"
+                                        wire:key="departments-page-{{ $page }}"
+                                        wire:click="gotoPage({{ $page }}, 'page')"
+                                        class="px-3 py-2 text-sm font-medium border rounded-md transition-colors duration-200 min-w-[40px] {{ $currentPage === $page ? 'bg-[color:var(--brand-via)] text-white border-[color:var(--brand-via)]' : 'bg-white text-gray-700 border-gray-300 hover:bg-gray-50 cursor-pointer' }}"
+                                    >
+                                        {{ $page }}
+                                    </button>
+                                @endif
+                            @endforeach
+                        </div>
+
+                        <button
+                            type="button"
+                            wire:click="nextPage('page')"
+                            @disabled($nextDisabled)
+                            class="px-4 py-2 text-sm font-medium bg-white border border-gray-300 rounded-md transition-colors duration-200 {{ $nextDisabled ? 'opacity-50 cursor-not-allowed' : 'hover:bg-gray-100 cursor-pointer' }}"
+                        >
+                            <span>{{ tr('Next') }}</span>
+                            <i class="fas fa-chevron-{{ $isRtl ? 'left' : 'right' }} ms-1"></i>
+                        </button>
+                    </div>
+                </div>
             </div>
 
         @else
