@@ -270,12 +270,44 @@
                         ['value' => 'hijri', 'label' => tr('Hijri')],
                     ]" width="full"
                         :defer="false" :applyOnChange="true" />
-
                 </div>
 
                 <div>
                     <x-ui.input type="number" min="1" label="{{ tr('Duration (days)') }}"
                         wire:model.defer="newDurationDays" required :disabled="!auth()->user()->can('settings.attendance.manage')" />
+                </div>
+
+                {{-- Repeat Type --}}
+                <div class="md:col-span-2">
+                    <label class="block text-xs font-semibold text-gray-500 mb-2 uppercase tracking-wider">
+                        {{ trk('recurrence', 'Recurrence') }}
+                    </label>
+                    <div class="flex items-center gap-4">
+                        <label class="flex items-center gap-2 cursor-pointer group">
+                            <input type="radio" wire:model.live="newRepeatType" value="once"
+                                class="w-4 h-4 text-[color:var(--brand-via)] border-gray-300 focus:ring-[color:var(--brand-via)]" />
+                            <span class="text-sm font-medium text-gray-700 group-hover:text-gray-900">
+                                {{ trk('one_time_only', 'One-time only') }}
+                            </span>
+                        </label>
+                        <label class="flex items-center gap-2 cursor-pointer group">
+                            <input type="radio" wire:model.live="newRepeatType" value="annual"
+                                class="w-4 h-4 text-[color:var(--brand-via)] border-gray-300 focus:ring-[color:var(--brand-via)]" />
+                            <span class="text-sm font-medium text-gray-700 group-hover:text-gray-900">
+                                {{ trk('repeat_annually', 'Repeat annually') }}
+                            </span>
+                        </label>
+                    </div>
+                    @if ($newRepeatType === 'annual')
+                        <div class="mt-2 p-3 bg-blue-50 border border-blue-200 rounded-lg text-xs text-blue-800 leading-relaxed">
+                            <i class="fas fa-info-circle me-1"></i>
+                            @if ($newCalendarType === 'hijri')
+                                {{ trk('holiday_auto_hijri_msg', 'The system will automatically generate this holiday for the next 5 Hijri years with the correct Gregorian date for each year.') }}
+                            @else
+                                {{ trk('holiday_auto_greg_msg', 'The system will automatically generate this holiday for the next 5 years on the same month and day.') }}
+                            @endif
+                        </div>
+                    @endif
                 </div>
 
                 <div>

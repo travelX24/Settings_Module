@@ -99,37 +99,172 @@ class HolidayService
     }
 
     /**
-     * Create a new official holiday template and occurrence.
+     * Create a new official holiday template and occurrence(s).
+     * If repeat_type is 'annual' with hijri calendar, generates occurrences for 5 years.
+     * If repeat_type is 'annual' with gregorian calendar, generates occurrences for 5 years on same month/day.
      */
     public function createHoliday(int $companyId, array $data, ?string $displayHijri): void
     {
         DB::transaction(function () use ($companyId, $data, $displayHijri) {
-            $template = OfficialHolidayTemplate::create([
-                'company_id' => $companyId,
-                'name' => $data['newName'],
-                'calendar_type' => $data['newCalendarType'],
-                'repeat_type' => 'once',
-                'once_start_date' => $data['newStartDate'],
-                'duration_days' => (int) $data['newDurationDays'],
-                'is_active' => true,
-            ]);
+            $repeatType = $data['newRepeatType'] ?? 'once';
+            $calendarType = $data['newCalendarType'];
+            $duration = (int) $data['newDurationDays'];
 
-            $start = Carbon::parse($data['newStartDate'])->startOfDay();
-            $end = (clone $start)->addDays(((int) $data['newDurationDays']) - 1);
+            if ($repeatType === 'annual' && $calendarType === 'hijri') {
+                // Extract hijri month and day from the provided start date
+                $hijriParts = $this->parseHijriDate($displayHijri ?? $data['newStartDate']);
+                $hijriMonth = $hijriParts['month'] ?? null;
+                $hijriDay   = $hijriParts['day']   ?? null;
 
-            OfficialHolidayOccurrence::create([
-                'company_id' => $companyId,
-                'template_id' => $template->id,
-                'year_greg' => (int) $start->year,
-                'year_hijri' => null,
-                'start_date' => $start->toDateString(),
-                'end_date' => $end->toDateString(),
-                'duration_days' => (int) $data['newDurationDays'],
-                'display_hijri' => $displayHijri,
-                'is_tentative' => false,
-                'is_overridden' => false,
-            ]);
+                $template = OfficialHolidayTemplate::create([
+                    'company_id'    => $companyId,
+                    'name'          => $data['newName'],
+                    'calendar_type' => 'hijri',
+                    'repeat_type'   => 'annual',
+                    'hijri_month'   => $hijriMonth,
+                    'hijri_day'     => $hijriDay,
+                    'duration_days' => $duration,
+                    'is_active'     => true,
+                ]);
+
+                // Generate occurrences for current Hijri year + 4 future years
+                $currentHijriYear = $this->currentHijriYear();
+                for ($i = 0; $i <= 4; $i++) {
+                    $hijriYear = $currentHijriYear + $i;
+                    $gregDate  = $this->hijriToGregorian($hijriYear, $hijriMonth, $hijriDay);
+                    if (! $gregDate) continue;
+
+                    $start = Carbon::parse($gregDate)->startOfDay();
+                    $end   = (clone $start)->addDays($duration - 1);
+                    $dHijri = $this->hijriFromGregorian($start->toDateString());
+
+                    OfficialHolidayOccurrence::create([
+                        'company_id'    => $companyId,
+                        'template_id'   => $template->id,
+                        'year_greg'     => (int) $start->year,
+                        'year_hijri'    => $hijriYear,
+                        'start_date'    => $start->toDateString(),
+                        'end_date'      => $end->toDateString(),
+                        'duration_days' => $duration,
+                        'display_hijri' => $dHijri ?: null,
+                        'is_tentative'  => false,
+                        'is_overridden' => false,
+                    ]);
+                }
+
+            } elseif ($repeatType === 'annual' && $calendarType === 'gregorian') {
+                // Extract gregorian month/day from start date
+                $startCarbon = Carbon::parse($data['newStartDate'])->startOfDay();
+                $gregMonth   = (int) $startCarbon->month;
+                $gregDay     = (int) $startCarbon->day;
+
+                $template = OfficialHolidayTemplate::create([
+                    'company_id'    => $companyId,
+                    'name'          => $data['newName'],
+                    'calendar_type' => 'gregorian',
+                    'repeat_type'   => 'annual',
+                    'greg_month'    => $gregMonth,
+                    'greg_day'      => $gregDay,
+                    'duration_days' => $duration,
+                    'is_active'     => true,
+                ]);
+
+                $currentYear = (int) now()->year;
+                for ($i = 0; $i <= 4; $i++) {
+                    $year  = $currentYear + $i;
+                    $start = Carbon::create($year, $gregMonth, $gregDay)->startOfDay();
+                    $end   = (clone $start)->addDays($duration - 1);
+                    $dHijri = $this->hijriFromGregorian($start->toDateString());
+
+                    OfficialHolidayOccurrence::create([
+                        'company_id'    => $companyId,
+                        'template_id'   => $template->id,
+                        'year_greg'     => $year,
+                        'year_hijri'    => null,
+                        'start_date'    => $start->toDateString(),
+                        'end_date'      => $end->toDateString(),
+                        'duration_days' => $duration,
+                        'display_hijri' => $dHijri ?: null,
+                        'is_tentative'  => false,
+                        'is_overridden' => false,
+                    ]);
+                }
+
+            } else {
+                // once — original behavior
+                $template = OfficialHolidayTemplate::create([
+                    'company_id'      => $companyId,
+                    'name'            => $data['newName'],
+                    'calendar_type'   => $calendarType,
+                    'repeat_type'     => 'once',
+                    'once_start_date' => $data['newStartDate'],
+                    'duration_days'   => $duration,
+                    'is_active'       => true,
+                ]);
+
+                $start = Carbon::parse($data['newStartDate'])->startOfDay();
+                $end   = (clone $start)->addDays($duration - 1);
+
+                OfficialHolidayOccurrence::create([
+                    'company_id'    => $companyId,
+                    'template_id'   => $template->id,
+                    'year_greg'     => (int) $start->year,
+                    'year_hijri'    => null,
+                    'start_date'    => $start->toDateString(),
+                    'end_date'      => $end->toDateString(),
+                    'duration_days' => $duration,
+                    'display_hijri' => $displayHijri,
+                    'is_tentative'  => false,
+                    'is_overridden' => false,
+                ]);
+            }
         });
+    }
+
+    /**
+     * Get current Hijri year.
+     */
+    private function currentHijriYear(): int
+    {
+        if (class_exists(\IntlCalendar::class)) {
+            try {
+                $tz  = \IntlTimeZone::createTimeZone('UTC');
+                $cal = \IntlCalendar::createInstance($tz, 'en_US@calendar=islamic-umalqura');
+                return (int) $cal->get(\IntlCalendar::FIELD_YEAR);
+            } catch (\Throwable $e) {}
+        }
+        return (int) now()->year - 579;
+    }
+
+    /**
+     * Convert Hijri year/month/day to a Gregorian date string (Y-m-d).
+     */
+    public function hijriToGregorian(int $hijriYear, int $hijriMonth, int $hijriDay): ?string
+    {
+        if (class_exists(\IntlCalendar::class)) {
+            try {
+                $tz  = \IntlTimeZone::createTimeZone('UTC');
+                $cal = \IntlCalendar::createInstance($tz, 'en_US@calendar=islamic-umalqura');
+                $cal->setLenient(false);
+                $cal->clear();
+                // IntlCalendar months are 0-indexed
+                $cal->set($hijriYear, $hijriMonth - 1, $hijriDay, 0, 0, 0);
+                $ts = (int) ($cal->getTime() / 1000);
+                return Carbon::createFromTimestampUTC($ts)->toDateString();
+            } catch (\Throwable $e) {}
+        }
+        return null;
+    }
+
+    /**
+     * Parse a hijri date string "YYYY/MM/DD" or "YYYY-MM-DD" into parts.
+     */
+    private function parseHijriDate(string $hijri): array
+    {
+        if (preg_match('~^(\d{4})[\/-](\d{1,2})[\/-](\d{1,2})$~', trim($hijri), $m)) {
+            return ['year' => (int)$m[1], 'month' => (int)$m[2], 'day' => (int)$m[3]];
+        }
+        return ['year' => null, 'month' => null, 'day' => null];
     }
 
     /**

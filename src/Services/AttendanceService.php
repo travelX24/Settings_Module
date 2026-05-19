@@ -268,13 +268,32 @@ class AttendanceService
             $dateStr = Carbon::parse($log->attendance_date)->toDateString();
             $checkInDateTime = Carbon::parse($dateStr . ' ' . $openSession->check_in_time);
             
-            if ($now->diffInMinutes($checkInDateTime) < 60) {
+            $canCheckOut = false;
+            if ($now->diffInMinutes($checkInDateTime) >= 60) {
+                $canCheckOut = true;
+            } else if ($openSession->work_schedule_period_id) {
+                $period = DB::table('work_schedule_periods')
+                    ->where('id', $openSession->work_schedule_period_id)
+                    ->first();
+                if ($period && !empty($period->end_time)) {
+                    $pStart = Carbon::parse($dateStr . ' ' . substr((string)$period->start_time, 0, 5));
+                    $pEnd = Carbon::parse($dateStr . ' ' . substr((string)$period->end_time, 0, 5));
+                    if ($pEnd->lt($pStart)) {
+                        $pEnd->addDay();
+                    }
+                    if ($now->greaterThanOrEqualTo($pEnd)) {
+                        $canCheckOut = true;
+                    }
+                }
+            }
+
+            if (!$canCheckOut) {
                 return [
                     'ok' => false, 
                     'code' => 'checkout_too_early', 
                     'message' => app()->getLocale() === 'ar' 
-                        ? 'لا يمكنك تسجيل الانصراف إلا بعد مرور ساعة كاملة من وقت التحضير.'
-                        : 'You cannot check-out within 1 hour of check-in.'
+                        ? 'لا يمكنك تسجيل الانصراف إلا بعد مرور ساعة كاملة من وقت التحضير أو بعد انتهاء فترة الدوام الرسمية.'
+                        : 'You cannot check-out within 1 hour of check-in, or before the period ends.'
                 ];
             }
         }

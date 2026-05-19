@@ -29,6 +29,7 @@ class AttendanceHolidays extends Component
     public string $newStartDate = '';
     public int $newDurationDays = 1;
 
+    public string $newRepeatType = 'once';
     public string $newGregorianAuto = '';
     public string $newDisplayHijriAuto = '';
 
@@ -220,6 +221,7 @@ class AttendanceHolidays extends Component
         $this->reset(['newName', 'newStartDate', 'newGregorianAuto', 'newDisplayHijriAuto']);
         $this->newCalendarType = $this->companyCalendarType;
         $this->newDurationDays = 1;
+        $this->newRepeatType = 'once';
     }
 
     public function saveNewHoliday(): void
@@ -234,10 +236,11 @@ class AttendanceHolidays extends Component
         $this->syncCreateAutoDates();
 
         $data = $this->validate([
-            'newName' => ['required', 'string', 'max:255'],
-            'newCalendarType' => ['required', 'in:hijri,gregorian'],
-            'newStartDate' => ['required', 'date'],
-            'newDurationDays' => ['required', 'integer', 'min:1', 'max:60'],
+            'newName'        => ['required', 'string', 'max:255'],
+            'newCalendarType'=> ['required', 'in:hijri,gregorian'],
+            'newRepeatType'  => ['required', 'in:once,annual'],
+            'newStartDate'   => ['required', 'date'],
+            'newDurationDays'=> ['required', 'integer', 'min:1', 'max:60'],
         ]);
 
         $this->holidayService->createHoliday($companyId, $data, $this->newDisplayHijriAuto ?: null);
