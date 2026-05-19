@@ -265,23 +265,19 @@ class AttendanceService
         }
 
         if ($openSession) {
-            $dateStr = Carbon::parse($log->attendance_date)->toDateString();
-            $checkInDateTime = Carbon::parse($dateStr . ' ' . $openSession->check_in_time);
-            
             $canCheckOut = false;
-            if ($now->diffInMinutes($checkInDateTime) >= 60) {
+            $elapsedMinutes = $this->minutesBetween($openSession->check_in_time, $nowTime);
+            
+            if ($elapsedMinutes >= 60) {
                 $canCheckOut = true;
             } else if ($openSession->work_schedule_period_id) {
                 $period = DB::table('work_schedule_periods')
                     ->where('id', $openSession->work_schedule_period_id)
                     ->first();
                 if ($period && !empty($period->end_time)) {
-                    $pStart = Carbon::parse($dateStr . ' ' . substr((string)$period->start_time, 0, 5));
-                    $pEnd = Carbon::parse($dateStr . ' ' . substr((string)$period->end_time, 0, 5));
-                    if ($pEnd->lt($pStart)) {
-                        $pEnd->addDay();
-                    }
-                    if ($now->greaterThanOrEqualTo($pEnd)) {
+                    $periodEndMin = $this->minutesBetween($period->start_time, $period->end_time);
+                    $nowFromStart = $this->minutesBetween($period->start_time, $nowTime);
+                    if ($nowFromStart >= $periodEndMin) {
                         $canCheckOut = true;
                     }
                 }
