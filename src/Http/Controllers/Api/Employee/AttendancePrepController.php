@@ -206,6 +206,27 @@ class AttendancePrepController extends Controller
             }
         }
 
+        // ✅ Determine current attendance status (can_check_in or can_check_out)
+        $currentStatus = 'can_check_in';
+        if ($employee) {
+            $log = \Athka\SystemSettings\Models\AttendanceDailyLog::where('saas_company_id', $companyId)
+                ->where('employee_id', $employee->id)
+                ->whereDate('attendance_date', now()->toDateString())
+                ->first();
+                
+            if ($log) {
+                $openSession = \DB::table('attendance_daily_details')
+                    ->where('daily_log_id', $log->id)
+                    ->whereNull('check_out_time')
+                    ->orderByDesc('id')
+                    ->first();
+                    
+                if ($openSession) {
+                    $currentStatus = 'can_check_out';
+                }
+            }
+        }
+
         return response()->json([
             'ok' => true,
             'data' => [
@@ -215,6 +236,7 @@ class AttendancePrepController extends Controller
                 'gps_locations' => $gpsLocations,
                 'devices' => $devices,
                 'exceptional_day' => $exceptionalDayInfo,
+                'current_status' => $currentStatus,
             ],
         ]);
     }

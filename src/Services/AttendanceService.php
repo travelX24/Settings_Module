@@ -264,6 +264,21 @@ class AttendanceService
              }
         }
 
+        if ($openSession) {
+            $dateStr = Carbon::parse($log->attendance_date)->toDateString();
+            $checkInDateTime = Carbon::parse($dateStr . ' ' . $openSession->check_in_time);
+            
+            if ($now->diffInMinutes($checkInDateTime) < 60) {
+                return [
+                    'ok' => false, 
+                    'code' => 'checkout_too_early', 
+                    'message' => app()->getLocale() === 'ar' 
+                        ? 'لا يمكنك تسجيل الانصراف إلا بعد مرور ساعة كاملة من وقت التحضير.'
+                        : 'You cannot check-out within 1 hour of check-in.'
+                ];
+            }
+        }
+
         DB::table('attendance_daily_details')->where('id', $openSession->id)->update([
             'check_out_time' => $nowTime,
             'updated_at' => $now,
