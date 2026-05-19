@@ -17,19 +17,32 @@ class WorkScheduleService
     public function getEffectiveSchedule(int $companyId, ?Employee $employee = null, ?string $date = null, bool $fallback = true): ?WorkSchedule
     {
         $resolveDate = $date ?: now()->toDateString();
+        $employeeId = $employee ? $employee->id : 0;
+
+        static $scheduleCache = [];
+        $cacheKey = "{$companyId}_{$employeeId}_{$resolveDate}_{$fallback}";
+        if (array_key_exists($cacheKey, $scheduleCache)) {
+            return $scheduleCache[$cacheKey];
+        }
+
+        static $rotations = [];
+        static $assignments = [];
+        static $defaultSchedule = [];
+        static $wsCache = [];
 
         // 1. Try employee-specific assignment (Priority 1: Rotations)
         if ($employee) {
-            $rotation = DB::table('employee_shift_rotations')
-                ->where('employee_id', $employee->id)
-                ->where('start_date', '<=', $resolveDate)
-                ->where(function ($q) use ($resolveDate) {
-                    $q->whereNull('end_date')
-                      ->orWhere('end_date', '>=', $resolveDate);
-                })
-                ->orderByDesc('start_date')
-                ->orderByDesc('id')
-                ->first();
+            if (!isset($rotations[$employeeId])) {
+                $rotations[$employeeId] = DB::table('employee_shift_rotations')
+                    ->where('employee_id', $employeeId)
+                    ->orderByDesc('start_date')
+                    ->orderByDesc('id')
+                    ->get();
+            }
+
+            $rotation = $rotations[$employeeId]->first(function ($r) use ($resolveDate) {
+                return $r->start_date <= $resolveDate && (is_null($r->end_date) || $r->end_date >= $resolveDate);
+            });
 
             if ($rotation) {
                 $rotStart = Carbon::parse($rotation->start_date)->startOfDay();
@@ -42,46 +55,52 @@ class WorkScheduleService
                 
                 $scheduleId = $isA ? (int)$rotation->work_schedule_id_a : (int)$rotation->work_schedule_id_b;
                 
-                $schedule = WorkSchedule::query()
-                    ->with(['periods', 'exceptions'])
-                    ->find($scheduleId);
+                if (!isset($wsCache[$scheduleId])) {
+                    $wsCache[$scheduleId] = WorkSchedule::query()
+                        ->with(['periods', 'exceptions'])
+                        ->find($scheduleId);
+                }
                 
-                if ($schedule) return $schedule;
+                return $scheduleCache[$cacheKey] = $wsCache[$scheduleId];
             }
 
             // Priority 2: Fixed Assignments
-            $assignment = DB::table('employee_work_schedules')
-                ->where('employee_id', $employee->id)
-                ->where('start_date', '<=', $resolveDate)
-                ->where(function ($q) use ($resolveDate) {
-                    $q->whereNull('end_date')
-                      ->orWhere('end_date', '>=', $resolveDate);
-                })
-                ->orderByDesc('start_date')
-                ->orderByDesc('id')
-                ->first();
+            if (!isset($assignments[$employeeId])) {
+                $assignments[$employeeId] = DB::table('employee_work_schedules')
+                    ->where('employee_id', $employeeId)
+                    ->orderByDesc('start_date')
+                    ->orderByDesc('id')
+                    ->get();
+            }
+
+            $assignment = $assignments[$employeeId]->first(function ($a) use ($resolveDate) {
+                return $a->start_date <= $resolveDate && (is_null($a->end_date) || $a->end_date >= $resolveDate);
+            });
 
             if ($assignment) {
-                $schedule = WorkSchedule::query()
-                    ->with(['periods', 'exceptions'])
-                    ->find($assignment->work_schedule_id);
+                $scheduleId = (int)$assignment->work_schedule_id;
+                if (!isset($wsCache[$scheduleId])) {
+                    $wsCache[$scheduleId] = WorkSchedule::query()
+                        ->with(['periods', 'exceptions'])
+                        ->find($scheduleId);
+                }
                 
-                if ($schedule) return $schedule;
+                return $scheduleCache[$cacheKey] = $wsCache[$scheduleId];
             }
         }
 
-        if (!$fallback) return null;
+        if (!$fallback) return $scheduleCache[$cacheKey] = null;
 
         // 2. Fallback to default company schedule
-        $schedule = WorkSchedule::query()
-            ->with(['periods', 'exceptions'])
-            ->where('saas_company_id', $companyId)
-            ->where('is_default', true)
-            ->first();
+        if (!isset($defaultSchedule[$companyId])) {
+            $defaultSchedule[$companyId] = WorkSchedule::query()
+                ->with(['periods', 'exceptions'])
+                ->where('saas_company_id', $companyId)
+                ->where('is_default', true)
+                ->first();
+        }
         
-        if ($schedule) return $schedule;
-        
-        return null;
+        return $scheduleCache[$cacheKey] = $defaultSchedule[$companyId];
     }
 
     /**
@@ -179,13 +198,21 @@ class WorkScheduleService
     {
         $day = Carbon::parse($date);
         $dateStr = $day->toDateString();
+        $employeeId = $employee ? $employee->id : 0;
+
+        static $empExceptions = [];
+        static $holidaysCache = [];
+        static $compExceptions = [];
 
         // 1. Check for Employee-Specific Exceptions FIRST (Highest Priority)
         if ($employee && class_exists(\Athka\Attendance\Models\EmployeeWorkScheduleException::class)) {
-            $empExcept = \Athka\Attendance\Models\EmployeeWorkScheduleException::query()
-                ->where('employee_id', $employee->id)
-                ->whereDate('exception_date', $dateStr)
-                ->first();
+            if (!isset($empExceptions[$employeeId])) {
+                $empExceptions[$employeeId] = \Athka\Attendance\Models\EmployeeWorkScheduleException::query()
+                    ->where('employee_id', $employeeId)
+                    ->get();
+            }
+
+            $empExcept = $empExceptions[$employeeId]->first(fn($e) => (string)$e->exception_date === $dateStr);
 
             if ($empExcept) {
                 $typeLabel = match($empExcept->exception_type) {
@@ -207,11 +234,13 @@ class WorkScheduleService
 
         // 2. Check Official Holidays
         if (class_exists(\Athka\SystemSettings\Models\OfficialHolidayOccurrence::class)) {
-            $holiday = \Athka\SystemSettings\Models\OfficialHolidayOccurrence::query()
-                ->where('company_id', $companyId)
-                ->whereDate('start_date', '<=', $dateStr)
-                ->whereDate('end_date', '>=', $dateStr)
-                ->first();
+            if (!isset($holidaysCache[$companyId])) {
+                $holidaysCache[$companyId] = \Athka\SystemSettings\Models\OfficialHolidayOccurrence::query()
+                    ->where('company_id', $companyId)
+                    ->get();
+            }
+
+            $holiday = $holidaysCache[$companyId]->first(fn($h) => $dateStr >= $h->start_date && $dateStr <= $h->end_date);
 
             if ($holiday) {
                 return (object) [
@@ -226,12 +255,14 @@ class WorkScheduleService
         }
         
         // 3. Check Company-Wide Exceptional Days
-        $exceptions = AttendanceExceptionalDay::query()
-            ->where('company_id', $companyId)
-            ->where('is_active', true)
-            ->whereDate('start_date', '<=', $dateStr)
-            ->whereDate('end_date', '>=', $dateStr)
-            ->get();
+        if (!isset($compExceptions[$companyId])) {
+            $compExceptions[$companyId] = AttendanceExceptionalDay::query()
+                ->where('company_id', $companyId)
+                ->where('is_active', true)
+                ->get();
+        }
+
+        $exceptions = $compExceptions[$companyId]->filter(fn($ce) => $dateStr >= $ce->start_date && $dateStr <= $ce->end_date);
 
         foreach ($exceptions as $ce) {
             $scopeType = $ce->scope_type ?: 'all';
