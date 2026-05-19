@@ -275,9 +275,8 @@ class AttendanceService
                     ->where('id', $openSession->work_schedule_period_id)
                     ->first();
                 if ($period && !empty($period->end_time)) {
-                    $periodEndMin = $this->minutesBetween($period->start_time, $period->end_time);
-                    $nowFromStart = $this->minutesBetween($period->start_time, $nowTime);
-                    if ($nowFromStart >= $periodEndMin) {
+                    $requiredMinutes = $this->minutesBetween($openSession->check_in_time, $period->end_time);
+                    if ($elapsedMinutes >= $requiredMinutes) {
                         $canCheckOut = true;
                     }
                 }
