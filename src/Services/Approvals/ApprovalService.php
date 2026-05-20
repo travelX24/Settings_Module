@@ -12,10 +12,28 @@ use Carbon\Carbon;
 class ApprovalService
 {
     /**
+     * Static in-memory cache for getRequestSource() results.
+     * Avoids repeated Schema::hasTable / Schema::hasColumn calls per request.
+     */
+    protected static array $sourceCache = [];
+
+    /**
+     * Static in-memory cache for detected manager column.
+     */
+    protected static ?string $managerColCache = null;
+    protected static bool $managerColResolved = false;
+
+    /**
      * Map request types to DB tables with column detection.
+     * Results are cached in-memory to avoid repeated Schema queries per request.
      */
     public function getRequestSource(string $type): ?array
     {
+        // Return from static cache if already resolved
+        if (array_key_exists($type, static::$sourceCache)) {
+            return static::$sourceCache[$type];
+        }
+
         $map = [
             'leaves' => [
                 'tables' => ['attendance_leave_requests', 'attendance_leave_cut_requests', 'leave_requests', 'employee_leave_requests'],
@@ -35,16 +53,22 @@ class ApprovalService
             ],
         ];
 
-        if (!isset($map[$type])) return null;
+        if (!isset($map[$type])) {
+            return static::$sourceCache[$type] = null;
+        }
 
         $table = null;
         foreach ($map[$type]['tables'] as $t) {
             if (Schema::hasTable($t)) { $table = $t; break; }
         }
-        if (!$table) return null;
+        if (!$table) {
+            return static::$sourceCache[$type] = null;
+        }
 
         $idCol = Schema::hasColumn($table, 'id') ? 'id' : null;
-        if (!$idCol) return null;
+        if (!$idCol) {
+            return static::$sourceCache[$type] = null;
+        }
 
         $companyCol = $this->detectCompanyColumn($table);
         $employeeCol = Schema::hasColumn($table, 'employee_id')
@@ -52,48 +76,62 @@ class ApprovalService
             : (Schema::hasColumn($table, 'user_id') ? 'user_id' : null);
 
         $approvalStatusCol = Schema::hasColumn($table, 'approval_status') ? 'approval_status' : null;
-        $statusCol = Schema::hasColumn($table, 'status') ? 'status' : null;
+        $statusCol         = Schema::hasColumn($table, 'status')          ? 'status'          : null;
+        $updatedAtCol      = Schema::hasColumn($table, 'updated_at')      ? 'updated_at'      : null;
+        $createdAtCol      = Schema::hasColumn($table, 'created_at')      ? 'created_at'      : null;
 
-        $updatedAtCol = Schema::hasColumn($table, 'updated_at') ? 'updated_at' : null;
-        $createdAtCol = Schema::hasColumn($table, 'created_at') ? 'created_at' : null;
-
-        return [
-            'type' => $type,
-            'table' => $table,
-            'operation_key' => $map[$type]['operation_key'],
-            'idCol' => $idCol,
-            'companyCol' => $companyCol,
-            'employeeCol' => $employeeCol,
+        return static::$sourceCache[$type] = [
+            'type'              => $type,
+            'table'             => $table,
+            'operation_key'     => $map[$type]['operation_key'],
+            'idCol'             => $idCol,
+            'companyCol'        => $companyCol,
+            'employeeCol'       => $employeeCol,
             'approvalStatusCol' => $approvalStatusCol,
-            'statusCol' => $statusCol,
-            'createdAtCol' => $createdAtCol,
-            'updatedAtCol' => $updatedAtCol,
+            'statusCol'         => $statusCol,
+            'createdAtCol'      => $createdAtCol,
+            'updatedAtCol'      => $updatedAtCol,
         ];
     }
 
     /**
-     * Detect company column.
+     * Detect company column. Cached per table.
      */
+    protected static array $companyColCache = [];
+
     public function detectCompanyColumn(string $table): ?string
     {
-        foreach (['saas_company_id', 'company_id'] as $c) {
-            if (Schema::hasColumn($table, $c)) return $c;
+        if (array_key_exists($table, static::$companyColCache)) {
+            return static::$companyColCache[$table];
         }
-        return null;
+        foreach (['saas_company_id', 'company_id'] as $c) {
+            if (Schema::hasColumn($table, $c)) {
+                return static::$companyColCache[$table] = $c;
+            }
+        }
+        return static::$companyColCache[$table] = null;
     }
 
     /**
      * Resolve manager.
      */
+    /**
+     * Resolve manager ID. Caches the column name to avoid repeated Schema checks.
+     */
     public function resolveDirectManagerId(int $employeeId): int
     {
-        $candidates = ['direct_manager_id', 'manager_id', 'reports_to_id', 'supervisor_id', 'line_manager_id'];
-        $col = null;
-        foreach ($candidates as $c) {
-            if (Schema::hasTable('employees') && Schema::hasColumn('employees', $c)) { $col = $c; break; }
+        if (!static::$managerColResolved) {
+            $candidates = ['direct_manager_id', 'manager_id', 'reports_to_id', 'supervisor_id', 'line_manager_id'];
+            foreach ($candidates as $c) {
+                if (Schema::hasTable('employees') && Schema::hasColumn('employees', $c)) {
+                    static::$managerColCache = $c;
+                    break;
+                }
+            }
+            static::$managerColResolved = true;
         }
-        if (!$col) return 0;
-        return (int) DB::table('employees')->where('id', $employeeId)->value($col);
+        if (!static::$managerColCache) return 0;
+        return (int) DB::table('employees')->where('id', $employeeId)->value(static::$managerColCache);
     }
 
     public function resolvePolicyForEmployee(string $operationKey, int $employeeId, int $companyId)

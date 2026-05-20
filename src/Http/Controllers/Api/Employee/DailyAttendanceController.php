@@ -82,7 +82,7 @@ class DailyAttendanceController extends Controller
                     if (!isset($schedulesCache[$dateStr])) {
                         $schedulesCache[$dateStr] = $this->scheduleService->getEffectiveSchedule($companyId, $employee, $dateStr);
                     }
-                    $this->attendanceService->ensureLog($companyId, $employee->id, $dateStr, $schedulesCache[$dateStr], $holidays, $forceSync);
+                    $this->attendanceService->ensureLog($companyId, $employee->id, $dateStr, $schedulesCache[$dateStr], $holidays, $forceSync, $requests);
                 }
                 $cursor->addDay();
             }

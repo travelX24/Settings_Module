@@ -21,7 +21,7 @@ class AttendanceService
     /**
      * Ensure a daily log exists.
      */
-    public function ensureLog(int $companyId, int $employeeId, string $date, $schedule = null, $holidays = null, bool $force = false)
+    public function ensureLog(int $companyId, int $employeeId, string $date, $schedule = null, $holidays = null, bool $force = false, $requests = null)
     {
         $log = AttendanceDailyLog::where('saas_company_id', $companyId)
             ->where('employee_id', $employeeId)
@@ -48,6 +48,11 @@ class AttendanceService
             $log->approval_status = 'pending';
             $log->source = 'automatic';
         }
+
+        // Set pre-fetched parameters on the model before saving to bypass expensive DB queries
+        $log->preFetchedHolidays = $holidays;
+        $log->preFetchedRequests = $requests;
+        $log->preFetchedSchedule = $schedule;
 
         // Saving triggers syncWithSchedule and other calculations in the model
         $log->save();
