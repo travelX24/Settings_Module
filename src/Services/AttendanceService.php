@@ -21,8 +21,10 @@ class AttendanceService
     /**
      * Ensure a daily log exists.
      */
-    public function ensureLog(int $companyId, int $employeeId, string $date, $schedule = null, $holidays = null, bool $force = false, $requests = null)
+    public function ensureLog(int $companyId, $employee, string $date, $schedule = null, $holidays = null, bool $force = false, $requests = null)
     {
+        $employeeId = $employee instanceof Employee ? $employee->id : (int)$employee;
+
         $log = AttendanceDailyLog::where('saas_company_id', $companyId)
             ->where('employee_id', $employeeId)
             ->whereDate('attendance_date', $date)
@@ -34,6 +36,9 @@ class AttendanceService
                 ->exists();
 
             if (!$hasOpenSession) {
+                if ($employee instanceof Employee) {
+                    $log->setRelation('employee', $employee);
+                }
                 return $log;
             }
             // Fall through → save() → calculateStatus() → auto-checkout applied
@@ -47,6 +52,10 @@ class AttendanceService
             $log->attendance_status = 'absent';
             $log->approval_status = 'pending';
             $log->source = 'automatic';
+        }
+
+        if ($employee instanceof Employee) {
+            $log->setRelation('employee', $employee);
         }
 
         // Set pre-fetched parameters on the model before saving to bypass expensive DB queries

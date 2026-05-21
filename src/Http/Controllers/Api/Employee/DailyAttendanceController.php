@@ -82,13 +82,42 @@ class DailyAttendanceController extends Controller
                     if (!isset($schedulesCache[$dateStr])) {
                         $schedulesCache[$dateStr] = $this->scheduleService->getEffectiveSchedule($companyId, $employee, $dateStr);
                     }
-                    $this->attendanceService->ensureLog($companyId, $employee->id, $dateStr, $schedulesCache[$dateStr], $holidays, $forceSync, $requests);
+                    $this->attendanceService->ensureLog($companyId, $employee, $dateStr, $schedulesCache[$dateStr], $holidays, $forceSync, $requests);
                 }
                 $cursor->addDay();
             }
         }
 
         $logs = $this->attendanceService->getLogs($companyId, $employee->id, $fromStr, $toStr);
+        foreach ($logs as $log) {
+            $log->setRelation('employee', $employee);
+        }
+
+        // Self-heal (Optimized): Recalculate and trigger auto-checkout for past logs with open sessions in a single bulk query
+        $todayStr = now()->toDateString();
+        $pastLogIds = [];
+        foreach ($logs as $log) {
+            if ($log->attendance_date->toDateString() < $todayStr) {
+                $pastLogIds[] = $log->id;
+            }
+        }
+
+        if (!empty($pastLogIds)) {
+            $logsWithOpenPeriods = DB::table('attendance_daily_details')
+                ->whereIn('daily_log_id', $pastLogIds)
+                ->whereNull('check_out_time')
+                ->pluck('daily_log_id')
+                ->unique()
+                ->toArray();
+
+            if (!empty($logsWithOpenPeriods)) {
+                foreach ($logs as $log) {
+                    if (in_array($log->id, $logsWithOpenPeriods, true)) {
+                        $log->save();
+                    }
+                }
+            }
+        }
 
         $logIds = $logs->pluck('id')->toArray();
         $allDetails = DB::table('attendance_daily_details')
@@ -180,7 +209,7 @@ class DailyAttendanceController extends Controller
         }
 
         $schedule = $this->scheduleService->getEffectiveSchedule($companyId, $employee);
-        $log = $this->attendanceService->ensureLog($companyId, $employee->id, $dateStr, $schedule, $this->scheduleService->getHolidays($companyId, $dateStr, $dateStr));
+        $log = $this->attendanceService->ensureLog($companyId, $employee, $dateStr, $schedule, $this->scheduleService->getHolidays($companyId, $dateStr, $dateStr));
 
         // [Security] Force set attendance_date as clean string to prevent double time specification
         $log->attendance_date = $dateStr;
