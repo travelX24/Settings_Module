@@ -119,6 +119,38 @@ class DailyAttendanceController extends Controller
 
             // 🚀 [Optimization] Pass pre-fetched requests and accurate schedule
             $metrics = $this->scheduleService->getMetricsForDate($dateStr, $daySchedule, $holidays, $employee, $requests);
+            $periods = collect($metrics['periods'] ?? [])->values();
+            $detailsByPeriod = $details
+                ->filter(fn ($d) => !empty($d->work_schedule_period_id))
+                ->keyBy(fn ($d) => (int) $d->work_schedule_period_id);
+
+            $punches = $periods->map(function ($period) use ($detailsByPeriod) {
+                $detail = $detailsByPeriod->get((int) ($period['id'] ?? 0));
+
+                return [
+                    'period_id' => isset($period['id']) ? (int) $period['id'] : null,
+                    'check_in' => $detail ? company_time($detail->check_in_time) : null,
+                    'check_out' => $detail ? company_time($detail->check_out_time) : null,
+                    'status' => $detail?->attendance_status,
+                ];
+            });
+
+            $periodIds = $periods->pluck('id')->filter()->map(fn ($id) => (int) $id)->all();
+            $unmatchedPunches = $details
+                ->filter(fn ($d) => empty($d->work_schedule_period_id) || !in_array((int) $d->work_schedule_period_id, $periodIds, true))
+                ->map(fn ($d) => [
+                    'period_id' => $d->work_schedule_period_id ? (int) $d->work_schedule_period_id : null,
+                    'check_in' => company_time($d->check_in_time),
+                    'check_out' => company_time($d->check_out_time),
+                    'status' => $d->attendance_status,
+                ])
+                ->values();
+
+            if ($periods->isEmpty()) {
+                $punches = $unmatchedPunches;
+            } elseif ($unmatchedPunches->isNotEmpty()) {
+                $punches = $punches->concat($unmatchedPunches)->values();
+            }
 
             return [
                 'id' => (int) $log->id,
@@ -133,12 +165,8 @@ class DailyAttendanceController extends Controller
                 'scheduled_hours' => (float) $log->scheduled_hours,
                 'scheduled_check_in' => company_time($log->scheduled_check_in),
                 'scheduled_check_out' => company_time($log->scheduled_check_out),
-                'punches' => $details->map(fn($d) => [
-                    'check_in' => company_time($d->check_in_time),
-                    'check_out' => company_time($d->check_out_time),
-                    'status' => $d->attendance_status,
-                ]),
-                'periods' => collect($metrics['periods'] ?? [])
+                'punches' => $punches->values(),
+                'periods' => $periods
                     ->map(fn($p) => company_time($p['start_time']) . ' - ' . company_time($p['end_time']))
                     ->all(),
             ];
