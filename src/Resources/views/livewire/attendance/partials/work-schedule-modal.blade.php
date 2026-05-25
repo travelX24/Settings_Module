@@ -40,11 +40,11 @@
         $themeIcon = 'fa-adjust';
         $themeTitle = tr('Mixed Shift');
     } elseif ($hasDay) {
-        $themeCls = 'bg-gradient-to-br from-blue-500 to-indigo-600 text-white';
+        $themeCls = 'bg-gradient-to-br from-[color:var(--brand-from)] to-[color:var(--brand-via)] text-white';
         $themeIcon = 'fa-sun';
         $themeTitle = tr('Day Shift');
     } elseif ($hasNight) {
-        $themeCls = 'bg-gradient-to-br from-indigo-900 to-black text-white';
+        $themeCls = 'bg-gradient-to-br from-[color:var(--brand-via)] to-gray-900 text-white';
         $themeIcon = 'fa-moon';
         $themeTitle = tr('Night Shift');
     }
@@ -180,7 +180,7 @@
                                                 wire:model.lazy="scheduleData.periods.{{ $idx }}.is_night_shift"
                                                 class="w-3.5 h-3.5 text-[color:var(--brand-via)] rounded border-gray-300"
                                             >
-                                            <i class="fas fa-moon text-[9px] {{ $p['is_night_shift'] ? 'text-indigo-500' : 'text-gray-400' }}"></i>
+                                            <i class="fas fa-moon text-[9px] {{ $p['is_night_shift'] ? 'text-[color:var(--brand-via)]' : 'text-gray-400' }}"></i>
                                         </label>
                                     </div>
 
@@ -213,7 +213,7 @@
                         <div>
                             <label class="text-[9px] font-black text-gray-400 uppercase tracking-widest">{{ tr('Daily Exceptions') }}</label>
                         </div>
-                        <button wire:click="addException" class="text-[9px] font-black text-indigo-500 uppercase hover:underline cursor-pointer">
+                        <button wire:click="addException" class="text-[9px] font-black text-[color:var(--brand-via)] uppercase hover:underline cursor-pointer">
                             <i class="fas fa-plus me-1"></i> {{ tr('Add Exception') }}
                         </button>
                     </div>
@@ -264,7 +264,7 @@
 
                                 <div class="col-span-1 flex items-center gap-1.5 h-[34px] px-2 bg-white rounded-lg border border-gray-100">
                                     {{-- ✅ changed live -> lazy --}}
-                                    <input type="checkbox" wire:model.lazy="scheduleData.exceptions.{{ $idx }}.is_night_shift" class="w-3 h-3 text-indigo-500 rounded border-gray-300">
+                                    <input type="checkbox" wire:model.lazy="scheduleData.exceptions.{{ $idx }}.is_night_shift" class="w-3 h-3 text-[color:var(--brand-via)] rounded border-gray-300">
                                     <span class="text-[8px] font-bold text-gray-500">{{ tr('Night') }}</span>
                                     <i class="fas fa-moon text-[8px] text-gray-300 ms-auto"></i>
                                 </div>

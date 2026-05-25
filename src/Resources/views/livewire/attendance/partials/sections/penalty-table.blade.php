@@ -60,7 +60,7 @@
                     @can('settings.attendance.manage')
                     <div class="flex items-center justify-end gap-2">
                         <button wire:click="{{ isset($item['absence_reason_type']) ? 'editAbsencePolicy' : 'editPenalty' }}('{{ $item['id'] }}')" 
-                            class="p-1.5 text-blue-500 hover:bg-blue-50 rounded-lg transition-colors cursor-pointer"
+                            class="p-1.5 text-[color:var(--brand-from)] hover:bg-blue-50 rounded-lg transition-colors cursor-pointer"
                             title="{{ tr('Edit') }}">
                             <i class="fas fa-edit text-xs"></i>
                         </button>

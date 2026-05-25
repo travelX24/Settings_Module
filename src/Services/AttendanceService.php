@@ -21,10 +21,8 @@ class AttendanceService
     /**
      * Ensure a daily log exists.
      */
-    public function ensureLog(int $companyId, $employee, string $date, $schedule = null, $holidays = null, bool $force = false, $requests = null)
+    public function ensureLog(int $companyId, int $employeeId, string $date, $schedule = null, $holidays = null, bool $force = false, $requests = null)
     {
-        $employeeId = $employee instanceof Employee ? $employee->id : (int)$employee;
-
         $log = AttendanceDailyLog::where('saas_company_id', $companyId)
             ->where('employee_id', $employeeId)
             ->whereDate('attendance_date', $date)
@@ -36,9 +34,6 @@ class AttendanceService
                 ->exists();
 
             if (!$hasOpenSession) {
-                if ($employee instanceof Employee) {
-                    $log->setRelation('employee', $employee);
-                }
                 return $log;
             }
             // Fall through → save() → calculateStatus() → auto-checkout applied
@@ -52,10 +47,6 @@ class AttendanceService
             $log->attendance_status = 'absent';
             $log->approval_status = 'pending';
             $log->source = 'automatic';
-        }
-
-        if ($employee instanceof Employee) {
-            $log->setRelation('employee', $employee);
         }
 
         // Set pre-fetched parameters on the model before saving to bypass expensive DB queries
@@ -81,31 +72,17 @@ class AttendanceService
         $status = 'present';
         $matchedPeriodId = null;
         $matchedPeriodEndTime = null;
-        $matchedPeriodWindowStart = null;
-        $matchedPeriodWindowEnd = null;
 
         $isWithinPeriod = false;
-        $firstAllowedStart = null;
-        $previousClosedPeriodNumber = null;
 
         if ($schedule && $schedule->periods) {
-            foreach ($schedule->periods->values() as $index => $p) {
+            foreach ($schedule->periods as $p) {
                 $pStartAllowed = Carbon::parse($dateStr . " " . substr((string)$p->start_time, 0, 5))->subMinutes(30);
                 $pEnd = Carbon::parse($dateStr . " " . substr((string)$p->end_time, 0, 5));
-
-                if (!$firstAllowedStart || $pStartAllowed->lt($firstAllowedStart)) {
-                    $firstAllowedStart = $pStartAllowed->copy();
-                }
-
-                if ($now->gt($pEnd)) {
-                    $previousClosedPeriodNumber = $index + 1;
-                }
                 
                 if ($now->between($pStartAllowed, $pEnd)) {
                     $matchedPeriodId = $p->id;
                     $matchedPeriodEndTime = $p->end_time;
-                    $matchedPeriodWindowStart = $pStartAllowed->copy();
-                    $matchedPeriodWindowEnd = $pEnd->copy();
                     $isWithinPeriod = true;
 
                     // Late calculation
@@ -202,16 +179,7 @@ class AttendanceService
 
         // ─── Period window gate (after auto-close) ─────────────────────────
         if (!$isWithinPeriod) {
-            if ($firstAllowedStart && $now->lt($firstAllowedStart)) {
-                return ['ok' => false, 'code' => 'too_early_for_checkin', 'message' => tr('You cannot check-in more than 30 minutes before the period starts.')];
-            }
-
-            $message = tr('You cannot check-in outside the scheduled work period.');
-            if ($previousClosedPeriodNumber === 1) {
-                $message = 'لا يمكن تسجيل حضور الفترة الأولى خارج وقتها المحدد';
-            }
-
-            return ['ok' => false, 'code' => 'outside_period_window', 'message' => $message];
+            return ['ok' => false, 'code' => 'too_early_for_checkin', 'message' => tr('You cannot check-in more than 30 minutes before the period starts.')];
         }
 
         // One more check: has this period already been used?
@@ -219,19 +187,6 @@ class AttendanceService
             $alreadyUsed = DB::table('attendance_daily_details')
                 ->where('daily_log_id', $log->id)
                 ->where('work_schedule_period_id', $matchedPeriodId)
-                ->exists();
-
-            if ($alreadyUsed) {
-                return ['ok' => false, 'code' => 'period_already_completed', 'message' => tr('You have already completed attendance registration for this period.')];
-            }
-        } elseif ($matchedPeriodWindowStart && $matchedPeriodWindowEnd) {
-            $alreadyUsed = DB::table('attendance_daily_details')
-                ->where('daily_log_id', $log->id)
-                ->whereNull('work_schedule_period_id')
-                ->whereBetween('check_in_time', [
-                    $matchedPeriodWindowStart->format('H:i:s'),
-                    $matchedPeriodWindowEnd->format('H:i:s'),
-                ])
                 ->exists();
 
             if ($alreadyUsed) {
@@ -329,11 +284,6 @@ class AttendanceService
                     if ($elapsedMinutes >= $requiredMinutes) {
                         $canCheckOut = true;
                     }
-                }
-            } else if ($log->scheduled_check_out) {
-                $scheduledOut = Carbon::parse($log->attendance_date->toDateString() . ' ' . substr((string)$log->scheduled_check_out, 0, 5));
-                if ($now->greaterThanOrEqualTo($scheduledOut)) {
-                    $canCheckOut = true;
                 }
             }
 

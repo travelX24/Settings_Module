@@ -86,7 +86,7 @@
 
                     <div class="flex items-center gap-4 mb-6">
                         <div
-                            class="w-14 h-14 rounded-2xl bg-gradient-to-br from-indigo-500 to-purple-600 flex items-center justify-center text-white shadow-lg shrink-0 group-hover:scale-110 transition-transform duration-500">
+                            class="w-14 h-14 rounded-2xl bg-gradient-to-br from-[color:var(--brand-from)] to-[color:var(--brand-via)] flex items-center justify-center text-white shadow-lg shrink-0 group-hover:scale-110 transition-transform duration-500">
                             <span class="text-xl font-black">{{ $c->symbol }}</span>
                         </div>
                         <div class="min-w-0 flex-1">
@@ -103,7 +103,7 @@
                         @can('settings.currencies.manage')
                             <x-ui.actions-menu>
                                 <x-ui.dropdown-item wire:click="openEdit({{ $c->id }})">
-                                    <i class="fas fa-edit mr-2 w-5 text-blue-500"></i>
+                                    <i class="fas fa-edit mr-2 w-5 text-[color:var(--brand-from)]"></i>
                                     {{ tr('Edit') }}
                                 </x-ui.dropdown-item>
                                 @if (!$c->is_default)
@@ -200,7 +200,7 @@
                                     <div class="flex items-center justify-end">
                                         <x-ui.actions-menu>
                                             <x-ui.dropdown-item wire:click="openEdit({{ $c->id }})">
-                                                <i class="fas fa-edit mr-2 w-5 text-blue-500"></i>
+                                                <i class="fas fa-edit mr-2 w-5 text-[color:var(--brand-from)]"></i>
                                                 {{ tr('Edit') }}
                                             </x-ui.dropdown-item>
                                             @if (!$c->is_default)
@@ -248,7 +248,7 @@
         <x-slot name="title">
             <div class="flex items-center gap-3">
                 <div
-                    class="w-10 h-10 rounded-xl bg-gradient-to-br from-indigo-500 to-purple-600 flex items-center justify-center text-white shadow-md">
+                    class="w-10 h-10 rounded-xl bg-gradient-to-br from-[color:var(--brand-from)] to-[color:var(--brand-via)] flex items-center justify-center text-white shadow-md">
                     <i class="fas fa-coins text-sm"></i>
                 </div>
                 <div>

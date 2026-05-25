@@ -1,10 +1,10 @@
 <div class="space-y-4">
         <h3 class="text-base font-bold text-gray-800 flex items-center gap-2">
-            <span class="w-1 h-5 bg-indigo-500 rounded-full"></span>
+            <span class="w-1 h-5 bg-orange-500 rounded-full"></span>
             {{ tr('Absence Without Permission') }}
         </h3>
         @can('settings.attendance.manage')
-        <x-ui.secondary-button wire:click="openAbsenceModal" class="!px-4 !py-2 !text-xs !rounded-xl shadow-sm border-indigo-100">
+        <x-ui.secondary-button wire:click="openAbsenceModal" class="!px-4 !py-2 !text-xs !rounded-xl shadow-sm border-orange-100">
             <i class="fas fa-calendar-times me-1 text-indigo-500"></i>
             {{ tr('Add Absence Policy') }}
         </x-ui.secondary-button>
@@ -40,7 +40,7 @@
                     </td>
                     <td class="px-6 py-4 text-center">
                         @if(($ap['day_selector_type'] ?? 'single') === 'single')
-                            <span class="px-3 py-1 bg-indigo-50 text-indigo-600 rounded-full text-[10px] font-black border border-indigo-100">{{ tr('Day') }} {{ $ap['day_from'] ?? 1 }}</span>
+                            <span class="px-3 py-1 bg-orange-50 text-[color:var(--brand-from)] rounded-full text-[10px] font-black border border-orange-100">{{ tr('Day') }} {{ $ap['day_from'] ?? 1 }}</span>
                         @else
                             <span class="px-3 py-1 bg-purple-50 text-purple-600 rounded-full text-[10px] font-black border border-purple-100">{{ tr('Range') }}: {{ $ap['day_from'] ?? 1 }}-{{ $ap['day_to'] ?? 1 }} {{ tr('Days') }}</span>
                         @endif
@@ -49,7 +49,7 @@
                         @php
                             $pType = $ap['penalty_action'] ?? 'notification';
                             $tagCls = match($pType) {
-                                'notification', 'notice' => 'bg-blue-50 text-blue-600 border-blue-100',
+                                'notification', 'notice' => 'bg-blue-50 text-[color:var(--brand-from)] border-blue-100',
                                 'warning_verbal', 'warning_written' => 'bg-amber-50 text-amber-600 border-amber-100',
                                 'deduction', 'suspension', 'termination' => 'bg-red-50 text-red-600 border-red-100',
                                 default => 'bg-gray-50 text-gray-600 border-gray-100'

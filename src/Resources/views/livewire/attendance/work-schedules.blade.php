@@ -160,7 +160,7 @@
                                                 class="fas fa-long-arrow-alt-{{ $isRtl ? 'left' : 'right' }} text-[9px] text-[color:var(--brand-via)]/40"></i>
                                             <span>{{ substr($period->end_time, 0, 5) }}</span>
                                             @if ($period->is_night_shift)
-                                                <i class="fas fa-moon text-[10px] text-indigo-400 ms-1"
+                                                <i class="fas fa-moon text-[10px] text-[color:var(--brand-via)] ms-1"
                                                     title="{{ tr('Night Shift') }}"></i>
                                             @endif
                                         </div>
@@ -265,7 +265,7 @@
                                         </x-ui.dropdown-item>
                                         <x-ui.dropdown-item wire:click="openScheduleModal({{ $schedule->id }})"
                                             class="cursor-pointer">
-                                            <i class="fas fa-edit me-2 text-blue-500"></i> {{ tr('Edit Details') }}
+                                            <i class="fas fa-edit me-2 text-[color:var(--brand-from)]"></i> {{ tr('Edit Details') }}
                                         </x-ui.dropdown-item>
                                         <x-ui.dropdown-item danger
                                             x-on:click.prevent="$dispatch('open-confirm-schedule-delete', { id: {{ $schedule->id }} })"

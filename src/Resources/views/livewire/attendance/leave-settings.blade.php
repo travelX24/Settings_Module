@@ -273,7 +273,7 @@
                                         <x-ui.actions-menu>
                                             <x-ui.dropdown-item wire:click="openEdit({{ (int) $row->id }})"
                                                 class="cursor-pointer">
-                                                <i class="fas fa-edit me-2 text-blue-500"></i> {{ tr('Edit') }}
+                                                <i class="fas fa-edit me-2 text-[color:var(--brand-from)]"></i> {{ tr('Edit') }}
                                             </x-ui.dropdown-item>
     
                                             @if (!$isAnnualDefault)
@@ -582,7 +582,7 @@
                 <x-slot:title>
                     <div class="flex items-center gap-3">
                         <div
-                            class="w-10 h-10 bg-blue-50 text-blue-600 rounded-xl flex items-center justify-center text-lg border border-blue-100 shadow-sm">
+                            class="w-10 h-10 bg-orange-50 text-[color:var(--brand-from)] rounded-xl flex items-center justify-center text-lg border border-blue-100 shadow-sm">
                             <i class="fas fa-edit"></i>
                         </div>
                         <div>
@@ -1518,7 +1518,7 @@
                     </div>
 
                     <div class="md:col-span-2">
-                        <div class="p-3 bg-blue-50/30 border border-blue-100 rounded-xl text-[10px] text-blue-700 italic flex items-center gap-2">
+                        <div class="p-3 bg-orange-50/30 border border-blue-100 rounded-xl text-[10px] text-blue-700 italic flex items-center gap-2">
                             <i class="fas fa-info-circle"></i>
                             <span>{{ tr('ملاحظة: يجب أن يكون أحد الحدين أعلاه على الأقل أكبر من الصفر للسماح بتقديم الطلبات عبر تطبيق الجوال.') }}</span>
                         </div>

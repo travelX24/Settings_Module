@@ -178,7 +178,7 @@
                                         <div class="text-sm font-bold text-gray-900 truncate">{{ $p->name }}</div>
                                         <div class="mt-1">
                                             @if(($p->scope_type ?? 'all') === 'all')
-                                                <span class="px-2 py-0.5 text-xs font-semibold rounded-full bg-blue-50 text-blue-700 border border-blue-200">{{ tr('All Employees') }}</span>
+                                                <span class="px-2 py-0.5 text-xs font-semibold rounded-full bg-orange-50 text-[color:var(--brand-from)] border border-orange-200">{{ tr('All Employees') }}</span>
                                             @else
                                                 <div class="group relative inline-block">
                                                     <span class="px-2 py-0.5 text-xs font-semibold rounded-full bg-gray-100 text-gray-700 border border-gray-200 cursor-help transition-all hover:bg-gray-200">{{ tr('Type') }}: {{ $p->scope_type }} ({{ $p->scopes_count }})</span>
@@ -285,7 +285,7 @@
 
                                 <td class="py-4 px-6 align-top whitespace-nowrap text-sm text-gray-700">
                                     @if(($p->scope_type ?? 'all') === 'all')
-                                        <span class="px-2 py-1 text-xs font-semibold rounded-full bg-blue-50 text-blue-700 border border-blue-200">{{ tr('All Employees') }}</span>
+                                        <span class="px-2 py-1 text-xs font-semibold rounded-full bg-orange-50 text-[color:var(--brand-from)] border border-orange-200">{{ tr('All Employees') }}</span>
                                     @else
                                         <div class="flex items-center gap-2">
                                             <div class="group relative inline-block">

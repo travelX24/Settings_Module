@@ -1,7 +1,7 @@
 <x-ui.modal wire:model="showAbsenceModal" maxWidth="3xl">
     <x-slot:title>
         <div class="flex items-center gap-3">
-            <div class="w-10 h-10 bg-indigo-50 text-indigo-600 rounded-xl flex items-center justify-center text-lg border border-indigo-100 shadow-sm"><i class="fas fa-calendar-times"></i></div>
+            <div class="w-10 h-10 bg-orange-50 text-[color:var(--brand-from)] rounded-xl flex items-center justify-center text-lg border border-indigo-100 shadow-sm"><i class="fas fa-calendar-times"></i></div>
             <div>
                 <h3 class="font-bold text-gray-900 text-lg leading-tight">{{ $isEditingAbsence ? tr('Edit Absence Policy') : tr('Add Absence Policy') }}</h3>
                 <p class="text-[10px] text-gray-400 font-bold uppercase tracking-widest">{{ tr('Unapproved Absence Governance') }}</p>
@@ -23,12 +23,12 @@
                         <label class="block text-xs font-black text-gray-400 uppercase tracking-widest">{{ tr('Duration Determination') }}</label>
                         <div class="flex gap-4">
                             <label class="flex items-center gap-2 cursor-pointer group">
-                                <input type="radio" wire:model.live="newAbsencePolicy.day_selector_type" value="single" class="w-3.5 h-3.5 text-indigo-600 border-gray-300" @cannot('settings.attendance.manage') disabled @endcannot>
-                                <span class="text-sm font-bold text-gray-600 group-hover:text-indigo-600 transition-colors">{{ tr('Single Day (Custom)') }}</span>
+                                <input type="radio" wire:model.live="newAbsencePolicy.day_selector_type" value="single" class="w-3.5 h-3.5 text-[color:var(--brand-from)] border-gray-300" @cannot('settings.attendance.manage') disabled @endcannot>
+                                <span class="text-sm font-bold text-gray-600 group-hover:text-[color:var(--brand-from)] transition-colors">{{ tr('Single Day (Custom)') }}</span>
                             </label>
                             <label class="flex items-center gap-2 cursor-pointer group">
-                                <input type="radio" wire:model.live="newAbsencePolicy.day_selector_type" value="range" class="w-3.5 h-3.5 text-indigo-600 border-gray-300" @cannot('settings.attendance.manage') disabled @endcannot>
-                                <span class="text-sm font-bold text-gray-600 group-hover:text-indigo-600 transition-colors">{{ tr('Days Range') }}</span>
+                                <input type="radio" wire:model.live="newAbsencePolicy.day_selector_type" value="range" class="w-3.5 h-3.5 text-[color:var(--brand-from)] border-gray-300" @cannot('settings.attendance.manage') disabled @endcannot>
+                                <span class="text-sm font-bold text-gray-600 group-hover:text-[color:var(--brand-from)] transition-colors">{{ tr('Days Range') }}</span>
                             </label>
                         </div>
 

@@ -12,10 +12,10 @@
     <x-slot:content>
         <div class="space-y-4 max-h-[60vh] overflow-y-auto pr-2 custom-scrollbar py-2">
             @forelse($geographicLocations as $loc)
-                <x-ui.card class="!p-0 border-none shadow-sm overflow-hidden bg-white hover:border-blue-100 border-2 border-transparent transition-all group">
+                <x-ui.card class="!p-0 border-none shadow-sm overflow-hidden bg-white hover:border-orange-100 border-2 border-transparent transition-all group">
                     <div class="flex items-stretch divide-x divide-gray-50 rtl:divide-x-reverse">
                         <div class="p-4 bg-gray-50/50 flex items-center justify-center">
-                            <div class="w-10 h-10 rounded-full bg-white shadow-sm flex items-center justify-center text-blue-500 border border-blue-50">
+                            <div class="w-10 h-10 rounded-full bg-white shadow-sm flex items-center justify-center text-[color:var(--brand-from)] border border-blue-50">
                                 <i class="fas fa-map-marked-alt"></i>
                             </div>
                         </div>
@@ -41,7 +41,7 @@
                             @can('settings.attendance.manage')
                             <x-ui.actions-menu>
                                 <x-ui.dropdown-item wire:click="editGpsLocation({{ $loc['id'] }})">
-                                    <i class="fas fa-edit me-2 text-blue-500"></i>
+                                    <i class="fas fa-edit me-2 text-[color:var(--brand-from)]"></i>
                                     <span>{{ tr('Edit') }}</span>
                                 </x-ui.dropdown-item>
                                 <x-ui.dropdown-item 
@@ -75,7 +75,7 @@
 <x-ui.modal wire:model="showGpsModal" maxWidth="5xl">
     <x-slot:title>
         <div class="flex items-center gap-3">
-            <div class="w-10 h-10 bg-blue-50 text-blue-600 rounded-xl flex items-center justify-center text-lg border border-blue-100 shadow-sm"><i class="fas fa-map-marked-alt"></i></div>
+            <div class="w-10 h-10 bg-orange-50 text-[color:var(--brand-from)] rounded-xl flex items-center justify-center text-lg border border-orange-100 shadow-sm"><i class="fas fa-map-marked-alt"></i></div>
             <div>
                 <h3 class="font-bold text-gray-900 text-lg leading-tight">{{ tr('Select Geographic Location') }}</h3>
                 <p class="text-[10px] text-gray-400 font-bold uppercase tracking-widest">{{ tr('Interactive Map Picker') }}</p>
@@ -146,7 +146,7 @@
                                         @error('selectedBranch') <span class="text-[10px] text-red-500 font-bold px-1">{{ tr($message) }}</span> @enderror
                                     @else
                                         <div class="text-[11px] text-gray-500 bg-gray-50 p-2 rounded-lg border border-gray-100 flex items-center gap-2">
-                                            <i class="fas fa-info-circle text-blue-500"></i>
+                                            <i class="fas fa-info-circle text-[color:var(--brand-from)]"></i>
                                             {{ tr('No branches available.') }}
                                         </div>
                                     @endif
@@ -160,7 +160,7 @@
                                         @error('selectedGroups') <span class="text-[10px] text-red-500 font-bold px-1">{{ tr($message) }}</span> @enderror
                                     @else
                                         <div class="text-[11px] text-gray-500 bg-gray-50 p-2 rounded-lg border border-gray-100 flex items-center gap-2">
-                                            <i class="fas fa-info-circle text-blue-500"></i>
+                                            <i class="fas fa-info-circle text-[color:var(--brand-from)]"></i>
                                             {{ tr('No employee groups available.') }}
                                         </div>
                                     @endif
@@ -176,10 +176,10 @@
                     <div class="p-4 bg-white rounded-2xl border border-gray-100 shadow-sm space-y-3 relative overflow-hidden">
                         {{-- Loading Overlay --}}
                         <div x-show="isFetching" x-transition class="absolute inset-0 bg-white/60 backdrop-blur-[1px] z-10 flex items-center justify-center">
-                            <i class="fas fa-circle-notch fa-spin text-blue-500"></i>
+                            <i class="fas fa-circle-notch fa-spin text-[color:var(--brand-from)]"></i>
                         </div>
 
-                        <h5 class="text-[9px] font-black text-blue-500 uppercase tracking-widest border-b border-gray-50 pb-2 mb-2">{{ tr('Location Metadata') }}</h5>
+                        <h5 class="text-[9px] font-black text-[color:var(--brand-from)] uppercase tracking-widest border-b border-gray-50 pb-2 mb-2">{{ tr('Location Metadata') }}</h5>
                         
                         <div class="grid grid-cols-2 gap-3">
                             <div>
@@ -231,7 +231,7 @@
                             <div class="flex-1 pointer-events-auto max-w-2xl">
                                 <div class="relative group/search">
                                     <div class="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
-                                        <i class="fas" :class="isSearching ? 'fa-circle-notch fa-spin text-blue-500' : 'fa-search text-gray-400 group-focus-within/search:text-blue-500'"></i>
+                                        <i class="fas" :class="isSearching ? 'fa-circle-notch fa-spin text-[color:var(--brand-from)]' : 'fa-search text-gray-400 group-focus-within/search:text-[color:var(--brand-from)]'"></i>
                                     </div>
                                     <input 
                                         type="text" 
@@ -264,14 +264,14 @@
                                             <span x-show="!isSearching">{{ tr('Found Locations') }}</span>
                                             <span x-show="isSearching">{{ tr('Searching...') }}</span>
                                         </span>
-                                        <span x-show="!isSearching" class="text-[10px] font-bold text-blue-500 bg-blue-50 px-2 py-0.5 rounded-full" x-text="searchResults.length"></span>
-                                        <i x-show="isSearching" class="fas fa-circle-notch fa-spin text-blue-500 text-[10px]"></i>
+                                        <span x-show="!isSearching" class="text-[10px] font-bold text-[color:var(--brand-from)] bg-orange-50 px-2 py-0.5 rounded-full" x-text="searchResults.length"></span>
+                                        <i x-show="isSearching" class="fas fa-circle-notch fa-spin text-[color:var(--brand-from)] text-[10px]"></i>
                                     </div>
 
                                     <div class="divide-y divide-gray-50">
                                         <template x-if="isSearching && searchResults.length === 0">
                                             <div class="p-8 text-center">
-                                                <div class="w-12 h-12 bg-blue-50 rounded-full flex items-center justify-center mx-auto mb-3">
+                                                <div class="w-12 h-12 bg-orange-50 rounded-full flex items-center justify-center mx-auto mb-3">
                                                     <i class="fas fa-search-location text-blue-400 animate-bounce"></i>
                                                 </div>
                                                 <p class="text-xs font-bold text-gray-400">{{ tr('Looking for places...') }}</p>
@@ -282,9 +282,9 @@
                                             <button 
                                                 type="button"
                                                 @click="selectLocation(result)"
-                                                class="w-full text-start px-4 py-3.5 hover:bg-blue-50/50 transition-colors flex items-start gap-4 group"
+                                                class="w-full text-start px-4 py-3.5 hover:bg-orange-50/50 transition-colors flex items-start gap-4 group"
                                             >
-                                                <div class="w-10 h-10 rounded-xl bg-blue-50/50 flex items-center justify-center text-blue-500 group-hover:bg-blue-500 group-hover:text-white transition-all shrink-0 shadow-sm">
+                                                <div class="w-10 h-10 rounded-xl bg-orange-50/50 flex items-center justify-center text-[color:var(--brand-from)] group-hover:bg-orange-500 group-hover:text-white transition-all shrink-0 shadow-sm">
                                                     <i class="fas fa-map-marker-alt text-sm"></i>
                                                 </div>
                                                 <div class="flex-1 min-w-0 pt-0.5">
@@ -305,7 +305,7 @@
                                 <button 
                                     type="button" 
                                     @click="getCurrentLocation()" 
-                                    class="flex items-center gap-2 text-[10px] font-black text-blue-600 hover:text-white hover:bg-blue-600 bg-white/95 backdrop-blur-md px-4 py-2.5 rounded-2xl border border-blue-100 transition-all shadow-xl active:scale-95 disabled:opacity-50" 
+                                    class="flex items-center gap-2 text-[10px] font-black text-[color:var(--brand-from)] hover:text-white hover:bg-blue-600 bg-white/95 backdrop-blur-md px-4 py-2.5 rounded-2xl border border-orange-100 transition-all shadow-xl active:scale-95 disabled:opacity-50" 
                                     @cannot('settings.attendance.manage') disabled @endcannot
                                 >
                                     <i class="fas fa-location-arrow animate-pulse"></i> 

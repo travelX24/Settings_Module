@@ -199,7 +199,7 @@
                                     <x-ui.actions-menu>
                                         <x-ui.dropdown-item wire:click.stop="openEdit({{ (int) $row->id }})"
                                             class="cursor-pointer">
-                                            <i class="fas fa-edit me-2 text-blue-500"></i> {{ tr('Edit') }}
+                                            <i class="fas fa-edit me-2 text-[color:var(--brand-from)]"></i> {{ tr('Edit') }}
                                         </x-ui.dropdown-item>
     
                                         <x-ui.dropdown-item danger
@@ -246,7 +246,7 @@
         <x-slot:title>
             <div class="flex items-center gap-3">
                 <div
-                    class="w-10 h-10 bg-brand-50 text-brand-600 rounded-xl flex items-center justify-center text-lg border border-brand-100 shadow-sm">
+                    class="w-10 h-10 bg-orange-50 text-[color:var(--brand-from)] rounded-xl flex items-center justify-center text-lg border border-brand-100 shadow-sm">
                     <i class="fas fa-umbrella-beach"></i>
                 </div>
                 <div>
@@ -299,7 +299,7 @@
                         </label>
                     </div>
                     @if ($newRepeatType === 'annual')
-                        <div class="mt-2 p-3 bg-blue-50 border border-blue-200 rounded-lg text-xs text-blue-800 leading-relaxed">
+                        <div class="mt-2 p-3 bg-orange-50 border border-blue-200 rounded-lg text-xs text-blue-800 leading-relaxed">
                             <i class="fas fa-info-circle me-1"></i>
                             @if ($newCalendarType === 'hijri')
                                 {{ trk('holiday_auto_hijri_msg', 'The system will automatically generate this holiday for the next 5 Hijri years with the correct Gregorian date for each year.') }}
@@ -351,7 +351,7 @@
         <x-slot:title>
             <div class="flex items-center gap-3">
                 <div
-                    class="w-10 h-10 bg-blue-50 text-blue-600 rounded-xl flex items-center justify-center text-lg border border-blue-100 shadow-sm">
+                    class="w-10 h-10 bg-orange-50 text-blue-600 rounded-xl flex items-center justify-center text-lg border border-blue-100 shadow-sm">
                     <i class="fas fa-edit"></i>
                 </div>
                 <div>

@@ -228,10 +228,6 @@ class WorkScheduleService
                     'name_ar'    => $empExcept->notes ?: $typeLabel,
                     'name_en'    => $empExcept->notes ?: $typeLabel,
                     'is_holiday' => in_array($empExcept->exception_type, ['off_day', 'day_off']),
-                    'exception_type' => $empExcept->exception_type,
-                    'start_time' => $empExcept->start_time,
-                    'end_time' => $empExcept->end_time,
-                    'is_night_shift' => false,
                 ];
             }
         }

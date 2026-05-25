@@ -52,7 +52,7 @@
 <x-ui.modal wire:model="showNfcModal" maxWidth="xl">
     <x-slot:title>
         <div class="flex items-center gap-3">
-            <div class="w-10 h-10 bg-blue-50 text-blue-600 rounded-xl flex items-center justify-center text-lg border border-blue-100 shadow-sm"><i class="fas fa-wifi"></i></div>
+            <div class="w-10 h-10 bg-orange-50 text-blue-600 rounded-xl flex items-center justify-center text-lg border border-orange-100 shadow-sm"><i class="fas fa-wifi"></i></div>
             <h3 class="font-bold text-gray-900 text-lg leading-tight">{{ tr('Add NFC Card/Device') }}</h3>
         </div>
     </x-slot:title>
@@ -141,7 +141,7 @@
                             @can('settings.attendance.manage')
                             <x-ui.actions-menu>
                                 <x-ui.dropdown-item wire:click="editDevice({{ $dev['id'] }})">
-                                    <i class="fas fa-edit me-2 text-blue-500"></i>
+                                    <i class="fas fa-edit me-2 text-[color:var(--brand-from)]"></i>
                                     <span>{{ tr('Edit') }}</span>
                                 </x-ui.dropdown-item>
                                 <x-ui.dropdown-item 
@@ -185,10 +185,10 @@
     <x-slot:content>
         <div class="space-y-4 max-h-[60vh] overflow-y-auto pr-2 custom-scrollbar py-2">
             @forelse($nfcDevices as $dev)
-                <x-ui.card class="!p-0 border-none shadow-sm overflow-hidden bg-white hover:border-blue-100 border-2 border-transparent transition-all group">
+                <x-ui.card class="!p-0 border-none shadow-sm overflow-hidden bg-white hover:border-orange-100 border-2 border-transparent transition-all group">
                     <div class="flex items-stretch divide-x divide-gray-50 rtl:divide-x-reverse">
                         <div class="p-4 bg-gray-50/50 flex items-center justify-center">
-                            <div class="w-10 h-10 rounded-full bg-white shadow-sm flex items-center justify-center text-blue-500 border border-blue-50">
+                            <div class="w-10 h-10 rounded-full bg-white shadow-sm flex items-center justify-center text-[color:var(--brand-from)] border border-blue-50">
                                 <i class="fas fa-wifi"></i>
                             </div>
                         </div>
@@ -214,7 +214,7 @@
                             @can('settings.attendance.manage')
                             <x-ui.actions-menu>
                                 <x-ui.dropdown-item wire:click="editDevice({{ $dev['id'] }})">
-                                    <i class="fas fa-edit me-2 text-blue-500"></i>
+                                    <i class="fas fa-edit me-2 text-[color:var(--brand-from)]"></i>
                                     <span>{{ tr('Edit') }}</span>
                                 </x-ui.dropdown-item>
                                 <x-ui.dropdown-item 

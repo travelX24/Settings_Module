@@ -1,7 +1,7 @@
 <x-ui.card class="space-y-4 !p-6 border-none shadow-sm bg-white !rounded-3xl">
     <div class="flex items-center justify-between">
         <div class="flex items-center gap-3">
-            <div class="w-10 h-10 rounded-xl bg-blue-50 flex items-center justify-center text-blue-500 border border-blue-100 shadow-sm">
+            <div class="w-10 h-10 rounded-xl bg-orange-50 flex items-center justify-center text-[color:var(--brand-from)] border border-blue-100 shadow-sm">
                 <i class="fas fa-sign-out-alt text-lg"></i>
             </div>
             <div>
@@ -64,7 +64,7 @@
                     />
                 </div>
             </div>
-            <p class="text-[10px] font-bold text-blue-500/70 italic px-1">
+            <p class="text-[10px] font-bold text-[color:var(--brand-from)]/70 italic px-1">
                 @if($basicEarlyPenalty['deduction_type'] === 'percentage')
                     <i class="fas fa-info-circle me-1"></i> {{ tr('Percentage of minute wage.') }}
                 @else

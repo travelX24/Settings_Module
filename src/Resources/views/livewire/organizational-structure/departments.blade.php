@@ -13,7 +13,7 @@
     <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 mb-8">
         {{-- Total Departments --}}
         <div class="bg-white rounded-2xl p-4 shadow-sm border border-gray-100 flex items-center gap-4 group hover:border-[color:var(--brand-via)]/30 transition-all duration-300">
-            <div class="w-12 h-12 bg-blue-50 rounded-xl flex items-center justify-center text-blue-600 group-hover:bg-blue-600 group-hover:text-white transition-all duration-500 shadow-sm">
+            <div class="w-12 h-12 bg-blue-50 rounded-xl flex items-center justify-center text-[color:var(--brand-from)] group-hover:bg-blue-600 group-hover:text-white transition-all duration-500 shadow-sm">
                 <i class="fas fa-building text-xl"></i>
             </div>
             <div>
@@ -43,7 +43,7 @@
             </div>
             <div class="w-px h-8 bg-gray-100"></div>
             <div class="text-center">
-                <p class="text-[9px] font-bold text-blue-600 uppercase">{{ tr('Sub') }}</p>
+                <p class="text-[9px] font-bold text-[color:var(--brand-from)] uppercase">{{ tr('Sub') }}</p>
                 <p class="text-lg font-black text-gray-900">{{ $stats['sub'] ?? 0 }}</p>
             </div>
         </div>

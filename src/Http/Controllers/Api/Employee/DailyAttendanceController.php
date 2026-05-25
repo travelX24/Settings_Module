@@ -82,42 +82,13 @@ class DailyAttendanceController extends Controller
                     if (!isset($schedulesCache[$dateStr])) {
                         $schedulesCache[$dateStr] = $this->scheduleService->getEffectiveSchedule($companyId, $employee, $dateStr);
                     }
-                    $this->attendanceService->ensureLog($companyId, $employee, $dateStr, $schedulesCache[$dateStr], $holidays, $forceSync, $requests);
+                    $this->attendanceService->ensureLog($companyId, $employee->id, $dateStr, $schedulesCache[$dateStr], $holidays, $forceSync, $requests);
                 }
                 $cursor->addDay();
             }
         }
 
         $logs = $this->attendanceService->getLogs($companyId, $employee->id, $fromStr, $toStr);
-        foreach ($logs as $log) {
-            $log->setRelation('employee', $employee);
-        }
-
-        // Self-heal (Optimized): Recalculate and trigger auto-checkout for past logs with open sessions in a single bulk query
-        $todayStr = now()->toDateString();
-        $pastLogIds = [];
-        foreach ($logs as $log) {
-            if ($log->attendance_date->toDateString() < $todayStr) {
-                $pastLogIds[] = $log->id;
-            }
-        }
-
-        if (!empty($pastLogIds)) {
-            $logsWithOpenPeriods = DB::table('attendance_daily_details')
-                ->whereIn('daily_log_id', $pastLogIds)
-                ->whereNull('check_out_time')
-                ->pluck('daily_log_id')
-                ->unique()
-                ->toArray();
-
-            if (!empty($logsWithOpenPeriods)) {
-                foreach ($logs as $log) {
-                    if (in_array($log->id, $logsWithOpenPeriods, true)) {
-                        $log->save();
-                    }
-                }
-            }
-        }
 
         $logIds = $logs->pluck('id')->toArray();
         $allDetails = DB::table('attendance_daily_details')
@@ -139,67 +110,6 @@ class DailyAttendanceController extends Controller
             // 🚀 [Optimization] Pass pre-fetched requests and accurate schedule
             $metrics = $this->scheduleService->getMetricsForDate($dateStr, $daySchedule, $holidays, $employee, $requests);
 
-            $periods = collect($metrics['periods'] ?? [])->values();
-            $usedDetailIds = [];
-
-            if ($periods->isNotEmpty()) {
-                $punches = $periods->map(function ($period) use ($details, $dateStr, &$usedDetailIds) {
-                    $periodId = $period['id'] ?? null;
-                    $detail = null;
-
-                    if ($periodId) {
-                        $detail = $details->first(function ($d) use ($periodId, $usedDetailIds) {
-                            return !in_array($d->id, $usedDetailIds, true)
-                                && (int) $d->work_schedule_period_id === (int) $periodId;
-                        });
-                    }
-
-                    if (!$detail) {
-                        $periodStart = Carbon::parse($dateStr . ' ' . substr((string) $period['start_time'], 0, 5));
-                        $periodEnd = Carbon::parse($dateStr . ' ' . substr((string) $period['end_time'], 0, 5));
-                        if (($period['is_night_shift'] ?? false) || $periodEnd->lt($periodStart)) {
-                            $periodEnd->addDay();
-                        }
-
-                        $detail = $details->first(function ($d) use ($dateStr, $periodStart, $periodEnd, $usedDetailIds) {
-                            if (in_array($d->id, $usedDetailIds, true) || empty($d->check_in_time)) {
-                                return false;
-                            }
-
-                            $checkIn = Carbon::parse($dateStr . ' ' . substr((string) $d->check_in_time, 0, 5));
-                            return $checkIn->between($periodStart, $periodEnd);
-                        });
-                    }
-
-                    if ($detail) {
-                        $usedDetailIds[] = $detail->id;
-                    }
-
-                    return [
-                        'check_in' => $detail ? company_time($detail->check_in_time) : null,
-                        'check_out' => $detail ? company_time($detail->check_out_time) : null,
-                        'status' => $detail->attendance_status ?? null,
-                    ];
-                });
-
-                $extraPunches = $details
-                    ->reject(fn($d) => in_array($d->id, $usedDetailIds, true))
-                    ->map(fn($d) => [
-                        'check_in' => company_time($d->check_in_time),
-                        'check_out' => company_time($d->check_out_time),
-                        'status' => $d->attendance_status,
-                    ])
-                    ->values();
-
-                $punches = $punches->concat($extraPunches)->values();
-            } else {
-                $punches = $details->map(fn($d) => [
-                    'check_in' => company_time($d->check_in_time),
-                    'check_out' => company_time($d->check_out_time),
-                    'status' => $d->attendance_status,
-                ])->values();
-            }
-
             return [
                 'id' => (int) $log->id,
                 'date' => $dateStr,
@@ -213,8 +123,12 @@ class DailyAttendanceController extends Controller
                 'scheduled_hours' => (float) $log->scheduled_hours,
                 'scheduled_check_in' => company_time($log->scheduled_check_in),
                 'scheduled_check_out' => company_time($log->scheduled_check_out),
-                'punches' => $punches,
-                'periods' => $periods
+                'punches' => $details->map(fn($d) => [
+                    'check_in' => company_time($d->check_in_time),
+                    'check_out' => company_time($d->check_out_time),
+                    'status' => $d->attendance_status,
+                ]),
+                'periods' => collect($metrics['periods'] ?? [])
                     ->map(fn($p) => company_time($p['start_time']) . ' - ' . company_time($p['end_time']))
                     ->all(),
             ];
@@ -266,32 +180,12 @@ class DailyAttendanceController extends Controller
         }
 
         $schedule = $this->scheduleService->getEffectiveSchedule($companyId, $employee);
-        $checkInSchedule = $schedule;
-
-        if (
-            $exceptionalDay
-            && !(bool)($exceptionalDay->is_holiday ?? true)
-            && !empty($exceptionalDay->start_time)
-            && !empty($exceptionalDay->end_time)
-        ) {
-            $checkInSchedule = (object) [
-                'periods' => collect([
-                    (object) [
-                        'id' => null,
-                        'start_time' => $exceptionalDay->start_time,
-                        'end_time' => $exceptionalDay->end_time,
-                        'is_night_shift' => (bool)($exceptionalDay->is_night_shift ?? false),
-                    ],
-                ]),
-            ];
-        }
-
-        $log = $this->attendanceService->ensureLog($companyId, $employee, $dateStr, $schedule, $this->scheduleService->getHolidays($companyId, $dateStr, $dateStr));
+        $log = $this->attendanceService->ensureLog($companyId, $employee->id, $dateStr, $schedule, $this->scheduleService->getHolidays($companyId, $dateStr, $dateStr));
 
         // [Security] Force set attendance_date as clean string to prevent double time specification
         $log->attendance_date = $dateStr;
 
-        $res = $this->attendanceService->recordCheckIn($log, $data['method'], $data['lat'], $data['lng'], $checkInSchedule, 15, $prep->data->tracking_mode ?? 'check_in_out');
+        $res = $this->attendanceService->recordCheckIn($log, $data['method'], $data['lat'], $data['lng'], $schedule, 15, $prep->data->tracking_mode ?? 'check_in_out');
         return response()->json($res);
     }
 

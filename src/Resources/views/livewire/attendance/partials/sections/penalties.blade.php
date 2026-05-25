@@ -48,7 +48,7 @@
                     @php
                         $pType = $penalty['penalty_action'] ?? 'notification';
                         $tagCls = match($pType) {
-                            'notification', 'notice' => 'bg-blue-50 text-blue-600 border-blue-100',
+                            'notification', 'notice' => 'bg-orange-50 text-[color:var(--brand-from)] border-orange-100',
                             'warning_verbal', 'warning_written' => 'bg-amber-50 text-amber-600 border-amber-100',
                             'deduction', 'suspension' => 'bg-red-50 text-red-600 border-red-100',
                             default => 'bg-gray-50 text-gray-600 border-gray-100'
@@ -63,7 +63,7 @@
                     @can('settings.attendance.manage')
                     <x-ui.actions-menu>
                         <x-ui.dropdown-item wire:click="editPenalty('{{ $penalty['id'] }}')">
-                            <i class="fas fa-edit me-2 text-blue-500"></i> {{ tr('Edit') }}
+                            <i class="fas fa-edit me-2 text-[color:var(--brand-from)]"></i> {{ tr('Edit') }}
                         </x-ui.dropdown-item>
                         <x-ui.dropdown-item 
                             danger

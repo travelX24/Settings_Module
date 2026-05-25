@@ -215,16 +215,6 @@ class AttendancePrepController extends Controller
                 ->first();
                 
             if ($log) {
-                // Real-time sync: if there is an open session today, trigger a save to check/apply auto-checkout
-                $hasOpenSession = \DB::table('attendance_daily_details')
-                    ->where('daily_log_id', $log->id)
-                    ->whereNull('check_out_time')
-                    ->exists();
-                    
-                if ($hasOpenSession) {
-                    $log->save(); // Automatically closes the session if past the auto-checkout limit at this moment
-                }
-
                 $openSession = \DB::table('attendance_daily_details')
                     ->where('daily_log_id', $log->id)
                     ->whereNull('check_out_time')

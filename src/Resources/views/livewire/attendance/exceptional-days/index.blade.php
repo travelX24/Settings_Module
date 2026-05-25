@@ -95,7 +95,7 @@
 
                 <div class="md:col-span-12">
                     <div class="flex items-center gap-2 text-xs font-semibold text-gray-700">
-                        <i class="fas fa-calendar-alt text-[11px] text-violet-500"></i>
+                        <i class="fas fa-calendar-alt text-[11px] text-[color:var(--brand-via)]"></i>
                         <span>{{ tr('Calendar Navigation') }}</span>
                     </div>
                     <div class="mt-1 text-[11px] text-gray-500">
@@ -420,7 +420,7 @@
                                 <x-ui.actions-menu>
                                     <x-ui.dropdown-item wire:click="openEdit({{ $row->id }})"
                                         class="cursor-pointer">
-                                        <i class="fas fa-edit me-2 text-blue-500"></i> {{ tr('Edit') }}
+                                        <i class="fas fa-edit me-2 text-[color:var(--brand-from)]"></i> {{ tr('Edit') }}
                                     </x-ui.dropdown-item>
 
                                     <x-ui.dropdown-item danger
@@ -714,7 +714,7 @@
                     <x-ui.card class="!p-4 !bg-gray-50/50">
                         <div class="flex items-start gap-3">
                             <div
-                                class="w-10 h-10 rounded-xl bg-violet-100 text-violet-700 flex items-center justify-center">
+                                class="w-10 h-10 rounded-xl bg-orange-100 text-[color:var(--brand-from)] flex items-center justify-center">
                                 <i class="fas fa-chart-bar"></i>
                             </div>
 
@@ -827,7 +827,7 @@
                             </div>
                         </x-ui.card>
 
-                        <x-ui.card class="!p-4 !bg-violet-50/40">
+                        <x-ui.card class="!p-4 !bg-orange-50/40">
                             <div class="text-sm font-bold text-gray-800 mb-3">{{ tr('Differences') }}</div>
 
                             <div class="space-y-3 text-sm">

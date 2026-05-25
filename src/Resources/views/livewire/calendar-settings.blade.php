@@ -31,7 +31,7 @@
             <div class="flex flex-col md:flex-row md:items-center justify-between gap-6">
                 <div class="flex items-center gap-4">
                     <div
-                        class="w-14 h-14 rounded-2xl bg-gradient-to-br from-indigo-500 to-purple-600 flex items-center justify-center text-white shadow-lg shadow-indigo-100">
+                        class="w-14 h-14 rounded-2xl bg-gradient-to-br from-[color:var(--brand-from)] to-[color:var(--brand-via)] flex items-center justify-center text-white shadow-lg shadow-[color:var(--brand-from)]/20">
                         <i class="fas fa-calendar-alt text-2xl"></i>
                     </div>
                     <div>
@@ -43,7 +43,7 @@
                                 class="text-xs font-bold text-gray-400 uppercase tracking-wider">{{ tr('Current Mode') }}:</span>
                             <span
                                 class="inline-flex items-center px-3 py-1 rounded-lg text-[10px] font-black uppercase tracking-wider
-                                         {{ $saved_calendar_type === 'hijri' ? 'bg-amber-100 text-amber-700' : 'bg-indigo-100 text-indigo-700' }}">
+                                         {{ $saved_calendar_type === 'hijri' ? 'bg-amber-100 text-amber-700' : 'bg-orange-100 text-[color:var(--brand-from)]' }}">
                                 <i class="fas {{ $saved_calendar_type === 'hijri' ? 'fa-moon' : 'fa-sun' }} mr-1.5"></i>
                                 {{ $savedLabel }}
                             </span>
@@ -89,7 +89,7 @@
             @can('settings.calendar.manage')
                 <div class="pt-8 border-t border-gray-50 flex items-center justify-center">
                     <x-ui.primary-button type="button" wire:click="save" loading="save"
-                        class="!px-16 !rounded-2xl font-black shadow-xl shadow-indigo-200">
+                        class="!px-16 !rounded-2xl font-black shadow-xl shadow-[color:var(--brand-from)]/30">
                         {{ tr('Confirm & Save') }}
                     </x-ui.primary-button>
                 </div>
