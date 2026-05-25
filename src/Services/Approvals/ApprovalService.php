@@ -416,12 +416,31 @@ class ApprovalService
                 $row = $modelClass::find($id);
                 if ($row) {
                     $row->update([$uCol => $status]);
+                    $this->applyPostStatusEffects($src, $id);
                     return;
                 }
             }
 
             // Fallback to DB table if no model found
             DB::table($src['table'])->where($src['idCol'], $id)->update([$uCol => $status]);
+            $this->applyPostStatusEffects($src, $id);
+        }
+    }
+
+    protected function applyPostStatusEffects(array $src, int $id): void
+    {
+        if (($src['table'] ?? null) !== 'attendance_leave_requests') {
+            return;
+        }
+
+        if (!class_exists(\Athka\Attendance\Models\AttendanceLeaveRequest::class)
+            || !class_exists(\Athka\Attendance\Services\LeaveApprovalImpactService::class)) {
+            return;
+        }
+
+        $leave = \Athka\Attendance\Models\AttendanceLeaveRequest::find($id);
+        if ($leave) {
+            app(\Athka\Attendance\Services\LeaveApprovalImpactService::class)->apply($leave);
         }
     }
 

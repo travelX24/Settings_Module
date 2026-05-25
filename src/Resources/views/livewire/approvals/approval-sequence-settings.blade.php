@@ -178,25 +178,50 @@
                                         <div class="text-sm font-bold text-gray-900 truncate">{{ $p->name }}</div>
                                         <div class="mt-1">
                                             @if(($p->scope_type ?? 'all') === 'all')
-                                                <span class="px-2 py-0.5 text-xs font-semibold rounded-full bg-orange-50 text-[color:var(--brand-from)] border border-orange-200">{{ tr('All Employees') }}</span>
+                                                <div class="flex flex-wrap items-center gap-2">
+                                                    <span class="px-2 py-0.5 text-xs font-semibold rounded-full bg-orange-50 text-[color:var(--brand-from)] border border-orange-200">{{ tr('All Employees') }}</span>
+                                                    <div class="group relative inline-block" tabindex="0">
+                                                        <span class="px-2 py-0.5 text-xs font-semibold rounded-full bg-gray-100 text-gray-700 border border-gray-200 cursor-help transition-all hover:bg-gray-200">
+                                                            {{ (int) ($p->affected_employees_count ?? 0) }}
+                                                        </span>
+                                                        <div class="invisible group-hover:visible group-focus-within:visible opacity-0 group-hover:opacity-100 group-focus-within:opacity-100 transition-all duration-300 absolute z-[100] bottom-full left-1/2 -translate-x-1/2 mb-2 w-72">
+                                                            <div class="bg-white rounded-xl shadow-xl border border-gray-100 overflow-hidden">
+                                                                <div class="bg-gray-50 px-3 py-2 border-b border-gray-100 flex items-center justify-between gap-3">
+                                                                    <span class="text-[10px] font-bold text-gray-500 uppercase tracking-wider">{{ tr('Employees') }}</span>
+                                                                    <span class="text-[10px] font-black text-gray-700">{{ (int) ($p->affected_employees_count ?? 0) }}</span>
+                                                                </div>
+                                                                <div class="p-3 max-h-56 overflow-y-auto whitespace-normal">
+                                                                    <div class="grid grid-cols-1 gap-1.5">
+                                                                        @forelse(($p->affected_employee_names ?? []) as $name)
+                                                                            <span class="px-2 py-1 rounded-lg text-[11px] font-medium bg-brand/5 text-brand border border-brand/10 truncate">{{ $name }}</span>
+                                                                        @empty
+                                                                            <span class="text-xs text-gray-400">{{ tr('No employees found') }}</span>
+                                                                        @endforelse
+                                                                    </div>
+                                                                </div>
+                                                            </div>
+                                                            <div class="w-3 h-3 bg-white border-r border-b border-gray-100 rotate-45 absolute -bottom-1.5 left-1/2 -translate-x-1/2"></div>
+                                                        </div>
+                                                    </div>
+                                                </div>
                                             @else
-                                                <div class="group relative inline-block">
-                                                    <span class="px-2 py-0.5 text-xs font-semibold rounded-full bg-gray-100 text-gray-700 border border-gray-200 cursor-help transition-all hover:bg-gray-200">{{ tr('Type') }}: {{ $p->scope_type }} ({{ $p->scopes_count }})</span>
+                                                <div class="group relative inline-block" tabindex="0">
+                                                    <span class="px-2 py-0.5 text-xs font-semibold rounded-full bg-gray-100 text-gray-700 border border-gray-200 cursor-help transition-all hover:bg-gray-200">{{ tr('Type') }}: {{ $p->scope_type }} ({{ (int) ($p->affected_employees_count ?? 0) }})</span>
                                                     
                                                     {{-- Tooltip Card --}}
-                                                    <div class="invisible group-hover:visible opacity-0 group-hover:opacity-100 transition-all duration-300 absolute z-[100] bottom-full left-1/2 -translate-x-1/2 mb-2 w-64">
+                                                    <div class="invisible group-hover:visible group-focus-within:visible opacity-0 group-hover:opacity-100 group-focus-within:opacity-100 transition-all duration-300 absolute z-[100] bottom-full left-1/2 -translate-x-1/2 mb-2 w-64">
                                                         <div class="bg-white rounded-xl shadow-xl border border-gray-100 overflow-hidden">
                                                             <div class="bg-gray-50 px-3 py-2 border-b border-gray-100 flex items-center gap-2">
                                                                 <i class="fas fa-users text-gray-400 text-xs"></i>
-                                                                <span class="text-[10px] font-bold text-gray-500 uppercase tracking-wider">{{ tr('Target List') }}</span>
+                                                                <span class="text-[10px] font-bold text-gray-500 uppercase tracking-wider">{{ tr('Employees') }}</span>
                                                             </div>
-                                                            <div class="p-3 max-h-48 overflow-y-auto no-scrollbar">
-                                                                <div class="flex flex-wrap gap-1.5">
-                                                                    @foreach(explode(', ', $p->scope_names_list) as $name)
-                                                                        <span class="inline-flex items-center px-2 py-0.5 rounded text-[11px] font-medium bg-brand/5 text-brand border border-brand/10">
-                                                                            {{ $name }}
-                                                                        </span>
-                                                                    @endforeach
+                                                            <div class="p-3 max-h-56 overflow-y-auto">
+                                                                <div class="grid grid-cols-1 gap-1.5">
+                                                                    @forelse(($p->affected_employee_names ?? []) as $name)
+                                                                        <span class="px-2 py-1 rounded-lg text-[11px] font-medium bg-brand/5 text-brand border border-brand/10 truncate">{{ $name }}</span>
+                                                                    @empty
+                                                                        <span class="text-xs text-gray-400">{{ tr('No employees found') }}</span>
+                                                                    @endforelse
                                                                 </div>
                                                             </div>
                                                             <div class="bg-brand/5 h-1 w-full"></div>
@@ -285,28 +310,65 @@
 
                                 <td class="py-4 px-6 align-top whitespace-nowrap text-sm text-gray-700">
                                     @if(($p->scope_type ?? 'all') === 'all')
-                                        <span class="px-2 py-1 text-xs font-semibold rounded-full bg-orange-50 text-[color:var(--brand-from)] border border-orange-200">{{ tr('All Employees') }}</span>
+                                        <div class="flex items-center gap-2">
+                                            <span class="px-2 py-1 text-xs font-semibold rounded-full bg-orange-50 text-[color:var(--brand-from)] border border-orange-200">{{ tr('All Employees') }}</span>
+                                            <div class="group relative inline-block" tabindex="0">
+                                                <span class="px-2 py-1 text-xs font-semibold rounded-full bg-gray-50 text-gray-700 border border-gray-200 cursor-help hover:bg-gray-100 transition-all">
+                                                    {{ (int) ($p->affected_employees_count ?? 0) }}
+                                                </span>
+
+                                                <div class="invisible group-hover:visible group-focus-within:visible opacity-0 group-hover:opacity-100 group-focus-within:opacity-100 transition-all duration-300 absolute z-[100] bottom-full left-1/2 -translate-x-1/2 mb-2 w-72">
+                                                    <div class="bg-white rounded-xl shadow-xl border border-gray-100 overflow-hidden">
+                                                        <div class="bg-gray-50 px-3 py-2 border-b border-gray-100 flex items-center justify-between gap-3">
+                                                            <div class="flex items-center gap-2">
+                                                                <i class="fas fa-users text-gray-400 text-xs"></i>
+                                                                <span class="text-[10px] font-bold text-gray-500 uppercase tracking-wider">{{ tr('Employees') }}</span>
+                                                            </div>
+                                                            <span class="text-[10px] font-black text-gray-700">{{ (int) ($p->affected_employees_count ?? 0) }}</span>
+                                                        </div>
+                                                        <div class="p-3 max-h-56 overflow-y-auto whitespace-normal">
+                                                            <div class="grid grid-cols-1 gap-1.5">
+                                                                @forelse(($p->affected_employee_names ?? []) as $name)
+                                                                    <span class="px-2 py-1 rounded-lg text-[11px] font-medium bg-brand/5 text-brand border border-brand/10 truncate">
+                                                                        {{ $name }}
+                                                                    </span>
+                                                                @empty
+                                                                    <span class="text-xs text-gray-400">{{ tr('No employees found') }}</span>
+                                                                @endforelse
+                                                            </div>
+                                                        </div>
+                                                        <div class="bg-brand/5 h-1 w-full"></div>
+                                                    </div>
+                                                    <div class="w-3 h-3 bg-white border-r border-b border-gray-100 rotate-45 absolute -bottom-1.5 left-1/2 -translate-x-1/2"></div>
+                                                </div>
+                                            </div>
+                                        </div>
                                     @else
                                         <div class="flex items-center gap-2">
-                                            <div class="group relative inline-block">
+                                            <div class="group relative inline-block" tabindex="0">
                                                 <span class="text-gray-500 text-xs cursor-help border-b border-dotted border-gray-400 hover:text-brand transition-colors">
-                                                    ({{ $p->scopes_count }})
+                                                    ({{ (int) ($p->affected_employees_count ?? 0) }})
                                                 </span>
                                                 
                                                 {{-- Tooltip Card --}}
-                                                <div class="invisible group-hover:visible opacity-0 group-hover:opacity-100 transition-all duration-300 absolute z-[100] bottom-full left-1/2 -translate-x-1/2 mb-2 w-64">
+                                                <div class="invisible group-hover:visible group-focus-within:visible opacity-0 group-hover:opacity-100 group-focus-within:opacity-100 transition-all duration-300 absolute z-[100] bottom-full left-1/2 -translate-x-1/2 mb-2 w-72">
                                                     <div class="bg-white rounded-xl shadow-xl border border-gray-100 overflow-hidden">
-                                                        <div class="bg-gray-50 px-3 py-2 border-b border-gray-100 flex items-center gap-2">
-                                                            <i class="fas fa-users text-gray-400 text-xs"></i>
-                                                            <span class="text-[10px] font-bold text-gray-500 uppercase tracking-wider">{{ tr('Target List') }}</span>
+                                                        <div class="bg-gray-50 px-3 py-2 border-b border-gray-100 flex items-center justify-between gap-3">
+                                                            <div class="flex items-center gap-2">
+                                                                <i class="fas fa-users text-gray-400 text-xs"></i>
+                                                                <span class="text-[10px] font-bold text-gray-500 uppercase tracking-wider">{{ tr('Employees') }}</span>
+                                                            </div>
+                                                            <span class="text-[10px] font-black text-gray-700">{{ (int) ($p->affected_employees_count ?? 0) }}</span>
                                                         </div>
-                                                        <div class="p-3 max-h-48 overflow-y-auto no-scrollbar whitespace-normal">
-                                                            <div class="flex flex-wrap gap-1.5">
-                                                                @foreach(explode(', ', $p->scope_names_list) as $name)
-                                                                    <span class="inline-flex items-center px-2 py-0.5 rounded text-[11px] font-medium bg-brand/5 text-brand border border-brand/10">
+                                                        <div class="p-3 max-h-56 overflow-y-auto whitespace-normal">
+                                                            <div class="grid grid-cols-1 gap-1.5">
+                                                                @forelse(($p->affected_employee_names ?? []) as $name)
+                                                                    <span class="px-2 py-1 rounded-lg text-[11px] font-medium bg-brand/5 text-brand border border-brand/10 truncate">
                                                                         {{ $name }}
                                                                     </span>
-                                                                @endforeach
+                                                                @empty
+                                                                    <span class="text-xs text-gray-400">{{ tr('No employees found') }}</span>
+                                                                @endforelse
                                                             </div>
                                                         </div>
                                                         <div class="bg-brand/5 h-1 w-full"></div>

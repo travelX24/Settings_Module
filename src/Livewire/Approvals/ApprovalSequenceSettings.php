@@ -8,6 +8,7 @@ use Athka\SystemSettings\Models\ApprovalPolicy;
 use Athka\SystemSettings\Services\ApprovalSettingService;
 use Illuminate\Support\Str;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Schema;
 
 class ApprovalSequenceSettings extends Component
 {
@@ -222,6 +223,8 @@ class ApprovalSequenceSettings extends Component
             })
             ->paginate(10);
 
+        $employeeRows = $this->approvalEmployeesForCompany($companyId);
+
         foreach ($policies as $p) {
             if (($p->scope_type ?? 'all') === 'all') {
                 $p->scope_names_list = tr('All Employees');
@@ -230,6 +233,10 @@ class ApprovalSequenceSettings extends Component
                 $map = collect($lookups[$lookupKey] ?? [])->pluck('name', 'id');
                 $p->scope_names_list = $p->scopes->map(fn($s) => $map[$s->scope_id] ?? ('#' . $s->scope_id))->implode(', ');
             }
+
+            $affectedEmployees = $this->resolveAffectedEmployeesForPolicy($p, $employeeRows);
+            $p->affected_employees_count = $affectedEmployees->count();
+            $p->affected_employee_names = $affectedEmployees->pluck('name')->values()->all();
 
             $userMap = collect($lookups['users'] ?? [])->pluck('name', 'id');
             $p->step_names_list = $p->steps->map(function($s, $idx) use ($userMap) {
@@ -249,5 +256,78 @@ class ApprovalSequenceSettings extends Component
             'lookups'  => $lookups,
             'counts'   => $counts,
         ])->layout('layouts.company-admin');
+    }
+
+    private function approvalEmployeesForCompany(int $companyId)
+    {
+        if (!Schema::hasTable('employees')) {
+            return collect();
+        }
+
+        $nameSelect = $this->employeeNameExpression();
+
+        $query = DB::table('employees')
+            ->select([
+                'id',
+                'branch_id',
+                'department_id',
+                'job_title_id',
+                DB::raw($nameSelect . ' as name'),
+            ]);
+
+        if (Schema::hasColumn('employees', 'saas_company_id')) {
+            $query->where('saas_company_id', $companyId);
+        } elseif (Schema::hasColumn('employees', 'company_id')) {
+            $query->where('company_id', $companyId);
+        }
+
+        if (Schema::hasColumn('employees', 'deleted_at')) {
+            $query->whereNull('deleted_at');
+        }
+
+        return $query->orderBy('name')->get();
+    }
+
+    private function employeeNameExpression(): string
+    {
+        $columns = [];
+
+        foreach (['name_ar', 'name_en', 'name', 'full_name', 'employee_no'] as $column) {
+            if (Schema::hasColumn('employees', $column)) {
+                $columns[] = $column;
+            }
+        }
+
+        if (empty($columns)) {
+            return 'CAST(id AS CHAR)';
+        }
+
+        $quoted = array_map(fn($column) => "`{$column}`", $columns);
+
+        return 'COALESCE(' . implode(', ', $quoted) . ', CAST(id AS CHAR))';
+    }
+
+    private function resolveAffectedEmployeesForPolicy(ApprovalPolicy $policy, $employeeRows)
+    {
+        $scopeType = $policy->scope_type ?? 'all';
+        $scopeIds = $policy->scopes->pluck('scope_id')->map(fn($id) => (int) $id)->all();
+
+        if ($scopeType === 'all') {
+            return $employeeRows;
+        }
+
+        if (empty($scopeIds)) {
+            return collect();
+        }
+
+        return $employeeRows->filter(function ($employee) use ($scopeType, $scopeIds) {
+            return match ($scopeType) {
+                'employee' => in_array((int) $employee->id, $scopeIds, true),
+                'department' => in_array((int) ($employee->department_id ?? 0), $scopeIds, true),
+                'job_title' => in_array((int) ($employee->job_title_id ?? 0), $scopeIds, true),
+                'branch' => in_array((int) ($employee->branch_id ?? 0), $scopeIds, true),
+                default => false,
+            };
+        })->values();
     }
 }

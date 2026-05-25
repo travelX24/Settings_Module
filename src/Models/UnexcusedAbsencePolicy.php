@@ -41,6 +41,7 @@ class UnexcusedAbsencePolicy extends Model
         'early_leave_minutes' => 'integer',
         'recurrence_count' => 'integer',
         'is_active' => 'boolean',
+        'is_enabled' => 'boolean',
     ];
 
     /**
@@ -61,7 +62,11 @@ class UnexcusedAbsencePolicy extends Model
      */
     public function scopeActive($query)
     {
-        return $query->where('is_active', true);
+        return $query->where('is_active', true)
+            ->where(function ($q) {
+                $q->where('is_enabled', true)
+                    ->orWhereNull('is_enabled');
+            });
     }
 
     public function scopeForReasonType($query, string $reasonType)
@@ -72,7 +77,9 @@ class UnexcusedAbsencePolicy extends Model
     public function scopeInDayRange($query, int $days)
     {
         return $query->where('day_from', '<=', $days)
-            ->where('day_to', '>=', $days);
+            ->where(function ($q) use ($days) {
+                $q->whereNull('day_to')->orWhere('day_to', '>=', $days);
+            });
     }
 
     /**

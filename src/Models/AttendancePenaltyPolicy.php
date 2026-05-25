@@ -42,6 +42,7 @@ class AttendancePenaltyPolicy extends Model
         'deduction_value' => 'decimal:2',
         'suspension_days' => 'integer',
         'is_active' => 'boolean',
+        'is_enabled' => 'boolean',
     ];
 
     /**
@@ -62,10 +63,11 @@ class AttendancePenaltyPolicy extends Model
      */
   public function scopeActive($query)
 {
-    return $query->where(function ($q) {
-        $q->where('is_enabled', true)
-          ->orWhere('is_active', true);
-    });
+    return $query->where('is_active', true)
+        ->where(function ($q) {
+            $q->where('is_enabled', true)
+                ->orWhereNull('is_enabled');
+        });
 }
 
     public function scopeForViolation($query, string $violationType)

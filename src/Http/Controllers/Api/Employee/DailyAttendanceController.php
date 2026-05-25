@@ -88,6 +88,16 @@ class DailyAttendanceController extends Controller
             }
         }
 
+        AttendanceDailyLog::where('saas_company_id', $companyId)
+            ->where('employee_id', $employee->id)
+            ->whereBetween('attendance_date', [$fromStr, $toStr])
+            ->whereHas('details', fn ($query) => $query->whereNull('check_out_time'))
+            ->with(['employee', 'details'])
+            ->get()
+            ->each(function ($log) {
+                $log->save();
+            });
+
         $logs = $this->attendanceService->getLogs($companyId, $employee->id, $fromStr, $toStr);
 
         $logIds = $logs->pluck('id')->toArray();

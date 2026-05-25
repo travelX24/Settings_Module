@@ -164,7 +164,7 @@
                                         <x-ui.input label="{{ tr('Late Arrival') }}" type="number" wire:model.defer="newGroup.custom_grace_periods.late_arrival" class="!py-2 !text-xs !rounded-xl" hint="{{ tr('Minutes') }}" :disabled="!auth()->user()->can('settings.attendance.manage')" />
                                         <x-ui.input label="{{ tr('Early Departure') }}" type="number" wire:model.defer="newGroup.custom_grace_periods.early_departure" class="!py-2 !text-xs !rounded-xl" hint="{{ tr('Minutes') }}" :disabled="!auth()->user()->can('settings.attendance.manage')" />
                                     </div>
-                                    <x-ui.input label="{{ tr('Auto Checkout After') }}" type="number" wire:model.defer="newGroup.custom_grace_periods.auto_departure" class="!py-2 !text-xs !rounded-xl" hint="{{ tr('Minutes') }}" :disabled="!auth()->user()->can('settings.attendance.manage')" />
+                                                    <x-ui.input label="{{ tr('Auto Checkout After') }}" type="number" wire:model.defer="newGroup.custom_grace_periods.auto_departure" class="!py-2 !text-xs !rounded-xl" hint="{{ tr('Hours') }}" :disabled="!auth()->user()->can('settings.attendance.manage')" />
                                 </div>
                             @else
                                 <div class="py-6 text-center space-y-2">
