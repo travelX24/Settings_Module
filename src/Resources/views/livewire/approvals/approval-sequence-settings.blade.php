@@ -46,7 +46,7 @@
     <x-ui.flash-toast />
 
     {{-- Main Container Matching Organizational Structure --}}
-    <div class="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden mb-6">
+    <div class="bg-white rounded-xl shadow-sm border border-gray-200 overflow-visible mb-6">
 
         
         {{-- Tabs Header --}}
@@ -133,13 +133,26 @@
                     </x-ui.select>
                 </div>
 
+                {{-- Employee Status Filter --}}
+                <div class="sm:w-44">
+                    <label class="block text-xs font-bold text-gray-500 uppercase tracking-wider mb-1.5">
+                        {{ tr('Employee Status') }}
+                    </label>
+                    <x-ui.select wire:model.live="employeeStatus">
+                        @foreach(\Athka\Employees\Support\EmployeeStatus::filterOptions(true) as $option)
+                            <option value="{{ $option['value'] }}">{{ $option['label'] }}</option>
+                        @endforeach
+                    </x-ui.select>
+                </div>
+
                 {{-- Clear Filters Button --}}
                 <div
                     x-data="{
                         hasFilters() {
                             return ($wire.search && $wire.search.trim() !== '') ||
                                    ($wire.filterBranchId && $wire.filterBranchId !== '') ||
-                                   ($wire.filterStatus && $wire.filterStatus !== 'all');
+                                   ($wire.filterStatus && $wire.filterStatus !== 'all') ||
+                                   ($wire.employeeStatus && $wire.employeeStatus !== 'ACTIVE');
                         }
                     }"
                     x-show="hasFilters()"
@@ -184,23 +197,23 @@
                                                         <span class="px-2 py-0.5 text-xs font-semibold rounded-full bg-gray-100 text-gray-700 border border-gray-200 cursor-help transition-all hover:bg-gray-200">
                                                             {{ (int) ($p->affected_employees_count ?? 0) }}
                                                         </span>
-                                                        <div class="invisible group-hover:visible group-focus-within:visible opacity-0 group-hover:opacity-100 group-focus-within:opacity-100 transition-all duration-300 absolute z-[100] bottom-full left-1/2 -translate-x-1/2 mb-2 w-72">
-                                                            <div class="bg-white rounded-xl shadow-xl border border-gray-100 overflow-hidden">
+                                                        <div class="invisible group-hover:visible group-focus-within:visible opacity-0 group-hover:opacity-100 group-focus-within:opacity-100 transition-opacity duration-150 absolute z-[200] bottom-full left-1/2 -translate-x-1/2 mb-2 w-80 max-w-[calc(100vw-2rem)]">
+                                                            <div class="bg-white rounded-lg shadow-xl border border-gray-200 overflow-hidden">
                                                                 <div class="bg-gray-50 px-3 py-2 border-b border-gray-100 flex items-center justify-between gap-3">
                                                                     <span class="text-[10px] font-bold text-gray-500 uppercase tracking-wider">{{ tr('Employees') }}</span>
                                                                     <span class="text-[10px] font-black text-gray-700">{{ (int) ($p->affected_employees_count ?? 0) }}</span>
                                                                 </div>
-                                                                <div class="p-3 max-h-56 overflow-y-auto whitespace-normal">
-                                                                    <div class="grid grid-cols-1 gap-1.5">
+                                                                <div class="p-3 max-h-[164px] overflow-y-auto whitespace-normal">
+                                                                    <div class="grid grid-cols-1 gap-2">
                                                                         @forelse(($p->affected_employee_names ?? []) as $name)
-                                                                            <span class="px-2 py-1 rounded-lg text-[11px] font-medium bg-brand/5 text-brand border border-brand/10 truncate">{{ $name }}</span>
+                                                                            <span class="h-9 px-3 rounded-md text-[12px] font-semibold bg-gray-50 text-gray-800 border border-gray-200 truncate flex items-center">{{ $name }}</span>
                                                                         @empty
                                                                             <span class="text-xs text-gray-400">{{ tr('No employees found') }}</span>
                                                                         @endforelse
                                                                     </div>
                                                                 </div>
                                                             </div>
-                                                            <div class="w-3 h-3 bg-white border-r border-b border-gray-100 rotate-45 absolute -bottom-1.5 left-1/2 -translate-x-1/2"></div>
+                                                            <div class="w-3 h-3 bg-white border-r border-b border-gray-200 rotate-45 absolute -bottom-1.5 left-1/2 -translate-x-1/2"></div>
                                                         </div>
                                                     </div>
                                                 </div>
@@ -209,16 +222,19 @@
                                                     <span class="px-2 py-0.5 text-xs font-semibold rounded-full bg-gray-100 text-gray-700 border border-gray-200 cursor-help transition-all hover:bg-gray-200">{{ tr('Type') }}: {{ $p->scope_type }} ({{ (int) ($p->affected_employees_count ?? 0) }})</span>
                                                     
                                                     {{-- Tooltip Card --}}
-                                                    <div class="invisible group-hover:visible group-focus-within:visible opacity-0 group-hover:opacity-100 group-focus-within:opacity-100 transition-all duration-300 absolute z-[100] bottom-full left-1/2 -translate-x-1/2 mb-2 w-64">
-                                                        <div class="bg-white rounded-xl shadow-xl border border-gray-100 overflow-hidden">
-                                                            <div class="bg-gray-50 px-3 py-2 border-b border-gray-100 flex items-center gap-2">
-                                                                <i class="fas fa-users text-gray-400 text-xs"></i>
-                                                                <span class="text-[10px] font-bold text-gray-500 uppercase tracking-wider">{{ tr('Employees') }}</span>
+                                                    <div class="invisible group-hover:visible group-focus-within:visible opacity-0 group-hover:opacity-100 group-focus-within:opacity-100 transition-opacity duration-150 absolute z-[200] bottom-full left-1/2 -translate-x-1/2 mb-2 w-80 max-w-[calc(100vw-2rem)]">
+                                                        <div class="bg-white rounded-lg shadow-xl border border-gray-200 overflow-hidden">
+                                                            <div class="bg-gray-50 px-3 py-2 border-b border-gray-100 flex items-center justify-between gap-3">
+                                                                <div class="flex items-center gap-2">
+                                                                    <i class="fas fa-users text-gray-400 text-xs"></i>
+                                                                    <span class="text-[10px] font-bold text-gray-500 uppercase tracking-wider">{{ tr('Employees') }}</span>
+                                                                </div>
+                                                                <span class="text-[10px] font-black text-gray-700">{{ (int) ($p->affected_employees_count ?? 0) }}</span>
                                                             </div>
-                                                            <div class="p-3 max-h-56 overflow-y-auto">
-                                                                <div class="grid grid-cols-1 gap-1.5">
+                                                            <div class="p-3 max-h-[164px] overflow-y-auto whitespace-normal">
+                                                                <div class="grid grid-cols-1 gap-2">
                                                                     @forelse(($p->affected_employee_names ?? []) as $name)
-                                                                        <span class="px-2 py-1 rounded-lg text-[11px] font-medium bg-brand/5 text-brand border border-brand/10 truncate">{{ $name }}</span>
+                                                                        <span class="h-9 px-3 rounded-md text-[12px] font-semibold bg-gray-50 text-gray-800 border border-gray-200 truncate flex items-center">{{ $name }}</span>
                                                                     @empty
                                                                         <span class="text-xs text-gray-400">{{ tr('No employees found') }}</span>
                                                                     @endforelse
@@ -226,7 +242,7 @@
                                                             </div>
                                                             <div class="bg-brand/5 h-1 w-full"></div>
                                                         </div>
-                                                        <div class="w-3 h-3 bg-white border-r border-b border-gray-100 rotate-45 absolute -bottom-1.5 left-1/2 -translate-x-1/2"></div>
+                                                        <div class="w-3 h-3 bg-white border-r border-b border-gray-200 rotate-45 absolute -bottom-1.5 left-1/2 -translate-x-1/2"></div>
                                                     </div>
                                                 </div>
                                             @endif
@@ -256,23 +272,28 @@
                                         <span class="font-bold text-gray-700 bg-gray-100 px-2 py-0.5 rounded-lg text-xs cursor-help transition-all hover:bg-gray-200 whitespace-pre">{{ (int) $p->steps_count }}</span>
                                         
                                         {{-- Tooltip Card --}}
-                                        <div class="invisible group-hover:visible opacity-0 group-hover:opacity-100 transition-all duration-300 absolute z-[100] bottom-full left-1/2 -translate-x-1/2 mb-2 w-56">
-                                            <div class="bg-white rounded-xl shadow-xl border border-gray-100 overflow-hidden">
-                                                <div class="bg-gray-50 px-3 py-2 border-b border-gray-100 flex items-center gap-2">
-                                                    <i class="fas fa-route text-gray-400 text-xs"></i>
-                                                    <span class="text-[10px] font-bold text-gray-500 uppercase tracking-wider">{{ tr('Approval Sequence') }}</span>
+                                        <div class="invisible group-hover:visible opacity-0 group-hover:opacity-100 transition-opacity duration-150 absolute z-[200] bottom-full left-1/2 -translate-x-1/2 mb-2 w-80 max-w-[calc(100vw-2rem)]">
+                                            <div class="bg-white rounded-lg shadow-xl border border-gray-200 overflow-hidden">
+                                                <div class="bg-gray-50 px-3 py-2 border-b border-gray-100 flex items-center justify-between gap-3">
+                                                    <div class="flex items-center gap-2">
+                                                        <i class="fas fa-route text-gray-400 text-xs"></i>
+                                                        <span class="text-[10px] font-bold text-gray-500 uppercase tracking-wider">{{ tr('Approval Sequence') }}</span>
+                                                    </div>
+                                                    <span class="text-[10px] font-black text-gray-700">{{ (int) $p->steps_count }}</span>
                                                 </div>
-                                                <div class="p-3 space-y-2 max-h-48 overflow-y-auto no-scrollbar">
+                                                <div class="p-3 max-h-[164px] overflow-y-auto whitespace-normal">
+                                                    <div class="grid grid-cols-1 gap-2">
                                                     @foreach(explode("\n", $p->step_names_list) as $step)
-                                                        <div class="flex items-center gap-2 text-xs text-gray-700">
-                                                            <div class="w-1.5 h-1.5 rounded-full bg-brand/40"></div>
-                                                            <span class="font-medium">{{ $step }}</span>
+                                                        <div class="h-9 px-3 rounded-md text-[12px] font-semibold bg-gray-50 text-gray-800 border border-gray-200 flex items-center gap-2">
+                                                            <div class="w-1.5 h-1.5 rounded-full bg-brand/40 shrink-0"></div>
+                                                            <span class="truncate">{{ $step }}</span>
                                                         </div>
                                                     @endforeach
+                                                    </div>
                                                 </div>
                                                 <div class="bg-brand/5 h-1 w-full"></div>
                                             </div>
-                                            <div class="w-3 h-3 bg-white border-r border-b border-gray-100 rotate-45 absolute -bottom-1.5 left-1/2 -translate-x-1/2"></div>
+                                            <div class="w-3 h-3 bg-white border-r border-b border-gray-200 rotate-45 absolute -bottom-1.5 left-1/2 -translate-x-1/2"></div>
                                         </div>
                                     </div>
                                 </div>
@@ -289,8 +310,8 @@
             </div>
 
             {{-- ✅ TABLE VIEW (Default) --}}
-            <div x-show="view === 'table'" x-cloak>
-                <div class="overflow-x-auto">
+            <div x-show="view === 'table'" x-cloak x-data="{ employeeTooltip: null, approvalTooltip: null }">
+                <div class="overflow-x-auto overflow-y-visible">
                     <x-ui.table
                         :headers="[
                             tr('Policy Name'),
@@ -312,13 +333,26 @@
                                     @if(($p->scope_type ?? 'all') === 'all')
                                         <div class="flex items-center gap-2">
                                             <span class="px-2 py-1 text-xs font-semibold rounded-full bg-orange-50 text-[color:var(--brand-from)] border border-orange-200">{{ tr('All Employees') }}</span>
-                                            <div class="group relative inline-block" tabindex="0">
-                                                <span class="px-2 py-1 text-xs font-semibold rounded-full bg-gray-50 text-gray-700 border border-gray-200 cursor-help hover:bg-gray-100 transition-all">
+                                            <div
+                                                class="relative inline-block"
+                                                tabindex="0"
+                                                x-data="{ key: 'all-{{ $p->id }}', x: 0, y: 0, place() { const r = this.$refs.trigger.getBoundingClientRect(); this.x = Math.min(Math.max(r.left + (r.width / 2), 176), window.innerWidth - 176); this.y = r.top - 8; } }"
+                                                x-on:mouseenter="place(); employeeTooltip = key"
+                                                x-on:mouseleave="if (employeeTooltip === key) employeeTooltip = null"
+                                                x-on:focusin="place(); employeeTooltip = key"
+                                                x-on:focusout="if (employeeTooltip === key) employeeTooltip = null"
+                                            >
+                                                <span x-ref="trigger" class="px-2 py-1 text-xs font-semibold rounded-full bg-gray-50 text-gray-700 border border-gray-200 cursor-help hover:bg-gray-100 transition-all">
                                                     {{ (int) ($p->affected_employees_count ?? 0) }}
                                                 </span>
 
-                                                <div class="invisible group-hover:visible group-focus-within:visible opacity-0 group-hover:opacity-100 group-focus-within:opacity-100 transition-all duration-300 absolute z-[100] bottom-full left-1/2 -translate-x-1/2 mb-2 w-72">
-                                                    <div class="bg-white rounded-xl shadow-xl border border-gray-100 overflow-hidden">
+                                                <div
+                                                    x-show="employeeTooltip === key"
+                                                    x-cloak
+                                                    x-bind:style="`left: ${x}px; top: ${y}px; transform: translate(-50%, -100%);`"
+                                                    class="fixed z-[10050] w-80 max-w-[calc(100vw-2rem)]"
+                                                >
+                                                    <div class="bg-white rounded-lg shadow-xl border border-gray-200 overflow-hidden">
                                                         <div class="bg-gray-50 px-3 py-2 border-b border-gray-100 flex items-center justify-between gap-3">
                                                             <div class="flex items-center gap-2">
                                                                 <i class="fas fa-users text-gray-400 text-xs"></i>
@@ -326,10 +360,10 @@
                                                             </div>
                                                             <span class="text-[10px] font-black text-gray-700">{{ (int) ($p->affected_employees_count ?? 0) }}</span>
                                                         </div>
-                                                        <div class="p-3 max-h-56 overflow-y-auto whitespace-normal">
-                                                            <div class="grid grid-cols-1 gap-1.5">
+                                                        <div class="p-3 max-h-[164px] overflow-y-auto whitespace-normal">
+                                                            <div class="grid grid-cols-1 gap-2">
                                                                 @forelse(($p->affected_employee_names ?? []) as $name)
-                                                                    <span class="px-2 py-1 rounded-lg text-[11px] font-medium bg-brand/5 text-brand border border-brand/10 truncate">
+                                                                    <span class="h-9 px-3 rounded-md text-[12px] font-semibold bg-gray-50 text-gray-800 border border-gray-200 truncate flex items-center">
                                                                         {{ $name }}
                                                                     </span>
                                                                 @empty
@@ -339,20 +373,33 @@
                                                         </div>
                                                         <div class="bg-brand/5 h-1 w-full"></div>
                                                     </div>
-                                                    <div class="w-3 h-3 bg-white border-r border-b border-gray-100 rotate-45 absolute -bottom-1.5 left-1/2 -translate-x-1/2"></div>
+                                                    <div class="w-3 h-3 bg-white border-r border-b border-gray-200 rotate-45 absolute -bottom-1.5 left-1/2 -translate-x-1/2"></div>
                                                 </div>
                                             </div>
                                         </div>
                                     @else
                                         <div class="flex items-center gap-2">
-                                            <div class="group relative inline-block" tabindex="0">
-                                                <span class="text-gray-500 text-xs cursor-help border-b border-dotted border-gray-400 hover:text-brand transition-colors">
+                                            <div
+                                                class="relative inline-block"
+                                                tabindex="0"
+                                                x-data="{ key: 'scoped-{{ $p->id }}', x: 0, y: 0, place() { const r = this.$refs.trigger.getBoundingClientRect(); this.x = Math.min(Math.max(r.left + (r.width / 2), 176), window.innerWidth - 176); this.y = r.top - 8; } }"
+                                                x-on:mouseenter="place(); employeeTooltip = key"
+                                                x-on:mouseleave="if (employeeTooltip === key) employeeTooltip = null"
+                                                x-on:focusin="place(); employeeTooltip = key"
+                                                x-on:focusout="if (employeeTooltip === key) employeeTooltip = null"
+                                            >
+                                                <span x-ref="trigger" class="text-gray-500 text-xs cursor-help border-b border-dotted border-gray-400 hover:text-brand transition-colors">
                                                     ({{ (int) ($p->affected_employees_count ?? 0) }})
                                                 </span>
                                                 
                                                 {{-- Tooltip Card --}}
-                                                <div class="invisible group-hover:visible group-focus-within:visible opacity-0 group-hover:opacity-100 group-focus-within:opacity-100 transition-all duration-300 absolute z-[100] bottom-full left-1/2 -translate-x-1/2 mb-2 w-72">
-                                                    <div class="bg-white rounded-xl shadow-xl border border-gray-100 overflow-hidden">
+                                                <div
+                                                    x-show="employeeTooltip === key"
+                                                    x-cloak
+                                                    x-bind:style="`left: ${x}px; top: ${y}px; transform: translate(-50%, -100%);`"
+                                                    class="fixed z-[10050] w-80 max-w-[calc(100vw-2rem)]"
+                                                >
+                                                    <div class="bg-white rounded-lg shadow-xl border border-gray-200 overflow-hidden">
                                                         <div class="bg-gray-50 px-3 py-2 border-b border-gray-100 flex items-center justify-between gap-3">
                                                             <div class="flex items-center gap-2">
                                                                 <i class="fas fa-users text-gray-400 text-xs"></i>
@@ -360,10 +407,10 @@
                                                             </div>
                                                             <span class="text-[10px] font-black text-gray-700">{{ (int) ($p->affected_employees_count ?? 0) }}</span>
                                                         </div>
-                                                        <div class="p-3 max-h-56 overflow-y-auto whitespace-normal">
-                                                            <div class="grid grid-cols-1 gap-1.5">
+                                                        <div class="p-3 max-h-[164px] overflow-y-auto whitespace-normal">
+                                                            <div class="grid grid-cols-1 gap-2">
                                                                 @forelse(($p->affected_employee_names ?? []) as $name)
-                                                                    <span class="px-2 py-1 rounded-lg text-[11px] font-medium bg-brand/5 text-brand border border-brand/10 truncate">
+                                                                    <span class="h-9 px-3 rounded-md text-[12px] font-semibold bg-gray-50 text-gray-800 border border-gray-200 truncate flex items-center">
                                                                         {{ $name }}
                                                                     </span>
                                                                 @empty
@@ -373,7 +420,7 @@
                                                         </div>
                                                         <div class="bg-brand/5 h-1 w-full"></div>
                                                     </div>
-                                                    <div class="w-3 h-3 bg-white border-r border-b border-gray-100 rotate-45 absolute -bottom-1.5 left-1/2 -translate-x-1/2"></div>
+                                                    <div class="w-3 h-3 bg-white border-r border-b border-gray-200 rotate-45 absolute -bottom-1.5 left-1/2 -translate-x-1/2"></div>
                                                 </div>
                                             </div>
                                         </div>
@@ -381,29 +428,47 @@
                                 </td>
 
                                 <td class="py-4 px-6 align-top whitespace-nowrap text-sm">
-                                    <div class="group relative inline-block">
-                                        <span class="px-2 py-1 text-xs font-semibold rounded-full bg-gray-50 text-gray-700 border border-gray-200 cursor-help hover:bg-gray-100 transition-all">
+                                    <div
+                                        class="relative inline-block"
+                                        tabindex="0"
+                                        x-data="{ key: 'approvers-{{ $p->id }}', x: 0, y: 0, place() { const r = this.$refs.trigger.getBoundingClientRect(); this.x = Math.min(Math.max(r.left + (r.width / 2), 176), window.innerWidth - 176); this.y = r.top - 8; } }"
+                                        x-on:mouseenter="place(); approvalTooltip = key"
+                                        x-on:mouseleave="if (approvalTooltip === key) approvalTooltip = null"
+                                        x-on:focusin="place(); approvalTooltip = key"
+                                        x-on:focusout="if (approvalTooltip === key) approvalTooltip = null"
+                                    >
+                                        <span x-ref="trigger" class="px-2 py-1 text-xs font-semibold rounded-full bg-gray-50 text-gray-700 border border-gray-200 cursor-help hover:bg-gray-100 transition-all">
                                             {{ (int) $p->steps_count }}
                                         </span>
 
                                         {{-- Tooltip Card --}}
-                                        <div class="invisible group-hover:visible opacity-0 group-hover:opacity-100 transition-all duration-300 absolute z-[100] bottom-full left-1/2 -translate-x-1/2 mb-2 w-56">
-                                            <div class="bg-white rounded-xl shadow-xl border border-gray-100 overflow-hidden">
-                                                <div class="bg-gray-50 px-3 py-2 border-b border-gray-100 flex items-center gap-2">
-                                                    <i class="fas fa-route text-gray-400 text-xs"></i>
-                                                    <span class="text-[10px] font-bold text-gray-500 uppercase tracking-wider">{{ tr('Approval Sequence') }}</span>
+                                        <div
+                                            x-show="approvalTooltip === key"
+                                            x-cloak
+                                            x-bind:style="`left: ${x}px; top: ${y}px; transform: translate(-50%, -100%);`"
+                                            class="fixed z-[10050] w-80 max-w-[calc(100vw-2rem)]"
+                                        >
+                                            <div class="bg-white rounded-lg shadow-xl border border-gray-200 overflow-hidden">
+                                                <div class="bg-gray-50 px-3 py-2 border-b border-gray-100 flex items-center justify-between gap-3">
+                                                    <div class="flex items-center gap-2">
+                                                        <i class="fas fa-route text-gray-400 text-xs"></i>
+                                                        <span class="text-[10px] font-bold text-gray-500 uppercase tracking-wider">{{ tr('Approval Sequence') }}</span>
+                                                    </div>
+                                                    <span class="text-[10px] font-black text-gray-700">{{ (int) $p->steps_count }}</span>
                                                 </div>
-                                                <div class="p-3 space-y-2 max-h-48 overflow-y-auto no-scrollbar whitespace-normal text-right">
+                                                <div class="p-3 max-h-[164px] overflow-y-auto whitespace-normal">
+                                                    <div class="grid grid-cols-1 gap-2">
                                                     @foreach(explode("\n", $p->step_names_list) as $step)
-                                                        <div class="flex items-center gap-2 text-xs text-gray-700">
-                                                            <div class="w-1.5 h-1.5 rounded-full bg-brand/40"></div>
-                                                            <span class="font-medium">{{ $step }}</span>
+                                                        <div class="h-9 px-3 rounded-md text-[12px] font-semibold bg-gray-50 text-gray-800 border border-gray-200 flex items-center gap-2">
+                                                            <div class="w-1.5 h-1.5 rounded-full bg-brand/40 shrink-0"></div>
+                                                            <span class="truncate">{{ $step }}</span>
                                                         </div>
                                                     @endforeach
+                                                    </div>
                                                 </div>
                                                 <div class="bg-brand/5 h-1 w-full"></div>
                                             </div>
-                                            <div class="w-3 h-3 bg-white border-r border-b border-gray-100 rotate-45 absolute -bottom-1.5 left-1/2 -translate-x-1/2"></div>
+                                            <div class="w-3 h-3 bg-white border-r border-b border-gray-200 rotate-45 absolute -bottom-1.5 left-1/2 -translate-x-1/2"></div>
                                         </div>
                                     </div>
                                 </td>

@@ -9,6 +9,7 @@ use Athka\SystemSettings\Services\ApprovalSettingService;
 use Illuminate\Support\Str;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Schema;
+use Athka\Employees\Support\EmployeeStatus;
 
 class ApprovalSequenceSettings extends Component
 {
@@ -18,6 +19,7 @@ class ApprovalSequenceSettings extends Component
     public string $search = '';
     public string $filterStatus = 'all';
     public string $filterBranchId = '';
+    public string $employeeStatus = EmployeeStatus::ACTIVE;
     public bool $showModal = false;
     public ?int $editingId = null;
     public ?int $confirmedPolicyId = null;
@@ -26,12 +28,14 @@ class ApprovalSequenceSettings extends Component
     public function updatingTab() { $this->resetPage(); }
     public function updatingFilterStatus() { $this->resetPage(); }
     public function updatingFilterBranchId() { $this->resetPage(); }
+    public function updatingEmployeeStatus() { $this->resetPage(); }
 
     public function clearAllFilters()
     {
         $this->search = '';
         $this->filterStatus = 'all';
         $this->filterBranchId = '';
+        $this->employeeStatus = EmployeeStatus::ACTIVE;
         $this->resetPage();
     }
 
@@ -203,6 +207,7 @@ class ApprovalSequenceSettings extends Component
     {
         $companyId = auth()->user()->saas_company_id;
         $lookups = $this->approvalService->getLookups($companyId);
+        $lookups['employees'] = $this->employeeLookupForCompany($companyId);
 
         $policies = ApprovalPolicy::where('company_id', $companyId)
             ->where('operation_key', $this->tab)
@@ -272,6 +277,7 @@ class ApprovalSequenceSettings extends Component
                 'branch_id',
                 'department_id',
                 'job_title_id',
+                'status',
                 DB::raw($nameSelect . ' as name'),
             ]);
 
@@ -285,7 +291,45 @@ class ApprovalSequenceSettings extends Component
             $query->whereNull('deleted_at');
         }
 
+        if (Schema::hasColumn('employees', 'status') && $this->employeeStatus !== 'all') {
+            $query->where('status', $this->employeeStatus);
+        }
+
         return $query->orderBy('name')->get();
+    }
+
+    private function employeeLookupForCompany(int $companyId): array
+    {
+        if (!Schema::hasTable('employees')) {
+            return [];
+        }
+
+        $nameSelect = $this->employeeNameExpression();
+        $query = DB::table('employees')
+            ->select(['id', 'status', DB::raw($nameSelect . ' as name')]);
+
+        if (Schema::hasColumn('employees', 'saas_company_id')) {
+            $query->where('saas_company_id', $companyId);
+        } elseif (Schema::hasColumn('employees', 'company_id')) {
+            $query->where('company_id', $companyId);
+        }
+
+        if (Schema::hasColumn('employees', 'deleted_at')) {
+            $query->whereNull('deleted_at');
+        }
+
+        if (Schema::hasColumn('employees', 'status') && $this->employeeStatus !== 'all') {
+            $query->where('status', $this->employeeStatus);
+        }
+
+        return $query->orderBy('name')->get()->map(function ($employee) {
+            $row = (array) $employee;
+            if (($row['status'] ?? EmployeeStatus::ACTIVE) !== EmployeeStatus::ACTIVE) {
+                $row['name'] = $row['name'] . ' - ' . EmployeeStatus::label($row['status'] ?? null);
+            }
+
+            return $row;
+        })->toArray();
     }
 
     private function employeeNameExpression(): string

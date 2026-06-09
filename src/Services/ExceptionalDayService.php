@@ -3,6 +3,7 @@
 namespace Athka\SystemSettings\Services;
 
 use Athka\SystemSettings\Models\AttendanceExceptionalDay;
+use Athka\Employees\Support\EmployeeStatus;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Schema;
@@ -237,7 +238,7 @@ class ExceptionalDayService
     /**
      * Load scope options (departments, employees, etc) for dropdowns
      */
-    public function loadScopeOptions(int $companyId, string $locale = 'en', ?array $allowedBranchIds = null, ?array $parentDeptIds = null): array
+    public function loadScopeOptions(int $companyId, string $locale = 'en', ?array $allowedBranchIds = null, ?array $parentDeptIds = null, string $employeeStatus = EmployeeStatus::ACTIVE): array
     {
         $departments = [];
         $sections = [];
@@ -277,7 +278,7 @@ class ExceptionalDayService
             $branchCol = $this->employeeBranchColumn();
 
             $employees = DB::table('employees')
-                ->where('status', 'ACTIVE')
+                ->when($employeeStatus !== 'all', fn ($q) => $q->where('status', $employeeStatus))
                 ->when($companyCol, fn($q) => $q->where($companyCol, $companyId))
                 ->when($allowedBranchIds !== null, function ($q) use ($allowedBranchIds, $branchCol) {
                     if (!$branchCol) {
@@ -286,10 +287,18 @@ class ExceptionalDayService
                     }
                     $q->whereIn($branchCol, $allowedBranchIds);
                 })
-                ->select('id', DB::raw("{$nameExpr} as name"))
+                ->select('id', 'status', DB::raw("{$nameExpr} as name"))
                 ->orderByRaw("{$nameExpr} asc")
                 ->limit(300)
-                ->get()->toArray();
+                ->get()
+                ->map(function ($employee) {
+                    if (($employee->status ?? EmployeeStatus::ACTIVE) !== EmployeeStatus::ACTIVE) {
+                        $employee->name .= ' - ' . EmployeeStatus::label($employee->status);
+                    }
+
+                    return $employee;
+                })
+                ->toArray();
 
             $contractTypes = DB::table('employees')
                 ->where('saas_company_id', $companyId)

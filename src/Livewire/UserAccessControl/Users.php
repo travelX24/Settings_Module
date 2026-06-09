@@ -11,6 +11,7 @@ use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Str;
 use Athka\SystemSettings\Services\AccessControlService;
 use Athka\SystemSettings\Livewire\UserAccessControl\Traits\HandleBranchFilter;
+use Athka\Employees\Support\EmployeeStatus;
 
 use Livewire\Attributes\On;
 
@@ -24,13 +25,16 @@ class Users extends Component
     public $showPermModal = false;
     public $editingId = null;
     public $permUserId = null;
+    public string $employeeStatus = EmployeeStatus::ACTIVE;
 
     public function updatingSearch() { $this->resetPage(); }
+    public function updatingEmployeeStatus() { $this->resetPage(); }
 
     public function clearAllFilters()
     {
         $this->search = '';
         $this->filterBranchId = '';
+        $this->employeeStatus = EmployeeStatus::ACTIVE;
         $this->resetPage();
     }
 
@@ -80,7 +84,7 @@ class Users extends Component
             $this->reset(['name', 'email']);
             return;
         }
-        $emp = Employee::findOrFail($id);
+        $emp = Employee::withoutGlobalScope('active_only')->findOrFail($id);
         $this->name = $emp->name_ar ?? $emp->name_en;
         $this->email = $emp->email_work ?? $emp->email_personal ?? '';
     }
@@ -320,7 +324,7 @@ class Users extends Component
         $metadata = $this->uacService->getBranchMetadata($companyId);
         
         $users = User::where('saas_company_id', $companyId)
-            ->with(['roles', 'employee'])
+            ->with(['roles', 'employee' => fn ($employee) => $employee->withoutGlobalScope('active_only')])
             ->when($this->search, function ($query) {
                 $query->where(function ($q) {
                     $q->where('name', 'like', '%' . $this->search . '%')
@@ -329,7 +333,16 @@ class Users extends Component
             })
             ->when($this->filterBranchId, function ($query) use ($metadata) {
                 $query->whereHas('employee', function ($q) use ($metadata) {
+                    $q->withoutGlobalScope('active_only');
                     $q->where($metadata['col'], $this->filterBranchId);
+                });
+            })
+            ->when($this->employeeStatus !== 'all', function ($query) {
+                $query->where(function ($q) {
+                    $q->whereDoesntHave('employee', fn ($employee) => $employee->withoutGlobalScope('active_only'))
+                        ->orWhereHas('employee', fn ($employee) => $employee
+                            ->withoutGlobalScope('active_only')
+                            ->where('status', $this->employeeStatus));
                 });
             })
             ->paginate(10);
@@ -339,7 +352,9 @@ class Users extends Component
         // Detailed info for selected employee
         $selectedEmp = null;
         if ($this->selectedEmployeeId) {
-            $selectedEmp = Employee::with(['department', 'jobTitle'])->find($this->selectedEmployeeId);
+            $selectedEmp = Employee::withoutGlobalScope('active_only')
+                ->with(['department', 'jobTitle'])
+                ->find($this->selectedEmployeeId);
         }
 
         $primaryUserId = User::where('saas_company_id', $companyId)
@@ -356,7 +371,9 @@ class Users extends Component
                                ->whereIn('name', ['company-admin', 'system-admin', 'super-admin']);
                       });
                 })->get(),
-            'foundEmployees' => Employee::forCompany($companyId)
+            'foundEmployees' => Employee::withoutGlobalScope('active_only')
+                ->forCompany($companyId)
+                ->when($this->employeeStatus !== 'all', fn ($query) => $query->where('status', $this->employeeStatus))
                 ->where(function($query) {
                     $query->whereDoesntHave('user')
                         ->orWhere('id', $this->selectedEmployeeId);

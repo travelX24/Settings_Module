@@ -181,7 +181,16 @@
                             <h4 class="text-xs font-black text-gray-700 uppercase tracking-wider">{{ tr('Member Assignment') }}</h4>
                         </div>
 
-                        <div class="bg-orange-50/30 rounded-3xl border border-orange-100 overflow-hidden shadow-sm flex flex-col h-[280px]"
+                        <div>
+                            <div class="text-[11px] text-gray-500 mb-1 font-bold uppercase tracking-wider">{{ tr('Employee Status') }}</div>
+                            <x-ui.select wire:model.live="employeeStatus" :disabled="!auth()->user()->can('settings.attendance.manage')">
+                                @foreach(\Athka\Employees\Support\EmployeeStatus::filterOptions(true) as $option)
+                                    <option value="{{ $option['value'] }}">{{ $option['label'] }}</option>
+                                @endforeach
+                            </x-ui.select>
+                        </div>
+
+                        <div wire:key="group-employees-{{ $employeeStatus }}" class="bg-orange-50/30 rounded-3xl border border-orange-100 overflow-hidden shadow-sm flex flex-col h-[280px]"
                             x-data="{ 
                                 search: '', 
                                 selected: @entangle('newGroup.employee_ids').live,

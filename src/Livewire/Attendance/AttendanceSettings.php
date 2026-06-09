@@ -11,6 +11,7 @@ use Athka\SystemSettings\Services\AttendanceSettingService;
 use Athka\SystemSettings\Livewire\Attendance\Traits\HandlePenaltySettings;
 use Athka\SystemSettings\Livewire\Attendance\Traits\HandleGpsSettings;
 use Athka\SystemSettings\Livewire\Attendance\Traits\HandleGroupSettings;
+use Athka\Employees\Support\EmployeeStatus;
 
 class AttendanceSettings extends Component
 {
@@ -88,6 +89,7 @@ class AttendanceSettings extends Component
     public $policyTypes = [];
     public $absenceTypes = [];
     public $availableEmployees = [];
+    public string $employeeStatus = EmployeeStatus::ACTIVE;
     public $branches = [];
     public $geographicLocations = [];
     public $fingerprintDevices = [];
@@ -130,18 +132,7 @@ class AttendanceSettings extends Component
             'late_early' => tr('Late/Early Cumulative')
         ];
 
-        // Load Employees with localized names based on the Employee model directly
-        $isAr = app()->getLocale() === 'ar';
-        $this->availableEmployees = \Athka\Employees\Models\Employee::where('saas_company_id', $companyId)
-            ->get()
-            ->map(function($e) use ($isAr) {
-                $name = $isAr ? ($e->name_ar ?? $e->name_en) : ($e->name_en ?? $e->name_ar);
-                return [
-                    'id' => (string)$e->id,
-                    'name' => $name ?: tr('Unnamed Employee')
-                ];
-            })
-            ->toArray();
+        $this->loadAvailableEmployees($companyId);
 
         // Load Branches
         $this->branches = \Athka\Saas\Models\Branch::where('saas_company_id', $companyId)
@@ -149,6 +140,35 @@ class AttendanceSettings extends Component
             ->toArray();
 
         $this->refreshData();
+    }
+
+    public function updatedEmployeeStatus(): void
+    {
+        $this->loadAvailableEmployees((int) auth()->user()->saas_company_id);
+    }
+
+    private function loadAvailableEmployees(int $companyId): void
+    {
+        $isAr = app()->getLocale() === 'ar';
+
+        $this->availableEmployees = \Athka\Employees\Models\Employee::withoutGlobalScope('active_only')
+            ->where('saas_company_id', $companyId)
+            ->when($this->employeeStatus !== 'all', fn ($query) => $query->where('status', $this->employeeStatus))
+            ->get()
+            ->map(function ($employee) use ($isAr) {
+                $name = $isAr ? ($employee->name_ar ?? $employee->name_en) : ($employee->name_en ?? $employee->name_ar);
+                $label = $name ?: tr('Unnamed Employee');
+
+                if (($employee->status ?? EmployeeStatus::ACTIVE) !== EmployeeStatus::ACTIVE) {
+                    $label .= ' - ' . EmployeeStatus::label($employee->status);
+                }
+
+                return [
+                    'id' => (string) $employee->id,
+                    'name' => $label,
+                ];
+            })
+            ->toArray();
     }
 
     public function refreshData()
@@ -424,7 +444,11 @@ class AttendanceSettings extends Component
         $companyId = auth()->user()->saas_company_id;
         
         $groupsQuery = \Athka\SystemSettings\Models\EmployeeGroup::where('saas_company_id', $companyId)
-            ->with(['employees', 'allowedMethods', 'appliedPolicy']);
+            ->with([
+                'employees' => fn ($employees) => $employees->withoutGlobalScope('active_only'),
+                'allowedMethods',
+                'appliedPolicy',
+            ]);
 
         // Since EmployeeGroup doesn't have branch_id, we might not be able to filter by branch directly 
         // unless we join with employees and their departments, but that's complex for now.

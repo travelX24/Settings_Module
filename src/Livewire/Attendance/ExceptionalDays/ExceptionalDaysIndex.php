@@ -10,6 +10,7 @@ use Illuminate\Validation\Rule;
 use App\Services\ExcelExportService;
 use Livewire\Component;
 use Livewire\WithPagination;
+use Athka\Employees\Support\EmployeeStatus;
 
 class ExceptionalDaysIndex extends Component
 {
@@ -20,6 +21,7 @@ class ExceptionalDaysIndex extends Component
 
     public string $status = 'all';
     public string $search = '';
+    public string $employeeStatus = EmployeeStatus::ACTIVE;
 
     public string $deductionType = 'all';
     public ?float $minMultiplier = null;
@@ -125,6 +127,11 @@ class ExceptionalDaysIndex extends Component
     public function updatingStatus()
     {
         $this->resetPage();
+    }
+
+    public function updatedEmployeeStatus(): void
+    {
+        $this->form['include']['employees'] = [];
     }
     public function updatingSearch()
     {
@@ -1228,7 +1235,7 @@ class ExceptionalDaysIndex extends Component
 
         $allowedBranchIds = $this->exceptionalDayService->currentUserAllowedBranchIds($companyId);
         $parentDeptIds = $this->form['include']['departments'] ?? [];
-        $opts = $this->exceptionalDayService->loadScopeOptions($companyId, app()->getLocale(), $allowedBranchIds, $parentDeptIds);
+        $opts = $this->exceptionalDayService->loadScopeOptions($companyId, app()->getLocale(), $allowedBranchIds, $parentDeptIds, $this->employeeStatus);
 
         return view('settings-module::livewire.attendance.exceptional-days.index', [
             'rows' => $rows,

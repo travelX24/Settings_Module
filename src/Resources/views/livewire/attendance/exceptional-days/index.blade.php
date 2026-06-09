@@ -652,6 +652,13 @@
                             {{-- ✅ Employees mode --}}
                             @if (($form['scope_type'] ?? 'all') === 'employees')
                                 <div class="md:col-span-2">
+                                    <div class="text-xs text-gray-600 mb-1">{{ tr('Employee Status') }}</div>
+                                    <x-ui.select wire:model.live="employeeStatus" class="mb-3">
+                                        @foreach(\Athka\Employees\Support\EmployeeStatus::filterOptions(true) as $option)
+                                            <option value="{{ $option['value'] }}">{{ $option['label'] }}</option>
+                                        @endforeach
+                                    </x-ui.select>
+
                                     <div class="text-xs text-gray-600 mb-1">{{ tr('Employees') }}</div>
                                     <x-ui.select multiple wire:model.defer="form.include.employees">
                                         @foreach ($employeesOptions as $e)

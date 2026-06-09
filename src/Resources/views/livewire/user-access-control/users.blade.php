@@ -49,6 +49,17 @@
                             </x-ui.select>
                         </div>
                     @endif
+
+                    <div>
+                        <label class="block text-xs font-bold text-gray-500 uppercase tracking-wider mb-1.5">
+                            {{ tr('Employee Status') }}
+                        </label>
+                        <x-ui.select wire:model.live="employeeStatus">
+                            @foreach(\Athka\Employees\Support\EmployeeStatus::filterOptions(true) as $option)
+                                <option value="{{ $option['value'] }}">{{ $option['label'] }}</option>
+                            @endforeach
+                        </x-ui.select>
+                    </div>
                 </div>
             </div>
             <div class="flex items-center gap-3">
@@ -57,7 +68,8 @@
                     x-data="{
                         hasFilters() {
                             return ($wire.search && $wire.search.trim() !== '') ||
-                                   ($wire.filterBranchId && $wire.filterBranchId !== '');
+                                   ($wire.filterBranchId && $wire.filterBranchId !== '') ||
+                                   ($wire.employeeStatus && $wire.employeeStatus !== 'ACTIVE');
                         }
                     }"
                     x-show="hasFilters()"
@@ -145,6 +157,15 @@
                             <span class="text-xs font-bold text-gray-800">
                                 {{ $user->employee ? ($user->employee->name_ar ?? $user->employee->name_en) : '-' }}
                             </span>
+                            @if($user->employee)
+                                @php
+                                    $employeeStatus = strtoupper($user->employee->status ?? 'ACTIVE');
+                                    $employeeStatusColor = \Athka\Employees\Support\EmployeeStatus::color($employeeStatus);
+                                @endphp
+                                <span class="text-[10px] px-2 py-0.5 rounded-full bg-{{ $employeeStatusColor }}-50 text-{{ $employeeStatusColor }}-700 border border-{{ $employeeStatusColor }}-100 font-bold">
+                                    {{ \Athka\Employees\Support\EmployeeStatus::label($employeeStatus) }}
+                                </span>
+                            @endif
                         </div>
                         <div class="flex items-center justify-between py-2 border-b border-gray-50">
                             <span class="text-xs font-medium text-gray-500">{{ tr('Role') }}</span>
@@ -234,6 +255,15 @@
                             <span class="text-sm text-gray-900">
                                 {{ $user->employee ? ($user->employee->name_ar ?? $user->employee->name_en) : '-' }}
                             </span>
+                            @if($user->employee)
+                                @php
+                                    $employeeStatus = strtoupper($user->employee->status ?? 'ACTIVE');
+                                    $employeeStatusColor = \Athka\Employees\Support\EmployeeStatus::color($employeeStatus);
+                                @endphp
+                                <span class="mt-1 w-fit text-[10px] px-2 py-0.5 rounded-full bg-{{ $employeeStatusColor }}-50 text-{{ $employeeStatusColor }}-700 border border-{{ $employeeStatusColor }}-100 font-bold">
+                                    {{ \Athka\Employees\Support\EmployeeStatus::label($employeeStatus) }}
+                                </span>
+                            @endif
                             @php
                                 $bid = ($user->employee && $employeeBranchCol) ? $user->employee->{$employeeBranchCol} : null;
                                 $bname = $bid ? ($branchesById[$bid] ?? null) : null;
@@ -414,7 +444,7 @@
                             <option value="">{{ tr('Select Employee') }}</option>
                             @foreach($foundEmployees as $emp)
                                 <option value="{{ $emp->id }}" @selected((int) $selectedEmployeeId === (int) $emp->id)>
-                                    {{ $emp->name_ar ?? $emp->name_en }} - {{ $emp->employee_no }}
+                                    {{ $emp->name_ar ?? $emp->name_en }} - {{ $emp->employee_no }}{{ ($emp->status ?? 'ACTIVE') !== 'ACTIVE' ? ' - ' . \Athka\Employees\Support\EmployeeStatus::label($emp->status) : '' }}
                                 </option>
                             @endforeach
                         </x-ui.select>
