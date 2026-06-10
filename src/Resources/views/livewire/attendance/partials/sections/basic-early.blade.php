@@ -1,7 +1,7 @@
 <x-ui.card class="space-y-4 !p-6 border-none shadow-sm bg-white !rounded-3xl">
     <div class="flex items-center justify-between">
         <div class="flex items-center gap-3">
-            <div class="w-10 h-10 rounded-xl bg-orange-50 flex items-center justify-center text-[color:var(--brand-from)] border border-blue-100 shadow-sm">
+            <div class="w-10 h-10 rounded-xl bg-[rgb(var(--accent-orange-rgb)/0.08)] flex items-center justify-center text-[color:var(--accent-orange)] border border-[rgb(var(--accent-orange-rgb)/0.16)] shadow-sm">
                 <i class="fas fa-sign-out-alt text-lg"></i>
             </div>
             <div>
@@ -12,10 +12,10 @@
         <label class="flex items-center gap-3 cursor-pointer group bg-gray-50/50 px-4 py-2 rounded-xl border border-gray-100 hover:bg-white transition-all">
             <input type="checkbox" 
                 wire:model.live="basicEarlyPenalty.enabled"
-                class="w-4 h-4 text-blue-600 rounded border-gray-300 focus:ring-blue-500"
+                class="w-4 h-4 text-[color:var(--accent-orange)] rounded border-gray-300 focus:ring-[color:var(--accent-orange)]"
                 @cannot('settings.attendance.manage') disabled @endcannot
             >
-            <span class="text-xs font-bold text-gray-700 group-hover:text-blue-600 transition-colors">{{ tr('Activate Penalties') }}</span>
+            <span class="text-xs font-bold text-gray-700 group-hover:text-[color:var(--accent-orange)] transition-colors">{{ tr('Activate Penalties') }}</span>
         </label>
     </div>
 
@@ -64,7 +64,7 @@
                     />
                 </div>
             </div>
-            <p class="text-[10px] font-bold text-[color:var(--brand-from)]/70 italic px-1">
+            <p class="text-[10px] font-bold text-[color:var(--accent-orange)] opacity-70 italic px-1">
                 @if($basicEarlyPenalty['deduction_type'] === 'percentage')
                     <i class="fas fa-info-circle me-1"></i> {{ tr('Percentage of minute wage.') }}
                 @else
@@ -81,7 +81,7 @@
             wire:loading.attr="disabled"
             :arrow="false"
             :fullWidth="false"
-            class="!px-6 !py-2 !rounded-xl !bg-blue-600 hover:!bg-blue-700 cursor-pointer"
+            class="!px-6 !py-2 !rounded-xl !bg-[color:var(--accent-orange)] hover:!bg-[color:var(--accent-orange-hover)] cursor-pointer"
         >
             <span wire:loading.remove wire:target="saveBasicEarlyPenalty">
                 <i class="fas fa-save me-2"></i>

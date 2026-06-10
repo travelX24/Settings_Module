@@ -1,7 +1,7 @@
 <div class="space-y-6">
     <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3 px-1">
             <h3 class="text-base font-bold text-gray-800 flex items-center gap-2">
-                <span class="w-1 h-5 bg-[color:var(--brand-via)] rounded-full"></span>
+                <span class="w-1 h-5 bg-[color:var(--accent-orange)] rounded-full"></span>
                 {{ tr('Employee Groups Management') }}
             </h3>
 
@@ -61,7 +61,7 @@
                     </td>
                     <td class="px-6 py-4 whitespace-nowrap">
                         <div class="flex items-center gap-3">
-                            <div class="w-10 h-10 rounded-xl bg-gradient-to-br from-orange-50 to-pink-50 border border-purple-100 flex items-center justify-center text-[color:var(--brand-from)]">
+                            <div class="w-10 h-10 rounded-xl bg-[rgb(var(--accent-orange-rgb)/0.08)] border border-[rgb(var(--accent-orange-rgb)/0.16)] flex items-center justify-center text-[color:var(--accent-orange)]">
                                 <i class="fas fa-users text-sm"></i>
                             </div>
                             <span class="text-sm font-bold text-gray-800">{{ $group['name'] }}</span>
@@ -75,9 +75,9 @@
                         @php
                             $policyLabel  = $policyTypes[$group['policy']] ?? $group['policy'];
                             $policyCls = match($group['policy']) {
-                                'general' => 'bg-green-50 text-green-600 border-green-100',
-                                'special' => 'bg-orange-50 text-[color:var(--brand-from)] border-orange-100',
-                                'custom' => 'bg-purple-50 text-[color:var(--brand-from)] border-purple-100',
+                                'general' => 'bg-[rgb(16_185_129/0.12)] text-[color:var(--success)] border-[rgb(16_185_129/0.22)]',
+                                'special' => 'bg-[rgb(var(--accent-orange-rgb)/0.08)] text-[color:var(--accent-orange)] border-[rgb(var(--accent-orange-rgb)/0.16)]',
+                                'custom' => 'bg-[rgb(var(--accent-orange-rgb)/0.08)] text-[color:var(--accent-orange)] border-[rgb(var(--accent-orange-rgb)/0.16)]',
                                 default => 'bg-gray-50 text-gray-600 border-gray-100'
                             };
                         @endphp
@@ -115,7 +115,7 @@
                     <td class="px-6 py-4 whitespace-nowrap">
                         <div class="flex items-center justify-center gap-1">
                             @if(($group['tracking_mode'] ?? '') === 'automatic')
-                                <div class="px-2 py-0.5 rounded-lg border border-amber-100 bg-amber-50 text-amber-600 flex items-center gap-1 text-[9px] font-black whitespace-nowrap shadow-sm">
+                                <div class="px-2 py-0.5 rounded-lg border border-[rgb(245_158_11/0.22)] bg-[rgb(245_158_11/0.10)] text-[color:var(--warning)] flex items-center gap-1 text-[9px] font-black whitespace-nowrap shadow-sm">
                                     <i class="fas fa-magic scale-75"></i>
                                     {{ tr('Auto Prep') }}
                                 </div>
@@ -123,9 +123,9 @@
                                 @foreach($group['methods'] as $m)
                                     @php
                                         $methodMeta = match($m) {
-                                            'gps' => ['icon' => 'fa-map-pin', 'cls' => 'bg-orange-50 text-[color:var(--brand-from)] border-orange-100', 'label' => 'GPS'],
-                                            'nfc' => ['icon' => 'fa-wifi', 'cls' => 'bg-purple-50 text-[color:var(--brand-from)] border-purple-100', 'label' => 'NFC'],
-                                            'fingerprint' => ['icon' => 'fa-fingerprint', 'cls' => 'bg-orange-50 text-[color:var(--brand-from)] border-orange-100', 'label' => tr('Finger')],
+                                            'gps' => ['icon' => 'fa-map-pin', 'cls' => 'bg-[rgb(var(--accent-orange-rgb)/0.08)] text-[color:var(--accent-orange)] border-[rgb(var(--accent-orange-rgb)/0.16)]', 'label' => 'GPS'],
+                                            'nfc' => ['icon' => 'fa-wifi', 'cls' => 'bg-[rgb(var(--accent-orange-rgb)/0.08)] text-[color:var(--accent-orange)] border-[rgb(var(--accent-orange-rgb)/0.16)]', 'label' => 'NFC'],
+                                            'fingerprint' => ['icon' => 'fa-fingerprint', 'cls' => 'bg-[rgb(var(--accent-orange-rgb)/0.08)] text-[color:var(--accent-orange)] border-[rgb(var(--accent-orange-rgb)/0.16)]', 'label' => tr('Finger')],
                                             default => ['icon' => 'fa-check', 'cls' => 'bg-gray-50 text-gray-600 border-gray-100', 'label' => $m]
                                         };
                                     @endphp
@@ -140,10 +140,10 @@
                     <td class="px-6 py-4 text-end whitespace-nowrap">
                         @can('settings.attendance.manage')
                         <div class="flex items-center justify-end gap-2">
-                            <button wire:click="editGroup('{{ $group['id'] }}')" class="p-2 text-[color:var(--brand-from)] hover:bg-orange-50 rounded-xl transition-colors cursor-pointer">
+                            <button wire:click="editGroup('{{ $group['id'] }}')" class="p-2 text-[color:var(--accent-orange)] hover:bg-[rgb(var(--accent-orange-rgb)/0.08)] rounded-xl transition-colors cursor-pointer">
                                 <i class="fas fa-edit text-xs"></i>
                             </button>
-                            <button @click="$dispatch('open-confirm-delete-group', { id: '{{ $group['id'] }}' })" class="p-2 text-red-500 hover:bg-red-50 rounded-xl transition-colors cursor-pointer">
+                            <button @click="$dispatch('open-confirm-delete-group', { id: '{{ $group['id'] }}' })" class="p-2 text-[color:var(--error)] hover:bg-[rgb(239_68_68/0.10)] rounded-xl transition-colors cursor-pointer">
                                 <i class="fas fa-trash-alt text-xs"></i>
                             </button>
                         </div>

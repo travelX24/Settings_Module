@@ -1,6 +1,6 @@
 <div class="space-y-4">
     <h3 class="text-base font-bold text-gray-800 flex items-center gap-2 px-1">
-        <span class="w-1 h-5 bg-[color:var(--brand-via)] rounded-full"></span>
+        <span class="w-1 h-5 bg-[color:var(--accent-orange)] rounded-full"></span>
         {{ tr('Preparation Methods') }}
     </h3>
     <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
@@ -9,11 +9,11 @@
             <div class="flex items-center justify-between mb-4">
                 <div class="w-10 h-10 bg-gray-50 border border-gray-100 text-gray-500 rounded-xl flex items-center justify-center text-lg"><i class="fas {{ $meta['icon'] }}"></i></div>
                 @can('settings.attendance.manage')
-                <button wire:click="togglePrepMethod('{{ $key }}')" class="w-11 h-6 rounded-full transition-all relative border cursor-pointer {{ $prepMethods[$key]['enabled'] ? 'bg-[color:var(--brand-via)] border-[color:var(--brand-via)]' : 'bg-gray-200 border-gray-200' }}">
+                <button wire:click="togglePrepMethod('{{ $key }}')" class="w-11 h-6 rounded-full transition-all relative border cursor-pointer {{ $prepMethods[$key]['enabled'] ? 'bg-[color:var(--accent-orange)] border-[color:var(--accent-orange)]' : 'bg-gray-200 border-gray-200' }}">
                     <div class="absolute top-0.5 w-5 h-5 bg-white rounded-full shadow-sm transition-all {{ $prepMethods[$key]['enabled'] ? ($isRtl ? 'right-5.5' : 'left-5.5') : ($isRtl ? 'right-0.5' : 'left-0.5') }}"></div>
                 </button>
                 @else
-                <button disabled class="w-11 h-6 rounded-full transition-all relative border cursor-not-allowed opacity-60 {{ $prepMethods[$key]['enabled'] ? 'bg-[color:var(--brand-via)] border-[color:var(--brand-via)]' : 'bg-gray-200 border-gray-200' }}">
+                <button disabled class="w-11 h-6 rounded-full transition-all relative border cursor-not-allowed opacity-60 {{ $prepMethods[$key]['enabled'] ? 'bg-[color:var(--accent-orange)] border-[color:var(--accent-orange)]' : 'bg-gray-200 border-gray-200' }}">
                     <div class="absolute top-0.5 w-5 h-5 bg-white rounded-full shadow-sm {{ $prepMethods[$key]['enabled'] ? ($isRtl ? 'right-5.5' : 'left-5.5') : ($isRtl ? 'right-0.5' : 'left-0.5') }}"></div>
                 </button>
                 @endcan
@@ -25,12 +25,12 @@
                     @if($key === 'gps')
                         <button wire:click="openSavedLocationsModal" class="font-bold text-gray-500 hover:text-gray-700 transition-colors cursor-pointer">{{ tr('View Saved') }}</button>
                         @can('settings.attendance.manage')
-                        <button wire:click="openGpsModal" class="font-bold text-[color:var(--brand-via)] hover:underline cursor-pointer">{{ tr('Add') }}</button>
+                        <button wire:click="openGpsModal" class="font-bold text-[color:var(--accent-orange)] hover:underline cursor-pointer">{{ tr('Add') }}</button>
                         @endcan
                     @else
                         <button wire:click="$set('showSaved{{ ucfirst($key) }}Modal', true)" class="font-bold text-gray-500 hover:text-gray-700 transition-colors cursor-pointer">{{ tr('View Saved') }}</button>
                         @can('settings.attendance.manage')
-                        <button wire:click="openDeviceModal('{{ $key }}')" class="font-bold text-[color:var(--brand-via)] hover:underline cursor-pointer">{{ tr('Add') }}</button>
+                        <button wire:click="openDeviceModal('{{ $key }}')" class="font-bold text-[color:var(--accent-orange)] hover:underline cursor-pointer">{{ tr('Add') }}</button>
                         @endcan
                     @endif
                 </div>

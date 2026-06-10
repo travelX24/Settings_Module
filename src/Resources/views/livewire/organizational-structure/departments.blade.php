@@ -12,8 +12,8 @@
     {{-- Statistics Bar --}}
     <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 mb-8">
         {{-- Total Departments --}}
-        <div class="bg-white rounded-2xl p-4 shadow-sm border border-gray-100 flex items-center gap-4 group hover:border-[color:var(--brand-via)]/30 transition-all duration-300">
-            <div class="w-12 h-12 bg-blue-50 rounded-xl flex items-center justify-center text-[color:var(--brand-from)] group-hover:bg-blue-600 group-hover:text-white transition-all duration-500 shadow-sm">
+        <div class="bg-white rounded-2xl p-4 shadow-sm border border-gray-100 flex items-center gap-4 group hover:border-[color:var(--accent-orange)]/30 transition-all duration-300">
+            <div class="w-12 h-12 bg-[color:var(--accent-orange)]/10 rounded-xl flex items-center justify-center text-[color:var(--accent-orange)] group-hover:bg-[color:var(--accent-orange)] group-hover:text-white transition-all duration-500 shadow-sm">
                 <i class="fas fa-building text-xl"></i>
             </div>
             <div>
@@ -23,9 +23,9 @@
         </div>
 
         {{-- Status Summary --}}
-        <div class="bg-white rounded-2xl p-4 shadow-sm border border-gray-100 flex items-center justify-around group hover:border-[color:var(--brand-via)]/30 transition-all duration-300">
+        <div class="bg-white rounded-2xl p-4 shadow-sm border border-gray-100 flex items-center justify-around group hover:border-[color:var(--accent-orange)]/30 transition-all duration-300">
             <div class="text-center">
-                <p class="text-[9px] font-bold text-green-500 uppercase">{{ tr('Active') }}</p>
+                <p class="text-[9px] font-bold text-[color:var(--success)] uppercase">{{ tr('Active') }}</p>
                 <p class="text-lg font-black text-gray-900">{{ $stats['active'] ?? 0 }}</p>
             </div>
             <div class="w-px h-8 bg-gray-100"></div>
@@ -36,14 +36,14 @@
         </div>
 
         {{-- Hierarchy --}}
-        <div class="bg-white rounded-2xl p-4 shadow-sm border border-gray-100 flex items-center justify-around group hover:border-[color:var(--brand-via)]/30 transition-all duration-300">
+        <div class="bg-white rounded-2xl p-4 shadow-sm border border-gray-100 flex items-center justify-around group hover:border-[color:var(--accent-orange)]/30 transition-all duration-300">
             <div class="text-center">
-                <p class="text-[9px] font-bold text-amber-600 uppercase">{{ tr('Root') }}</p>
+                <p class="text-[9px] font-bold text-[color:var(--warning)] uppercase">{{ tr('Root') }}</p>
                 <p class="text-lg font-black text-gray-900">{{ $stats['root'] ?? 0 }}</p>
             </div>
             <div class="w-px h-8 bg-gray-100"></div>
             <div class="text-center">
-                <p class="text-[9px] font-bold text-[color:var(--brand-from)] uppercase">{{ tr('Sub') }}</p>
+                <p class="text-[9px] font-bold text-[color:var(--accent-orange)] uppercase">{{ tr('Sub') }}</p>
                 <p class="text-lg font-black text-gray-900">{{ $stats['sub'] ?? 0 }}</p>
             </div>
         </div>
@@ -64,7 +64,7 @@
                             wire:model.live.debounce.300ms="search"
                             placeholder="{{ tr('Search departments...') }}"
                             class="w-full px-4 py-2.5 ps-10 text-sm rounded-xl border border-gray-200 bg-white shadow-sm placeholder-gray-400 text-gray-900
-                                   focus:outline-none focus:ring-2 focus:ring-[color:var(--brand-via)]/20 focus:border-[color:var(--brand-via)]
+                                   focus:outline-none focus:ring-2 focus:ring-[color:var(--accent-orange)]/20 focus:border-[color:var(--accent-orange)]
                                    transition"
                         />
                     </div>
@@ -206,7 +206,7 @@
                                     <span class="text-gray-500">{{ tr('Employees') }}</span>
                                     <button
                                         wire:click="$dispatch('open-employees-modal', { type: 'department', id: {{ $department->id }} })"
-                                        class="font-bold text-[color:var(--brand-via)] hover:text-[color:var(--brand-via)]/80 hover:underline"
+                                        class="font-bold text-[color:var(--accent-orange)] hover:text-[color:var(--accent-orange-hover)] hover:underline"
                                     >
                                         {{ $department->employees_count_display ?? 0 }}
                                     </button>
@@ -219,7 +219,7 @@
                                             <div :class="expanded ? 'whitespace-normal break-words' : 'line-clamp-2'" class="transition-all duration-300">
                                                 {{ $department->description }}
                                             </div>
-                                            <button @click="expanded = !expanded" class="text-xs font-semibold text-[color:var(--brand-via)] hover:underline mt-1 focus:outline-none">
+                                            <button @click="expanded = !expanded" class="text-xs font-semibold text-[color:var(--accent-orange)] hover:underline mt-1 focus:outline-none">
                                                 <span x-show="!expanded">{{ tr('Read more') }}</span>
                                                 <span x-show="expanded" x-cloak>{{ tr('Show less') }}</span>
                                             </button>
@@ -232,7 +232,7 @@
                                 </div>
 
                                 <div class="pt-2">
-                                    <span class="px-2 py-1 text-xs font-semibold rounded-full {{ $department->is_active ? 'bg-green-100 text-green-800' : 'bg-gray-100 text-gray-800' }}">
+                                    <span class="px-2 py-1 text-xs font-semibold rounded-full {{ $department->is_active ? 'bg-[color:var(--success)]/10 text-[color:var(--success)]' : 'bg-gray-100 text-gray-800' }}">
                                         {{ $department->is_active ? tr('Active') : tr('Inactive') }}
                                     </span>
                                 </div>
@@ -301,7 +301,7 @@
                             <td class="py-4 px-6 align-top whitespace-nowrap">
                                 <button
                                     wire:click="$dispatch('open-employees-modal', { type: 'department', id: {{ $department->id }} })"
-                                    class="text-sm font-semibold text-[color:var(--brand-via)] hover:text-[color:var(--brand-via)]/80 hover:underline cursor-pointer"
+                                    class="text-sm font-semibold text-[color:var(--accent-orange)] hover:text-[color:var(--accent-orange-hover)] hover:underline cursor-pointer"
                                 >
                                     {{ $department->employees_count_display ?? 0 }}
                                 </button>
@@ -313,7 +313,7 @@
                                         <div :class="expanded ? 'whitespace-normal break-words' : 'line-clamp-2'" class="transition-all duration-300">
                                             {{ $department->description }}
                                         </div>
-                                        <button @click="expanded = !expanded" class="text-xs font-semibold text-[color:var(--brand-via)] hover:underline mt-1 focus:outline-none">
+                                        <button @click="expanded = !expanded" class="text-xs font-semibold text-[color:var(--accent-orange)] hover:underline mt-1 focus:outline-none">
                                             <span x-show="!expanded">{{ tr('Read more') }}</span>
                                             <span x-show="expanded" x-cloak>{{ tr('Show less') }}</span>
                                         </button>
@@ -327,7 +327,7 @@
 
                             <td class="py-4 px-6 align-top whitespace-nowrap">
                                 <div>
-                                    <span class="px-2 py-1 text-xs font-semibold rounded-full {{ $department->is_active ? 'bg-green-100 text-green-800' : 'bg-gray-100 text-gray-800' }}">
+                                    <span class="px-2 py-1 text-xs font-semibold rounded-full {{ $department->is_active ? 'bg-[color:var(--success)]/10 text-[color:var(--success)]' : 'bg-gray-100 text-gray-800' }}">
                                         {{ $department->is_active ? tr('Active') : tr('Inactive') }}
                                     </span>
                                 </div>
@@ -441,7 +441,7 @@
                                         type="button"
                                         wire:key="departments-page-{{ $page }}"
                                         wire:click="gotoPage({{ $page }}, 'page')"
-                                        class="px-3 py-2 text-sm font-medium border rounded-md transition-colors duration-200 min-w-[40px] {{ $currentPage === $page ? 'bg-[color:var(--brand-via)] text-white border-[color:var(--brand-via)]' : 'bg-white text-gray-700 border-gray-300 hover:bg-gray-50 cursor-pointer' }}"
+                                        class="px-3 py-2 text-sm font-medium border rounded-md transition-colors duration-200 min-w-[40px] {{ $currentPage === $page ? 'bg-[color:var(--accent-orange)] text-white border-[color:var(--accent-orange)]' : 'bg-white text-gray-700 border-gray-300 hover:bg-gray-50 cursor-pointer' }}"
                                     >
                                         {{ $page }}
                                     </button>
@@ -567,7 +567,7 @@
                                 type="checkbox"
                                 wire:model="is_active"
                                 id="is_active"
-                                class="w-5 h-5 text-[color:var(--brand-via)] border-gray-300 rounded focus:ring-[color:var(--brand-via)] focus:ring-2 disabled:opacity-50"
+                                class="w-5 h-5 text-[color:var(--accent-orange)] border-gray-300 rounded focus:ring-[color:var(--accent-orange)] focus:ring-2 disabled:opacity-50"
                                 @cannot('settings.organizational.manage') disabled @endcannot
                             />
                             <label for="is_active" class="text-sm font-semibold text-gray-700 cursor-pointer">

@@ -1,7 +1,7 @@
 <x-ui.modal wire:model="showGpsModal" maxWidth="5xl">
     <x-slot:title>
         <div class="flex items-center gap-3">
-            <div class="w-10 h-10 bg-blue-50 text-blue-600 rounded-xl flex items-center justify-center text-lg border border-blue-100 shadow-sm"><i class="fas fa-map-marked-alt"></i></div>
+            <div class="w-10 h-10 bg-[rgb(var(--accent-orange-rgb)/0.08)] text-[color:var(--accent-orange)] rounded-xl flex items-center justify-center text-lg border border-[rgb(var(--accent-orange-rgb)/0.16)] shadow-sm"><i class="fas fa-map-marked-alt"></i></div>
             <div>
                 <h3 class="font-bold text-gray-900 text-lg leading-tight">{{ tr('Select Geographic Location') }}</h3>
                 <p class="text-[10px] text-gray-400 font-bold uppercase tracking-widest">{{ tr('Interactive Map Picker') }}</p>
@@ -27,11 +27,11 @@
                             <label class="text-[10px] font-black text-gray-400 uppercase tracking-widest">{{ tr('Location By') }}</label>
                             <div class="flex gap-4">
                                 <label class="flex items-center gap-2 cursor-pointer">
-                                    <input type="radio" wire:model.live="gpsTarget" value="branch" class="w-3.5 h-3.5 text-[color:var(--brand-via)] border-gray-300">
+                                    <input type="radio" wire:model.live="gpsTarget" value="branch" class="w-3.5 h-3.5 text-[color:var(--accent-orange)] border-gray-300">
                                     <span class="text-xs font-bold text-gray-600">{{ tr('Branch') }}</span>
                                 </label>
                                 <label class="flex items-center gap-2 cursor-pointer">
-                                    <input type="radio" wire:model.live="gpsTarget" value="groups" class="w-3.5 h-3.5 text-[color:var(--brand-via)] border-gray-300">
+                                    <input type="radio" wire:model.live="gpsTarget" value="groups" class="w-3.5 h-3.5 text-[color:var(--accent-orange)] border-gray-300">
                                     <span class="text-xs font-bold text-gray-600">{{ tr('Employee Group') }}</span>
                                 </label>
                             </div>
@@ -59,10 +59,10 @@
                     <div class="p-4 bg-white rounded-2xl border border-gray-100 shadow-sm space-y-3 relative overflow-hidden">
                         {{-- Loading Overlay --}}
                         <div x-show="isFetching" x-transition class="absolute inset-0 bg-white/60 backdrop-blur-[1px] z-10 flex items-center justify-center">
-                            <i class="fas fa-circle-notch fa-spin text-blue-500"></i>
+                            <i class="fas fa-circle-notch fa-spin text-[color:var(--accent-orange)]"></i>
                         </div>
 
-                        <h5 class="text-[9px] font-black text-blue-500 uppercase tracking-widest border-b border-gray-50 pb-2 mb-2">{{ tr('Location Metadata') }}</h5>
+                        <h5 class="text-[9px] font-black text-[color:var(--accent-orange)] uppercase tracking-widest border-b border-gray-50 pb-2 mb-2">{{ tr('Location Metadata') }}</h5>
                         
                         <div class="grid grid-cols-2 gap-3">
                             <div>
@@ -93,7 +93,7 @@
                         {{-- Search Box Overlay --}}
                         <div class="absolute top-4 left-4 right-4 z-10 max-w-sm">
                             <div class="relative shadow-lg rounded-xl">
-                                <input id="pac-input" type="text" placeholder="{{ tr('Search for a location') }}" class="w-full pl-10 pr-4 py-3 rounded-xl border-0 focus:ring-2 focus:ring-blue-500 shadow-sm text-sm" />
+                                <input id="pac-input" type="text" placeholder="{{ tr('Search for a location') }}" class="w-full pl-10 pr-4 py-3 rounded-xl border-0 focus:ring-2 focus:ring-[color:var(--accent-orange)] shadow-sm text-sm" />
                                 <i class="fas fa-search absolute left-3.5 top-3.5 text-gray-400"></i>
                             </div>
                         </div>
@@ -102,12 +102,12 @@
                         <div class="absolute bottom-6 left-1/2 -translate-x-1/2 bg-white/90 backdrop-blur-md px-6 py-3 rounded-full shadow-lg border border-gray-200 flex items-center gap-4 z-10 w-3/4 max-w-md transition-all hover:scale-105">
                             <span class="text-xs font-bold text-gray-600 whitespace-nowrap">{{ tr('Geofence Radius') }}</span>
                             <div class="flex-1 relative flex items-center">
-                                <i class="fas fa-bullseye text-[color:var(--brand-via)] absolute left-0 text-xs"></i>
-                                <input type="range" class="w-full h-1.5 bg-gray-200 rounded-lg appearance-none cursor-pointer accent-[color:var(--brand-via)] ml-5" 
+                                <i class="fas fa-bullseye text-[color:var(--accent-orange)] absolute left-0 text-xs"></i>
+                                <input type="range" class="w-full h-1.5 bg-gray-200 rounded-lg appearance-none cursor-pointer accent-[color:var(--accent-orange)] ml-5" 
                                     min="10" max="1000" step="10" x-model="radius" @input="updateCircle()"
                                 >
                             </div>
-                            <span class="text-xs font-black text-[color:var(--brand-via)] w-12 text-end" x-text="radius + 'm'"></span>
+                            <span class="text-xs font-black text-[color:var(--accent-orange)] w-12 text-end" x-text="radius + 'm'"></span>
                         </div>
                     </div>
                     
@@ -122,11 +122,11 @@
     <x-slot:footer>
         <div class="flex items-center justify-between w-full">
             <span class="text-xs text-gray-400">
-                <i class="fas fa-satellite-dish me-1 animate-pulse text-green-500"></i> {{ tr('GPS Signal Active') }}
+                <i class="fas fa-satellite-dish me-1 animate-pulse text-[color:var(--success)]"></i> {{ tr('GPS Signal Active') }}
             </span>
             <div class="flex gap-3">
                 <x-ui.secondary-button wire:click="$set('showGpsModal', false)">{{ tr('Cancel') }}</x-ui.secondary-button>
-                <x-ui.brand-button wire:click="saveGpsLocation" class="!px-8 !rounded-xl shadow-lg shadow-blue-100">{{ $isEditing ? tr('Update Location') : tr('Save Location') }}</x-ui.brand-button>
+                <x-ui.brand-button wire:click="saveGpsLocation" class="!px-8 !rounded-xl shadow-[0_10px_20px_rgb(var(--accent-orange-rgb)/0.20)]">{{ $isEditing ? tr('Update Location') : tr('Save Location') }}</x-ui.brand-button>
             </div>
         </div>
     </x-slot:footer>

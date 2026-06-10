@@ -12,17 +12,16 @@
     @endsection
 
     @section('topbar-actions')
-        <div class="flex w-full {{ $isRtl ? 'justify-end' : 'justify-start' }}"> <x-ui.secondary-button
-                href="{{ \Illuminate\Support\Facades\Route::has('company-admin.settings.attendance')
-                    ? route('company-admin.settings.attendance')
-                    : (\Illuminate\Support\Facades\Route::has('company-admin.settings.general')
-                        ? route('company-admin.settings.general')
-                        : url('/company-admin/settings')) }}"
-                :arrow="false" :fullWidth="false" class="!px-4 !py-2 !text-sm !rounded-xl !gap-2 cursor-pointer">
-                <i class="fas {{ $isRtl ? 'fa-arrow-right' : 'fa-arrow-left' }} text-xs"></i>
-                <span>{{ tr('Back') }}</span>
-            </x-ui.secondary-button>
-        </div>
+        <x-ui.secondary-button
+            href="{{ \Illuminate\Support\Facades\Route::has('company-admin.settings.attendance')
+                ? route('company-admin.settings.attendance')
+                : (\Illuminate\Support\Facades\Route::has('company-admin.settings.general')
+                    ? route('company-admin.settings.general')
+                    : url('/company-admin/settings')) }}"
+            :arrow="false" :fullWidth="false" class="!px-4 !py-2 !text-sm !rounded-xl !gap-2 cursor-pointer">
+            <i class="fas {{ $isRtl ? 'fa-arrow-right' : 'fa-arrow-left' }} text-xs"></i>
+            <span>{{ tr('Back') }}</span>
+        </x-ui.secondary-button>
     @endsection
 
     <div class="space-y-6">
@@ -78,7 +77,7 @@
                             <x-ui.secondary-button type="button"
                                 onclick="window.dispatchEvent(new CustomEvent('open-confirm-exceptional-day-bulk-delete'));"
                                 :arrow="false" :fullWidth="false"
-                                class="!px-4 !py-2 !text-sm !rounded-xl !gap-2 !text-red-600 cursor-pointer">
+                                class="!px-4 !py-2 !text-sm !rounded-xl !gap-2 !text-[color:var(--error)] cursor-pointer">
                                 <i class="fas fa-trash text-xs"></i>
                                 <span>{{ tr('Delete Selected') }}</span>
                             </x-ui.secondary-button>
@@ -95,7 +94,7 @@
 
                 <div class="md:col-span-12">
                     <div class="flex items-center gap-2 text-xs font-semibold text-gray-700">
-                        <i class="fas fa-calendar-alt text-[11px] text-[color:var(--brand-via)]"></i>
+                        <i class="fas fa-calendar-alt text-[11px] text-[color:var(--accent-orange)]"></i>
                         <span>{{ tr('Calendar Navigation') }}</span>
                     </div>
                     <div class="mt-1 text-[11px] text-gray-500">
@@ -399,14 +398,14 @@
                             <div class="flex justify-center">
                                 @can('settings.attendance.manage')
                                     <button wire:click="toggleActive({{ $row->id }})"
-                                        class="w-9 h-4.5 rounded-full p-1 transition-all relative cursor-pointer {{ $row->is_active ? 'bg-green-500' : 'bg-gray-200' }}">
+                                        class="w-9 h-4.5 rounded-full p-1 transition-all relative cursor-pointer {{ $row->is_active ? 'bg-[color:var(--success)]' : 'bg-gray-200' }}">
                                         <div
                                             class="w-2.5 h-2.5 bg-white rounded-full shadow-sm transition-all {{ $row->is_active ? (app()->getLocale() == 'ar' ? 'mr-4.5' : 'ml-4.5') : '' }}">
                                         </div>
                                     </button>
                                 @else
                                     <button disabled
-                                        class="w-9 h-4.5 rounded-full p-1 transition-all relative cursor-not-allowed opacity-50 {{ $row->is_active ? 'bg-green-500' : 'bg-gray-200' }}">
+                                        class="w-9 h-4.5 rounded-full p-1 transition-all relative cursor-not-allowed opacity-50 {{ $row->is_active ? 'bg-[color:var(--success)]' : 'bg-gray-200' }}">
                                         <div
                                             class="w-2.5 h-2.5 bg-white rounded-full shadow-sm transition-all {{ $row->is_active ? (app()->getLocale() == 'ar' ? 'mr-4.5' : 'ml-4.5') : '' }}">
                                         </div>
@@ -420,13 +419,13 @@
                                 <x-ui.actions-menu>
                                     <x-ui.dropdown-item wire:click="openEdit({{ $row->id }})"
                                         class="cursor-pointer">
-                                        <i class="fas fa-edit me-2 text-[color:var(--brand-from)]"></i> {{ tr('Edit') }}
+                                        <i class="fas fa-edit me-2 text-[color:var(--accent-orange)]"></i> {{ tr('Edit') }}
                                     </x-ui.dropdown-item>
 
                                     <x-ui.dropdown-item danger
                                         onclick="window.dispatchEvent(new CustomEvent('open-confirm-exceptional-day-delete', { detail: { id: {{ $row->id }} } }));"
                                         class="cursor-pointer">
-                                        <i class="fas fa-trash-alt me-2 text-red-500"></i> {{ tr('Delete') }}
+                                        <i class="fas fa-trash-alt me-2 text-[color:var(--error)]"></i> {{ tr('Delete') }}
                                     </x-ui.dropdown-item>
                                 </x-ui.actions-menu>
                             @endcan
@@ -470,7 +469,7 @@
                                 <div class="text-xs text-gray-600 mb-1">{{ tr('Name') }}</div>
                                 <x-ui.input wire:model.defer="form.name" :disabled="!auth()->user()->can('settings.attendance.manage')" />
                                 @error('form.name')
-                                    <div class="text-xs text-red-600 mt-1">{{ $message }}</div>
+                                    <div class="text-xs text-[color:var(--error)] mt-1">{{ $message }}</div>
                                 @enderror
                             </div>
 
@@ -515,7 +514,7 @@
                                     <option value="late">{{ tr('Late') }}</option>
                                 </x-ui.select>
                                 @error('form.apply_on')
-                                    <div class="text-xs text-red-600 mt-1">{{ $message }}</div>
+                                    <div class="text-xs text-[color:var(--error)] mt-1">{{ $message }}</div>
                                 @enderror
                             </div>
 
@@ -526,7 +525,7 @@
                                     <option value="without">{{ tr('Without Deduction') }}</option>
                                 </x-ui.select>
                                 @error('form.deduction_mode')
-                                    <div class="text-xs text-red-600 mt-1">{{ $message }}</div>
+                                    <div class="text-xs text-[color:var(--error)] mt-1">{{ $message }}</div>
                                 @enderror
                             </div>
 
@@ -541,7 +540,7 @@
                                     <x-ui.input type="number" step="0.01" min="0" max="1000"
                                         wire:model.defer="form.deduction_percent" :disabled="!auth()->user()->can('settings.attendance.manage')" />
                                     @error('form.deduction_percent')
-                                        <div class="text-xs text-red-600 mt-1">{{ $message }}</div>
+                                        <div class="text-xs text-[color:var(--error)] mt-1">{{ $message }}</div>
                                     @enderror
 
                                     <div class="mt-1 text-xs text-gray-500">
@@ -555,7 +554,7 @@
                                         <x-ui.input type="number" min="0" max="24"
                                             wire:model.defer="form.grace_hours" />
                                         @error('form.grace_hours')
-                                            <div class="text-xs text-red-600 mt-1">{{ $message }}</div>
+                                            <div class="text-xs text-[color:var(--error)] mt-1">{{ $message }}</div>
                                         @enderror
                                     </div>
                                 @endif
@@ -582,7 +581,7 @@
                                     <option value="employees">{{ tr('Specific Employees') }}</option>
                                 </x-ui.select>
                                 @error('form.scope_type')
-                                    <div class="text-xs text-red-600 mt-1">{{ $message }}</div>
+                                    <div class="text-xs text-[color:var(--error)] mt-1">{{ $message }}</div>
                                 @enderror
                             </div>
 
@@ -604,7 +603,7 @@
                                         @endforeach
                                     </x-ui.select>
                                     @error('form.include.departments')
-                                        <div class="text-xs text-red-600 mt-1">{{ $message }}</div>
+                                        <div class="text-xs text-[color:var(--error)] mt-1">{{ $message }}</div>
                                     @enderror
                                 </div>
 
@@ -629,7 +628,7 @@
                                         @endforeach
                                     </x-ui.select>
                                     @error('form.include.branches')
-                                        <div class="text-xs text-red-600 mt-1">{{ $message }}</div>
+                                        <div class="text-xs text-[color:var(--error)] mt-1">{{ $message }}</div>
                                     @enderror
                                 </div>
                             @endif
@@ -644,7 +643,7 @@
                                         @endforeach
                                     </x-ui.select>
                                     @error('form.include.contract_types')
-                                        <div class="text-xs text-red-600 mt-1">{{ $message }}</div>
+                                        <div class="text-xs text-[color:var(--error)] mt-1">{{ $message }}</div>
                                     @enderror
                                 </div>
                             @endif
@@ -666,7 +665,7 @@
                                         @endforeach
                                     </x-ui.select>
                                     @error('form.include.employees')
-                                        <div class="text-xs text-red-600 mt-1">{{ $message }}</div>
+                                        <div class="text-xs text-[color:var(--error)] mt-1">{{ $message }}</div>
                                     @enderror
                                 </div>
                             @endif
@@ -676,7 +675,7 @@
                                 <x-ui.textarea rows="2" wire:model.defer="form.notify_message"
                                     :disabled="!auth()->user()->can('settings.attendance.manage')" />
                                 @error('form.notify_message')
-                                    <div class="text-xs text-red-600 mt-1">{{ $message }}</div>
+                                    <div class="text-xs text-[color:var(--error)] mt-1">{{ $message }}</div>
                                 @enderror
                             </div>
 
@@ -721,7 +720,7 @@
                     <x-ui.card class="!p-4 !bg-gray-50/50">
                         <div class="flex items-start gap-3">
                             <div
-                                class="w-10 h-10 rounded-xl bg-orange-100 text-[color:var(--brand-from)] flex items-center justify-center">
+                                class="w-10 h-10 rounded-xl bg-[rgb(var(--accent-orange-rgb)/0.10)] text-[color:var(--accent-orange)] flex items-center justify-center">
                                 <i class="fas fa-chart-bar"></i>
                             </div>
 
@@ -834,7 +833,7 @@
                             </div>
                         </x-ui.card>
 
-                        <x-ui.card class="!p-4 !bg-orange-50/40">
+                        <x-ui.card class="!p-4 !bg-[rgb(var(--accent-orange-rgb)/0.08)]">
                             <div class="text-sm font-bold text-gray-800 mb-3">{{ tr('Differences') }}</div>
 
                             <div class="space-y-3 text-sm">

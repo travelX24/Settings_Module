@@ -1,7 +1,7 @@
 <x-ui.card class="space-y-4 !p-6 border-none shadow-sm bg-white !rounded-3xl">
     <div class="flex items-center justify-between">
         <div class="flex items-center gap-3">
-            <div class="w-10 h-10 rounded-xl bg-red-50 flex items-center justify-center text-red-500 border border-red-100 shadow-sm">
+            <div class="w-10 h-10 rounded-xl bg-[rgb(239_68_68/0.10)] flex items-center justify-center text-[color:var(--error)] border border-[rgb(239_68_68/0.20)] shadow-sm">
                 <i class="fas fa-calendar-times text-lg"></i>
             </div>
             <div>
@@ -12,10 +12,10 @@
         <label class="flex items-center gap-3 cursor-pointer group bg-gray-50/50 px-4 py-2 rounded-xl border border-gray-100 hover:bg-white transition-all">
             <input type="checkbox" 
                 wire:model.live="basicAbsencePenalty.enabled"
-                class="w-4 h-4 text-red-600 rounded border-gray-300 focus:ring-red-500"
+                class="w-4 h-4 text-[color:var(--error)] rounded border-gray-300 focus:ring-[color:var(--error)]"
                 @cannot('settings.attendance.manage') disabled @endcannot
             >
-            <span class="text-xs font-bold text-gray-700 group-hover:text-red-600 transition-colors">{{ tr('Activate Penalties') }}</span>
+            <span class="text-xs font-bold text-gray-700 group-hover:text-[color:var(--error)] transition-colors">{{ tr('Activate Penalties') }}</span>
         </label>
     </div>
 
@@ -67,7 +67,7 @@
                         />
                     </div>
                 </div>
-                <p class="text-[10px] font-bold text-red-500/70 italic px-1">
+                <p class="text-[10px] font-bold text-[color:var(--error)] opacity-70 italic px-1">
                     @if($basicAbsencePenalty['deduction_type'] === 'percentage')
                         <i class="fas fa-info-circle me-1"></i> {{ tr('Percentage of daily wage (100% = 1 day, 200% = 2 days).') }}
                     @else
@@ -85,7 +85,7 @@
             wire:loading.attr="disabled"
             :arrow="false"
             :fullWidth="false"
-            class="!px-6 !py-2 !rounded-xl !bg-red-600 hover:!bg-red-700 cursor-pointer"
+            class="!px-6 !py-2 !rounded-xl !bg-[color:var(--error)] hover:!brightness-95 cursor-pointer"
         >
             <span wire:loading.remove wire:target="saveBasicAbsencePenalty">
                 <i class="fas fa-save me-2"></i>

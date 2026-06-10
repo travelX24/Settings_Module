@@ -1,11 +1,11 @@
 <div class="space-y-4">
         <h3 class="text-base font-bold text-gray-800 flex items-center gap-2">
-            <span class="w-1 h-5 bg-orange-500 rounded-full"></span>
+            <span class="w-1 h-5 bg-[color:var(--accent-orange)] rounded-full"></span>
             {{ tr('Absence Without Permission') }}
         </h3>
         @can('settings.attendance.manage')
-        <x-ui.secondary-button wire:click="openAbsenceModal" class="!px-4 !py-2 !text-xs !rounded-xl shadow-sm border-orange-100">
-            <i class="fas fa-calendar-times me-1 text-indigo-500"></i>
+        <x-ui.secondary-button wire:click="openAbsenceModal" class="!px-4 !py-2 !text-xs !rounded-xl shadow-sm border-[rgb(var(--accent-orange-rgb)/0.16)]">
+            <i class="fas fa-calendar-times me-1 text-[color:var(--accent-orange)]"></i>
             {{ tr('Add Absence Policy') }}
         </x-ui.secondary-button>
         @endcan
@@ -27,7 +27,7 @@
                 <tr class="hover:bg-gray-50/30 transition-colors group">
                     <td class="px-6 py-4">
                         <div class="flex items-center gap-3">
-                            <div class="w-8 h-8 rounded-lg bg-gray-50 border border-gray-100 flex items-center justify-center text-indigo-500">
+                            <div class="w-8 h-8 rounded-lg bg-gray-50 border border-gray-100 flex items-center justify-center text-[color:var(--accent-orange)]">
                                 <i class="fas fa-user-slash text-xs"></i>
                             </div>
                             <div class="flex flex-col">
@@ -40,18 +40,18 @@
                     </td>
                     <td class="px-6 py-4 text-center">
                         @if(($ap['day_selector_type'] ?? 'single') === 'single')
-                            <span class="px-3 py-1 bg-orange-50 text-[color:var(--brand-from)] rounded-full text-[10px] font-black border border-orange-100">{{ tr('Day') }} {{ $ap['day_from'] ?? 1 }}</span>
+                            <span class="px-3 py-1 bg-[rgb(var(--accent-orange-rgb)/0.08)] text-[color:var(--accent-orange)] rounded-full text-[10px] font-black border border-[rgb(var(--accent-orange-rgb)/0.16)]">{{ tr('Day') }} {{ $ap['day_from'] ?? 1 }}</span>
                         @else
-                            <span class="px-3 py-1 bg-purple-50 text-purple-600 rounded-full text-[10px] font-black border border-purple-100">{{ tr('Range') }}: {{ $ap['day_from'] ?? 1 }}-{{ $ap['day_to'] ?? 1 }} {{ tr('Days') }}</span>
+                            <span class="px-3 py-1 bg-[rgb(var(--accent-orange-rgb)/0.08)] text-[color:var(--accent-orange)] rounded-full text-[10px] font-black border border-[rgb(var(--accent-orange-rgb)/0.16)]">{{ tr('Range') }}: {{ $ap['day_from'] ?? 1 }}-{{ $ap['day_to'] ?? 1 }} {{ tr('Days') }}</span>
                         @endif
                     </td>
                     <td class="px-6 py-4 text-center">
                         @php
                             $pType = $ap['penalty_action'] ?? 'notification';
                             $tagCls = match($pType) {
-                                'notification', 'notice' => 'bg-blue-50 text-[color:var(--brand-from)] border-blue-100',
-                                'warning_verbal', 'warning_written' => 'bg-amber-50 text-amber-600 border-amber-100',
-                                'deduction', 'suspension', 'termination' => 'bg-red-50 text-red-600 border-red-100',
+                                'notification', 'notice' => 'bg-[rgb(var(--accent-orange-rgb)/0.08)] text-[color:var(--accent-orange)] border-[rgb(var(--accent-orange-rgb)/0.16)]',
+                                'warning_verbal', 'warning_written' => 'bg-[rgb(245_158_11/0.10)] text-[color:var(--warning)] border-[rgb(245_158_11/0.22)]',
+                                'deduction', 'suspension', 'termination' => 'bg-[rgb(239_68_68/0.10)] text-[color:var(--error)] border-[rgb(239_68_68/0.20)]',
                                 default => 'bg-gray-50 text-gray-600 border-gray-100'
                             };
                         @endphp
@@ -70,13 +70,13 @@
                         @can('settings.attendance.manage')
                         <x-ui.actions-menu>
                             <x-ui.dropdown-item wire:click="editAbsencePolicy('{{ $ap['id'] }}')">
-                                <i class="fas fa-edit me-2 text-blue-500"></i> {{ tr('Edit') }}
+                                <i class="fas fa-edit me-2 text-[color:var(--accent-orange)]"></i> {{ tr('Edit') }}
                             </x-ui.dropdown-item>
                             <x-ui.dropdown-item 
                                 danger
                                 @click="$dispatch('open-confirm-delete-absence', { id: '{{ $ap['id'] }}' })"
                             >
-                                <i class="fas fa-trash-alt me-2 text-red-500"></i> {{ tr('Delete') }}
+                                <i class="fas fa-trash-alt me-2 text-[color:var(--error)]"></i> {{ tr('Delete') }}
                             </x-ui.dropdown-item>
                         </x-ui.actions-menu>
                         @else

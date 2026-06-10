@@ -43,13 +43,13 @@
                 <td class="px-6 py-3 text-center">
                     <div class="flex items-center justify-center gap-1">
                         @for($i=1; $i<=4; $i++)
-                            <span class="w-1.5 h-1.5 rounded-full {{ $i <= ($item['recurrence_count'] ?? 0) ? 'bg-purple-400' : 'bg-gray-200' }}"></span>
+                            <span class="w-1.5 h-1.5 rounded-full {{ $i <= ($item['recurrence_count'] ?? 0) ? 'bg-[color:var(--accent-orange)]' : 'bg-gray-200' }}"></span>
                         @endfor
                         <span class="ms-1 text-[10px] font-bold text-gray-600">{{ $item['recurrence_count'] ?? 0 }}x</span>
                     </div>
                 </td>
                 <td class="px-6 py-3 text-center">
-                    <x-ui.badge type="custom" size="sm" class="bg-red-50 text-red-600 border-red-100 !text-[9px] !font-black uppercase">
+                    <x-ui.badge type="custom" size="sm" class="bg-[rgb(239_68_68/0.10)] text-[color:var(--error)] border-[rgb(239_68_68/0.20)] !text-[9px] !font-black uppercase">
                         {{ tr($item['penalty_action'] ?? 'deduction') }}
                         @if(($item['penalty_action'] ?? 'deduction') === 'deduction') 
                             ({{ $item['deduction_value'] ?? 0 }}{{ ($item['deduction_type'] ?? '') === 'percentage' ? '%' : '' }})
@@ -60,13 +60,13 @@
                     @can('settings.attendance.manage')
                     <div class="flex items-center justify-end gap-2">
                         <button wire:click="{{ isset($item['absence_reason_type']) ? 'editAbsencePolicy' : 'editPenalty' }}('{{ $item['id'] }}')" 
-                            class="p-1.5 text-[color:var(--brand-from)] hover:bg-blue-50 rounded-lg transition-colors cursor-pointer"
+                            class="p-1.5 text-[color:var(--accent-orange)] hover:bg-[rgb(var(--accent-orange-rgb)/0.08)] rounded-lg transition-colors cursor-pointer"
                             title="{{ tr('Edit') }}">
                             <i class="fas fa-edit text-xs"></i>
                         </button>
                         <button 
                             @click="$dispatch('open-confirm-delete-{{ isset($item['absence_reason_type']) ? 'absence' : 'penalty' }}', { id: '{{ $item['id'] }}' })"
-                            class="p-1.5 text-red-500 hover:bg-red-50 rounded-lg transition-colors cursor-pointer"
+                            class="p-1.5 text-[color:var(--error)] hover:bg-[rgb(239_68_68/0.10)] rounded-lg transition-colors cursor-pointer"
                             title="{{ tr('Delete') }}">
                             <i class="fas fa-trash-alt text-xs"></i>
                         </button>

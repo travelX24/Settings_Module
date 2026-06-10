@@ -59,7 +59,7 @@
                     </div>
 
                     <x-ui.secondary-button :fullWidth="false" wire:click="exportExcel" wire:loading.attr="disabled"
-                        class="!border-amber-200 !bg-amber-50/50 !text-amber-700 hover:!bg-amber-100 cursor-pointer">
+                        class="!border-[rgb(245_158_11/0.22)] !bg-[rgb(245_158_11/0.08)] !text-[color:var(--warning)] hover:!bg-[rgb(245_158_11/0.12)] cursor-pointer">
                         <i class="fas fa-file-export" wire:loading.remove wire:target="exportExcel"></i>
                         <i class="fas fa-circle-notch fa-spin" wire:loading wire:target="exportExcel"></i>
                         <span class="ms-2 leading-none">{{ tr('Export') }}</span>
@@ -199,13 +199,13 @@
                                     <x-ui.actions-menu>
                                         <x-ui.dropdown-item wire:click.stop="openEdit({{ (int) $row->id }})"
                                             class="cursor-pointer">
-                                            <i class="fas fa-edit me-2 text-[color:var(--brand-from)]"></i> {{ tr('Edit') }}
+                                            <i class="fas fa-edit me-2 text-[color:var(--accent-orange)]"></i> {{ tr('Edit') }}
                                         </x-ui.dropdown-item>
     
                                         <x-ui.dropdown-item danger
                                             @click.stop="$dispatch('open-confirm-delete-holiday', { id: {{ $row->id }} })"
                                             class="cursor-pointer">
-                                            <i class="fas fa-trash-alt me-2 text-red-500"></i> {{ tr('Delete') }}
+                                            <i class="fas fa-trash-alt me-2 text-[color:var(--error)]"></i> {{ tr('Delete') }}
                                         </x-ui.dropdown-item>
                                     </x-ui.actions-menu>
                                 @endcan
@@ -246,7 +246,7 @@
         <x-slot:title>
             <div class="flex items-center gap-3">
                 <div
-                    class="w-10 h-10 bg-orange-50 text-[color:var(--brand-from)] rounded-xl flex items-center justify-center text-lg border border-brand-100 shadow-sm">
+                    class="w-10 h-10 bg-[color:var(--accent-orange)]/10 text-[color:var(--accent-orange)] rounded-xl flex items-center justify-center text-lg border border-[color:var(--accent-orange)]/20 shadow-sm">
                     <i class="fas fa-umbrella-beach"></i>
                 </div>
                 <div>
@@ -285,21 +285,21 @@
                     <div class="flex items-center gap-4">
                         <label class="flex items-center gap-2 cursor-pointer group">
                             <input type="radio" wire:model.live="newRepeatType" value="once"
-                                class="w-4 h-4 text-[color:var(--brand-via)] border-gray-300 focus:ring-[color:var(--brand-via)]" />
+                                class="w-4 h-4 text-[color:var(--accent-orange)] border-gray-300 focus:ring-[color:var(--accent-orange)]" />
                             <span class="text-sm font-medium text-gray-700 group-hover:text-gray-900">
                                 {{ trk('one_time_only', 'One-time only') }}
                             </span>
                         </label>
                         <label class="flex items-center gap-2 cursor-pointer group">
                             <input type="radio" wire:model.live="newRepeatType" value="annual"
-                                class="w-4 h-4 text-[color:var(--brand-via)] border-gray-300 focus:ring-[color:var(--brand-via)]" />
+                                class="w-4 h-4 text-[color:var(--accent-orange)] border-gray-300 focus:ring-[color:var(--accent-orange)]" />
                             <span class="text-sm font-medium text-gray-700 group-hover:text-gray-900">
                                 {{ trk('repeat_annually', 'Repeat annually') }}
                             </span>
                         </label>
                     </div>
                     @if ($newRepeatType === 'annual')
-                        <div class="mt-2 p-3 bg-orange-50 border border-blue-200 rounded-lg text-xs text-blue-800 leading-relaxed">
+                        <div class="mt-2 p-3 bg-[rgb(var(--accent-orange-rgb)/0.08)] border border-[rgb(var(--accent-orange-rgb)/0.16)] rounded-lg text-xs text-[color:var(--accent-orange)] leading-relaxed">
                             <i class="fas fa-info-circle me-1"></i>
                             @if ($newCalendarType === 'hijri')
                                 {{ trk('holiday_auto_hijri_msg', 'The system will automatically generate this holiday for the next 5 Hijri years with the correct Gregorian date for each year.') }}
@@ -313,7 +313,7 @@
                 <div>
                     <x-ui.company-date-picker model="newStartDate" :label="tr('Start Date')" :calendarType="$newCalendarType" />
                     @error('newStartDate')
-                        <div class="text-xs text-red-600 mt-1">{{ $message }}</div>
+                        <div class="text-xs text-[color:var(--error)] mt-1">{{ $message }}</div>
                     @enderror
                 </div>
 
@@ -351,7 +351,7 @@
         <x-slot:title>
             <div class="flex items-center gap-3">
                 <div
-                    class="w-10 h-10 bg-orange-50 text-blue-600 rounded-xl flex items-center justify-center text-lg border border-blue-100 shadow-sm">
+                    class="w-10 h-10 bg-[color:var(--accent-orange)]/10 text-[color:var(--accent-orange)] rounded-xl flex items-center justify-center text-lg border border-[color:var(--accent-orange)]/20 shadow-sm">
                     <i class="fas fa-edit"></i>
                 </div>
                 <div>
@@ -386,7 +386,7 @@
                 <div>
                     <x-ui.company-date-picker model="editStartDate" :label="tr('Start Date')" :calendarType="$editCalendarType" />
                     @error('editStartDate')
-                        <div class="text-xs text-red-600 mt-1">{{ $message }}</div>
+                        <div class="text-xs text-[color:var(--error)] mt-1">{{ $message }}</div>
                     @enderror
                 </div>
 

@@ -65,7 +65,7 @@
         .leaflet-container { font-family: inherit; }
         .leaflet-bar { border: none !important; border-radius: 12px !important; overflow: hidden; box-shadow: 0 4px 15px rgba(0,0,0,0.1) !important; }
         .leaflet-bar a { background: white !important; border: none !important; color: #64748b !important; }
-        .leaflet-bar a:hover { color: #3b82f6 !important; }
+        .leaflet-bar a:hover { color: var(--accent-orange) !important; }
     </style>
     @endpush
 
@@ -159,8 +159,8 @@
                     this.marker = L.marker([defaultLat, defaultLng], { draggable: true }).addTo(this.map);
                     this.circle = L.circle([defaultLat, defaultLng], {
                         radius: this.radius || 100,
-                        color: '#3b82f6',
-                        fillColor: '#3b82f6',
+                        color: '#C45A1A',
+                        fillColor: '#C45A1A',
                         fillOpacity: 0.15,
                         weight: 2
                     }).addTo(this.map);

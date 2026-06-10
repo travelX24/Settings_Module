@@ -5,7 +5,7 @@
     {{-- Section 2: Basic Penalties --}}
     <div class="flex items-center px-1">
         <h3 class="text-base font-bold text-gray-800 flex items-center gap-2">
-            <span class="w-1 h-5 bg-red-500 rounded-full"></span>
+            <span class="w-1 h-5 bg-[color:var(--error)] rounded-full"></span>
             {{ tr('Basic Penalties') }}
         </h3>
     </div>

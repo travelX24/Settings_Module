@@ -12,8 +12,8 @@
     {{-- Statistics Bar --}}
     <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-2 gap-4 mb-8">
         {{-- Total Job Titles --}}
-        <div class="bg-white rounded-2xl p-4 shadow-sm border border-gray-100 flex items-center gap-4 group hover:border-[color:var(--brand-via)]/30 transition-all duration-300">
-            <div class="w-12 h-12 bg-purple-50 rounded-xl flex items-center justify-center text-purple-600 group-hover:bg-purple-600 group-hover:text-white transition-all duration-500 shadow-sm">
+        <div class="bg-white rounded-2xl p-4 shadow-sm border border-gray-100 flex items-center gap-4 group hover:border-[color:var(--accent-orange)]/30 transition-all duration-300">
+            <div class="w-12 h-12 bg-[color:var(--accent-orange)]/10 rounded-xl flex items-center justify-center text-[color:var(--accent-orange)] group-hover:bg-[color:var(--accent-orange)] group-hover:text-white transition-all duration-500 shadow-sm">
                 <i class="fas fa-briefcase text-xl"></i>
             </div>
             <div>
@@ -23,9 +23,9 @@
         </div>
 
         {{-- Status Summary --}}
-        <div class="bg-white rounded-2xl p-4 shadow-sm border border-gray-100 flex items-center justify-around group hover:border-[color:var(--brand-via)]/30 transition-all duration-300">
+        <div class="bg-white rounded-2xl p-4 shadow-sm border border-gray-100 flex items-center justify-around group hover:border-[color:var(--accent-orange)]/30 transition-all duration-300">
             <div class="text-center">
-                <p class="text-[9px] font-bold text-green-500 uppercase">{{ tr('Active') }}</p>
+                <p class="text-[9px] font-bold text-[color:var(--success)] uppercase">{{ tr('Active') }}</p>
                 <p class="text-lg font-black text-gray-900">{{ $stats['active'] ?? 0 }}</p>
             </div>
             <div class="w-px h-8 bg-gray-100"></div>
@@ -49,7 +49,7 @@
                     wire:model.live.debounce.300ms="search"
                     placeholder="{{ tr('Search job titles...') }}"
                     class="w-full px-4 py-2.5 ps-10 text-sm rounded-xl border border-gray-200 bg-white shadow-sm placeholder-gray-400 text-gray-900
-                           focus:outline-none focus:ring-2 focus:ring-[color:var(--brand-via)]/20 focus:border-[color:var(--brand-via)]
+                           focus:outline-none focus:ring-2 focus:ring-[color:var(--accent-orange)]/20 focus:border-[color:var(--accent-orange)]
                            transition"
                 />
             </div>
@@ -119,7 +119,7 @@
                                             <div :class="expanded ? 'whitespace-normal break-words' : 'line-clamp-2'" class="text-xs text-gray-500 transition-all duration-300">
                                                 {{ $jobTitle->description }}
                                             </div>
-                                            <button @click="expanded = !expanded" class="text-[10px] font-semibold text-[color:var(--brand-via)] hover:underline mt-1 focus:outline-none">
+                                            <button @click="expanded = !expanded" class="text-[10px] font-semibold text-[color:var(--accent-orange)] hover:underline mt-1 focus:outline-none">
                                                 <span x-show="!expanded">{{ tr('Read more') }}</span>
                                                 <span x-show="expanded" x-cloak>{{ tr('Show less') }}</span>
                                             </button>
@@ -137,7 +137,7 @@
                                 </div>
 
                                 <div class="flex items-center gap-2 shrink-0">
-                                    <span class="px-2 py-1 text-xs font-semibold rounded-full {{ $jobTitle->is_active ? 'bg-green-100 text-green-800' : 'bg-gray-100 text-gray-800' }}">
+                                    <span class="px-2 py-1 text-xs font-semibold rounded-full {{ $jobTitle->is_active ? 'bg-[color:var(--success)]/10 text-[color:var(--success)]' : 'bg-gray-100 text-gray-800' }}">
                                         {{ $jobTitle->is_active ? tr('Active') : tr('Inactive') }}
                                     </span>
 
@@ -176,7 +176,7 @@
 
                                 <button
                                     wire:click="$dispatch('open-employees-modal', { type: 'job-title', id: {{ $jobTitle->id }} })"
-                                    class="font-bold text-[color:var(--brand-via)] hover:text-[color:var(--brand-via)]/80 hover:underline"
+                                    class="font-bold text-[color:var(--accent-orange)] hover:text-[color:var(--accent-orange-hover)] hover:underline"
                                 >
                                     {{ (int) ($jobTitle->employees_count ?? 0) }}
                                 </button>
@@ -222,7 +222,7 @@
                             <td class="py-4 px-6 align-top whitespace-nowrap">
                                 <button
                                     wire:click="$dispatch('open-employees-modal', { type: 'job-title', id: {{ $jobTitle->id }} })"
-                                    class="text-sm font-semibold text-[color:var(--brand-via)] hover:text-[color:var(--brand-via)]/80 hover:underline cursor-pointer"
+                                    class="text-sm font-semibold text-[color:var(--accent-orange)] hover:text-[color:var(--accent-orange-hover)] hover:underline cursor-pointer"
                                 >
                                     {{ (int) ($jobTitle->employees_count ?? 0) }}
                                 </button>
@@ -234,7 +234,7 @@
                                         <div :class="expanded ? 'whitespace-normal break-words' : 'line-clamp-2'" class="transition-all duration-300">
                                             {{ $jobTitle->description }}
                                         </div>
-                                        <button @click="expanded = !expanded" class="text-xs font-semibold text-[color:var(--brand-via)] hover:underline mt-1 focus:outline-none">
+                                        <button @click="expanded = !expanded" class="text-xs font-semibold text-[color:var(--accent-orange)] hover:underline mt-1 focus:outline-none">
                                             <span x-show="!expanded">{{ tr('Read more') }}</span>
                                             <span x-show="expanded" x-cloak>{{ tr('Show less') }}</span>
                                         </button>
@@ -248,7 +248,7 @@
 
                             <td class="py-4 px-6 align-top whitespace-nowrap">
                                 <div>
-                                    <span class="px-2 py-1 text-xs font-semibold rounded-full {{ $jobTitle->is_active ? 'bg-green-100 text-green-800' : 'bg-gray-100 text-gray-800' }}">
+                                    <span class="px-2 py-1 text-xs font-semibold rounded-full {{ $jobTitle->is_active ? 'bg-[color:var(--success)]/10 text-[color:var(--success)]' : 'bg-gray-100 text-gray-800' }}">
                                         {{ $jobTitle->is_active ? tr('Active') : tr('Inactive') }}
                                     </span>
                                 </div>
@@ -333,7 +333,7 @@
                                 type="checkbox"
                                 wire:model="is_active"
                                 id="is_active_job"
-                                class="w-5 h-5 text-[color:var(--brand-via)] border-gray-300 rounded focus:ring-[color:var(--brand-via)] focus:ring-2 disabled:opacity-50"
+                                class="w-5 h-5 text-[color:var(--accent-orange)] border-gray-300 rounded focus:ring-[color:var(--accent-orange)] focus:ring-2 disabled:opacity-50"
                                 @cannot('settings.organizational.manage') disabled @endcannot
                             />
                             <label for="is_active_job" class="text-sm font-semibold text-gray-700 cursor-pointer">

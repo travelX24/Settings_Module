@@ -55,7 +55,7 @@
                 {{-- Add Button next to toggle --}}
                 @can('settings.currencies.manage')
                     <button type="button" wire:click="openCreate"
-                        class="group inline-flex items-center gap-2.5 px-5 py-2.5 bg-gradient-to-r from-[color:var(--brand-from)] to-[color:var(--brand-to)] text-white rounded-xl shadow-lg shadow-[color:var(--brand-from)]/20 hover:shadow-xl hover:shadow-[color:var(--brand-from)]/30 hover:-translate-y-0.5 transition-all duration-300 cursor-pointer">
+                        class="group inline-flex items-center gap-2.5 px-5 py-2.5 bg-[color:var(--accent-orange)] text-white rounded-xl shadow-[0_10px_20px_rgb(var(--accent-orange-rgb)/0.20)] hover:bg-[color:var(--accent-orange-hover)] hover:shadow-[0_14px_24px_rgb(var(--accent-orange-rgb)/0.28)] hover:-translate-y-0.5 transition-all duration-300 cursor-pointer">
                         <div
                             class="w-6 h-6 bg-white/20 rounded-lg flex items-center justify-center group-hover:rotate-90 transition-transform duration-500">
                             <i class="fas fa-plus text-sm"></i>
@@ -79,14 +79,14 @@
                     class="rounded-2xl border-gray-200 p-5 group flex flex-col h-full relative overflow-hidden">
                     @if ($c->is_default)
                         <div
-                            class="absolute top-0 {{ $isRtl ? 'left-0 rounded-br-xl' : 'right-0 rounded-bl-xl' }} bg-emerald-500 text-white px-3 py-1 text-[10px] font-black uppercase tracking-widest shadow-sm">
+                            class="absolute top-0 {{ $isRtl ? 'left-0 rounded-br-xl' : 'right-0 rounded-bl-xl' }} bg-[color:var(--success)] text-white px-3 py-1 text-[10px] font-black uppercase tracking-widest shadow-sm">
                             {{ tr('Default') }}
                         </div>
                     @endif
 
                     <div class="flex items-center gap-4 mb-6">
                         <div
-                            class="w-14 h-14 rounded-2xl bg-gradient-to-br from-[color:var(--brand-from)] to-[color:var(--brand-via)] flex items-center justify-center text-white shadow-lg shrink-0 group-hover:scale-110 transition-transform duration-500">
+                            class="w-14 h-14 rounded-2xl bg-[rgb(var(--accent-orange-rgb)/0.10)] text-[color:var(--accent-orange)] border border-[rgb(var(--accent-orange-rgb)/0.16)] flex items-center justify-center shadow-sm shrink-0 group-hover:scale-110 transition-transform duration-500">
                             <span class="text-xl font-black">{{ $c->symbol }}</span>
                         </div>
                         <div class="min-w-0 flex-1">
@@ -103,16 +103,16 @@
                         @can('settings.currencies.manage')
                             <x-ui.actions-menu>
                                 <x-ui.dropdown-item wire:click="openEdit({{ $c->id }})">
-                                    <i class="fas fa-edit mr-2 w-5 text-[color:var(--brand-from)]"></i>
+                                    <i class="fas fa-edit mr-2 w-5 text-[color:var(--accent-orange)]"></i>
                                     {{ tr('Edit') }}
                                 </x-ui.dropdown-item>
                                 @if (!$c->is_default)
                                     <x-ui.dropdown-item wire:click="setDefault({{ $c->id }})">
-                                        <i class="fas fa-star mr-2 w-5 text-amber-500"></i>
+                                        <i class="fas fa-star mr-2 w-5 text-[color:var(--warning)]"></i>
                                         {{ tr('Set as default') }}
                                     </x-ui.dropdown-item>
                                     <x-ui.dropdown-item wire:click="confirmDelete({{ $c->id }})" :danger="true">
-                                        <i class="fas fa-trash-alt mr-2 w-5 text-red-500"></i>
+                                        <i class="fas fa-trash-alt mr-2 w-5 text-[color:var(--error)]"></i>
                                         {{ tr('Delete') }}
                                     </x-ui.dropdown-item>
                                 @endif
@@ -184,7 +184,7 @@
                             <td class="px-6 py-4">
                                 @if ($c->is_default)
                                     <span
-                                        class="inline-flex items-center px-2.5 py-1 rounded-full text-[10px] font-black uppercase tracking-widest bg-emerald-50 text-emerald-600 border border-emerald-100 shadow-sm">
+                                        class="inline-flex items-center px-2.5 py-1 rounded-full text-[10px] font-black uppercase tracking-widest bg-[rgb(16_185_129/0.12)] text-[color:var(--success)] border border-[rgb(16_185_129/0.22)] shadow-sm">
                                         <i class="fas fa-check-circle mr-1.5"></i>
                                         {{ tr('Default') }}
                                     </span>
@@ -200,17 +200,17 @@
                                     <div class="flex items-center justify-end">
                                         <x-ui.actions-menu>
                                             <x-ui.dropdown-item wire:click="openEdit({{ $c->id }})">
-                                                <i class="fas fa-edit mr-2 w-5 text-[color:var(--brand-from)]"></i>
+                                                <i class="fas fa-edit mr-2 w-5 text-[color:var(--accent-orange)]"></i>
                                                 {{ tr('Edit') }}
                                             </x-ui.dropdown-item>
                                             @if (!$c->is_default)
                                                 <x-ui.dropdown-item wire:click="setDefault({{ $c->id }})">
-                                                    <i class="fas fa-star mr-2 w-5 text-amber-500"></i>
+                                                    <i class="fas fa-star mr-2 w-5 text-[color:var(--warning)]"></i>
                                                     {{ tr('Set as default') }}
                                                 </x-ui.dropdown-item>
                                                 <x-ui.dropdown-item wire:click="confirmDelete({{ $c->id }})"
                                                     :danger="true">
-                                                    <i class="fas fa-trash-alt mr-2 w-5 text-red-500"></i>
+                                                    <i class="fas fa-trash-alt mr-2 w-5 text-[color:var(--error)]"></i>
                                                     {{ tr('Delete') }}
                                                 </x-ui.dropdown-item>
                                             @endif
@@ -248,7 +248,7 @@
         <x-slot name="title">
             <div class="flex items-center gap-3">
                 <div
-                    class="w-10 h-10 rounded-xl bg-gradient-to-br from-[color:var(--brand-from)] to-[color:var(--brand-via)] flex items-center justify-center text-white shadow-md">
+                    class="w-10 h-10 rounded-xl bg-[rgb(var(--accent-orange-rgb)/0.10)] text-[color:var(--accent-orange)] border border-[rgb(var(--accent-orange-rgb)/0.16)] flex items-center justify-center shadow-sm">
                     <i class="fas fa-coins text-sm"></i>
                 </div>
                 <div>
@@ -275,13 +275,13 @@
 
                     @if ($mode === 'edit' && $codeLocked)
                         <div
-                            class="mt-2 flex items-center gap-2 text-[10px] text-amber-600 font-black uppercase tracking-tighter">
+                            class="mt-2 flex items-center gap-2 text-[10px] text-[color:var(--warning)] font-black uppercase tracking-tighter">
                             <i class="fas fa-lock"></i>
                             {{ tr('Locked: Linked to existing transactions') }}
                         </div>
                     @endif
                     @error('code')
-                        <p class="mt-1.5 text-[11px] font-bold text-red-500">{{ $message }}</p>
+                        <p class="mt-1.5 text-[11px] font-bold text-[color:var(--error)]">{{ $message }}</p>
                     @enderror
                 </div>
 
@@ -296,23 +296,23 @@
                 {{-- Default toggle --}}
                 @if (!$is_default)
                     <div
-                        class="p-4 bg-emerald-50/50 border border-emerald-100 rounded-2xl flex items-center justify-between">
+                        class="p-4 bg-[rgb(16_185_129/0.10)] border border-[rgb(16_185_129/0.22)] rounded-2xl flex items-center justify-between">
                         <div>
-                            <h5 class="text-sm font-black text-emerald-900">{{ tr('Primary Currency') }}</h5>
-                            <p class="text-[10px] text-emerald-600 font-bold leading-tight mt-0.5">
+                            <h5 class="text-sm font-black text-[color:var(--success)]">{{ tr('Primary Currency') }}</h5>
+                            <p class="text-[10px] text-[color:var(--success)] font-bold leading-tight mt-0.5">
                                 {{ tr('Set this as the main currency for all financial entries') }}</p>
                         </div>
                         <label class="relative inline-flex items-center cursor-pointer">
                             <input type="checkbox" wire:model="is_default" class="sr-only peer">
                             <div
-                                class="w-11 h-6 bg-gray-200 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full rtl:peer-checked:after:-translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:start-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-emerald-500">
+                                class="w-11 h-6 bg-gray-200 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full rtl:peer-checked:after:-translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:start-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-[color:var(--success)]">
                             </div>
                         </label>
                     </div>
                 @else
-                    <div class="p-4 bg-amber-50/50 border border-amber-100 rounded-2xl flex items-center gap-3">
-                        <i class="fas fa-info-circle text-amber-500"></i>
-                        <p class="text-[10px] text-amber-700 font-bold leading-tight">
+                    <div class="p-4 bg-[rgb(245_158_11/0.10)] border border-[rgb(245_158_11/0.22)] rounded-2xl flex items-center gap-3">
+                        <i class="fas fa-info-circle text-[color:var(--warning)]"></i>
+                        <p class="text-[10px] text-[color:var(--warning)] font-bold leading-tight">
                             {{ tr('This is the default currency and cannot be unset here. Set another currency as default to change.') }}
                         </p>
                     </div>
@@ -326,7 +326,7 @@
                     {{ tr('Cancel') }}
                 </x-ui.secondary-button>
                 <x-ui.primary-button wire:click="save" loading="save"
-                    class="!rounded-xl !px-10 font-black shadow-lg shadow-[color:var(--brand-from)]/20">
+                    class="!rounded-xl !px-10 font-black shadow-[0_10px_20px_rgb(var(--accent-orange-rgb)/0.20)]">
                     {{ tr('Save Changes') }}
                 </x-ui.primary-button>
             </div>

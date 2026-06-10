@@ -26,7 +26,7 @@
                 <a href="{{ request()->fullUrlWithQuery(['tab' => 'leaves']) }}" wire:navigate
                     class="whitespace-nowrap flex-1 sm:flex-none text-center px-4 py-2 text-xs font-black rounded-xl transition-all cursor-pointer
                     {{ $tab === 'leaves'
-                        ? 'text-white shadow-sm bg-[color:var(--brand-via)]'
+                        ? 'text-white shadow-sm bg-[color:var(--accent-orange)]'
                         : 'text-gray-600 hover:text-gray-900 hover:bg-gray-100/50' }}">
                     {{ tr('Leave Settings') }}
                 </a>
@@ -34,7 +34,7 @@
                 <a href="{{ request()->fullUrlWithQuery(['tab' => 'permissions']) }}" wire:navigate
                     class="whitespace-nowrap flex-1 sm:flex-none text-center px-4 py-2 text-xs font-black rounded-xl transition-all cursor-pointer
                     {{ $tab === 'permissions'
-                        ? 'text-white shadow-sm bg-[color:var(--brand-via)]'
+                        ? 'text-white shadow-sm bg-[color:var(--accent-orange)]'
                         : 'text-gray-600 hover:text-gray-900 hover:bg-gray-100/50' }}">
                     {{ tr('Permission Settings') }}
                 </a>
@@ -73,7 +73,7 @@
 
                                 @if (!$showAllYears && $selectedYear?->is_active)
                                     <span
-                                        class="text-[10px] font-black px-2 py-0.5 rounded-full bg-emerald-50 text-emerald-700 border border-emerald-100">
+                                        class="text-[10px] font-black px-2 py-0.5 rounded-full bg-[color:var(--success)]/10 text-[color:var(--success)] border border-[color:var(--success)]/20">
                                         {{ tr('Active') }}
                                     </span>
                                 @endif
@@ -85,7 +85,7 @@
                         </div>
 
                         <button type="button" wire:click="toggleAllYears"
-                            class="w-full sm:w-auto flex justify-center items-center gap-2 text-xs font-bold transition-all px-3 py-2 rounded-xl border {{ $showAllYears ? 'bg-[color:var(--brand-via)]/10 text-[color:var(--brand-via)] border-[color:var(--brand-via)]/30 hover:bg-[color:var(--brand-via)]/20' : 'bg-white text-gray-600 border-gray-200 hover:border-gray-300 hover:bg-gray-50 hover:text-gray-900 shadow-sm' }} cursor-pointer">
+                            class="w-full sm:w-auto flex justify-center items-center gap-2 text-xs font-bold transition-all px-3 py-2 rounded-xl border {{ $showAllYears ? 'bg-[color:var(--accent-orange)]/10 text-[color:var(--accent-orange)] border-[color:var(--accent-orange)]/30 hover:bg-[color:var(--accent-orange)]/20' : 'bg-white text-gray-600 border-gray-200 hover:border-gray-300 hover:bg-gray-50 hover:text-gray-900 shadow-sm' }} cursor-pointer">
                             <i class="fas {{ $showAllYears ? 'fa-calendar-day' : 'fa-bars-staggered' }}"></i>
                             <span>{{ $showAllYears ? tr('Show single year') : tr('Show all years') }}</span>
                         </button>
@@ -243,21 +243,21 @@
     
                                 <td class="px-6 py-4 text-center whitespace-nowrap">
                                     <span
-                                        class="text-xs font-bold {{ $row->is_active ? 'text-emerald-600' : 'text-gray-400' }}">
+                                        class="text-xs font-bold {{ $row->is_active ? 'text-[color:var(--success)]' : 'text-gray-400' }}">
                                         {{ $row->is_active ? tr('Active') : tr('Inactive') }}
                                     </span>
                                 </td>
     
                                 <td class="px-6 py-4 text-center whitespace-nowrap">
                                     <span
-                                        class="text-xs font-bold {{ $row->show_in_app ? 'text-emerald-600' : 'text-gray-400' }}">
+                                        class="text-xs font-bold {{ $row->show_in_app ? 'text-[color:var(--success)]' : 'text-gray-400' }}">
                                         {{ $row->show_in_app ? tr('Yes') : tr('No') }}
                                     </span>
                                 </td>
     
                                 <td class="px-6 py-4 text-center whitespace-nowrap">
                                     <span
-                                        class="text-xs font-bold {{ $row->requires_attachment ? 'text-amber-600' : 'text-gray-400' }}">
+                                        class="text-xs font-bold {{ $row->requires_attachment ? 'text-[color:var(--warning)]' : 'text-gray-400' }}">
                                         {{ $row->requires_attachment ? tr('Yes') : tr('No') }}
                                     </span>
                                 </td>
@@ -273,14 +273,14 @@
                                         <x-ui.actions-menu>
                                             <x-ui.dropdown-item wire:click="openEdit({{ (int) $row->id }})"
                                                 class="cursor-pointer">
-                                                <i class="fas fa-edit me-2 text-[color:var(--brand-from)]"></i> {{ tr('Edit') }}
+                                                <i class="fas fa-edit me-2 text-[color:var(--accent-orange)]"></i> {{ tr('Edit') }}
                                             </x-ui.dropdown-item>
     
                                             @if (!$isAnnualDefault)
                                                 <x-ui.dropdown-item danger
                                                     @click.stop="$dispatch('open-confirm-delete-leave', { id: '{{ (int) $row->id }}' })"
                                                     class="cursor-pointer">
-                                                    <i class="fas fa-trash-alt me-2 text-red-500"></i> {{ tr('Delete') }}
+                                                    <i class="fas fa-trash-alt me-2 text-[color:var(--error)]"></i> {{ tr('Delete') }}
                                                 </x-ui.dropdown-item>
                                             @endif
                                         </x-ui.actions-menu>
@@ -322,7 +322,7 @@
                 <x-slot:title>
                     <div class="flex items-center gap-3">
                         <div
-                            class="w-10 h-10 bg-brand-50 text-brand-600 rounded-xl flex items-center justify-center text-lg border border-brand-100 shadow-sm">
+                            class="w-10 h-10 bg-[color:var(--accent-orange)]/10 text-[color:var(--accent-orange)] rounded-xl flex items-center justify-center text-lg border border-[color:var(--accent-orange)]/20 shadow-sm">
                             <i class="fas fa-umbrella-beach"></i>
                         </div>
                         <div>
@@ -414,7 +414,7 @@
                                     <span>{{ tr('Allow retroactive requests') }}</span>
                                 </label>
                                 @error('allow_retroactive')
-                                    <div class="text-xs text-red-600 mt-1">{{ $message }}</div>
+                                    <div class="text-xs text-[color:var(--error)] mt-1">{{ $message }}</div>
                                 @enderror
                             </div>
 
@@ -428,7 +428,7 @@
                                             class="flex items-center gap-2 p-2 bg-gray-50/50 rounded-xl border border-gray-100 cursor-pointer hover:bg-gray-100 transition-all select-none">
                                             <input type="checkbox" value="{{ $value }}"
                                                 wire:model.defer="selected_leave_excluded_contract_types"
-                                                class="w-4 h-4 text-[color:var(--brand-via)] rounded border-gray-300 focus:ring-[color:var(--brand-via)]"
+                                                class="w-4 h-4 text-[color:var(--accent-orange)] rounded border-gray-300 focus:ring-[color:var(--accent-orange)]"
                                                 @cannot('settings.attendance.manage') disabled @endcannot>
                                             <span class="text-xs font-bold text-gray-700">{{ $label }}</span>
                                         </label>
@@ -450,7 +450,7 @@
                                     <span>{{ tr('Mandatory note') }}</span>
                                 </label>
                                 @error('note_required')
-                                    <div class="text-xs text-red-600 mt-1">{{ $message }}</div>
+                                    <div class="text-xs text-[color:var(--error)] mt-1">{{ $message }}</div>
                                 @enderror
 
                                 <div class="mt-3">
@@ -466,7 +466,7 @@
                                     <span>{{ tr('Require acknowledgment of the note') }}</span>
                                 </label>
                                 @error('note_ack_required')
-                                    <div class="text-xs text-red-600 mt-1">{{ $message }}</div>
+                                    <div class="text-xs text-[color:var(--error)] mt-1">{{ $message }}</div>
                                 @enderror
                             </div>
 
@@ -513,10 +513,10 @@
                                             </label>
                                         </div>
                                         @error('attachment_types')
-                                            <div class="text-xs text-red-600 mt-1">{{ $message }}</div>
+                                            <div class="text-xs text-[color:var(--error)] mt-1">{{ $message }}</div>
                                         @enderror
                                         @error('attachment_types.*')
-                                            <div class="text-xs text-red-600 mt-1">{{ $message }}</div>
+                                            <div class="text-xs text-[color:var(--error)] mt-1">{{ $message }}</div>
                                         @enderror
                                     </div>
 
@@ -582,7 +582,7 @@
                 <x-slot:title>
                     <div class="flex items-center gap-3">
                         <div
-                            class="w-10 h-10 bg-orange-50 text-[color:var(--brand-from)] rounded-xl flex items-center justify-center text-lg border border-blue-100 shadow-sm">
+                            class="w-10 h-10 bg-[color:var(--accent-orange)]/10 text-[color:var(--accent-orange)] rounded-xl flex items-center justify-center text-lg border border-[color:var(--accent-orange)]/20 shadow-sm">
                             <i class="fas fa-edit"></i>
                         </div>
                         <div>
@@ -740,7 +740,7 @@
                                     <span>{{ tr('Allow retroactive requests') }}</span>
                                 </label>
                                 @error('allow_retroactive')
-                                    <div class="text-xs text-red-600 mt-1">{{ $message }}</div>
+                                    <div class="text-xs text-[color:var(--error)] mt-1">{{ $message }}</div>
                                 @enderror
                             </div>
 
@@ -754,7 +754,7 @@
                                             class="flex items-center gap-2 p-2 bg-gray-50/50 rounded-xl border border-gray-100 cursor-pointer hover:bg-gray-100 transition-all select-none">
                                             <input type="checkbox" value="{{ $value }}"
                                                 wire:model.defer="selected_leave_excluded_contract_types"
-                                                class="w-4 h-4 text-[color:var(--brand-via)] rounded border-gray-300 focus:ring-[color:var(--brand-via)]"
+                                                class="w-4 h-4 text-[color:var(--accent-orange)] rounded border-gray-300 focus:ring-[color:var(--accent-orange)]"
                                                 @cannot('settings.attendance.manage') disabled @endcannot>
                                             <span class="text-xs font-bold text-gray-700">{{ $label }}</span>
                                         </label>
@@ -776,7 +776,7 @@
                                     <span>{{ tr('Mandatory note') }}</span>
                                 </label>
                                 @error('note_required')
-                                    <div class="text-xs text-red-600 mt-1">{{ $message }}</div>
+                                    <div class="text-xs text-[color:var(--error)] mt-1">{{ $message }}</div>
                                 @enderror
 
                                 <div class="mt-3">
@@ -792,7 +792,7 @@
                                     <span>{{ tr('Require acknowledgment of the note') }}</span>
                                 </label>
                                 @error('note_ack_required')
-                                    <div class="text-xs text-red-600 mt-1">{{ $message }}</div>
+                                    <div class="text-xs text-[color:var(--error)] mt-1">{{ $message }}</div>
                                 @enderror
                             </div>
 
@@ -839,10 +839,10 @@
                                             </label>
                                         </div>
                                         @error('attachment_types')
-                                            <div class="text-xs text-red-600 mt-1">{{ $message }}</div>
+                                            <div class="text-xs text-[color:var(--error)] mt-1">{{ $message }}</div>
                                         @enderror
                                         @error('attachment_types.*')
-                                            <div class="text-xs text-red-600 mt-1">{{ $message }}</div>
+                                            <div class="text-xs text-[color:var(--error)] mt-1">{{ $message }}</div>
                                         @enderror
                                     </div>
 
@@ -923,7 +923,7 @@
                 <x-slot:title>
                     <div class="flex items-center gap-3">
                         <div
-                            class="w-10 h-10 bg-brand-50 text-brand-600 rounded-xl flex items-center justify-center text-lg border border-brand-100 shadow-sm">
+                            class="w-10 h-10 bg-[color:var(--accent-orange)]/10 text-[color:var(--accent-orange)] rounded-xl flex items-center justify-center text-lg border border-[color:var(--accent-orange)]/20 shadow-sm">
                             <i class="fas fa-calendar-alt"></i>
                         </div>
                         <div>
@@ -939,7 +939,7 @@
                         {{-- Add new year --}}
                         <div class="space-y-4">
                             <div class="flex items-center gap-2 mb-1">
-                                <span class="w-1 h-3 bg-brand-500 rounded-full"></span>
+                                <span class="w-1 h-3 bg-[color:var(--accent-orange)] rounded-full"></span>
                                 <h4 class="text-xs font-black text-gray-700 uppercase tracking-wider">
                                     {{ tr('Add New Year') }}</h4>
                             </div>
@@ -985,7 +985,7 @@
                                                 <span>{{ $y->year }}</span>
                                                 @if ($y->is_active)
                                                     <span
-                                                        class="text-[10px] font-black px-2 py-0.5 rounded-full bg-emerald-50 text-emerald-700 border border-emerald-100">
+                                                        class="text-[10px] font-black px-2 py-0.5 rounded-full bg-[color:var(--success)]/10 text-[color:var(--success)] border border-[color:var(--success)]/20">
                                                         {{ tr('Active') }}
                                                     </span>
                                                 @endif
@@ -1001,7 +1001,7 @@
                                         <div class="flex items-center gap-2">
                                             @if (!$y->is_active && (int) $y->year === (int) $this->currentCalendarYear)
                                                 <button wire:click="setYearActive({{ (int) $y->id }})"
-                                                    class="w-8 h-8 rounded-xl bg-gray-50 text-gray-400 hover:bg-emerald-50 hover:text-emerald-600 border border-gray-100 transition-all flex items-center justify-center disabled:opacity-50 cursor-pointer"
+                                                    class="w-8 h-8 rounded-xl bg-gray-50 text-gray-400 hover:bg-[color:var(--success)]/10 hover:text-[color:var(--success)] border border-gray-100 transition-all flex items-center justify-center disabled:opacity-50 cursor-pointer"
                                                     title="{{ tr('Set Active') }}"
                                                     @cannot('settings.attendance.manage') disabled @endcannot>
                                                     <i class="fas fa-bolt text-xs"></i>
@@ -1010,7 +1010,7 @@
 
                                             <button type="button"
                                                 @click.stop="$dispatch('open-confirm-delete-leave-year', { id: {{ (int) $y->id }} })"
-                                                class="w-8 h-8 rounded-xl bg-gray-50 text-gray-400 hover:bg-red-50 hover:text-red-600 border border-gray-100 transition-all flex items-center justify-center disabled:opacity-50 cursor-pointer"
+                                                class="w-8 h-8 rounded-xl bg-gray-50 text-gray-400 hover:bg-[color:var(--error)]/10 hover:text-[color:var(--error)] border border-gray-100 transition-all flex items-center justify-center disabled:opacity-50 cursor-pointer"
                                                 title="{{ tr('Delete') }}"
                                                 @cannot('settings.attendance.manage') disabled @endcannot>
                                                 <i class="fas fa-trash text-xs"></i>
@@ -1047,7 +1047,7 @@
                 <x-slot:title>
                     <div class="flex items-center gap-3">
                         <div
-                            class="w-10 h-10 bg-indigo-50 text-indigo-600 rounded-xl flex items-center justify-center text-lg border border-indigo-100 shadow-sm">
+                            class="w-10 h-10 bg-[color:var(--accent-orange)]/10 text-[color:var(--accent-orange)] rounded-xl flex items-center justify-center text-lg border border-[color:var(--accent-orange)]/20 shadow-sm">
                             <i class="fas fa-exchange-alt"></i>
                         </div>
                         <div>
@@ -1144,7 +1144,7 @@
                                                 }
                                             @endphp
                                             <tr
-                                                class="{{ $different ? 'bg-amber-50/40' : 'hover:bg-gray-50/50' }} transition-colors">
+                                                class="{{ $different ? 'bg-[color:var(--warning)]/10' : 'hover:bg-gray-50/50' }} transition-colors">
                                                 <td class="px-5 py-3 border-e border-gray-50">
                                                     <div class="text-sm font-bold text-gray-900 truncate">
                                                         {{ $r['name'] }}</div>
@@ -1159,7 +1159,7 @@
                                                                 {{ $a->days_per_year }}</span>
 
                                                             <span
-                                                                class="px-2 py-1 {{ $a->is_active ? 'bg-emerald-50 text-emerald-700' : 'bg-red-50 text-red-700' }} rounded-md">
+                                                                class="px-2 py-1 {{ $a->is_active ? 'bg-[color:var(--success)]/10 text-[color:var(--success)]' : 'bg-[color:var(--error)]/10 text-[color:var(--error)]' }} rounded-md">
                                                                 <b>{{ tr('Status') }}:</b>
                                                                 {{ $a->is_active ? tr('Active') : tr('Inactive') }}
                                                             </span>
@@ -1180,7 +1180,7 @@
                                                                 {{ $b->days_per_year }}</span>
 
                                                             <span
-                                                                class="px-2 py-1 {{ $b->is_active ? 'bg-emerald-50 text-emerald-700' : 'bg-red-50 text-red-700' }} rounded-md">
+                                                                class="px-2 py-1 {{ $b->is_active ? 'bg-[color:var(--success)]/10 text-[color:var(--success)]' : 'bg-[color:var(--error)]/10 text-[color:var(--error)]' }} rounded-md">
                                                                 <b>{{ tr('Status') }}:</b>
                                                                 {{ $b->is_active ? tr('Active') : tr('Inactive') }}
                                                             </span>
@@ -1449,7 +1449,7 @@
                 <div class="flex items-start justify-between gap-4">
                     <div class="flex items-center gap-3">
                         <div
-                            class="w-10 h-10 bg-amber-50 text-amber-700 rounded-xl flex items-center justify-center border border-amber-100">
+                            class="w-10 h-10 bg-[color:var(--warning)]/10 text-[color:var(--warning)] rounded-xl flex items-center justify-center border border-[color:var(--warning)]/20">
                             <i class="fas fa-user-clock"></i>
                         </div>
 
@@ -1476,25 +1476,25 @@
                 @endphp
 
                 @if(!$isPermConfigured)
-                    <div class="p-4 bg-amber-50/50 border border-amber-200 rounded-2xl flex items-start gap-4 animate-pulse">
-                        <div class="w-10 h-10 rounded-xl bg-amber-100 text-amber-700 flex items-center justify-center shrink-0 border border-amber-200">
+                    <div class="p-4 bg-[color:var(--warning)]/10 border border-[color:var(--warning)]/25 rounded-2xl flex items-start gap-4 animate-pulse">
+                        <div class="w-10 h-10 rounded-xl bg-[color:var(--warning)]/15 text-[color:var(--warning)] flex items-center justify-center shrink-0 border border-[color:var(--warning)]/25">
                              <i class="fas fa-exclamation-triangle"></i>
                         </div>
                         <div>
-                            <h4 class="text-sm font-black text-amber-900">{{ tr('تنبيه: الإعدادات غير مهيأة') }}</h4>
-                            <p class="text-[11px] text-amber-700 mt-1 leading-relaxed">
+                            <h4 class="text-sm font-black text-[color:var(--warning)]">{{ tr('تنبيه: الإعدادات غير مهيأة') }}</h4>
+                            <p class="text-[11px] text-[color:var(--warning)] mt-1 leading-relaxed">
                                 {{ tr('طلبات الأذونات معطلة حالياً في التطبيق لعدم تحديد حدود الساعات. يرجى إدخال قيمة للحد الشهري أو الحد الأقصى للطلب لتفعيل هذه الميزة.') }}
                             </p>
                         </div>
                     </div>
                 @else
-                    <div class="p-4 bg-emerald-50/50 border border-emerald-200 rounded-2xl flex items-start gap-4 transition-all duration-500">
-                        <div class="w-10 h-10 rounded-xl bg-emerald-100 text-emerald-700 flex items-center justify-center shrink-0 border border-emerald-200">
+                    <div class="p-4 bg-[color:var(--success)]/10 border border-[color:var(--success)]/25 rounded-2xl flex items-start gap-4 transition-all duration-500">
+                        <div class="w-10 h-10 rounded-xl bg-[color:var(--success)]/15 text-[color:var(--success)] flex items-center justify-center shrink-0 border border-[color:var(--success)]/25">
                              <i class="fas fa-check-circle"></i>
                         </div>
                         <div>
-                            <h4 class="text-sm font-black text-emerald-900">{{ tr('تم تهيئة الإعدادات بنجاح') }}</h4>
-                            <p class="text-[11px] text-emerald-700 mt-1 leading-relaxed">
+                            <h4 class="text-sm font-black text-[color:var(--success)]">{{ tr('تم تهيئة الإعدادات بنجاح') }}</h4>
+                            <p class="text-[11px] text-[color:var(--success)] mt-1 leading-relaxed">
                                 {{ tr('إعدادات الأذونات نشطة الآن. يمكن للموظفين تقديم الطلبات من التطبيق بناءً على الحدود المحددة.') }}
                             </p>
                         </div>
@@ -1518,7 +1518,7 @@
                     </div>
 
                     <div class="md:col-span-2">
-                        <div class="p-3 bg-orange-50/30 border border-blue-100 rounded-xl text-[10px] text-blue-700 italic flex items-center gap-2">
+                        <div class="p-3 bg-[rgb(var(--accent-orange-rgb)/0.08)] border border-[rgb(var(--accent-orange-rgb)/0.16)] rounded-xl text-[10px] text-[color:var(--accent-orange)] italic flex items-center gap-2">
                             <i class="fas fa-info-circle"></i>
                             <span>{{ tr('ملاحظة: يجب أن يكون أحد الحدين أعلاه على الأقل أكبر من الصفر للسماح بتقديم الطلبات عبر تطبيق الجوال.') }}</span>
                         </div>
@@ -1575,10 +1575,10 @@
                                 </div>
 
                                 @error('perm_attachment_types')
-                                    <div class="text-xs text-red-600 mt-1">{{ $message }}</div>
+                                    <div class="text-xs text-[color:var(--error)] mt-1">{{ $message }}</div>
                                 @enderror
                                 @error('perm_attachment_types.*')
-                                    <div class="text-xs text-red-600 mt-1">{{ $message }}</div>
+                                    <div class="text-xs text-[color:var(--error)] mt-1">{{ $message }}</div>
                                 @enderror
                             </div>
 

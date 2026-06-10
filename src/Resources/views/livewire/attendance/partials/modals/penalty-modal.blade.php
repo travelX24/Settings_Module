@@ -4,7 +4,7 @@
 >
     <x-slot:title>
         <div class="flex items-center gap-3">
-            <div class="w-10 h-10 bg-orange-50 text-[color:var(--brand-from)] rounded-xl flex items-center justify-center text-lg border border-purple-100 shadow-sm">
+            <div class="w-10 h-10 bg-[rgb(var(--accent-orange-rgb)/0.08)] text-[color:var(--accent-orange)] rounded-xl flex items-center justify-center text-lg border border-[rgb(var(--accent-orange-rgb)/0.16)] shadow-sm">
                 <i class="fas fa-exclamation-triangle"></i>
             </div>
             <div>
@@ -32,7 +32,7 @@
                         <option value="early_departure">{{ tr('Early Departure') }}</option>
                         <option value="unexcused_absence">{{ tr('Unexcused Absence') }}</option>
                     </x-ui.select>
-                    @error('newPenalty.violation_type') <span class="text-[10px] text-red-500 font-bold px-2">{{ tr($message) }}</span> @enderror
+                    @error('newPenalty.violation_type') <span class="text-[10px] text-[color:var(--error)] font-bold px-2">{{ tr($message) }}</span> @enderror
                 </div>
 
                 {{-- Recurrence --}}
@@ -46,7 +46,7 @@
                         <option value="3">3 {{ tr('Times') }}</option>
                         <option value="4">4 {{ tr('Times') }}</option>
                     </x-ui.select>
-                    @error('newPenalty.recurrence_count') <span class="text-[10px] text-red-500 font-bold px-2">{{ tr($message) }}</span> @enderror
+                    @error('newPenalty.recurrence_count') <span class="text-[10px] text-[color:var(--error)] font-bold px-2">{{ tr($message) }}</span> @enderror
                 </div>
             </div>
 
@@ -60,7 +60,7 @@
                         hint="{{ tr('Should be more than the basic grace period.') }}"
                         :disabled="!auth()->user()->can('settings.attendance.manage')"
                     />
-                    @error('newPenalty.threshold_minutes') <span class="text-[10px] text-red-500 font-bold px-2">{{ tr($message) }}</span> @enderror
+                    @error('newPenalty.threshold_minutes') <span class="text-[10px] text-[color:var(--error)] font-bold px-2">{{ tr($message) }}</span> @enderror
                 </div>
 
                 {{-- Penalty Action --}}
@@ -81,11 +81,11 @@
                         <option value="suspension">{{ app()->isLocale('ar') ? 'ايقاف عن العمل' : tr('Suspension') }}</option>
                         <option value="termination">{{ app()->isLocale('ar') ? 'فصل' : tr('Termination') }}</option>
                     </x-ui.select>
-                    @error('newPenalty.penalty_action') <span class="text-[10px] text-red-500 font-bold px-2">{{ tr($message) }}</span> @enderror
+                    @error('newPenalty.penalty_action') <span class="text-[10px] text-[color:var(--error)] font-bold px-2">{{ tr($message) }}</span> @enderror
                 </div>
             
             @if(in_array(($newPenalty['penalty_action'] ?? ''), ['warning_verbal','warning_written','warning_final'], true))
-                <div class="p-4 bg-amber-50/50 rounded-2xl border border-amber-100">
+                <div class="p-4 bg-[rgb(245_158_11/0.08)] rounded-2xl border border-[rgb(245_158_11/0.18)]">
                     <x-ui.input
                         label="{{ app()->isLocale('ar') ? 'الملاحظة' : tr('Note') }}"
                         wire:model.defer="newPenalty.notification_message"
@@ -99,7 +99,7 @@
             </div>
 
             @if($newPenalty['penalty_action'] === 'deduction')
-            <div class="p-6 bg-purple-50/50 rounded-3xl border border-purple-100 animate-in fade-in zoom-in duration-300">
+            <div class="p-6 bg-[rgb(var(--accent-orange-rgb)/0.08)] rounded-3xl border border-[rgb(var(--accent-orange-rgb)/0.16)] animate-in fade-in zoom-in duration-300">
                 <div class="grid grid-cols-1 md:grid-cols-2 gap-6 items-end">
                         <div class="space-y-1">
                             <x-ui.select 
@@ -110,7 +110,7 @@
                                 <option value="percentage">{{ tr('Percentage (%)') }}</option>
                                 <option value="fixed">{{ tr('Fixed Amount') }}</option>
                             </x-ui.select>
-                            @error('newPenalty.deduction_type') <span class="text-[10px] text-red-500 font-bold px-2">{{ tr($message) }}</span> @enderror
+                            @error('newPenalty.deduction_type') <span class="text-[10px] text-[color:var(--error)] font-bold px-2">{{ tr($message) }}</span> @enderror
                         </div>
                         
                         <div class="space-y-1">
@@ -120,7 +120,7 @@
                                 wire:model.defer="newPenalty.deduction_value"
                                 :disabled="!auth()->user()->can('settings.attendance.manage')"
                             />
-                            @error('newPenalty.deduction_value') <span class="text-[10px] text-red-500 font-bold px-2">{{ tr($message) }}</span> @enderror
+                            @error('newPenalty.deduction_value') <span class="text-[10px] text-[color:var(--error)] font-bold px-2">{{ tr($message) }}</span> @enderror
                         </div>
                 </div>
             </div>
@@ -139,7 +139,7 @@
             <x-ui.primary-button 
                 wire:click="savePenalty" 
                 wire:loading.attr="disabled"
-                class="!bg-purple-600 hover:!bg-purple-700 !text-xs !py-3 !px-10 !rounded-2xl shadow-xl flex items-center gap-2 cursor-pointer"
+                class="!bg-[color:var(--accent-orange)] hover:!bg-[color:var(--accent-orange-hover)] !text-xs !py-3 !px-10 !rounded-2xl shadow-xl flex items-center gap-2 cursor-pointer"
             >
                 <div wire:loading wire:target="savePenalty">
                     <i class="fas fa-spinner fa-spin text-xs"></i>

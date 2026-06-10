@@ -40,7 +40,7 @@
         }
     </style>
     <div wire:loading wire:target="setActiveTab" class="fixed top-0 left-0 right-0 h-1 z-[9999] pointer-events-none bg-white/10 overflow-hidden">
-        <div class="h-full bg-gradient-to-r from-[color:var(--brand-from)] via-[color:var(--brand-via)] to-[color:var(--brand-to)] w-1/2 animate-progress-move shadow-[0_0_10px_rgba(var(--brand-via-rgb),0.5)]"></div>
+        <div class="h-full bg-[color:var(--accent-orange)] w-1/2 animate-progress-move shadow-[0_0_10px_rgb(var(--accent-orange-rgb)/0.45)]"></div>
     </div>
 
     {{-- Tabs Navigation --}}
@@ -49,7 +49,7 @@
             <button 
                 type="button"
                 wire:click="setActiveTab('policies')"
-                class="flex-1 whitespace-nowrap px-4 sm:px-6 py-3 sm:py-4 font-semibold text-sm flex items-center justify-center gap-2 transition-all duration-200 cursor-pointer {{ $activeTab === 'policies' ? 'text-[color:var(--brand-via)] border-b-2 sm:border-b-[3px] border-[color:var(--brand-via)] bg-white' : 'text-gray-500 hover:text-gray-700 hover:bg-gray-50 border-b-2 sm:border-b-[3px] border-transparent' }}"
+                class="flex-1 whitespace-nowrap px-4 sm:px-6 py-3 sm:py-4 font-semibold text-sm flex items-center justify-center gap-2 transition-all duration-200 cursor-pointer {{ $activeTab === 'policies' ? 'text-[color:var(--accent-orange)] border-b-2 sm:border-b-[3px] border-[color:var(--accent-orange)] bg-white' : 'text-gray-500 hover:text-gray-700 hover:bg-gray-50 border-b-2 sm:border-b-[3px] border-transparent' }}"
             >
                 <i class="fas fa-clock"></i>
                 <span>{{ tr('Attendance Tracking') }}</span>
@@ -57,7 +57,7 @@
             <button 
                 type="button"
                 wire:click="setActiveTab('regulations')"
-                class="flex-1 whitespace-nowrap px-4 sm:px-6 py-3 sm:py-4 font-semibold text-sm flex items-center justify-center gap-2 transition-all duration-200 cursor-pointer {{ $activeTab === 'regulations' ? 'text-[color:var(--brand-via)] border-b-2 sm:border-b-[3px] border-[color:var(--brand-via)] bg-white' : 'text-gray-500 hover:text-gray-700 hover:bg-gray-50 border-b-2 sm:border-b-[3px] border-transparent' }}"
+                class="flex-1 whitespace-nowrap px-4 sm:px-6 py-3 sm:py-4 font-semibold text-sm flex items-center justify-center gap-2 transition-all duration-200 cursor-pointer {{ $activeTab === 'regulations' ? 'text-[color:var(--accent-orange)] border-b-2 sm:border-b-[3px] border-[color:var(--accent-orange)] bg-white' : 'text-gray-500 hover:text-gray-700 hover:bg-gray-50 border-b-2 sm:border-b-[3px] border-transparent' }}"
             >
                 <i class="fas fa-gavel"></i>
                 <span>{{ tr('Regulations & Penalties') }}</span>
@@ -65,7 +65,7 @@
             <button 
                 type="button"
                 wire:click="setActiveTab('groups')"
-                class="flex-1 whitespace-nowrap px-4 sm:px-6 py-3 sm:py-4 font-semibold text-sm flex items-center justify-center gap-2 transition-all duration-200 cursor-pointer {{ $activeTab === 'groups' ? 'text-[color:var(--brand-via)] border-b-2 sm:border-b-[3px] border-[color:var(--brand-via)] bg-white' : 'text-gray-500 hover:text-gray-700 hover:bg-gray-50 border-b-2 sm:border-b-[3px] border-transparent' }}"
+                class="flex-1 whitespace-nowrap px-4 sm:px-6 py-3 sm:py-4 font-semibold text-sm flex items-center justify-center gap-2 transition-all duration-200 cursor-pointer {{ $activeTab === 'groups' ? 'text-[color:var(--accent-orange)] border-b-2 sm:border-b-[3px] border-[color:var(--accent-orange)] bg-white' : 'text-gray-500 hover:text-gray-700 hover:bg-gray-50 border-b-2 sm:border-b-[3px] border-transparent' }}"
             >
                 <i class="fas fa-users-cog"></i>
                 <span>{{ tr('Groups') }}</span>

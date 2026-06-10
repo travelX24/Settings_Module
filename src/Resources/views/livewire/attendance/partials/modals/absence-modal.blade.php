@@ -1,7 +1,7 @@
 <x-ui.modal wire:model="showAbsenceModal" maxWidth="3xl">
     <x-slot:title>
         <div class="flex items-center gap-3">
-            <div class="w-10 h-10 bg-orange-50 text-[color:var(--brand-from)] rounded-xl flex items-center justify-center text-lg border border-indigo-100 shadow-sm"><i class="fas fa-calendar-times"></i></div>
+            <div class="w-10 h-10 bg-[rgb(var(--accent-orange-rgb)/0.08)] text-[color:var(--accent-orange)] rounded-xl flex items-center justify-center text-lg border border-[rgb(var(--accent-orange-rgb)/0.16)] shadow-sm"><i class="fas fa-calendar-times"></i></div>
             <div>
                 <h3 class="font-bold text-gray-900 text-lg leading-tight">{{ $isEditingAbsence ? tr('Edit Absence Policy') : tr('Add Absence Policy') }}</h3>
                 <p class="text-[10px] text-gray-400 font-bold uppercase tracking-widest">{{ tr('Unapproved Absence Governance') }}</p>
@@ -23,12 +23,12 @@
                         <label class="block text-xs font-black text-gray-400 uppercase tracking-widest">{{ tr('Duration Determination') }}</label>
                         <div class="flex gap-4">
                             <label class="flex items-center gap-2 cursor-pointer group">
-                                <input type="radio" wire:model.live="newAbsencePolicy.day_selector_type" value="single" class="w-3.5 h-3.5 text-[color:var(--brand-from)] border-gray-300" @cannot('settings.attendance.manage') disabled @endcannot>
-                                <span class="text-sm font-bold text-gray-600 group-hover:text-[color:var(--brand-from)] transition-colors">{{ tr('Single Day (Custom)') }}</span>
+                                <input type="radio" wire:model.live="newAbsencePolicy.day_selector_type" value="single" class="w-3.5 h-3.5 text-[color:var(--accent-orange)] border-gray-300" @cannot('settings.attendance.manage') disabled @endcannot>
+                                <span class="text-sm font-bold text-gray-600 group-hover:text-[color:var(--accent-orange)] transition-colors">{{ tr('Single Day (Custom)') }}</span>
                             </label>
                             <label class="flex items-center gap-2 cursor-pointer group">
-                                <input type="radio" wire:model.live="newAbsencePolicy.day_selector_type" value="range" class="w-3.5 h-3.5 text-[color:var(--brand-from)] border-gray-300" @cannot('settings.attendance.manage') disabled @endcannot>
-                                <span class="text-sm font-bold text-gray-600 group-hover:text-[color:var(--brand-from)] transition-colors">{{ tr('Days Range') }}</span>
+                                <input type="radio" wire:model.live="newAbsencePolicy.day_selector_type" value="range" class="w-3.5 h-3.5 text-[color:var(--accent-orange)] border-gray-300" @cannot('settings.attendance.manage') disabled @endcannot>
+                                <span class="text-sm font-bold text-gray-600 group-hover:text-[color:var(--accent-orange)] transition-colors">{{ tr('Days Range') }}</span>
                             </label>
                         </div>
 
@@ -45,7 +45,7 @@
                     </div>
 
                     @if(($newAbsencePolicy['absence_reason_type'] ?? '') === 'late_early')
-                        <div class="grid grid-cols-2 gap-4 p-4 bg-amber-50/50 rounded-2xl border border-amber-100">
+                        <div class="grid grid-cols-2 gap-4 p-4 bg-[rgb(245_158_11/0.08)] rounded-2xl border border-[rgb(245_158_11/0.18)]">
                             <x-ui.input label="{{ tr('Minutes') }}" type="number" wire:model.defer="newAbsencePolicy.late_minutes" required :disabled="!auth()->user()->can('settings.attendance.manage')" />
                             <x-ui.input label="{{ tr('Repetitions') }}" type="number" wire:model.defer="newAbsencePolicy.recurrence_count" required :disabled="!auth()->user()->can('settings.attendance.manage')" />
                         </div>
@@ -65,8 +65,8 @@
                     </x-ui.select>
 
                     @if(($newAbsencePolicy['penalty_action'] ?? '') === 'deduction')
-                        <div class="space-y-4 p-4 bg-red-50/50 rounded-2xl border border-red-100 shadow-inner">
-                            <label class="block text-xs font-black text-red-400 uppercase tracking-widest">{{ tr('Deduction Details') }}</label>
+                        <div class="space-y-4 p-4 bg-[rgb(239_68_68/0.10)] rounded-2xl border border-[rgb(239_68_68/0.20)] shadow-inner">
+                            <label class="block text-xs font-black text-[color:var(--error)] uppercase tracking-widest">{{ tr('Deduction Details') }}</label>
                             <x-ui.select label="{{ tr('Deduction Type') }}" wire:model.defer="newAbsencePolicy.deduction_type" required :disabled="!auth()->user()->can('settings.attendance.manage')">
                                 <option value="fixed">{{ tr('Fixed Amount (SAR)') }}</option>
                                 <option value="percentage">{{ tr('Percentage of Salary (%)') }}</option>
@@ -76,7 +76,7 @@
                     @endif
 
                     <div class="p-4 bg-gray-50 rounded-2xl border border-gray-100 flex items-start gap-3">
-                        <i class="fas fa-info-circle text-indigo-400 mt-1"></i>
+                        <i class="fas fa-info-circle text-[color:var(--accent-orange)] mt-1"></i>
                         <div class="space-y-1">
                             <h5 class="text-[11px] font-bold text-gray-700 uppercase tracking-tight">{{ tr('System Intelligence') }}</h5>
                             <p class="text-[10px] text-gray-400 leading-relaxed">{{ tr('This policy will be automatically triggered twice a day during the reconciliation process to ensure real-time accuracy.') }}</p>
@@ -89,7 +89,7 @@
     <x-slot:footer>
         <x-ui.secondary-button wire:click="$set('showAbsenceModal', false)">{{ tr('Cancel') }}</x-ui.secondary-button>
         @can('settings.attendance.manage')
-        <x-ui.brand-button wire:click="saveAbsencePolicy" class="!px-10 !rounded-xl shadow-xl shadow-indigo-100">
+        <x-ui.brand-button wire:click="saveAbsencePolicy" class="!px-10 !rounded-xl shadow-[0_10px_20px_rgb(var(--accent-orange-rgb)/0.20)]">
             {{ $isEditingAbsence ? tr('Update Policy') : tr('Save Policy') }}
         </x-ui.brand-button>
         @endcan

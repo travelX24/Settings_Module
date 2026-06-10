@@ -74,7 +74,7 @@
                 <x-ui.card wire:key="role-card-{{ $role->id }}" :hover="true" :padding="false" class="rounded-2xl border-gray-200 p-5 group flex flex-col h-full">
                     <div class="flex items-start justify-between mb-4">
                         <div class="flex items-center gap-3 min-w-0">
-                            <div class="w-12 h-12 rounded-xl bg-gradient-to-br from-[color:var(--brand-from)] to-[color:var(--brand-via)] flex items-center justify-center text-white shadow-lg shrink-0">
+                            <div class="w-12 h-12 rounded-xl bg-[rgb(var(--accent-orange-rgb)/0.10)] text-[color:var(--accent-orange)] border border-[rgb(var(--accent-orange-rgb)/0.16)] flex items-center justify-center shadow-sm shrink-0">
                                 <i class="fas fa-user-shield text-xl"></i>
                             </div>
                             <div class="min-w-0">
@@ -91,12 +91,12 @@
 
                                 @if(!$isProtected)
                                     <x-ui.dropdown-item wire:click="openEditModal({{ $role->id }})">
-                                        <i class="fas fa-edit mr-2 w-5 text-[color:var(--brand-from)]"></i>
+                                        <i class="fas fa-edit mr-2 w-5 text-[color:var(--accent-orange)]"></i>
                                         {{ tr('Edit Role') }}
                                     </x-ui.dropdown-item>
                                 @endif
                                 <x-ui.dropdown-item wire:click="copyRole({{ $role->id }})">
-                                    <i class="fas fa-copy mr-2 w-5 text-emerald-500"></i>
+                                    <i class="fas fa-copy mr-2 w-5 text-[color:var(--success)]"></i>
                                     {{ tr('Duplicate Role') }}
                                 </x-ui.dropdown-item>
                                 
@@ -125,7 +125,7 @@
                         <div class="flex items-center justify-between py-2 border-b border-gray-50">
                             <span class="text-xs font-medium text-gray-500">{{ tr('Permissions') }}</span>
                             @php $permsCount = $role->permissions->count(); @endphp
-                            <span class="text-xs font-bold text-[color:var(--brand-from)] bg-orange-50 px-2 py-0.5 rounded-lg">
+                            <span class="text-xs font-bold text-[color:var(--accent-orange)] bg-[rgb(var(--accent-orange-rgb)/0.08)] px-2 py-0.5 rounded-lg">
                                 {{ $permsCount }} {{ tr('Permissions') }}
                             </span>
                         </div>
@@ -138,7 +138,7 @@
                     </div>
 
                     <div class="mt-4 flex items-center justify-between">
-                         <span class="text-[10px] bg-orange-50 text-indigo-700 px-2 py-1 rounded-lg font-bold border border-orange-100">
+                         <span class="text-[10px] bg-[rgb(var(--accent-orange-rgb)/0.08)] text-[color:var(--accent-orange)] px-2 py-1 rounded-lg font-bold border border-[rgb(var(--accent-orange-rgb)/0.16)]">
                             <i class="fas fa-shield-alt mr-1"></i> {{ tr('Access Role') }}
                         </span>
                     </div>
@@ -174,15 +174,15 @@
                         <div class="flex items-center" x-data="{ showTooltip: false, pos: { top: 0, left: 0 } }">
                             @php $permsCount = $role->permissions->count(); @endphp
                             <div class="relative inline-block">
-                                <button type="button" x-ref="trigger" @click="showTooltip = !showTooltip; if(showTooltip) { const rect = $refs.trigger.getBoundingClientRect(); pos = { top: rect.top, left: rect.left + rect.width / 2 }; }" class="flex items-center gap-2 px-3 py-1.5 rounded-lg bg-orange-50 text-indigo-700 border border-orange-100/50 hover:bg-orange-100 transition-all group cursor-pointer">
-                                    <i class="fas fa-shield-alt text-[color:var(--brand-via)] group-hover:scale-110 transition-transform"></i>
+                                <button type="button" x-ref="trigger" @click="showTooltip = !showTooltip; if(showTooltip) { const rect = $refs.trigger.getBoundingClientRect(); pos = { top: rect.top, left: rect.left + rect.width / 2 }; }" class="flex items-center gap-2 px-3 py-1.5 rounded-lg bg-[rgb(var(--accent-orange-rgb)/0.08)] text-[color:var(--accent-orange)] border border-[rgb(var(--accent-orange-rgb)/0.16)] hover:bg-[rgb(var(--accent-orange-rgb)/0.12)] transition-all group cursor-pointer">
+                                    <i class="fas fa-shield-alt text-[color:var(--accent-orange)] group-hover:scale-110 transition-transform"></i>
                                     <span class="text-xs font-bold">{{ $permsCount }}</span>
                                 </button>
                                 <template x-teleport="body">
                                     <div x-show="showTooltip" x-cloak @click.away="showTooltip = false" x-transition.opacity class="fixed z-[9999]" :style="'top: ' + pos.top + 'px; left: ' + pos.left + 'px; transform: translate(-50%, -110%);'">
                                         <div class="bg-white border border-gray-100 rounded-xl shadow-2xl p-3 w-64">
                                             <h5 class="font-bold text-gray-900 text-[10px] uppercase tracking-wider mb-2 border-b border-gray-50 pb-1 flex items-center gap-2">
-                                                <i class="fas fa-shield-alt text-[color:var(--brand-from)]"></i>
+                                                <i class="fas fa-shield-alt text-[color:var(--accent-orange)]"></i>
                                                 {{ tr('Role Permissions') }}
                                             </h5>
                                             <div class="flex flex-wrap gap-1 max-h-48 overflow-y-auto custom-scrollbar">
@@ -221,13 +221,13 @@
 
                                 @if(!$isProtected)
                                     <x-ui.dropdown-item wire:click="openEditModal({{ $role->id }})">
-                                        <i class="fas fa-edit mr-2 w-5 text-[color:var(--brand-from)]"></i>
+                                        <i class="fas fa-edit mr-2 w-5 text-[color:var(--accent-orange)]"></i>
                                         {{ tr('Edit Role') }}
                                     </x-ui.dropdown-item>
                                 @endif
 
                                 <x-ui.dropdown-item wire:click="copyRole({{ $role->id }})">
-                                    <i class="fas fa-copy mr-2 w-5 text-emerald-500"></i>
+                                    <i class="fas fa-copy mr-2 w-5 text-[color:var(--success)]"></i>
                                     {{ tr('Duplicate') }}
                                 </x-ui.dropdown-item>
                                 
@@ -257,8 +257,8 @@
     <x-ui.modal wire:model="showModal" maxWidth="5xl">
         <x-slot name="title">
             <div class="flex items-center gap-3">
-                <div class="w-10 h-10 rounded-xl flex items-center justify-center {{ $editingId ? 'bg-orange-50' : 'bg-emerald-50' }}">
-                    <i class="fas {{ $editingId ? 'fa-edit text-[color:var(--brand-from)]' : 'fa-plus text-emerald-500' }} text-lg"></i>
+                <div class="w-10 h-10 rounded-xl flex items-center justify-center bg-[rgb(var(--accent-orange-rgb)/0.08)]">
+                    <i class="fas {{ $editingId ? 'fa-edit' : 'fa-plus' }} text-[color:var(--accent-orange)] text-lg"></i>
                 </div>
                 <div>
                     <h3 class="text-base font-extrabold text-gray-900 leading-none mb-1">
@@ -273,8 +273,8 @@
         <x-slot name="content">
             <div class="space-y-6" x-data="{ permSearch: '', activeGroup: null }">
                 @if($errors->any())
-                    <div class="bg-red-50 border-s-4 border-red-500 p-3 rounded-lg">
-                        <ul class="list-disc list-inside text-xs text-red-600">
+                    <div class="bg-[rgb(239_68_68/0.10)] border-s-4 border-[color:var(--error)] p-3 rounded-lg">
+                        <ul class="list-disc list-inside text-xs text-[color:var(--error)]">
                             @foreach ($errors->all() as $error)
                                 <li>{{ tr($error) }}</li>
                             @endforeach
@@ -295,7 +295,7 @@
                 <div class="space-y-4">
                     <div class="flex items-center justify-between border-b border-gray-100 pb-3">
                         <h4 class="text-sm font-extrabold text-gray-900 flex items-center gap-2">
-                             <i class="fas fa-shield-alt text-[color:var(--brand-from)]"></i>
+                             <i class="fas fa-shield-alt text-[color:var(--accent-orange)]"></i>
                              {{ tr('Role Permissions') }}
                         </h4>
                         <div class="relative w-64">
@@ -303,7 +303,7 @@
                                 type="text" 
                                 x-model="permSearch" 
                                 placeholder="{{ tr('Filter permissions...') }}"
-                                class="w-full pr-8 pl-3 py-1.5 text-xs border border-gray-200 rounded-xl focus:ring-2 focus:ring-[color:var(--brand-from)]/20 focus:border-[color:var(--brand-from)] outline-none transition-all"
+                                class="w-full pr-8 pl-3 py-1.5 text-xs border border-gray-200 rounded-xl focus:ring-2 focus:ring-[rgb(var(--accent-orange-rgb)/0.22)] focus:border-[color:var(--accent-orange)] outline-none transition-all"
                             />
                             <span class="absolute inset-y-0 end-0 pe-3 flex items-center pointer-events-none">
                                 <i class="fas fa-search text-gray-300 text-[10px]"></i>
@@ -318,10 +318,10 @@
                             <button 
                                 type="button"
                                 @click="activeTab = '{{ $tabKey }}'"
-                                :class="activeTab === '{{ $tabKey }}' ? 'bg-[color:var(--brand-from)] text-white shadow-md scale-[1.02]' : 'bg-white text-gray-500 hover:bg-gray-50 border border-gray-100'"
+                                :class="activeTab === '{{ $tabKey }}' ? 'bg-[color:var(--accent-orange)] text-white shadow-md scale-[1.02]' : 'bg-white text-gray-500 hover:bg-gray-50 border border-gray-100'"
                                 class="flex items-center gap-3 px-4 py-3 rounded-xl transition-all duration-200 text-sm font-bold whitespace-nowrap group shrink-0"
                             >
-                                <div class="w-8 h-8 rounded-lg flex items-center justify-center transition-colors" :class="activeTab === '{{ $tabKey }}' ? 'bg-white/20' : 'bg-gray-50 text-gray-400 group-hover:text-[color:var(--brand-from)]'">
+                                <div class="w-8 h-8 rounded-lg flex items-center justify-center transition-colors" :class="activeTab === '{{ $tabKey }}' ? 'bg-white/20' : 'bg-gray-50 text-gray-400 group-hover:text-[color:var(--accent-orange)]'">
                                     <i class="fas {{ $tab['icon'] }} text-xs"></i>
                                 </div>
                                 <span class="hidden md:inline">{{ $tab['label'] }}</span>
@@ -338,7 +338,7 @@
                             <div x-show="activeTab === '{{ $tabKey }}'" x-cloak class="space-y-6 animate-in fade-in slide-in-from-right-2 duration-300">
                                 <div class="flex items-center justify-between">
                                     <h4 class="text-sm font-extrabold text-gray-900 flex items-center gap-2">
-                                        <i class="fas {{ $tab['icon'] }} text-[color:var(--brand-from)]"></i>
+                                        <i class="fas {{ $tab['icon'] }} text-[color:var(--accent-orange)]"></i>
                                         {{ $tab['label'] }}
                                     </h4>
                                     <button 
@@ -349,7 +349,7 @@
                                             $allSelectedInTab = count($allInTabKeys) > 0 && count($tabKeysInSelected) === count($allInTabKeys);
                                         @endphp
                                         wire:click="toggleTab('{{ $tabKey }}')"
-                                        class="text-[10px] font-bold {{ $allSelectedInTab ? 'text-red-600 bg-red-50 border-red-100' : 'text-[color:var(--brand-from)] bg-orange-50 border-orange-100' }} border px-3 py-1.5 rounded-lg hover:brightness-95 transition-all"
+                                        class="text-[10px] font-bold {{ $allSelectedInTab ? 'text-[color:var(--error)] bg-[rgb(239_68_68/0.10)] border-[rgb(239_68_68/0.20)]' : 'text-[color:var(--accent-orange)] bg-[rgb(var(--accent-orange-rgb)/0.08)] border-[rgb(var(--accent-orange-rgb)/0.16)]' }} border px-3 py-1.5 rounded-lg hover:brightness-95 transition-all"
                                     >
                                         {{ $allSelectedInTab ? tr('Deselect All Section') : tr('Select All Section') }}
                                     </button>
@@ -357,7 +357,7 @@
 
                                 <div class="grid grid-cols-1 lg:grid-cols-2 gap-4 max-h-[450px] overflow-y-auto custom-scrollbar pe-2">
                                     @foreach($tab['groups'] as $groupName => $permissions)
-                                        <div class="bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden flex flex-col group/card hover:border-orange-200 transition-colors self-start">
+                                        <div class="bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden flex flex-col group/card hover:border-[rgb(var(--accent-orange-rgb)/0.28)] transition-colors self-start">
                                             <div 
                                                 class="px-4 py-3 bg-gray-50/50 border-b border-gray-100 flex items-center justify-between cursor-pointer hover:bg-gray-50 transition-colors group"
                                                 @click="activeGroup = activeGroup === '{{ $groupName }}' ? null : '{{ $groupName }}'"
@@ -369,14 +369,14 @@
                                                     @endphp
                                                     <input 
                                                         type="checkbox" 
-                                                        class="w-4 h-4 rounded border-gray-300 text-[color:var(--brand-from)] focus:ring-[color:var(--brand-from)] cursor-pointer"
+                                                        class="w-4 h-4 rounded border-gray-300 text-[color:var(--accent-orange)] focus:ring-[color:var(--accent-orange)] cursor-pointer"
                                                         wire:click.stop="toggleGroup('{{ $groupName }}')"
                                                         {{ $allSelectedInGroup ? 'checked' : '' }}
                                                         @cannot('uac.roles.manage') disabled @endcannot
                                                     />
-                                                    <span class="text-xs font-extrabold text-gray-800 group-hover:text-[color:var(--brand-from)] transition-colors">{{ tr($groupName) }}</span>
+                                                    <span class="text-xs font-extrabold text-gray-800 group-hover:text-[color:var(--accent-orange)] transition-colors">{{ tr($groupName) }}</span>
                                                 </div>
-                                                <i class="fas fa-chevron-down text-[10px] text-gray-400 transition-transform duration-300" :class="activeGroup === '{{ $groupName }}' ? 'rotate-180 text-[color:var(--brand-from)]' : ''"></i>
+                                                <i class="fas fa-chevron-down text-[10px] text-gray-400 transition-transform duration-300" :class="activeGroup === '{{ $groupName }}' ? 'rotate-180 text-[color:var(--accent-orange)]' : ''"></i>
                                             </div>
 
                                             <div 
@@ -392,11 +392,11 @@
                                                             type="checkbox" 
                                                             wire:model="selectedPermissions" 
                                                             value="{{ $permKey }}"
-                                                            class="w-4 h-4 rounded-md border-gray-300 text-[color:var(--brand-from)] focus:ring-[color:var(--brand-from)] cursor-pointer transition-all"
+                                                            class="w-4 h-4 rounded-md border-gray-300 text-[color:var(--accent-orange)] focus:ring-[color:var(--accent-orange)] cursor-pointer transition-all"
                                                             @cannot('uac.roles.manage') disabled @endcannot
                                                         >
                                                         <div class="flex flex-col min-w-0">
-                                                            <span class="text-xs font-bold text-slate-700 group-hover/item:text-[color:var(--brand-from)] transition-colors break-words leading-tight">{{ tr($permLabel) }}</span>
+                                                            <span class="text-xs font-bold text-slate-700 group-hover/item:text-[color:var(--accent-orange)] transition-colors break-words leading-tight">{{ tr($permLabel) }}</span>
                                                             <span class="text-[9px] text-slate-400 font-mono tracking-tighter truncate mt-0.5">{{ $permKey }}</span>
                                                         </div>
                                                     </label>
@@ -413,7 +413,7 @@
                 <div class="flex items-center justify-between border-t border-gray-100 pt-4 mt-8">
                      <div class="flex items-center gap-2">
                          <span class="text-[10px] font-bold text-gray-400 uppercase tracking-widest">{{ tr('Total Permissions') }}:</span>
-                         <span class="text-xs font-extrabold text-[color:var(--brand-from)] bg-orange-50 px-3 py-1 rounded-full border border-orange-100">
+                         <span class="text-xs font-extrabold text-[color:var(--accent-orange)] bg-[rgb(var(--accent-orange-rgb)/0.08)] px-3 py-1 rounded-full border border-[rgb(var(--accent-orange-rgb)/0.16)]">
                             {{ count($selectedPermissions) }}
                          </span>
                      </div>

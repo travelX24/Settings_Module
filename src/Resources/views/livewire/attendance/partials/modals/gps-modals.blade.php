@@ -2,7 +2,7 @@
 <x-ui.modal wire:model="showSavedLocationsModal" maxWidth="4xl">
     <x-slot:title>
         <div class="flex items-center gap-3">
-            <div class="w-10 h-10 bg-gray-50 text-[color:var(--brand-via)] rounded-xl flex items-center justify-center text-lg border border-gray-100"><i class="fas fa-list-ul"></i></div>
+            <div class="w-10 h-10 bg-[rgb(var(--accent-orange-rgb)/0.08)] text-[color:var(--accent-orange)] rounded-xl flex items-center justify-center text-lg border border-[rgb(var(--accent-orange-rgb)/0.16)]"><i class="fas fa-list-ul"></i></div>
             <div>
                 <h3 class="font-bold text-gray-900 text-lg leading-tight">{{ tr('Saved Geographic Locations') }}</h3>
                 <p class="text-[10px] text-gray-400 font-bold uppercase tracking-widest">{{ count($geographicLocations) }} {{ tr('Locations Recorded') }}</p>
@@ -12,10 +12,10 @@
     <x-slot:content>
         <div class="space-y-4 max-h-[60vh] overflow-y-auto pr-2 custom-scrollbar py-2">
             @forelse($geographicLocations as $loc)
-                <x-ui.card class="!p-0 border-none shadow-sm overflow-hidden bg-white hover:border-orange-100 border-2 border-transparent transition-all group">
+                <x-ui.card class="!p-0 border-none shadow-sm overflow-hidden bg-white hover:border-[rgb(var(--accent-orange-rgb)/0.16)] border-2 border-transparent transition-all group">
                     <div class="flex items-stretch divide-x divide-gray-50 rtl:divide-x-reverse">
                         <div class="p-4 bg-gray-50/50 flex items-center justify-center">
-                            <div class="w-10 h-10 rounded-full bg-white shadow-sm flex items-center justify-center text-[color:var(--brand-from)] border border-blue-50">
+                            <div class="w-10 h-10 rounded-full bg-white shadow-sm flex items-center justify-center text-[color:var(--accent-orange)] border border-[rgb(var(--accent-orange-rgb)/0.12)]">
                                 <i class="fas fa-map-marked-alt"></i>
                             </div>
                         </div>
@@ -41,14 +41,14 @@
                             @can('settings.attendance.manage')
                             <x-ui.actions-menu>
                                 <x-ui.dropdown-item wire:click="editGpsLocation({{ $loc['id'] }})">
-                                    <i class="fas fa-edit me-2 text-[color:var(--brand-from)]"></i>
+                                    <i class="fas fa-edit me-2 text-[color:var(--accent-orange)]"></i>
                                     <span>{{ tr('Edit') }}</span>
                                 </x-ui.dropdown-item>
                                 <x-ui.dropdown-item 
                                     danger
                                     @click="$dispatch('open-confirm-delete-location', { id: {{ $loc['id'] }} })"
                                 >
-                                    <i class="fas fa-trash-alt me-2 text-red-500"></i>
+                                    <i class="fas fa-trash-alt me-2 text-[color:var(--error)]"></i>
                                     <span>{{ tr('Remove') }}</span>
                                 </x-ui.dropdown-item>
                             </x-ui.actions-menu>
@@ -75,7 +75,7 @@
 <x-ui.modal wire:model="showGpsModal" maxWidth="5xl">
     <x-slot:title>
         <div class="flex items-center gap-3">
-            <div class="w-10 h-10 bg-orange-50 text-[color:var(--brand-from)] rounded-xl flex items-center justify-center text-lg border border-orange-100 shadow-sm"><i class="fas fa-map-marked-alt"></i></div>
+            <div class="w-10 h-10 bg-[rgb(var(--accent-orange-rgb)/0.08)] text-[color:var(--accent-orange)] rounded-xl flex items-center justify-center text-lg border border-[rgb(var(--accent-orange-rgb)/0.16)] shadow-sm"><i class="fas fa-map-marked-alt"></i></div>
             <div>
                 <h3 class="font-bold text-gray-900 text-lg leading-tight">{{ tr('Select Geographic Location') }}</h3>
                 <p class="text-[10px] text-gray-400 font-bold uppercase tracking-widest">{{ tr('Interactive Map Picker') }}</p>
@@ -84,16 +84,16 @@
     </x-slot:title>
     <x-slot:content>
         @if($errors->any())
-            <div class="mb-4 bg-red-50 border-s-4 border-red-500 p-3 rounded-e-xl">
+            <div class="mb-4 bg-[rgb(239_68_68/0.10)] border-s-4 border-[color:var(--error)] p-3 rounded-e-xl">
                 <div class="flex">
                     <div class="flex-shrink-0">
-                        <i class="fas fa-exclamation-circle text-red-500 mt-0.5"></i>
+                        <i class="fas fa-exclamation-circle text-[color:var(--error)] mt-0.5"></i>
                     </div>
                     <div class="ms-3">
-                        <p class="text-xs text-red-700 font-bold uppercase tracking-wider mb-1">
+                        <p class="text-xs text-[color:var(--error)] font-bold uppercase tracking-wider mb-1">
                             {{ tr('The following errors occurred:') }}
                         </p>
-                        <ul class="list-disc list-inside text-[11px] text-red-600 space-y-0.5">
+                        <ul class="list-disc list-inside text-[11px] text-[color:var(--error)] space-y-0.5">
                             @foreach ($errors->all() as $error)
                                 <li>{{ tr($error) }}</li>
                             @endforeach
@@ -121,11 +121,11 @@
                             <label class="text-[10px] font-black text-gray-400 uppercase tracking-widest">{{ tr('Location By') }}</label>
                             <div class="flex gap-4">
                                 <label class="flex items-center gap-2 cursor-pointer">
-                                    <input type="radio" wire:model.live="gpsTarget" value="branch" class="w-3.5 h-3.5 text-[color:var(--brand-via)] border-gray-300" @cannot('settings.attendance.manage') disabled @endcannot>
+                                    <input type="radio" wire:model.live="gpsTarget" value="branch" class="w-3.5 h-3.5 text-[color:var(--accent-orange)] border-gray-300" @cannot('settings.attendance.manage') disabled @endcannot>
                                     <span class="text-xs font-bold text-gray-600">{{ tr('Branch') }}</span>
                                 </label>
                                 <label class="flex items-center gap-2 cursor-pointer">
-                                    <input type="radio" wire:model.live="gpsTarget" value="groups" class="w-3.5 h-3.5 text-[color:var(--brand-via)] border-gray-300" @cannot('settings.attendance.manage') disabled @endcannot>
+                                    <input type="radio" wire:model.live="gpsTarget" value="groups" class="w-3.5 h-3.5 text-[color:var(--accent-orange)] border-gray-300" @cannot('settings.attendance.manage') disabled @endcannot>
                                     <span class="text-xs font-bold text-gray-600">{{ tr('Employee Group') }}</span>
                                 </label>
                             </div>
@@ -143,10 +143,10 @@
                                                 @endif
                                             @endforeach
                                         </x-ui.select>
-                                        @error('selectedBranch') <span class="text-[10px] text-red-500 font-bold px-1">{{ tr($message) }}</span> @enderror
+                                        @error('selectedBranch') <span class="text-[10px] text-[color:var(--error)] font-bold px-1">{{ tr($message) }}</span> @enderror
                                     @else
                                         <div class="text-[11px] text-gray-500 bg-gray-50 p-2 rounded-lg border border-gray-100 flex items-center gap-2">
-                                            <i class="fas fa-info-circle text-[color:var(--brand-from)]"></i>
+                                            <i class="fas fa-info-circle text-[color:var(--accent-orange)]"></i>
                                             {{ tr('No branches available.') }}
                                         </div>
                                     @endif
@@ -157,10 +157,10 @@
                                                 <option value="{{ $g['id'] }}">{{ $g['name'] }}</option>
                                            @endforeach
                                         </x-ui.select>
-                                        @error('selectedGroups') <span class="text-[10px] text-red-500 font-bold px-1">{{ tr($message) }}</span> @enderror
+                                        @error('selectedGroups') <span class="text-[10px] text-[color:var(--error)] font-bold px-1">{{ tr($message) }}</span> @enderror
                                     @else
                                         <div class="text-[11px] text-gray-500 bg-gray-50 p-2 rounded-lg border border-gray-100 flex items-center gap-2">
-                                            <i class="fas fa-info-circle text-[color:var(--brand-from)]"></i>
+                                            <i class="fas fa-info-circle text-[color:var(--accent-orange)]"></i>
                                             {{ tr('No employee groups available.') }}
                                         </div>
                                     @endif
@@ -168,7 +168,7 @@
                             </div>
 
                             <x-ui.input label="{{ tr('Location Name') }}" wire:model.defer="gpsData.name" name="gpsData.name" placeholder="{{ tr('e.g. Sales Dept Area') }}" required class="!py-2" :disabled="!auth()->user()->can('settings.attendance.manage')" />
-                            @error('gpsData.name') <span class="text-[10px] text-red-500 font-bold px-1">{{ tr($message) }}</span> @enderror
+                            @error('gpsData.name') <span class="text-[10px] text-[color:var(--error)] font-bold px-1">{{ tr($message) }}</span> @enderror
                         </div>
                     </div>
 
@@ -176,21 +176,21 @@
                     <div class="p-4 bg-white rounded-2xl border border-gray-100 shadow-sm space-y-3 relative overflow-hidden">
                         {{-- Loading Overlay --}}
                         <div x-show="isFetching" x-transition class="absolute inset-0 bg-white/60 backdrop-blur-[1px] z-10 flex items-center justify-center">
-                            <i class="fas fa-circle-notch fa-spin text-[color:var(--brand-from)]"></i>
+                            <i class="fas fa-circle-notch fa-spin text-[color:var(--accent-orange)]"></i>
                         </div>
 
-                        <h5 class="text-[9px] font-black text-[color:var(--brand-from)] uppercase tracking-widest border-b border-gray-50 pb-2 mb-2">{{ tr('Location Metadata') }}</h5>
+                        <h5 class="text-[9px] font-black text-[color:var(--accent-orange)] uppercase tracking-widest border-b border-gray-50 pb-2 mb-2">{{ tr('Location Metadata') }}</h5>
                         
                         <div class="grid grid-cols-2 gap-3">
                             <div>
                                 <label class="text-[10px] text-gray-400 block mb-1">{{ tr('Latitude') }}</label>
                                 <span x-text="parseFloat(lat || 0).toFixed(6)" class="text-xs font-mono font-bold text-gray-700 bg-gray-50 px-2 py-1 rounded w-full block"></span>
-                                @error('gpsData.lat') <span class="text-[9px] text-red-500 font-bold">{{ tr($message) }}</span> @enderror
+                                @error('gpsData.lat') <span class="text-[9px] text-[color:var(--error)] font-bold">{{ tr($message) }}</span> @enderror
                             </div>
                             <div>
                                 <label class="text-[10px] text-gray-400 block mb-1">{{ tr('Longitude') }}</label>
                                 <span x-text="parseFloat(lng || 0).toFixed(6)" class="text-xs font-mono font-bold text-gray-700 bg-gray-50 px-2 py-1 rounded w-full block"></span>
-                                @error('gpsData.lng') <span class="text-[9px] text-red-500 font-bold">{{ tr($message) }}</span> @enderror
+                                @error('gpsData.lng') <span class="text-[9px] text-[color:var(--error)] font-bold">{{ tr($message) }}</span> @enderror
                             </div>
                         </div>
 
@@ -213,8 +213,8 @@
                             </div>
                             <div>
                                 <span class="text-[8px] font-bold text-gray-400 block mb-0.5">{{ tr('Radius Accuracy') }}</span>
-                                <span class="text-[11px] font-black text-emerald-600 block truncate" x-text="radius + 'm'"></span>
-                                @error('gpsData.radius') <span class="text-[9px] text-red-500 font-bold">{{ tr($message) }}</span> @enderror
+                                <span class="text-[11px] font-black text-[color:var(--success)] block truncate" x-text="radius + 'm'"></span>
+                                @error('gpsData.radius') <span class="text-[9px] text-[color:var(--error)] font-bold">{{ tr($message) }}</span> @enderror
                             </div>
                         </div>
                     </div>
@@ -231,19 +231,19 @@
                             <div class="flex-1 pointer-events-auto max-w-2xl">
                                 <div class="relative group/search">
                                     <div class="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
-                                        <i class="fas" :class="isSearching ? 'fa-circle-notch fa-spin text-[color:var(--brand-from)]' : 'fa-search text-gray-400 group-focus-within/search:text-[color:var(--brand-from)]'"></i>
+                                        <i class="fas" :class="isSearching ? 'fa-circle-notch fa-spin text-[color:var(--accent-orange)]' : 'fa-search text-gray-400 group-focus-within/search:text-[color:var(--accent-orange)]'"></i>
                                     </div>
                                     <input 
                                         type="text" 
                                         x-model="searchQuery" 
                                         @input.debounce.500ms="searchLocation()"
                                         placeholder="{{ tr('Search for a place or address...') }}"
-                                        class="block w-full pl-11 pr-11 py-2.5 bg-white/95 backdrop-blur-xl border border-gray-200/50 rounded-2xl text-xs font-bold shadow-xl focus:ring-4 focus:ring-blue-500/10 focus:border-blue-400 transition-all placeholder:text-gray-400 placeholder:font-medium"
+                                        class="block w-full pl-11 pr-11 py-2.5 bg-white/95 backdrop-blur-xl border border-gray-200/50 rounded-2xl text-xs font-bold shadow-xl focus:ring-4 focus:ring-[rgb(var(--accent-orange-rgb)/0.16)] focus:border-[color:var(--accent-orange)] transition-all placeholder:text-gray-400 placeholder:font-medium"
                                     >
                                     <button 
                                         x-show="searchQuery.length > 0" 
                                         @click="searchQuery = ''; searchResults = []; isSearching = false" 
-                                        class="absolute inset-y-0 right-0 pr-4 flex items-center text-gray-300 hover:text-red-500 transition-colors"
+                                        class="absolute inset-y-0 right-0 pr-4 flex items-center text-gray-300 hover:text-[color:var(--error)] transition-colors"
                                         type="button"
                                     >
                                         <i class="fas fa-times-circle text-lg"></i>
@@ -264,15 +264,15 @@
                                             <span x-show="!isSearching">{{ tr('Found Locations') }}</span>
                                             <span x-show="isSearching">{{ tr('Searching...') }}</span>
                                         </span>
-                                        <span x-show="!isSearching" class="text-[10px] font-bold text-[color:var(--brand-from)] bg-orange-50 px-2 py-0.5 rounded-full" x-text="searchResults.length"></span>
-                                        <i x-show="isSearching" class="fas fa-circle-notch fa-spin text-[color:var(--brand-from)] text-[10px]"></i>
+                                        <span x-show="!isSearching" class="text-[10px] font-bold text-[color:var(--accent-orange)] bg-[rgb(var(--accent-orange-rgb)/0.08)] px-2 py-0.5 rounded-full" x-text="searchResults.length"></span>
+                                        <i x-show="isSearching" class="fas fa-circle-notch fa-spin text-[color:var(--accent-orange)] text-[10px]"></i>
                                     </div>
 
                                     <div class="divide-y divide-gray-50">
                                         <template x-if="isSearching && searchResults.length === 0">
                                             <div class="p-8 text-center">
-                                                <div class="w-12 h-12 bg-orange-50 rounded-full flex items-center justify-center mx-auto mb-3">
-                                                    <i class="fas fa-search-location text-blue-400 animate-bounce"></i>
+                                                <div class="w-12 h-12 bg-[rgb(var(--accent-orange-rgb)/0.08)] rounded-full flex items-center justify-center mx-auto mb-3">
+                                                    <i class="fas fa-search-location text-[color:var(--accent-orange)] animate-bounce"></i>
                                                 </div>
                                                 <p class="text-xs font-bold text-gray-400">{{ tr('Looking for places...') }}</p>
                                             </div>
@@ -282,9 +282,9 @@
                                             <button 
                                                 type="button"
                                                 @click="selectLocation(result)"
-                                                class="w-full text-start px-4 py-3.5 hover:bg-orange-50/50 transition-colors flex items-start gap-4 group"
+                                                class="w-full text-start px-4 py-3.5 hover:bg-[rgb(var(--accent-orange-rgb)/0.08)] transition-colors flex items-start gap-4 group"
                                             >
-                                                <div class="w-10 h-10 rounded-xl bg-orange-50/50 flex items-center justify-center text-[color:var(--brand-from)] group-hover:bg-orange-500 group-hover:text-white transition-all shrink-0 shadow-sm">
+                                                <div class="w-10 h-10 rounded-xl bg-[rgb(var(--accent-orange-rgb)/0.08)] flex items-center justify-center text-[color:var(--accent-orange)] group-hover:bg-[color:var(--accent-orange)] group-hover:text-white transition-all shrink-0 shadow-sm">
                                                     <i class="fas fa-map-marker-alt text-sm"></i>
                                                 </div>
                                                 <div class="flex-1 min-w-0 pt-0.5">
@@ -292,7 +292,7 @@
                                                     <p class="text-[10px] text-gray-500 truncate font-medium leading-relaxed" x-text="result.display_name"></p>
                                                 </div>
                                                 <div class="self-center opacity-0 group-hover:opacity-100 transition-opacity pr-1">
-                                                    <i class="fas fa-chevron-right text-blue-300 text-[10px]"></i>
+                                                    <i class="fas fa-chevron-right text-[color:var(--accent-orange)] text-[10px]"></i>
                                                 </div>
                                             </button>
                                         </template>
@@ -305,7 +305,7 @@
                                 <button 
                                     type="button" 
                                     @click="getCurrentLocation()" 
-                                    class="flex items-center gap-2 text-[10px] font-black text-[color:var(--brand-from)] hover:text-white hover:bg-blue-600 bg-white/95 backdrop-blur-md px-4 py-2.5 rounded-2xl border border-orange-100 transition-all shadow-xl active:scale-95 disabled:opacity-50" 
+                                    class="flex items-center gap-2 text-[10px] font-black text-[color:var(--accent-orange)] hover:text-white hover:bg-[color:var(--accent-orange)] bg-white/95 backdrop-blur-md px-4 py-2.5 rounded-2xl border border-[rgb(var(--accent-orange-rgb)/0.16)] transition-all shadow-xl active:scale-95 disabled:opacity-50" 
                                     @cannot('settings.attendance.manage') disabled @endcannot
                                 >
                                     <i class="fas fa-location-arrow animate-pulse"></i> 
@@ -318,12 +318,12 @@
                         <div class="absolute bottom-6 left-1/2 -translate-x-1/2 bg-white/90 backdrop-blur-md px-6 py-3 rounded-full shadow-lg border border-gray-200 flex items-center gap-4 z-20 w-3/4 max-w-md transition-all hover:scale-105 pointer-events-auto">
                             <span class="text-xs font-bold text-gray-600 whitespace-nowrap">{{ tr('Geofence Radius') }}</span>
                             <div class="flex-1 relative flex items-center">
-                                <input type="range" class="w-full h-1.5 bg-gray-200 rounded-lg appearance-none cursor-pointer accent-[color:var(--brand-via)] ml-5" 
+                                <input type="range" class="w-full h-1.5 bg-gray-200 rounded-lg appearance-none cursor-pointer accent-[color:var(--accent-orange)] ml-5" 
                                     min="10" max="1000" step="10" x-model="radius" @input="updateCircle()"
                                     @cannot('settings.attendance.manage') disabled @endcannot
                                 >
                             </div>
-                            <span class="text-xs font-black text-[color:var(--brand-via)] w-12 text-end" x-text="radius + 'm'"></span>
+                            <span class="text-xs font-black text-[color:var(--accent-orange)] w-12 text-end" x-text="radius + 'm'"></span>
                         </div>
 
                     </div>
@@ -339,7 +339,7 @@
     <x-slot:footer>
         <div class="flex items-center justify-between w-full">
             <span class="text-xs text-gray-400">
-                <i class="fas fa-satellite-dish me-1 animate-pulse text-green-500"></i> {{ tr('GPS Signal Active') }}
+                <i class="fas fa-satellite-dish me-1 animate-pulse text-[color:var(--success)]"></i> {{ tr('GPS Signal Active') }}
             </span>
             <div class="flex gap-3">
                 <x-ui.secondary-button wire:click="$set('showGpsModal', false)">{{ tr('Cancel') }}</x-ui.secondary-button>
@@ -347,7 +347,7 @@
                 <x-ui.primary-button 
                     wire:click="saveGpsLocation" 
                     loading="saveGpsLocation"
-                    class="!px-8 !rounded-xl shadow-lg shadow-blue-100"
+                    class="!px-8 !rounded-xl shadow-[0_10px_20px_rgb(var(--accent-orange-rgb)/0.20)]"
                     :fullWidth="false"
                 >
                     {{ $isEditing ? tr('Update Location') : tr('Save Location') }}

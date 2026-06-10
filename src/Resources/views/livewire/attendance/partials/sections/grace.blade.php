@@ -1,6 +1,6 @@
 <div class="flex items-center justify-between px-1">
     <h3 class="text-base font-bold text-gray-800 flex items-center gap-2">
-        <span class="w-1 h-5 bg-amber-500 rounded-full"></span>
+        <span class="w-1 h-5 bg-[color:var(--warning)] rounded-full"></span>
         {{ tr('Basic Settings') }}
     </h3>
 </div>
@@ -32,9 +32,9 @@
                 :disabled="!auth()->user()->can('settings.attendance.manage')"
             />
             {{-- Warning note --}}
-            <div class="flex items-start gap-2 rounded-xl border border-amber-200 bg-amber-50 px-3 py-2">
-                <i class="fas fa-exclamation-triangle text-amber-500 text-xs mt-0.5 shrink-0"></i>
-                <p class="text-[11px] text-amber-700 font-medium leading-snug">
+            <div class="flex items-start gap-2 rounded-xl border border-[rgb(245_158_11/0.22)] bg-[rgb(245_158_11/0.10)] px-3 py-2">
+                <i class="fas fa-exclamation-triangle text-[color:var(--warning)] text-xs mt-0.5 shrink-0"></i>
+                <p class="text-[11px] text-[color:var(--warning)] font-medium leading-snug">
                     @if(app()->getLocale() === 'ar')
                         يُنصح بأن يكون الحد الأقصى لتسجيل الخروج التلقائي أقل من فترة الاستراحة بين فترات العمل في الجدول؛ وإلا سيُسجَّل الخروج عند بداية الفترة التالية بدلاً من الحد الأقصى المحدد. أنت مسؤول عن اختيار القيمة المناسبة.
                     @else
@@ -50,7 +50,7 @@
             <input type="checkbox" 
                 id="auto_departure_penalty_enabled"
                 wire:model.live="gracePeriods.auto_departure_penalty_enabled"
-                class="w-4 h-4 text-blue-600 rounded border-gray-300"
+                class="w-4 h-4 text-[color:var(--accent-orange)] rounded border-gray-300"
                 @cannot('settings.attendance.manage') disabled @endcannot
             >
             <span class="text-xs font-bold text-gray-700">{{ tr('Activate Auto-Checkout Penalties') }}</span>

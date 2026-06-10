@@ -36,7 +36,7 @@
         }
     </style>
     <div wire:loading wire:target="setActiveTab" class="fixed top-0 left-0 right-0 h-1 z-[9999] pointer-events-none bg-white/10 overflow-hidden">
-        <div class="h-full bg-gradient-to-r from-[color:var(--brand-from)] via-[color:var(--brand-via)] to-[color:var(--brand-to)] w-1/2 animate-progress-move shadow-[0_0_10px_rgba(var(--brand-via-rgb),0.5)]"></div>
+        <div class="h-full bg-[color:var(--accent-orange)] w-1/2 animate-progress-move shadow-[0_0_10px_rgb(var(--accent-orange-rgb)/0.45)]"></div>
     </div>
 
 
@@ -52,7 +52,7 @@
                     <button
                         wire:click="setActiveTab('users')"
                         class="px-4 sm:px-6 py-3 sm:py-4 font-semibold text-sm transition-all duration-200 flex items-center gap-2 whitespace-nowrap cursor-pointer {{ $activeTab === 'users' 
-                            ? 'border-b-2 sm:border-b-[3px] border-[color:var(--brand-via)] text-[color:var(--brand-via)] bg-white' 
+                            ? 'border-b-2 sm:border-b-[3px] border-[color:var(--accent-orange)] text-[color:var(--accent-orange)] bg-white' 
                             : 'text-gray-600 hover:text-gray-900 hover:bg-gray-100 border-b-2 sm:border-b-[3px] border-transparent' }}"
                     >
                         <i class="fas fa-users text-lg"></i>
@@ -65,7 +65,7 @@
                     <button
                         wire:click="setActiveTab('roles')"
                         class="px-4 sm:px-6 py-3 sm:py-4 font-semibold text-sm transition-all duration-200 flex items-center gap-2 whitespace-nowrap cursor-pointer {{ $activeTab === 'roles' 
-                            ? 'border-b-2 sm:border-b-[3px] border-[color:var(--brand-via)] text-[color:var(--brand-via)] bg-white' 
+                            ? 'border-b-2 sm:border-b-[3px] border-[color:var(--accent-orange)] text-[color:var(--accent-orange)] bg-white' 
                             : 'text-gray-600 hover:text-gray-900 hover:bg-gray-100 border-b-2 sm:border-b-[3px] border-transparent' }}"
                     >
                         <i class="fas fa-user-tag text-lg"></i>
@@ -80,7 +80,7 @@
                     <button
                         type="button"
                         @click="$dispatch('open-add-user-modal')"
-                        class="group relative overflow-hidden rounded-xl px-4 py-2 text-sm font-semibold text-white shadow-md bg-gradient-to-r from-[color:var(--brand-from)] via-[color:var(--brand-via)] to-[color:var(--brand-to)] hover:shadow-lg active:scale-[0.98] transition-all duration-300 w-full sm:w-auto text-center justify-center focus:outline-none focus:ring-2 focus:ring-[color:var(--brand-from)]/30 cursor-pointer"
+                        class="group relative overflow-hidden rounded-xl px-4 py-2 text-sm font-semibold text-white shadow-md bg-[color:var(--accent-orange)] hover:bg-[color:var(--accent-orange-hover)] hover:shadow-lg active:scale-[0.98] transition-all duration-300 w-full sm:w-auto text-center justify-center focus:outline-none focus:ring-2 focus:ring-[rgb(var(--accent-orange-rgb)/0.28)] cursor-pointer"
                     >
                         <span class="absolute inset-0 bg-gradient-to-r from-transparent via-white/20 to-transparent -translate-x-full group-hover:translate-x-full transition-transform duration-1000"></span>
                         <span class="relative flex items-center justify-center gap-2">
@@ -97,7 +97,7 @@
                     <button
                         type="button"
                         @click="$dispatch('open-add-role-modal')"
-                        class="group relative overflow-hidden rounded-xl px-4 py-2 text-sm font-semibold text-white shadow-md bg-gradient-to-r from-[color:var(--brand-from)] via-[color:var(--brand-via)] to-[color:var(--brand-to)] hover:shadow-lg active:scale-[0.98] transition-all duration-300 w-full sm:w-auto text-center justify-center focus:outline-none focus:ring-2 focus:ring-[color:var(--brand-from)]/30 cursor-pointer"
+                        class="group relative overflow-hidden rounded-xl px-4 py-2 text-sm font-semibold text-white shadow-md bg-[color:var(--accent-orange)] hover:bg-[color:var(--accent-orange-hover)] hover:shadow-lg active:scale-[0.98] transition-all duration-300 w-full sm:w-auto text-center justify-center focus:outline-none focus:ring-2 focus:ring-[rgb(var(--accent-orange-rgb)/0.28)] cursor-pointer"
                     >
                         <span class="absolute inset-0 bg-gradient-to-r from-transparent via-white/20 to-transparent -translate-x-full group-hover:translate-x-full transition-transform duration-1000"></span>
                         <span class="relative flex items-center justify-center gap-2">

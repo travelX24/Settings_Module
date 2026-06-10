@@ -62,7 +62,7 @@
         <div class="p-6 border-b border-gray-100 bg-gradient-to-r from-gray-50 to-white">
             <div class="flex items-center justify-between mb-4">
                 <div class="flex items-center gap-3">
-                    <div class="w-10 h-10 rounded-xl bg-[color:var(--brand-via)]/10 flex items-center justify-center text-[color:var(--brand-via)]">
+                    <div class="w-10 h-10 rounded-xl bg-[color:var(--accent-orange)]/10 flex items-center justify-center text-[color:var(--accent-orange)]">
                         <i class="fas fa-users-viewfinder text-lg"></i>
                     </div>
                     <div>
@@ -90,7 +90,7 @@
         <div class="p-6 flex-1 min-h-[400px]">
             <template x-if="loading">
                 <div class="flex flex-col items-center justify-center py-20">
-                    <div class="w-12 h-12 border-4 border-[color:var(--brand-via)]/20 border-t-[color:var(--brand-via)] rounded-full animate-spin"></div>
+                    <div class="w-12 h-12 border-4 border-[color:var(--accent-orange)]/20 border-t-[color:var(--accent-orange)] rounded-full animate-spin"></div>
                     <p class="text-gray-500 mt-4 font-medium">{{ tr('Fetching data...') }}</p>
                 </div>
             </template>
@@ -110,11 +110,11 @@
                     <template x-for="employee in paginatedEmployees" :key="employee.id">
                         <button
                             @click="$dispatch('open-employee-detail', { id: employee.id })"
-                            class="group w-full text-start block p-4 bg-white border border-gray-100 rounded-2xl hover:border-[color:var(--brand-via)]/30 hover:bg-[color:var(--brand-via)]/[0.02] hover:shadow-md transition-all duration-200"
+                            class="group w-full text-start block p-4 bg-white border border-gray-100 rounded-2xl hover:border-[color:var(--accent-orange)]/30 hover:bg-[color:var(--accent-orange)]/[0.02] hover:shadow-md transition-all duration-200"
                         >
                             <div class="flex items-center justify-between">
                                 <div class="flex items-center gap-4">
-                                    <div class="w-12 h-12 rounded-2xl bg-gradient-to-br from-[color:var(--brand-via)]/10 to-[color:var(--brand-via)]/5 flex items-center justify-center text-[color:var(--brand-via)] group-hover:scale-110 transition-transform">
+                                    <div class="w-12 h-12 rounded-2xl bg-[color:var(--accent-orange)]/10 flex items-center justify-center text-[color:var(--accent-orange)] group-hover:scale-110 transition-transform">
                                         <i class="fas fa-user text-xl"></i>
                                     </div>
                                     <div>
@@ -129,8 +129,8 @@
                                     </div>
                                 </div>
                                 <div class="flex items-center gap-3">
-                                    <span class="hidden sm:inline-flex text-[10px] font-bold text-[color:var(--brand-via)] bg-[color:var(--brand-via)]/5 px-2.5 py-1.5 rounded-xl opacity-0 group-hover:opacity-100 transition-opacity">{{ tr('View Profile') }}</span>
-                                    <div class="w-8 h-8 rounded-full border border-gray-100 flex items-center justify-center text-gray-300 group-hover:text-[color:var(--brand-via)] group-hover:border-[color:var(--brand-via)]/20 transition-colors">
+                                    <span class="hidden sm:inline-flex text-[10px] font-bold text-[color:var(--accent-orange)] bg-[color:var(--accent-orange)]/10 px-2.5 py-1.5 rounded-xl opacity-0 group-hover:opacity-100 transition-opacity">{{ tr('View Profile') }}</span>
+                                    <div class="w-8 h-8 rounded-full border border-gray-100 flex items-center justify-center text-gray-300 group-hover:text-[color:var(--accent-orange)] group-hover:border-[color:var(--accent-orange)]/20 transition-colors">
                                         <i class="fas fa-chevron-{{ app()->getLocale() === 'ar' ? 'left' : 'right' }} text-xs"></i>
                                     </div>
                                 </div>
@@ -159,7 +159,7 @@
                         <button 
                             @click="page = p"
                             class="w-8 h-8 rounded-lg text-xs font-bold transition-all"
-                            :class="page === p ? 'bg-[color:var(--brand-via)] text-white shadow-md' : 'text-gray-500 hover:bg-white'"
+                            :class="page === p ? 'bg-[color:var(--accent-orange)] text-white shadow-md' : 'text-gray-500 hover:bg-white'"
                             x-text="p"
                         ></button>
                     </template>

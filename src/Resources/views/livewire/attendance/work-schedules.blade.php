@@ -54,7 +54,7 @@
                     </div>
 
                     <x-ui.secondary-button wire:click="exportSchedules" :fullWidth="false"
-                        class="!border-amber-200 !bg-amber-50/50 !text-amber-700 hover:!bg-amber-100 cursor-pointer">
+                        class="!border-[rgb(245_158_11/0.22)] !bg-[rgb(245_158_11/0.08)] !text-[color:var(--warning)] hover:!bg-[rgb(245_158_11/0.12)] cursor-pointer">
                         <i class="fas fa-file-export"></i>
                         <span class="ms-2">{{ tr('Export CSV') }}</span>
                     </x-ui.secondary-button>
@@ -133,7 +133,7 @@
                             <td class="px-6 py-4 whitespace-nowrap">
                                 <div class="flex items-center gap-3">
                                     <div
-                                        class="w-10 h-10 rounded-xl bg-gray-50 text-gray-400 flex items-center justify-center text-sm border border-gray-100 group-hover/row:bg-[color:var(--brand-via)] group-hover/row:text-white group-hover/row:border-[color:var(--brand-via)] transition-all flex-shrink-0">
+                                        class="w-10 h-10 rounded-xl bg-gray-50 text-gray-400 flex items-center justify-center text-sm border border-gray-100 group-hover/row:bg-[color:var(--accent-orange)] group-hover/row:text-white group-hover/row:border-[color:var(--accent-orange)] transition-all flex-shrink-0">
                                         <i class="fas fa-calendar-alt"></i>
                                     </div>
                                     <div class="overflow-hidden">
@@ -142,7 +142,7 @@
                                                 class="text-sm font-bold text-gray-800 truncate">{{ $schedule->name }}</span>
                                             @if ($schedule->is_default)
                                                 <span
-                                                    class="flex-shrink-0 px-1.5 py-0.5 rounded-md bg-amber-50 text-[9px] font-black text-amber-600 border border-amber-100 uppercase">{{ tr('Default') }}</span>
+                                                    class="flex-shrink-0 px-1.5 py-0.5 rounded-md bg-[rgb(245_158_11/0.10)] text-[9px] font-black text-[color:var(--warning)] border border-[rgb(245_158_11/0.22)] uppercase">{{ tr('Default') }}</span>
                                             @endif
                                         </div>
                                         <p class="text-[10px] text-gray-400 truncate max-w-[200px]">
@@ -157,10 +157,10 @@
                                             class="flex items-center justify-center gap-2 text-[10px] font-black text-gray-600 bg-white px-2.5 py-1 rounded-xl border border-gray-100 shadow-sm w-fit whitespace-nowrap">
                                             <span>{{ substr($period->start_time, 0, 5) }}</span>
                                             <i
-                                                class="fas fa-long-arrow-alt-{{ $isRtl ? 'left' : 'right' }} text-[9px] text-[color:var(--brand-via)]/40"></i>
+                                                class="fas fa-long-arrow-alt-{{ $isRtl ? 'left' : 'right' }} text-[9px] text-[color:var(--accent-orange)] opacity-40"></i>
                                             <span>{{ substr($period->end_time, 0, 5) }}</span>
                                             @if ($period->is_night_shift)
-                                                <i class="fas fa-moon text-[10px] text-[color:var(--brand-via)] ms-1"
+                                                <i class="fas fa-moon text-[10px] text-[color:var(--accent-orange)] ms-1"
                                                     title="{{ tr('Night Shift') }}"></i>
                                             @endif
                                         </div>
@@ -210,7 +210,7 @@
 
                                         <div class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg border {{ substr($locale, 0, 2) === 'ar' ? 'text-[9px]' : 'text-[10px]' }} font-black whitespace-nowrap transition-colors
                 {{ $isActiveDay
-                    ? 'bg-[color:var(--brand-via)]/10 text-[color:var(--brand-via)] border-[color:var(--brand-via)]/20'
+                    ? 'bg-[rgb(var(--accent-orange-rgb)/0.08)] text-[color:var(--accent-orange)] border-[rgb(var(--accent-orange-rgb)/0.16)]'
                     : 'bg-gray-50 text-gray-400 border-gray-200' }}"
                                             title="{{ $daysOfWeek[$day] ?? tr(ucfirst($day)) }}">
                                             <i
@@ -224,7 +224,7 @@
                             <td class="px-6 py-4 text-center whitespace-nowrap">
                                 @if (($schedule->active_exceptions_count ?? 0) > 0)
                                     <div
-                                        class="inline-flex items-center justify-center gap-1.5 px-2.5 py-1 rounded-xl bg-amber-50 text-amber-700 border border-amber-100 text-[10px] font-black whitespace-nowrap">
+                                        class="inline-flex items-center justify-center gap-1.5 px-2.5 py-1 rounded-xl bg-[rgb(245_158_11/0.10)] text-[color:var(--warning)] border border-[rgb(245_158_11/0.22)] text-[10px] font-black whitespace-nowrap">
                                         <i class="fas fa-calendar-times text-[10px]"></i>
                                         <span>{{ tr('Has Exceptions') }}</span>
                                     </div>
@@ -241,14 +241,14 @@
                                 <div class="flex justify-center">
                                     @can('settings.attendance.manage')
                                         <button wire:click="toggleStatus({{ $schedule->id }})"
-                                            class="w-9 h-4.5 rounded-full p-1 transition-all relative cursor-pointer {{ $schedule->is_active ? 'bg-green-500' : 'bg-gray-200' }}">
+                                            class="w-9 h-4.5 rounded-full p-1 transition-all relative cursor-pointer {{ $schedule->is_active ? 'bg-[color:var(--success)]' : 'bg-gray-200' }}">
                                             <div
                                                 class="w-2.5 h-2.5 bg-white rounded-full shadow-sm transition-all {{ $schedule->is_active ? ($isRtl ? 'mr-4.5' : 'ml-4.5') : '' }}">
                                             </div>
                                         </button>
                                     @else
                                         <button disabled
-                                            class="w-9 h-4.5 rounded-full p-1 transition-all relative cursor-not-allowed opacity-50 {{ $schedule->is_active ? 'bg-green-500' : 'bg-gray-200' }}">
+                                            class="w-9 h-4.5 rounded-full p-1 transition-all relative cursor-not-allowed opacity-50 {{ $schedule->is_active ? 'bg-[color:var(--success)]' : 'bg-gray-200' }}">
                                             <div
                                                 class="w-2.5 h-2.5 bg-white rounded-full shadow-sm {{ $schedule->is_active ? ($isRtl ? 'mr-4.5' : 'ml-4.5') : '' }}">
                                             </div>
@@ -261,16 +261,16 @@
                                     <x-ui.actions-menu>
                                         <x-ui.dropdown-item wire:click="copySchedule({{ $schedule->id }})"
                                             class="cursor-pointer">
-                                            <i class="fas fa-copy me-2 text-amber-500"></i> {{ tr('Duplicate') }}
+                                            <i class="fas fa-copy me-2 text-[color:var(--warning)]"></i> {{ tr('Duplicate') }}
                                         </x-ui.dropdown-item>
                                         <x-ui.dropdown-item wire:click="openScheduleModal({{ $schedule->id }})"
                                             class="cursor-pointer">
-                                            <i class="fas fa-edit me-2 text-[color:var(--brand-from)]"></i> {{ tr('Edit Details') }}
+                                            <i class="fas fa-edit me-2 text-[color:var(--accent-orange)]"></i> {{ tr('Edit Details') }}
                                         </x-ui.dropdown-item>
                                         <x-ui.dropdown-item danger
                                             x-on:click.prevent="$dispatch('open-confirm-schedule-delete', { id: {{ $schedule->id }} })"
                                             class="cursor-pointer">
-                                            <i class="fas fa-trash-alt me-2 text-red-500"></i> {{ tr('Delete Permanently') }}
+                                            <i class="fas fa-trash-alt me-2 text-[color:var(--error)]"></i> {{ tr('Delete Permanently') }}
                                         </x-ui.dropdown-item>
                                     </x-ui.actions-menu>
                                 @endcan

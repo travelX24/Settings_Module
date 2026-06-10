@@ -58,11 +58,11 @@
                         <button
                             wire:click="$set('tab', '{{ $key }}')"
                             class="cursor-pointer px-4 sm:px-6 py-3 sm:py-4 font-semibold text-sm transition-all duration-200 flex items-center gap-2 whitespace-nowrap {{ $tab === $key 
-                                ? 'border-b-2 sm:border-b-[3px] border-[color:var(--brand-via)] text-[color:var(--brand-via)] bg-white' 
+                                ? 'border-b-2 sm:border-b-[3px] border-[color:var(--accent-orange)] text-[color:var(--accent-orange)] bg-white' 
                                 : 'text-gray-600 hover:text-gray-900 hover:bg-gray-100 border-b-2 sm:border-b-[3px] border-transparent' }}"
                         >
                             <span>{{ $label }}</span>
-                            <span class="inline-flex items-center justify-center px-1.5 py-0.5 text-xs font-semibold rounded-full {{ $tab === $key ? 'bg-brand/10 text-[color:var(--brand-via)] border border-[color:var(--brand-via)]/20' : 'bg-gray-200 text-gray-700' }}">
+                            <span class="inline-flex items-center justify-center px-1.5 py-0.5 text-xs font-semibold rounded-full {{ $tab === $key ? 'bg-[color:var(--accent-orange)]/10 text-[color:var(--accent-orange)] border border-[color:var(--accent-orange)]/20' : 'bg-gray-200 text-gray-700' }}">
                                 {{ $c }}
                             </span>
                         </button>
@@ -74,7 +74,7 @@
                     <button
                         type="button"
                         wire:click="openCreate"
-                        class="cursor-pointer group relative overflow-hidden rounded-xl px-4 py-2 text-sm font-semibold text-white shadow-md bg-gradient-to-r from-[color:var(--brand-from)] via-[color:var(--brand-via)] to-[color:var(--brand-to)] hover:shadow-lg active:scale-[0.98] transition-all duration-300 w-full sm:w-auto text-center justify-center focus:outline-none focus:ring-2 focus:ring-[color:var(--brand-from)]/30"
+                        class="cursor-pointer group relative overflow-hidden rounded-xl px-4 py-2 text-sm font-semibold text-white shadow-md bg-[color:var(--accent-orange)] hover:bg-[color:var(--accent-orange-hover)] hover:shadow-lg active:scale-[0.98] transition-all duration-300 w-full sm:w-auto text-center justify-center focus:outline-none focus:ring-2 focus:ring-[color:var(--accent-orange)]/30"
                     >
                         <span class="absolute inset-0 bg-gradient-to-r from-transparent via-white/20 to-transparent -translate-x-full group-hover:translate-x-full transition-transform duration-1000"></span>
                         <span class="relative flex items-center justify-center gap-2">
@@ -184,7 +184,7 @@
                         @foreach($policies as $p)
                             <div
                                 wire:key="policy-card-{{ $p->id }}"
-                                class="bg-white border border-gray-200 rounded-2xl p-5 shadow-sm hover:border-[color:var(--brand-via)]/40 hover:shadow-md transition-all duration-200 flex flex-col gap-4"
+                                class="bg-white border border-gray-200 rounded-2xl p-5 shadow-sm hover:border-[color:var(--accent-orange)]/30 hover:shadow-md transition-all duration-200 flex flex-col gap-4"
                             >
                                 <div class="flex items-start justify-between gap-3">
                                     <div class="min-w-0">
@@ -192,7 +192,7 @@
                                         <div class="mt-1">
                                             @if(($p->scope_type ?? 'all') === 'all')
                                                 <div class="flex flex-wrap items-center gap-2">
-                                                    <span class="px-2 py-0.5 text-xs font-semibold rounded-full bg-orange-50 text-[color:var(--brand-from)] border border-orange-200">{{ tr('All Employees') }}</span>
+                                                    <span class="px-2 py-0.5 text-xs font-semibold rounded-full bg-[color:var(--accent-orange)]/10 text-[color:var(--accent-orange)] border border-[color:var(--accent-orange)]/20">{{ tr('All Employees') }}</span>
                                                     <div class="group relative inline-block" tabindex="0">
                                                         <span class="px-2 py-0.5 text-xs font-semibold rounded-full bg-gray-100 text-gray-700 border border-gray-200 cursor-help transition-all hover:bg-gray-200">
                                                             {{ (int) ($p->affected_employees_count ?? 0) }}
@@ -240,7 +240,7 @@
                                                                     @endforelse
                                                                 </div>
                                                             </div>
-                                                            <div class="bg-brand/5 h-1 w-full"></div>
+                                                            <div class="bg-[color:var(--accent-orange)]/5 h-1 w-full"></div>
                                                         </div>
                                                         <div class="w-3 h-3 bg-white border-r border-b border-gray-200 rotate-45 absolute -bottom-1.5 left-1/2 -translate-x-1/2"></div>
                                                     </div>
@@ -249,7 +249,7 @@
                                         </div>
                                     </div>
                                     <div class="flex items-center gap-2 shrink-0">
-                                        <span class="px-2 py-1 text-xs font-semibold rounded-full {{ $p->is_active ? 'bg-green-100 text-green-800' : 'bg-gray-100 text-gray-800' }}">
+                                        <span class="px-2 py-1 text-xs font-semibold rounded-full {{ $p->is_active ? 'bg-[color:var(--success)]/10 text-[color:var(--success)]' : 'bg-gray-100 text-gray-800' }}">
                                             {{ $p->is_active ? tr('Active') : tr('Inactive') }}
                                         </span>
                                         <x-ui.actions-menu>
@@ -285,13 +285,13 @@
                                                     <div class="grid grid-cols-1 gap-2">
                                                     @foreach(explode("\n", $p->step_names_list) as $step)
                                                         <div class="h-9 px-3 rounded-md text-[12px] font-semibold bg-gray-50 text-gray-800 border border-gray-200 flex items-center gap-2">
-                                                            <div class="w-1.5 h-1.5 rounded-full bg-brand/40 shrink-0"></div>
+                                                            <div class="w-1.5 h-1.5 rounded-full bg-[color:var(--accent-orange)]/40 shrink-0"></div>
                                                             <span class="truncate">{{ $step }}</span>
                                                         </div>
                                                     @endforeach
                                                     </div>
                                                 </div>
-                                                <div class="bg-brand/5 h-1 w-full"></div>
+                                                <div class="bg-[color:var(--accent-orange)]/5 h-1 w-full"></div>
                                             </div>
                                             <div class="w-3 h-3 bg-white border-r border-b border-gray-200 rotate-45 absolute -bottom-1.5 left-1/2 -translate-x-1/2"></div>
                                         </div>
@@ -332,7 +332,7 @@
                                 <td class="py-4 px-6 align-top whitespace-nowrap text-sm text-gray-700">
                                     @if(($p->scope_type ?? 'all') === 'all')
                                         <div class="flex items-center gap-2">
-                                            <span class="px-2 py-1 text-xs font-semibold rounded-full bg-orange-50 text-[color:var(--brand-from)] border border-orange-200">{{ tr('All Employees') }}</span>
+                                    <span class="px-2 py-1 text-xs font-semibold rounded-full bg-[color:var(--accent-orange)]/10 text-[color:var(--accent-orange)] border border-[color:var(--accent-orange)]/20">{{ tr('All Employees') }}</span>
                                             <div
                                                 class="relative inline-block"
                                                 tabindex="0"
@@ -371,7 +371,7 @@
                                                                 @endforelse
                                                             </div>
                                                         </div>
-                                                        <div class="bg-brand/5 h-1 w-full"></div>
+                                                        <div class="bg-[color:var(--accent-orange)]/5 h-1 w-full"></div>
                                                     </div>
                                                     <div class="w-3 h-3 bg-white border-r border-b border-gray-200 rotate-45 absolute -bottom-1.5 left-1/2 -translate-x-1/2"></div>
                                                 </div>
@@ -388,7 +388,7 @@
                                                 x-on:focusin="place(); employeeTooltip = key"
                                                 x-on:focusout="if (employeeTooltip === key) employeeTooltip = null"
                                             >
-                                                <span x-ref="trigger" class="text-gray-500 text-xs cursor-help border-b border-dotted border-gray-400 hover:text-brand transition-colors">
+                                                <span x-ref="trigger" class="text-gray-500 text-xs cursor-help border-b border-dotted border-gray-400 hover:text-[color:var(--accent-orange)] transition-colors">
                                                     ({{ (int) ($p->affected_employees_count ?? 0) }})
                                                 </span>
                                                 
@@ -418,7 +418,7 @@
                                                                 @endforelse
                                                             </div>
                                                         </div>
-                                                        <div class="bg-brand/5 h-1 w-full"></div>
+                                                        <div class="bg-[color:var(--accent-orange)]/5 h-1 w-full"></div>
                                                     </div>
                                                     <div class="w-3 h-3 bg-white border-r border-b border-gray-200 rotate-45 absolute -bottom-1.5 left-1/2 -translate-x-1/2"></div>
                                                 </div>
@@ -460,13 +460,13 @@
                                                     <div class="grid grid-cols-1 gap-2">
                                                     @foreach(explode("\n", $p->step_names_list) as $step)
                                                         <div class="h-9 px-3 rounded-md text-[12px] font-semibold bg-gray-50 text-gray-800 border border-gray-200 flex items-center gap-2">
-                                                            <div class="w-1.5 h-1.5 rounded-full bg-brand/40 shrink-0"></div>
+                                                            <div class="w-1.5 h-1.5 rounded-full bg-[color:var(--accent-orange)]/40 shrink-0"></div>
                                                             <span class="truncate">{{ $step }}</span>
                                                         </div>
                                                     @endforeach
                                                     </div>
                                                 </div>
-                                                <div class="bg-brand/5 h-1 w-full"></div>
+                                                <div class="bg-[color:var(--accent-orange)]/5 h-1 w-full"></div>
                                             </div>
                                             <div class="w-3 h-3 bg-white border-r border-b border-gray-200 rotate-45 absolute -bottom-1.5 left-1/2 -translate-x-1/2"></div>
                                         </div>
@@ -474,7 +474,7 @@
                                 </td>
 
                                 <td class="py-4 px-6 align-top whitespace-nowrap text-sm">
-                                    <span class="px-2 py-1 text-xs font-semibold rounded-full {{ $p->is_active ? 'bg-green-100 text-green-800' : 'bg-gray-100 text-gray-800' }}">
+                                    <span class="px-2 py-1 text-xs font-semibold rounded-full {{ $p->is_active ? 'bg-[color:var(--success)]/10 text-[color:var(--success)]' : 'bg-gray-100 text-gray-800' }}">
                                         {{ $p->is_active ? tr('Active') : tr('Inactive') }}
                                     </span>
                                 </td>
@@ -556,7 +556,7 @@
                     <div class="flex items-center gap-2 md:pt-8">
                         <label class="group relative flex items-center gap-3 p-3 rounded-xl border border-gray-200 cursor-pointer hover:border-gray-300 hover:bg-gray-50 transition w-full">
                             <div class="flex items-center h-5">
-                                <input type="checkbox" wire:model.defer="is_active" class="w-5 h-5 rounded border-gray-300 text-[color:var(--brand-via)] focus:ring-[color:var(--brand-via)]" @cannot('settings.approval.manage') disabled @endcannot>
+                                <input type="checkbox" wire:model.defer="is_active" class="w-5 h-5 rounded border-gray-300 text-[color:var(--accent-orange)] focus:ring-[color:var(--accent-orange)]" @cannot('settings.approval.manage') disabled @endcannot>
                             </div>
                             <div class="flex flex-col">
                                 <span class="text-sm font-semibold text-gray-900">{{ tr('Active') }}</span>
@@ -607,8 +607,8 @@
                                     multiple
                                     class="w-full rounded-xl border bg-white px-4 py-2.5 text-sm shadow-sm
                                         border-gray-200 text-gray-900
-                                        focus:outline-none focus:ring-2 focus:ring-[color:var(--brand-via)]/20
-                                        focus:border-[color:var(--brand-via)] transition
+                                        focus:outline-none focus:ring-2 focus:ring-[color:var(--accent-orange)]/20
+                                        focus:border-[color:var(--accent-orange)] transition
                                         min-h-[110px]"
                                     @cannot('settings.approval.manage') disabled @endcannot
                                 >
@@ -618,7 +618,7 @@
                                 </select>
 
                                 @error('scope_ids')
-                                    <div class="text-xs text-red-600 mt-1">{{ $message }}</div>
+                                    <div class="text-xs text-[color:var(--error)] mt-1">{{ $message }}</div>
                                 @enderror
                             @endif
                         </div>
@@ -647,7 +647,7 @@
                         @foreach($steps as $i => $s)
                             @php($t = $steps[$i]['approver_type'] ?? 'direct_manager')
 
-                            <div class="bg-white border border-gray-200 rounded-xl p-4 shadow-sm hover:border-[color:var(--brand-via)]/30 transition" wire:key="step-{{ $steps[$i]['_key'] ?? $i }}">
+                            <div class="bg-white border border-gray-200 rounded-xl p-4 shadow-sm hover:border-[color:var(--accent-orange)]/30 transition" wire:key="step-{{ $steps[$i]['_key'] ?? $i }}">
 
                                 {{-- ✅ صف واحد مرتب + الأسهم فوق/تحت --}}
                                 <div class="flex flex-col lg:flex-row lg:items-center gap-4">
@@ -695,9 +695,9 @@
                                     <div class="shrink-0 flex items-center gap-4 border-t lg:border-t-0 lg:border-l border-gray-100 pt-3 lg:pt-0 lg:pl-4 mt-3 lg:mt-0 w-full lg:w-auto justify-between lg:justify-end">
                                         @if($tab === 'leave_exceptions')
                                             <div class="flex items-center">
-                                                <label class="group relative flex items-center gap-2 px-3 py-1.5 rounded-full bg-white border border-gray-200 shadow-sm cursor-pointer hover:border-indigo-300 hover:bg-indigo-50/30 transition-all duration-200">
-                                                    <input type="checkbox" wire:model.defer="steps.{{ $i }}.follow_standard" class="w-4 h-4 rounded border-gray-300 text-[color:var(--brand-via)] focus:ring-[color:var(--brand-via)]/20 transition-all">
-                                                    <span class="text-xs font-bold text-gray-600 group-hover:text-indigo-700 whitespace-nowrap">{{ tr('Follow Standard') }}</span>
+                                                <label class="group relative flex items-center gap-2 px-3 py-1.5 rounded-full bg-white border border-gray-200 shadow-sm cursor-pointer hover:border-[color:var(--accent-orange)]/30 hover:bg-[color:var(--accent-orange)]/10 transition-all duration-200">
+                                                    <input type="checkbox" wire:model.defer="steps.{{ $i }}.follow_standard" class="w-4 h-4 rounded border-gray-300 text-[color:var(--accent-orange)] focus:ring-[color:var(--accent-orange)]/20 transition-all">
+                                                    <span class="text-xs font-bold text-gray-600 group-hover:text-[color:var(--accent-orange)] whitespace-nowrap">{{ tr('Follow Standard') }}</span>
                                                 </label>
                                             </div>
                                         @endif
@@ -707,14 +707,14 @@
                                                 <button
                                                     type="button"
                                                     wire:click="moveStepUp({{ $i }})"
-                                                    class="w-8 h-5 flex items-center justify-center text-gray-400 hover:text-white hover:bg-[color:var(--brand-via)] transition border-b border-gray-200"
+                                                    class="w-8 h-5 flex items-center justify-center text-gray-400 hover:text-white hover:bg-[color:var(--accent-orange)] transition border-b border-gray-200"
                                                     title="{{ tr('Move Up') }}"
                                                 ><i class="fas fa-chevron-up text-[10px]"></i></button>
 
                                                 <button
                                                     type="button"
                                                     wire:click="moveStepDown({{ $i }})"
-                                                    class="w-8 h-5 flex items-center justify-center text-gray-400 hover:text-white hover:bg-[color:var(--brand-via)] transition"
+                                                    class="w-8 h-5 flex items-center justify-center text-gray-400 hover:text-white hover:bg-[color:var(--accent-orange)] transition"
                                                     title="{{ tr('Move Down') }}"
                                                 ><i class="fas fa-chevron-down text-[10px]"></i></button>
                                             </div>
@@ -722,7 +722,7 @@
                                             <button
                                                 type="button"
                                                 wire:click="removeStep({{ $i }})"
-                                                class="w-10 h-10 flex items-center justify-center rounded-xl border border-red-100 bg-red-50 text-red-500 hover:bg-red-500 hover:text-white shadow-sm transition-all duration-200 shrink-0"
+                                                class="w-10 h-10 flex items-center justify-center rounded-xl border border-[color:var(--error)]/20 bg-[color:var(--error)]/10 text-[color:var(--error)] hover:bg-[color:var(--error)] hover:text-white shadow-sm transition-all duration-200 shrink-0"
                                                 title="{{ tr('Remove') }}"
                                             ><i class="fas fa-trash-alt text-sm"></i></button>
                                         </div>
@@ -730,11 +730,11 @@
                                 </div>
 
                                 @error("steps.$i.approver_type")
-                                    <div class="text-xs text-red-600 mt-2">{{ $message }}</div>
+                                    <div class="text-xs text-[color:var(--error)] mt-2">{{ $message }}</div>
                                 @enderror
 
                                 @error("steps.$i.approver_id")
-                                    <div class="text-xs text-red-600 mt-1">{{ $message }}</div>
+                                    <div class="text-xs text-[color:var(--error)] mt-1">{{ $message }}</div>
                                 @enderror
                             </div>
                         @endforeach
@@ -747,7 +747,7 @@
                         @endif
                         
                         @error("steps")
-                            <div class="text-sm font-semibold text-red-600 mt-2 text-center">{{ $message }}</div>
+                            <div class="text-sm font-semibold text-[color:var(--error)] mt-2 text-center">{{ $message }}</div>
                         @enderror
                     </div>
                 </div>

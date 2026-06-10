@@ -1,11 +1,11 @@
 <div class="flex items-center justify-between px-1">
     <h3 class="text-base font-bold text-gray-800 flex items-center gap-2">
-        <span class="w-1 h-5 bg-red-500 rounded-full"></span>
+        <span class="w-1 h-5 bg-[color:var(--error)] rounded-full"></span>
         {{ tr('Penalty Policies') }}
     </h3>
     @can('settings.attendance.manage')
     <x-ui.secondary-button wire:click="openPenaltyModal" class="!px-4 !py-2 !text-xs !rounded-xl shadow-sm">
-        <i class="fas fa-plus me-1 text-[color:var(--brand-via)]"></i>
+        <i class="fas fa-plus me-1 text-[color:var(--accent-orange)]"></i>
         {{ tr('Add New Policy') }}
     </x-ui.secondary-button>
     @endcan
@@ -39,7 +39,7 @@
                 <td class="px-6 py-4 text-center">
                     <div class="flex items-center justify-center gap-1">
                         @for($i=1; $i<=4; $i++)
-                            <span class="w-1.5 h-1.5 rounded-full {{ $i <= ($penalty['recurrence_from'] ?? 0) ? 'bg-amber-400' : 'bg-gray-200' }}"></span>
+                            <span class="w-1.5 h-1.5 rounded-full {{ $i <= ($penalty['recurrence_from'] ?? 0) ? 'bg-[color:var(--warning)]' : 'bg-gray-200' }}"></span>
                         @endfor
                         <span class="ms-1 text-[11px] font-bold text-gray-600">{{ $penalty['recurrence_from'] ?? 0 }}x</span>
                     </div>
@@ -48,9 +48,9 @@
                     @php
                         $pType = $penalty['penalty_action'] ?? 'notification';
                         $tagCls = match($pType) {
-                            'notification', 'notice' => 'bg-orange-50 text-[color:var(--brand-from)] border-orange-100',
-                            'warning_verbal', 'warning_written' => 'bg-amber-50 text-amber-600 border-amber-100',
-                            'deduction', 'suspension' => 'bg-red-50 text-red-600 border-red-100',
+                            'notification', 'notice' => 'bg-[rgb(var(--accent-orange-rgb)/0.08)] text-[color:var(--accent-orange)] border-[rgb(var(--accent-orange-rgb)/0.16)]',
+                            'warning_verbal', 'warning_written' => 'bg-[rgb(245_158_11/0.10)] text-[color:var(--warning)] border-[rgb(245_158_11/0.22)]',
+                            'deduction', 'suspension' => 'bg-[rgb(239_68_68/0.10)] text-[color:var(--error)] border-[rgb(239_68_68/0.20)]',
                             default => 'bg-gray-50 text-gray-600 border-gray-100'
                         };
                     @endphp
@@ -63,13 +63,13 @@
                     @can('settings.attendance.manage')
                     <x-ui.actions-menu>
                         <x-ui.dropdown-item wire:click="editPenalty('{{ $penalty['id'] }}')">
-                            <i class="fas fa-edit me-2 text-[color:var(--brand-from)]"></i> {{ tr('Edit') }}
+                            <i class="fas fa-edit me-2 text-[color:var(--accent-orange)]"></i> {{ tr('Edit') }}
                         </x-ui.dropdown-item>
                         <x-ui.dropdown-item 
                             danger
                             @click="$dispatch('open-confirm-delete-penalty', { id: '{{ $penalty['id'] }}' })"
                         >
-                            <i class="fas fa-trash-alt me-2 text-red-500"></i> {{ tr('Delete') }}
+                            <i class="fas fa-trash-alt me-2 text-[color:var(--error)]"></i> {{ tr('Delete') }}
                         </x-ui.dropdown-item>
                     </x-ui.actions-menu>
                     @else

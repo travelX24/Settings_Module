@@ -3,7 +3,7 @@
         <button
             type="button"
             @click="$dispatch('open-add-user-modal')"
-            class="group inline-flex items-center gap-2.5 px-5 py-2.5 bg-gradient-to-r from-[color:var(--brand-from)] to-[color:var(--brand-to)] text-white rounded-xl shadow-lg shadow-[color:var(--brand-from)]/20 hover:shadow-xl hover:shadow-[color:var(--brand-from)]/30 hover:-translate-y-0.5 transition-all duration-300 cursor-pointer"
+            class="group inline-flex items-center gap-2.5 px-5 py-2.5 bg-[color:var(--accent-orange)] text-white rounded-xl shadow-[0_10px_20px_rgb(var(--accent-orange-rgb)/0.20)] hover:bg-[color:var(--accent-orange-hover)] hover:shadow-[0_14px_24px_rgb(var(--accent-orange-rgb)/0.28)] hover:-translate-y-0.5 transition-all duration-300 cursor-pointer"
         >
             <div class="w-6 h-6 bg-white/20 rounded-lg flex items-center justify-center group-hover:rotate-90 transition-transform duration-500">
                 <i class="fas fa-plus text-sm"></i>
@@ -101,7 +101,7 @@
                 <x-ui.card wire:key="user-card-{{ $user->id }}" :hover="true" :padding="false" class="rounded-2xl border-gray-200 p-5 group flex flex-col h-full">
                     <div class="flex items-start justify-between mb-4">
                         <div class="flex items-center gap-3 min-w-0">
-                            <div class="w-12 h-12 rounded-xl bg-gradient-to-br from-[color:var(--brand-from)] to-[color:var(--brand-via)] flex items-center justify-center text-white shadow-lg shrink-0">
+                            <div class="w-12 h-12 rounded-xl bg-[rgb(var(--accent-orange-rgb)/0.10)] text-[color:var(--accent-orange)] border border-[rgb(var(--accent-orange-rgb)/0.16)] flex items-center justify-center shadow-sm shrink-0">
                                 <span class="text-lg font-bold">{{ substr($user->name, 0, 1) }}</span>
                             </div>
                             <div class="min-w-0">
@@ -113,11 +113,11 @@
                         <x-ui.actions-menu>
                             @can('uac.users.manage')
                                 <x-ui.dropdown-item wire:click="sendPasswordReset({{ $user->id }})">
-                                    <i class="fas fa-envelope mr-2 w-5 text-[color:var(--brand-from)]"></i>
+                                    <i class="fas fa-envelope mr-2 w-5 text-[color:var(--accent-orange)]"></i>
                                     {{ tr('Send Password Reset') }}
                                 </x-ui.dropdown-item>
                                 <x-ui.dropdown-item wire:click="openEditModal({{ $user->id }})">
-                                    <i class="fas fa-edit mr-2 w-5 text-[color:var(--brand-from)]"></i>
+                                    <i class="fas fa-edit mr-2 w-5 text-[color:var(--accent-orange)]"></i>
                                     {{ tr('Edit') }}
                                 </x-ui.dropdown-item>
                                 @php 
@@ -127,12 +127,12 @@
                                 @endphp
                                 @if(($user->access_type ?? 'system_and_app') !== 'hr_app_only' && !$isSysAdmin)
                                     <x-ui.dropdown-item wire:click="openPermModal({{ $user->id }})">
-                                        <i class="fas fa-sliders-h mr-2 w-5 text-amber-500"></i>
+                                        <i class="fas fa-sliders-h mr-2 w-5 text-[color:var(--warning)]"></i>
                                         {{ tr('Custom Permissions') }}
                                     </x-ui.dropdown-item>
                                 @endif
                                 <x-ui.dropdown-item @click="$dispatch('open-confirm-confirm-reset-device', {{ $user->id }})">
-                                    <i class="fas fa-mobile-alt mr-2 w-5 text-purple-500"></i>
+                                    <i class="fas fa-mobile-alt mr-2 w-5 text-[color:var(--warning)]"></i>
                                     {{ tr('Reset Device') }}
                                 </x-ui.dropdown-item>
                                 <x-ui.dropdown-item
@@ -140,10 +140,10 @@
                                     :danger="$user->is_active ?? true"
                                 >
                                     @if($user->is_active ?? true)
-                                        <i class="fas fa-user-slash mr-2 w-5 text-red-500"></i>
+                                        <i class="fas fa-user-slash mr-2 w-5 text-[color:var(--error)]"></i>
                                         {{ tr('Deactivate') }}
                                     @else
-                                        <i class="fas fa-user-check mr-2 w-5 text-green-500"></i>
+                                        <i class="fas fa-user-check mr-2 w-5 text-[color:var(--success)]"></i>
                                         {{ tr('Activate') }}
                                     @endif
                                 </x-ui.dropdown-item>
@@ -174,20 +174,20 @@
                             @endphp
                             @if($user->has_custom_permissions && $user->reference_role)
                                 <div class="flex flex-col items-end gap-0.5">
-                                    <span class="text-xs font-bold text-[color:var(--brand-from)]">{{ $user->reference_role }}</span>
-                                    <span class="text-[9px] bg-amber-50 text-amber-700 border border-amber-200 px-1.5 py-0.5 rounded-full font-bold">
+                                    <span class="text-xs font-bold text-[color:var(--accent-orange)]">{{ $user->reference_role }}</span>
+                                    <span class="text-[9px] bg-[rgb(245_158_11/0.10)] text-[color:var(--warning)] border border-[rgb(245_158_11/0.22)] px-1.5 py-0.5 rounded-full font-bold">
                                         <i class="fas fa-sliders-h mr-0.5"></i> {{ tr('Custom') }}
                                     </span>
                                 </div>
                             @else
-                                <span class="text-xs font-bold text-[color:var(--brand-from)]">
+                                <span class="text-xs font-bold text-[color:var(--accent-orange)]">
                                     {{ $roleNames->isNotEmpty() ? $roleNames->join(', ') : '-' }}
                                 </span>
                             @endif
                         </div>
                         <div class="flex items-center justify-between py-2 border-b border-gray-50">
                             <span class="text-xs font-medium text-gray-500">{{ tr('Access Scope') }}</span>
-                            <span class="text-[10px] px-2 py-0.5 rounded-full bg-orange-50 text-[color:var(--brand-from)] font-bold">
+                            <span class="text-[10px] px-2 py-0.5 rounded-full bg-[rgb(var(--accent-orange-rgb)/0.08)] text-[color:var(--accent-orange)] font-bold">
                                 @php 
                                     $scope = $user->access_scope ?? 'all_branches'; 
                                 @endphp
@@ -208,18 +208,18 @@
                                 <i class="fas fa-mobile-alt mr-1"></i> {{ tr('HR App Only') }}
                             </span>
                         @else
-                            <span class="text-[10px] bg-orange-50 text-indigo-700 px-2 py-1 rounded-lg font-bold border border-orange-100">
+                            <span class="text-[10px] bg-[rgb(var(--accent-orange-rgb)/0.08)] text-[color:var(--accent-orange)] px-2 py-1 rounded-lg font-bold border border-[rgb(var(--accent-orange-rgb)/0.16)]">
                                 <i class="fas fa-laptop mr-1"></i> {{ tr('System & App') }}
                             </span>
                         @endif
 
                         @php $isActive = $user->is_active ?? true; @endphp
                         @if($isActive)
-                            <span class="px-2.5 py-1 text-[10px] font-bold rounded-full bg-green-100 text-green-800">
+                            <span class="px-2.5 py-1 text-[10px] font-bold rounded-full bg-[rgb(16_185_129/0.12)] text-[color:var(--success)]">
                                 {{ tr('Active') }}
                             </span>
                         @else
-                            <span class="px-2.5 py-1 text-[10px] font-bold rounded-full bg-red-100 text-red-800">
+                            <span class="px-2.5 py-1 text-[10px] font-bold rounded-full bg-[rgb(239_68_68/0.10)] text-[color:var(--error)]">
                                 {{ tr('Inactive') }}
                             </span>
                         @endif
@@ -279,7 +279,7 @@
                                 {{ tr('HR App Only') }}
                             </span>
                         @else
-                            <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-orange-100 text-[color:var(--brand-from)]">
+                            <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-[rgb(var(--accent-orange-rgb)/0.10)] text-[color:var(--accent-orange)]">
                                 {{ tr('System & App') }}
                             </span>
                         @endif
@@ -293,7 +293,7 @@
                         @elseif($user->has_custom_permissions && $user->reference_role)
                             <div class="flex flex-col gap-0.5">
                                 <span class="text-sm font-medium text-gray-900">{{ $user->reference_role }}</span>
-                                <span class="text-[9px] bg-amber-50 text-amber-700 border border-amber-200 px-1.5 py-0.5 rounded-full font-bold w-fit">
+                                <span class="text-[9px] bg-[rgb(245_158_11/0.10)] text-[color:var(--warning)] border border-[rgb(245_158_11/0.22)] px-1.5 py-0.5 rounded-full font-bold w-fit">
                                     <i class="fas fa-sliders-h mr-0.5"></i> {{ tr('Custom') }}
                                 </span>
                             </div>
@@ -310,15 +310,15 @@
                                 $permsCount = $perms->count(); 
                             @endphp
                             <div class="relative inline-block">
-                                <button type="button" x-ref="trigger" @click="showTooltip = !showTooltip; if(showTooltip) { const rect = $refs.trigger.getBoundingClientRect(); pos = { top: rect.top, left: rect.left + rect.width / 2 }; }" class="flex items-center gap-2 px-3 py-1.5 rounded-lg bg-orange-50 text-indigo-700 border border-orange-100/50 hover:bg-orange-100 transition-all group cursor-pointer">
-                                    <i class="fas fa-shield-alt text-indigo-400 group-hover:scale-110 transition-transform"></i>
+                                <button type="button" x-ref="trigger" @click="showTooltip = !showTooltip; if(showTooltip) { const rect = $refs.trigger.getBoundingClientRect(); pos = { top: rect.top, left: rect.left + rect.width / 2 }; }" class="flex items-center gap-2 px-3 py-1.5 rounded-lg bg-[rgb(var(--accent-orange-rgb)/0.08)] text-[color:var(--accent-orange)] border border-[rgb(var(--accent-orange-rgb)/0.16)] hover:bg-[rgb(var(--accent-orange-rgb)/0.12)] transition-all group cursor-pointer">
+                                    <i class="fas fa-shield-alt text-[color:var(--accent-orange)] group-hover:scale-110 transition-transform"></i>
                                     <span class="text-xs font-bold">{{ $permsCount }}</span>
                                 </button>
                                 <template x-teleport="body">
                                     <div x-show="showTooltip" x-cloak @click.away="showTooltip = false" x-transition.opacity class="fixed z-[9999]" :style="'top: ' + pos.top + 'px; left: ' + pos.left + 'px; transform: translate(-50%, -110%);'">
                                         <div class="bg-white border border-gray-100 rounded-xl shadow-2xl p-3 w-64">
                                             <h5 class="font-bold text-gray-900 text-[10px] uppercase tracking-wider mb-2 border-b border-gray-50 pb-1 flex items-center gap-2">
-                                                <i class="fas fa-shield-alt text-[color:var(--brand-from)]"></i>
+                                                <i class="fas fa-shield-alt text-[color:var(--accent-orange)]"></i>
                                                 {{ tr('User Permissions') }}
                                             </h5>
                                             <div class="flex flex-wrap gap-1 max-h-48 overflow-y-auto custom-scrollbar">
@@ -335,7 +335,7 @@
                                 </template>
                             </div>
                             @if($user->has_custom_permissions)
-                                <span class="text-[9px] bg-amber-50 text-amber-700 border border-amber-200 px-1.5 py-0.5 rounded-full font-bold whitespace-nowrap">
+                                <span class="text-[9px] bg-[rgb(245_158_11/0.10)] text-[color:var(--warning)] border border-[rgb(245_158_11/0.22)] px-1.5 py-0.5 rounded-full font-bold whitespace-nowrap">
                                     <i class="fas fa-sliders-h mr-0.5"></i> {{ tr('Custom') }}
                                 </span>
                             @endif
@@ -356,11 +356,11 @@
                     <td class="px-6 py-4 whitespace-nowrap">
                         @php $isActive = $user->is_active ?? true; @endphp
                         @if($isActive)
-                            <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800">
+                            <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-[rgb(16_185_129/0.12)] text-[color:var(--success)]">
                                 {{ tr('Active') }}
                             </span>
                         @else
-                            <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-red-100 text-red-800">
+                            <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-[rgb(239_68_68/0.10)] text-[color:var(--error)]">
                                 {{ tr('Inactive') }}
                             </span>
                         @endif
@@ -369,11 +369,11 @@
                         <x-ui.actions-menu>
                             @can('uac.users.manage')
                                 <x-ui.dropdown-item wire:click="sendPasswordReset({{ $user->id }})">
-                                    <i class="fas fa-envelope mr-2 w-5 text-[color:var(--brand-from)]"></i>
+                                    <i class="fas fa-envelope mr-2 w-5 text-[color:var(--accent-orange)]"></i>
                                     {{ tr('Send Password Reset') }}
                                 </x-ui.dropdown-item>
                                 <x-ui.dropdown-item wire:click="openEditModal({{ $user->id }})">
-                                    <i class="fas fa-edit mr-2 w-5 text-[color:var(--brand-from)]"></i>
+                                    <i class="fas fa-edit mr-2 w-5 text-[color:var(--accent-orange)]"></i>
                                     {{ tr('Edit') }}
                                 </x-ui.dropdown-item>
                                 @php 
@@ -383,20 +383,20 @@
                                 @endphp
                                 @if(($user->access_type ?? 'system_and_app') !== 'hr_app_only' && !$isSysAdmin)
                                     <x-ui.dropdown-item wire:click="openPermModal({{ $user->id }})">
-                                        <i class="fas fa-sliders-h mr-2 w-5 text-amber-500"></i>
+                                        <i class="fas fa-sliders-h mr-2 w-5 text-[color:var(--warning)]"></i>
                                         {{ tr('Custom Permissions') }}
                                     </x-ui.dropdown-item>
                                 @endif
                                 <x-ui.dropdown-item @click="$dispatch('open-confirm-confirm-reset-device', {{ $user->id }})">
-                                    <i class="fas fa-mobile-alt mr-2 w-5 text-purple-500"></i>
+                                    <i class="fas fa-mobile-alt mr-2 w-5 text-[color:var(--warning)]"></i>
                                     {{ tr('Reset Device') }}
                                 </x-ui.dropdown-item>
                                 <x-ui.dropdown-item @click="$dispatch('open-confirm-confirm-toggle-status', {{ $user->id }})" :danger="$user->is_active ?? true">
                                     @if($user->is_active ?? true)
-                                        <i class="fas fa-user-slash mr-2 w-5 text-red-500"></i>
+                                        <i class="fas fa-user-slash mr-2 w-5 text-[color:var(--error)]"></i>
                                         {{ tr('Deactivate') }}
                                     @else
-                                        <i class="fas fa-user-check mr-2 w-5 text-green-500"></i>
+                                        <i class="fas fa-user-check mr-2 w-5 text-[color:var(--success)]"></i>
                                         {{ tr('Activate') }}
                                     @endif
                                 </x-ui.dropdown-item>
@@ -423,8 +423,8 @@
         <x-slot name="content">
             <form wire:submit.prevent="save">
                 @if($errors->any())
-                    <div class="mb-4 bg-red-50 border-s-4 border-red-500 p-3">
-                        <ul class="list-disc list-inside text-xs text-red-600">
+                    <div class="mb-4 bg-[rgb(239_68_68/0.10)] border-s-4 border-[color:var(--error)] p-3">
+                        <ul class="list-disc list-inside text-xs text-[color:var(--error)]">
                             @foreach ($errors->all() as $error)
                                 <li>{{ tr($error) }}</li>
                             @endforeach
@@ -505,7 +505,7 @@
                 </div>
 
                 @if(!$editingId)
-                    <div class="mt-4 bg-orange-50 p-2 rounded text-[10px] text-[color:var(--brand-from)]">
+                    <div class="mt-4 bg-[rgb(var(--accent-orange-rgb)/0.08)] p-2 rounded text-[10px] text-[color:var(--accent-orange)]">
                         <i class="fas fa-info-circle mr-1"></i>
                         {{ tr('A password reset will be sent.') }}
                     </div>
@@ -554,17 +554,17 @@
     <x-ui.modal wire:model="showPermModal" maxWidth="5xl">
         <x-slot name="title">
             <div class="flex items-center gap-3">
-                <div class="w-10 h-10 rounded-xl flex items-center justify-center bg-amber-50">
-                    <i class="fas fa-sliders-h text-amber-500 text-lg"></i>
+                <div class="w-10 h-10 rounded-xl flex items-center justify-center bg-[rgb(245_158_11/0.10)]">
+                    <i class="fas fa-sliders-h text-[color:var(--warning)] text-lg"></i>
                 </div>
                 <div>
                     <h3 class="text-base font-extrabold text-gray-900 leading-none mb-1">
                         {{ tr('Custom Permissions') }} — {{ $permUserName }}
                     </h3>
                     <p class="text-[10px] text-gray-400 font-medium uppercase tracking-widest">
-                        {{ tr('Reference Role') }}: <span class="text-[color:var(--brand-from)] font-bold">{{ $permReferencRole ?? '—' }}</span>
+                        {{ tr('Reference Role') }}: <span class="text-[color:var(--accent-orange)] font-bold">{{ $permReferencRole ?? '—' }}</span>
                         @if($permUserHasCustom)
-                            &nbsp;·&nbsp; <span class="text-amber-600 font-bold"><i class="fas fa-exclamation-triangle mr-1"></i>{{ tr('Custom overrides active') }}</span>
+                            &nbsp;·&nbsp; <span class="text-[color:var(--warning)] font-bold"><i class="fas fa-exclamation-triangle mr-1"></i>{{ tr('Custom overrides active') }}</span>
                         @endif
                     </p>
                 </div>
@@ -575,8 +575,8 @@
 
                 {{-- Info banner when custom is active --}}
                 @if($permUserHasCustom)
-                    <div class="flex items-center justify-between bg-amber-50 border border-amber-200 rounded-xl p-3">
-                        <div class="flex items-center gap-2 text-amber-700 text-xs font-semibold">
+                    <div class="flex items-center justify-between bg-[rgb(245_158_11/0.10)] border border-[rgb(245_158_11/0.22)] rounded-xl p-3">
+                        <div class="flex items-center gap-2 text-[color:var(--warning)] text-xs font-semibold">
                             <i class="fas fa-sliders-h"></i>
                             {{ tr('This user has custom permissions that override their role defaults.') }}
                         </div>
@@ -584,7 +584,7 @@
                             type="button"
                             wire:click="resetToRoleDefault"
                             wire:loading.attr="disabled"
-                            class="flex items-center gap-2 px-3 py-1.5 bg-white border border-amber-300 text-amber-700 rounded-lg text-xs font-bold hover:bg-amber-100 transition cursor-pointer"
+                            class="flex items-center gap-2 px-3 py-1.5 bg-white border border-[rgb(245_158_11/0.30)] text-[color:var(--warning)] rounded-lg text-xs font-bold hover:bg-[rgb(245_158_11/0.12)] transition cursor-pointer"
                         >
                             <i class="fas fa-undo"></i>
                             {{ tr('Reset to Role Default') }}
@@ -595,9 +595,9 @@
                 {{-- Permission Groups --}}
                 <div class="flex items-center justify-between border-b border-gray-100 pb-3">
                     <h4 class="text-sm font-extrabold text-gray-900 flex items-center gap-2">
-                        <i class="fas fa-shield-alt text-[color:var(--brand-from)]"></i>
+                        <i class="fas fa-shield-alt text-[color:var(--accent-orange)]"></i>
                         {{ tr('Permissions') }}
-                        <span class="text-xs bg-orange-50 text-[color:var(--brand-from)] px-2 py-0.5 rounded-full font-bold border border-orange-100">
+                        <span class="text-xs bg-[rgb(var(--accent-orange-rgb)/0.08)] text-[color:var(--accent-orange)] px-2 py-0.5 rounded-full font-bold border border-[rgb(var(--accent-orange-rgb)/0.16)]">
                             {{ count($customPermissions) }}
                         </span>
                     </h4>
@@ -606,7 +606,7 @@
                             type="text"
                             x-model="permSearch"
                             placeholder="{{ tr('Filter permissions...') }}"
-                            class="w-full pr-8 pl-3 py-1.5 text-xs border border-gray-200 rounded-xl focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 outline-none transition-all"
+                            class="w-full pr-8 pl-3 py-1.5 text-xs border border-gray-200 rounded-xl focus:ring-2 focus:ring-[rgb(var(--accent-orange-rgb)/0.22)] focus:border-[color:var(--accent-orange)] outline-none transition-all"
                         />
                         <span class="absolute inset-y-0 end-0 pe-3 flex items-center pointer-events-none">
                             <i class="fas fa-search text-gray-300 text-[10px]"></i>
@@ -621,10 +621,10 @@
                             <button
                                 type="button"
                                 @click="activeTab = '{{ $tabKey }}'"
-                                :class="activeTab === '{{ $tabKey }}' ? 'bg-indigo-600 text-white shadow-md scale-[1.02]' : 'bg-white text-gray-500 hover:bg-gray-50 border border-gray-100'"
+                                :class="activeTab === '{{ $tabKey }}' ? 'bg-[color:var(--accent-orange)] text-white shadow-md scale-[1.02]' : 'bg-white text-gray-500 hover:bg-gray-50 border border-gray-100'"
                                 class="flex items-center gap-3 px-4 py-3 rounded-xl transition-all duration-200 text-sm font-bold whitespace-nowrap group shrink-0"
                             >
-                                <div class="w-8 h-8 rounded-lg flex items-center justify-center transition-colors" :class="activeTab === '{{ $tabKey }}' ? 'bg-white/20' : 'bg-gray-50 text-gray-400 group-hover:text-[color:var(--brand-from)]'">
+                                <div class="w-8 h-8 rounded-lg flex items-center justify-center transition-colors" :class="activeTab === '{{ $tabKey }}' ? 'bg-white/20' : 'bg-gray-50 text-gray-400 group-hover:text-[color:var(--accent-orange)]'">
                                     <i class="fas {{ $tab['icon'] }} text-xs"></i>
                                 </div>
                                 <span class="hidden md:inline">{{ $tab['label'] }}</span>
@@ -641,7 +641,7 @@
                             <div x-show="activeTab === '{{ $tabKey }}'" x-cloak class="space-y-6 animate-in fade-in slide-in-from-right-2 duration-300">
                                 <div class="flex items-center justify-between">
                                     <h4 class="text-sm font-extrabold text-gray-900 flex items-center gap-2">
-                                        <i class="fas {{ $tab['icon'] }} text-[color:var(--brand-from)]"></i>
+                                        <i class="fas {{ $tab['icon'] }} text-[color:var(--accent-orange)]"></i>
                                         {{ $tab['label'] }}
                                     </h4>
                                     <button
@@ -652,7 +652,7 @@
                                             $allSelectedInTab = count($allInTabKeys) > 0 && count($tabKeysInSelected) === count($allInTabKeys);
                                         @endphp
                                         wire:click="toggleTabCustom('{{ $tabKey }}')"
-                                        class="text-[10px] font-bold {{ $allSelectedInTab ? 'text-red-600 bg-red-50 border-red-100' : 'text-[color:var(--brand-from)] bg-orange-50 border-orange-100' }} border px-3 py-1.5 rounded-lg hover:brightness-95 transition-all"
+                                        class="text-[10px] font-bold {{ $allSelectedInTab ? 'text-[color:var(--error)] bg-[rgb(239_68_68/0.10)] border-[rgb(239_68_68/0.20)]' : 'text-[color:var(--accent-orange)] bg-[rgb(var(--accent-orange-rgb)/0.08)] border-[rgb(var(--accent-orange-rgb)/0.16)]' }} border px-3 py-1.5 rounded-lg hover:brightness-95 transition-all"
                                     >
                                         {{ $allSelectedInTab ? tr('Deselect All Section') : tr('Select All Section') }}
                                     </button>
@@ -660,7 +660,7 @@
 
                                 <div class="grid grid-cols-1 lg:grid-cols-2 gap-4 max-h-[450px] overflow-y-auto custom-scrollbar pe-2">
                                     @foreach($tab['groups'] as $groupName => $permissions)
-                                        <div class="bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden flex flex-col group/card hover:border-indigo-200 transition-colors self-start">
+                                        <div class="bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden flex flex-col group/card hover:border-[rgb(var(--accent-orange-rgb)/0.28)] transition-colors self-start">
                                             <div
                                                 class="px-4 py-3 bg-gray-50/50 border-b border-gray-100 flex items-center justify-between cursor-pointer hover:bg-gray-50 transition-colors group"
                                                 @click="activeGroup = activeGroup === '{{ $groupName }}' ? null : '{{ $groupName }}'"
@@ -672,13 +672,13 @@
                                                     @endphp
                                                     <input
                                                         type="checkbox"
-                                                        class="w-4 h-4 rounded border-gray-300 text-[color:var(--brand-from)] focus:ring-indigo-500 cursor-pointer"
+                                                        class="w-4 h-4 rounded border-gray-300 text-[color:var(--accent-orange)] focus:ring-[color:var(--accent-orange)] cursor-pointer"
                                                         wire:click.stop="toggleGroupCustom('{{ $groupName }}')"
                                                         {{ $allSelI ? 'checked' : '' }}
                                                     />
-                                                    <span class="text-xs font-extrabold text-gray-800 group-hover:text-[color:var(--brand-from)] transition-colors">{{ tr($groupName) }}</span>
+                                                    <span class="text-xs font-extrabold text-gray-800 group-hover:text-[color:var(--accent-orange)] transition-colors">{{ tr($groupName) }}</span>
                                                 </div>
-                                                <i class="fas fa-chevron-down text-[10px] text-gray-400 transition-transform duration-300" :class="activeGroup === '{{ $groupName }}' ? 'rotate-180 text-[color:var(--brand-from)]' : ''"></i>
+                                                <i class="fas fa-chevron-down text-[10px] text-gray-400 transition-transform duration-300" :class="activeGroup === '{{ $groupName }}' ? 'rotate-180 text-[color:var(--accent-orange)]' : ''"></i>
                                             </div>
 
                                             <div
@@ -694,10 +694,10 @@
                                                             type="checkbox"
                                                             wire:model="customPermissions"
                                                             value="{{ $permKey }}"
-                                                            class="w-4 h-4 rounded-md border-gray-300 text-[color:var(--brand-from)] focus:ring-indigo-500 cursor-pointer transition-all"
+                                                            class="w-4 h-4 rounded-md border-gray-300 text-[color:var(--accent-orange)] focus:ring-[color:var(--accent-orange)] cursor-pointer transition-all"
                                                         >
                                                         <div class="flex flex-col min-w-0">
-                                                            <span class="text-xs font-bold text-slate-700 group-hover/item:text-[color:var(--brand-from)] transition-colors break-words leading-tight">{{ tr($permLabel) }}</span>
+                                                            <span class="text-xs font-bold text-slate-700 group-hover/item:text-[color:var(--accent-orange)] transition-colors break-words leading-tight">{{ tr($permLabel) }}</span>
                                                             <span class="text-[9px] text-slate-400 font-mono tracking-tighter truncate mt-0.5">{{ $permKey }}</span>
                                                         </div>
                                                     </label>

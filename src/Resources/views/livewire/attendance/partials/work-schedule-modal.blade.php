@@ -36,15 +36,15 @@
     $themeCls = 'bg-gray-800 text-white'; // Fallback
 
     if ($hasDay && $hasNight) {
-        $themeCls = 'bg-gradient-to-br from-[color:var(--brand-via)] to-gray-900 text-white';
+        $themeCls = 'bg-[color:var(--accent-orange)] text-white';
         $themeIcon = 'fa-adjust';
         $themeTitle = tr('Mixed Shift');
     } elseif ($hasDay) {
-        $themeCls = 'bg-gradient-to-br from-[color:var(--brand-from)] to-[color:var(--brand-via)] text-white';
+        $themeCls = 'bg-[color:var(--accent-orange)] text-white';
         $themeIcon = 'fa-sun';
         $themeTitle = tr('Day Shift');
     } elseif ($hasNight) {
-        $themeCls = 'bg-gradient-to-br from-[color:var(--brand-via)] to-gray-900 text-white';
+        $themeCls = 'bg-[color:var(--accent-orange)] text-white';
         $themeIcon = 'fa-moon';
         $themeTitle = tr('Night Shift');
     }
@@ -53,7 +53,7 @@
 <x-ui.modal wire:model="showScheduleModal" maxWidth="5xl">
     <x-slot:title>
         <div class="flex items-center gap-3">
-            <div class="w-10 h-10 bg-[color:var(--brand-via)]/5 text-[color:var(--brand-via)] rounded-xl flex items-center justify-center border border-[color:var(--brand-via)]/10 shadow-sm">
+            <div class="w-10 h-10 bg-[rgb(var(--accent-orange-rgb)/0.08)] text-[color:var(--accent-orange)] rounded-xl flex items-center justify-center border border-[rgb(var(--accent-orange-rgb)/0.16)] shadow-sm">
                 <i class="fas fa-calendar-plus text-sm"></i>
             </div>
             <div>
@@ -118,7 +118,7 @@
                     <div class="space-y-2">
                         <div class="flex items-center justify-between">
                             <label class="text-[10px] font-black text-gray-400 uppercase tracking-widest">{{ tr('Work Days Selection') }}</label>
-                            <button wire:click="toggleAllDays" class="text-[10px] font-black text-[color:var(--brand-via)] uppercase hover:underline cursor-pointer">
+                            <button wire:click="toggleAllDays" class="text-[10px] font-black text-[color:var(--accent-orange)] uppercase hover:underline cursor-pointer">
                                 {{ count($scheduleData['work_days']) === 7 ? tr('Deselect All') : tr('Select All') }}
                             </button>
                         </div>
@@ -127,7 +127,7 @@
                             @foreach($daysOfWeek as $val => $lbl)
                                 <label class="cursor-pointer group">
                                     <input type="checkbox" wire:model.live="scheduleData.work_days" value="{{ $val }}" class="hidden peer">
-                                    <div class="px-3 py-2 rounded-xl border border-gray-100 bg-white text-[11px] font-bold text-gray-500 transition-all peer-checked:bg-[color:var(--brand-via)] peer-checked:text-white peer-checked:border-[color:var(--brand-via)] shadow-sm group-hover:bg-gray-50">
+                                    <div class="px-3 py-2 rounded-xl border border-gray-100 bg-white text-[11px] font-bold text-gray-500 transition-all peer-checked:bg-[color:var(--accent-orange)] peer-checked:text-white peer-checked:border-[color:var(--accent-orange)] shadow-sm group-hover:bg-gray-50">
                                         {{ $lbl }}
                                     </div>
                                 </label>
@@ -145,7 +145,7 @@
                         </div>
 
                         @if(count($scheduleData['periods']) < 4)
-                            <button wire:click="addPeriod" class="text-[10px] font-black text-[color:var(--brand-via)] uppercase hover:underline transition-all cursor-pointer">
+                            <button wire:click="addPeriod" class="text-[10px] font-black text-[color:var(--accent-orange)] uppercase hover:underline transition-all cursor-pointer">
                                 <i class="fas fa-plus me-1"></i>{{ tr('Add Period') }}
                             </button>
                         @endif
@@ -154,7 +154,7 @@
                     <div class="grid grid-cols-1 gap-3">
                         @foreach($scheduleData['periods'] as $idx => $p)
                             <div class="space-y-1">
-                                <div class="flex items-end gap-3 p-2.5 bg-white rounded-xl border border-gray-100 shadow-sm animate-in fade-in slide-in-from-top-1 {{ $errors->has('scheduleData.periods.'.$idx.'.end_time') ? 'border-red-200 bg-red-50/10' : '' }}">
+                                <div class="flex items-end gap-3 p-2.5 bg-white rounded-xl border border-gray-100 shadow-sm animate-in fade-in slide-in-from-top-1 {{ $errors->has('scheduleData.periods.'.$idx.'.end_time') ? 'border-[rgb(239_68_68/0.22)] bg-[rgb(239_68_68/0.08)]' : '' }}">
                                     <div class="flex-1 grid grid-cols-1 sm:grid-cols-2 gap-3">
                                         {{-- ✅ changed live -> lazy --}}
                                         <x-ui.input
@@ -178,27 +178,27 @@
                                             <input
                                                 type="checkbox"
                                                 wire:model.lazy="scheduleData.periods.{{ $idx }}.is_night_shift"
-                                                class="w-3.5 h-3.5 text-[color:var(--brand-via)] rounded border-gray-300"
+                                                class="w-3.5 h-3.5 text-[color:var(--accent-orange)] rounded border-gray-300"
                                             >
-                                            <i class="fas fa-moon text-[9px] {{ $p['is_night_shift'] ? 'text-[color:var(--brand-via)]' : 'text-gray-400' }}"></i>
+                                            <i class="fas fa-moon text-[9px] {{ $p['is_night_shift'] ? 'text-[color:var(--accent-orange)]' : 'text-gray-400' }}"></i>
                                         </label>
                                     </div>
 
                                     @if(count($scheduleData['periods']) > 1)
-                                        <button wire:click="removePeriod({{ $idx }})" class="mb-1.5 w-7 h-7 rounded-lg text-red-400 hover:bg-red-50 flex items-center justify-center transition-colors cursor-pointer">
+                                        <button wire:click="removePeriod({{ $idx }})" class="mb-1.5 w-7 h-7 rounded-lg text-[color:var(--error)] hover:bg-[rgb(239_68_68/0.10)] flex items-center justify-center transition-colors cursor-pointer">
                                             <i class="fas fa-trash-alt text-[10px]"></i>
                                         </button>
                                     @endif
                                 </div>
 
                                 @error('scheduleData.periods.'.$idx.'.end_time')
-                                    <p class="text-[9px] font-bold text-red-500 px-3 flex items-center gap-1">
+                                    <p class="text-[9px] font-bold text-[color:var(--error)] px-3 flex items-center gap-1">
                                         <i class="fas fa-exclamation-circle text-[8px]"></i> {{ $message }}
                                     </p>
                                 @enderror
 
                                 @error('scheduleData.periods.'.$idx.'.start_time')
-                                    <p class="text-[9px] font-bold text-red-500 px-3 flex items-center gap-1">
+                                    <p class="text-[9px] font-bold text-[color:var(--error)] px-3 flex items-center gap-1">
                                         <i class="fas fa-exclamation-circle text-[8px]"></i> {{ $message }}
                                     </p>
                                 @enderror
@@ -213,7 +213,7 @@
                         <div>
                             <label class="text-[9px] font-black text-gray-400 uppercase tracking-widest">{{ tr('Daily Exceptions') }}</label>
                         </div>
-                        <button wire:click="addException" class="text-[9px] font-black text-[color:var(--brand-via)] uppercase hover:underline cursor-pointer">
+                        <button wire:click="addException" class="text-[9px] font-black text-[color:var(--accent-orange)] uppercase hover:underline cursor-pointer">
                             <i class="fas fa-plus me-1"></i> {{ tr('Add Exception') }}
                         </button>
                     </div>
@@ -224,11 +224,11 @@
                                 <div class="flex items-center gap-2">
                                     <span class="text-[10px] font-black text-gray-700 uppercase">{{ tr('Exception') }} #{{ $idx + 1 }}</span>
                                     <label class="flex items-center gap-1.5 cursor-pointer ml-2">
-                                        <input type="checkbox" wire:model.defer="scheduleData.exceptions.{{ $idx }}.is_active" class="w-3.5 h-3.5 text-emerald-500 rounded border-gray-300">
+                                        <input type="checkbox" wire:model.defer="scheduleData.exceptions.{{ $idx }}.is_active" class="w-3.5 h-3.5 text-[color:var(--success)] rounded border-gray-300">
                                         <span class="text-[9px] font-bold text-gray-500">{{ tr('Active') }}</span>
                                     </label>
                                 </div>
-                                <button wire:click="removeException({{ $idx }})" class="text-red-400 hover:text-red-600 transition-colors cursor-pointer">
+                                <button wire:click="removeException({{ $idx }})" class="text-[color:var(--error)] hover:brightness-95 transition-colors cursor-pointer">
                                     <i class="fas fa-trash-alt text-[10px]"></i>
                                 </button>
                             </div>
@@ -264,7 +264,7 @@
 
                                 <div class="col-span-1 flex items-center gap-1.5 h-[34px] px-2 bg-white rounded-lg border border-gray-100">
                                     {{-- ✅ changed live -> lazy --}}
-                                    <input type="checkbox" wire:model.lazy="scheduleData.exceptions.{{ $idx }}.is_night_shift" class="w-3 h-3 text-[color:var(--brand-via)] rounded border-gray-300">
+                                    <input type="checkbox" wire:model.lazy="scheduleData.exceptions.{{ $idx }}.is_night_shift" class="w-3 h-3 text-[color:var(--accent-orange)] rounded border-gray-300">
                                     <span class="text-[8px] font-bold text-gray-500">{{ tr('Night') }}</span>
                                     <i class="fas fa-moon text-[8px] text-gray-300 ms-auto"></i>
                                 </div>
@@ -338,10 +338,10 @@
                                     @endphp
                                     <div class="flex items-center gap-2 px-2.5 py-1.5 rounded-lg border transition-all
                                         {{ $isWork ? 'bg-white text-gray-900 border-white' : 'bg-white/5 border-white/10 text-white/30' }}">
-                                        <div class="w-1.5 h-1.5 rounded-full {{ $isWork ? 'bg-[color:var(--brand-via)]' : 'bg-transparent border border-white/20' }}"></div>
+                                        <div class="w-1.5 h-1.5 rounded-full {{ $isWork ? 'bg-[color:var(--accent-orange)]' : 'bg-transparent border border-white/20' }}"></div>
                                         <span class="text-[10px] font-bold truncate">{{ $daysOfWeek[$d] }}</span>
                                         @if($isWeekend)
-                                            <i class="fas fa-star text-[8px] text-amber-400 ms-auto" title="{{ tr('Week End') }}"></i>
+                                            <i class="fas fa-star text-[8px] text-[color:var(--warning)] ms-auto" title="{{ tr('Week End') }}"></i>
                                         @endif
                                     </div>
                                 @endforeach
@@ -353,7 +353,7 @@
                 <div class="p-4 bg-white rounded-[1.5rem] border border-gray-100 space-y-3">
                     <label class="flex items-center justify-between cursor-pointer group">
                         <div class="flex items-center gap-2.5">
-                            <div class="w-7 h-7 rounded-lg bg-amber-50 text-amber-500 flex items-center justify-center transition-transform group-hover:scale-110 shadow-inner">
+                            <div class="w-7 h-7 rounded-lg bg-[rgb(245_158_11/0.10)] text-[color:var(--warning)] flex items-center justify-center transition-transform group-hover:scale-110 shadow-inner">
                                 <i class="fas fa-star text-[10px]"></i>
                             </div>
                             <div>
@@ -361,12 +361,12 @@
                                 <p class="text-[8px] text-gray-400 font-medium mt-1 leading-none">{{ tr('Apply to new staff') }}</p>
                             </div>
                         </div>
-                        <input type="checkbox" wire:model.defer="scheduleData.is_default" class="w-4 h-4 text-amber-500 rounded border-gray-300 cursor-pointer">
+                        <input type="checkbox" wire:model.defer="scheduleData.is_default" class="w-4 h-4 text-[color:var(--warning)] rounded border-gray-300 cursor-pointer">
                     </label>
 
                     <label class="flex items-center justify-between cursor-pointer group">
                         <div class="flex items-center gap-2.5">
-                            <div class="w-7 h-7 rounded-lg bg-green-50 text-green-500 flex items-center justify-center transition-transform group-hover:scale-110 shadow-inner">
+                            <div class="w-7 h-7 rounded-lg bg-[rgb(16_185_129/0.12)] text-[color:var(--success)] flex items-center justify-center transition-transform group-hover:scale-110 shadow-inner">
                                 <i class="fas fa-power-off text-[10px]"></i>
                             </div>
                             <div>
@@ -374,7 +374,7 @@
                                 <p class="text-[8px] text-gray-400 font-medium mt-1 leading-none">{{ tr('Enable Template') }}</p>
                             </div>
                         </div>
-                        <input type="checkbox" wire:model.defer="scheduleData.is_active" class="w-4 h-4 text-green-500 rounded border-gray-300 cursor-pointer">
+                        <input type="checkbox" wire:model.defer="scheduleData.is_active" class="w-4 h-4 text-[color:var(--success)] rounded border-gray-300 cursor-pointer">
                     </label>
                 </div>
             </div>
@@ -392,7 +392,7 @@
             loading="save"
             :arrow="false"
             :fullWidth="false"
-            class="!px-12 !rounded-xl shadow-lg shadow-[color:var(--brand-via)]/20 cursor-pointer w-full sm:w-auto"
+            class="!px-12 !rounded-xl shadow-[0_10px_20px_rgb(var(--accent-orange-rgb)/0.20)] cursor-pointer w-full sm:w-auto"
         >
             <i class="fas fa-save me-2"></i> {{ tr('Save Schedule') }}
         </x-ui.primary-button>
