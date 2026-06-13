@@ -262,37 +262,112 @@ class WorkScheduleService
                 ->get();
         }
 
-        $exceptions = $compExceptions[$companyId]->filter(fn($ce) => $dateStr >= $ce->start_date && $dateStr <= $ce->end_date);
+        $exceptions = $compExceptions[$companyId]->filter(fn($ce) => $this->exceptionalDayCoversDate($ce, $dateStr));
 
         foreach ($exceptions as $ce) {
-            $scopeType = $ce->scope_type ?: 'all';
-            
-            // If scope is ALL, it applies to everyone immediately
-            if ($scopeType === 'all') {
+            if ($this->exceptionalDayAppliesToEmployee($ce, $employee)) {
                 return $ce;
-            }
-
-            if (!$employee) continue;
-
-            $include = is_array($ce->include) ? $ce->include : (json_decode($ce->include, true) ?: []);
-            
-            if ($scopeType === 'employees') {
-                $targetIds = $include['employees'] ?? [];
-                if (in_array((string)$employee->id, $targetIds)) return $ce;
-            }
-            
-            if ($scopeType === 'departments') {
-                $targetIds = $include['departments'] ?? [];
-                if (in_array((string)$employee->department_id, $targetIds)) return $ce;
-            }
-
-            if ($scopeType === 'branches' || $scopeType === 'locations') {
-                $targetIds = $include['branches'] ?? $include['locations'] ?? [];
-                if (in_array((string)$employee->branch_id, $targetIds)) return $ce;
             }
         }
 
         return null;
+    }
+
+    private function exceptionalDayCoversDate(AttendanceExceptionalDay $day, string $dateStr): bool
+    {
+        $start = Carbon::parse($day->start_date)->toDateString();
+        $end = Carbon::parse($day->end_date ?? $day->start_date)->toDateString();
+
+        return $dateStr >= $start && $dateStr <= $end;
+    }
+
+    private function exceptionalDayAppliesToEmployee(AttendanceExceptionalDay $day, ?Employee $employee): bool
+    {
+        $scopeType = strtolower((string) ($day->scope_type ?: 'all'));
+
+        if ($scopeType === 'all') {
+            return true;
+        }
+
+        if (!$employee) {
+            return false;
+        }
+
+        $include = $this->normalizeExceptionalScope($day->include);
+        $exclude = $this->normalizeExceptionalScope($day->exclude);
+
+        if ($this->employeeMatchesExceptionalScope($employee, $exclude, $scopeType)) {
+            return false;
+        }
+
+        if ($scopeType === 'limited') {
+            return $this->employeeMatchesExceptionalScope($employee, $include);
+        }
+
+        return $this->employeeMatchesExceptionalScope($employee, $include, $scopeType);
+    }
+
+    private function employeeMatchesExceptionalScope(Employee $employee, array $scope, ?string $scopeType = null): bool
+    {
+        $scopeType = $scopeType ? strtolower($scopeType) : null;
+
+        if (($scopeType === null || $scopeType === 'employees') &&
+            $this->containsScopeValue($scope['employees'] ?? [], $employee->id)) {
+            return true;
+        }
+
+        if (($scopeType === null || $scopeType === 'departments') &&
+            (
+                $this->containsScopeValue($scope['departments'] ?? [], $employee->department_id ?? null) ||
+                $this->containsScopeValue($scope['sections'] ?? [], $employee->sub_department_id ?? null)
+            )) {
+            return true;
+        }
+
+        if (in_array($scopeType, [null, 'branches', 'locations'], true) &&
+            (
+                $this->containsScopeValue($scope['branches'] ?? [], $employee->branch_id ?? null) ||
+                $this->containsScopeValue($scope['locations'] ?? [], $employee->branch_id ?? null)
+            )) {
+            return true;
+        }
+
+        if (($scopeType === null || $scopeType === 'contract_types') &&
+            $this->containsScopeValue($scope['contract_types'] ?? [], $employee->contract_type ?? null)) {
+            return true;
+        }
+
+        return false;
+    }
+
+    private function normalizeExceptionalScope($scope): array
+    {
+        if (is_string($scope)) {
+            $decoded = json_decode($scope, true);
+            $scope = is_array($decoded) ? $decoded : [];
+        }
+
+        if (!is_array($scope)) {
+            $scope = [];
+        }
+
+        foreach (['employees', 'departments', 'sections', 'branches', 'locations', 'contract_types'] as $key) {
+            $scope[$key] = array_values(array_filter(array_map(
+                fn($value) => is_scalar($value) ? strtolower(trim((string) $value)) : '',
+                (array) ($scope[$key] ?? [])
+            ), fn($value) => $value !== ''));
+        }
+
+        return $scope;
+    }
+
+    private function containsScopeValue(array $values, $needle): bool
+    {
+        if ($needle === null || $needle === '') {
+            return false;
+        }
+
+        return in_array(strtolower(trim((string) $needle)), $values, true);
     }
 
     /**
