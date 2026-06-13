@@ -159,8 +159,8 @@
                     this.marker = L.marker([defaultLat, defaultLng], { draggable: true }).addTo(this.map);
                     this.circle = L.circle([defaultLat, defaultLng], {
                         radius: this.radius || 100,
-                        color: '#C45A1A',
-                        fillColor: '#C45A1A',
+                        color: '#903749',
+                        fillColor: '#903749',
                         fillOpacity: 0.15,
                         weight: 2
                     }).addTo(this.map);
