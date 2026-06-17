@@ -19,103 +19,103 @@ class AccessControlService
         return [
             // --- Core System ---
             'Dashboard' => [
-                'dashboard.view' => tr('View Dashboard Statistics'),
-                'dashboard.reports' => tr('Access Reports Dashboard'),
+                'dashboard.view' => 'View Dashboard Statistics',
+                'dashboard.reports' => 'Access Reports Dashboard',
             ],
             'General Settings' => [
-                'settings.general.view' => tr('View General Settings'),
-                'settings.general.edit' => tr('Edit General Settings'),
-                'settings.general.manage' => tr('Manage Overall Settings'),
-                'settings.branches.manage' => tr('Manage Company Branches'),
-                'settings.lists.manage' => tr('Manage Dynamic Selection Lists'),
+                'settings.general.view' => 'View General Settings',
+                'settings.general.edit' => 'Edit General Settings',
+                'settings.general.manage' => 'Manage Overall Settings',
+                'settings.branches.manage' => 'Manage Company Branches',
+                'settings.lists.manage' => 'Manage Dynamic Selection Lists',
             ],
             'Organizational Structure' => [
-                'settings.organizational.view' => tr('View Organizational Structure'),
-                'settings.organizational.manage' => tr('Manage Departments & Job Titles'),
+                'settings.organizational.view' => 'View Organizational Structure',
+                'settings.organizational.manage' => 'Manage Departments & Job Titles',
             ],
             'User Access Control' => [
-                'uac.users.view' => tr('View System Users'),
-                'uac.users.manage' => tr('Manage System Users'),
-                'uac.roles.view' => tr('View Roles & Groups'),
-                'uac.roles.manage' => tr('Manage Roles & Permissions'),
+                'uac.users.view' => 'View System Users',
+                'uac.users.manage' => 'Manage System Users',
+                'uac.roles.view' => 'View Roles & Groups',
+                'uac.roles.manage' => 'Manage Roles & Permissions',
             ],
             'Approval Workflows' => [
-                'settings.approval.view' => tr('View Approval Workflows'),
-                'settings.approval.manage' => tr('Manage Approval Workflows'),
+                'settings.approval.view' => 'View Approval Workflows',
+                'settings.approval.manage' => 'Manage Approval Workflows',
             ],
             'System Logs & Backup' => [
-                'logs.view' => tr('View System Activity Logs'),
-                'logs.export' => tr('Export Activity Logs'),
-                'settings.backup.view' => tr('View System Backups'),
-                'settings.backup.manage' => tr('Manage Multi-Backups'),
-                'settings.branding.view' => tr('View Branding Settings'),
-                'settings.branding.manage' => tr('Manage System Branding'),
+                'logs.view' => 'View System Activity Logs',
+                'logs.export' => 'Export Activity Logs',
+                'settings.backup.view' => 'View System Backups',
+                'settings.backup.manage' => 'Manage Multi-Backups',
+                'settings.branding.view' => 'View Branding Settings',
+                'settings.branding.manage' => 'Manage System Branding',
             ],
             'Currency & Calendar' => [
-                'settings.calendar.manage' => tr('Manage System Calendar'),
-                'settings.currencies.manage' => tr('Manage Currencies'),
+                'settings.calendar.manage' => 'Manage System Calendar',
+                'settings.currencies.manage' => 'Manage Currencies',
             ],
 
             // --- HR Modules ---
             'Employee Master Data' => [
-                'employees.view' => tr('View Employees List'),
-                'employees.view-details' => tr('View Employee Full Profile'),
-                'employees.create' => tr('Add New Employee'),
-                'employees.edit' => tr('Edit Employee Details'),
-                'employees.delete' => tr('Delete / Archive Employee'),
-                'employees.status.manage' => tr('Manage Employment Status'),
-                'employees.contracts.manage' => tr('Manage Employee Contracts'),
-                'employees.documents.manage' => tr('Manage Employee Documents'),
-                'employees.export' => tr('Export Employee Data'),
-                'employees.import' => tr('Import Employee Data'),
+                'employees.view' => 'View Employees List',
+                'employees.view-details' => 'View Employee Full Profile',
+                'employees.create' => 'Add New Employee',
+                'employees.edit' => 'Edit Employee Details',
+                'employees.delete' => 'Delete / Archive Employee',
+                'employees.status.manage' => 'Manage Employment Status',
+                'employees.contracts.manage' => 'Manage Employee Contracts',
+                'employees.documents.manage' => 'Manage Employee Documents',
+                'employees.export' => 'Export Employee Data',
+                'employees.import' => 'Import Employee Data',
             ],
 
             // --- Operations ---
             'Daily Attendance' => [
-                'attendance.dashboard.view' => tr('View Attendance Dashboard'),
-                'attendance.daily.view' => tr('View Daily Attendance (All)'),
-                'attendance.daily.view-subordinates' => tr('View Subordinates Attendance'),
-                'attendance.daily.manage' => tr('Manage Daily Attendance Record'),
-                'attendance.daily.manual-entry' => tr('Add Manual Attendance Entry'),
-                'attendance.logs.view' => tr('View Attendance Logs'),
-                'attendance.logs.sync' => tr('Sync Fingerprint Devices Data'),
+                'attendance.dashboard.view' => 'View Attendance Dashboard',
+                'attendance.daily.view' => 'View Daily Attendance (All)',
+                'attendance.daily.view-subordinates' => 'View Subordinates Attendance',
+                'attendance.daily.manage' => 'Manage Daily Attendance Record',
+                'attendance.daily.manual-entry' => 'Add Manual Attendance Entry',
+                'attendance.logs.view' => 'View Attendance Logs',
+                'attendance.logs.sync' => 'Sync Fingerprint Devices Data',
             ],
             'Work Schedules' => [
-                'attendance.schedules.view' => tr('View Work Schedules'),
-                'attendance.schedules.view-subordinates' => tr('View Subordinates Schedules'),
-                'attendance.schedules.manage' => tr('Manage Work Schedules'),
-                'attendance.schedules.assign' => tr('Assign Schedules'),
-                'attendance.schedules.bulk-assign' => tr('Bulk Assign Schedules'),
-                'shifts.view' => tr('View Shifts'),
-                'shifts.manage' => tr('Manage Shifts & Rotations'),
-                'holidays.manage' => tr('Manage Public Holidays'),
-                'settings.attendance.view' => tr('View Global Attendance Rules'),
-                'settings.attendance.manage' => tr('Manage Global Attendance Policies'),
-                'settings.attendance.schedules.manage' => tr('Manage Master Schedules Settings'),
-                'settings.attendance.holidays.manage' => tr('Manage Global Holiday Policies'),
-                'settings.attendance.exceptional.manage' => tr('Manage Exceptional Attendance Rules'),
+                'attendance.schedules.view' => 'View Work Schedules',
+                'attendance.schedules.view-subordinates' => 'View Subordinates Schedules',
+                'attendance.schedules.manage' => 'Manage Work Schedules',
+                'attendance.schedules.assign' => 'Assign Schedules',
+                'attendance.schedules.bulk-assign' => 'Bulk Assign Schedules',
+                'shifts.view' => 'View Shifts',
+                'shifts.manage' => 'Manage Shifts & Rotations',
+                'holidays.manage' => 'Manage Public Holidays',
+                'settings.attendance.view' => 'View Global Attendance Rules',
+                'settings.attendance.manage' => 'Manage Global Attendance Policies',
+                'settings.attendance.schedules.manage' => 'Manage Master Schedules Settings',
+                'settings.attendance.holidays.manage' => 'Manage Global Holiday Policies',
+                'settings.attendance.exceptional.manage' => 'Manage Exceptional Attendance Rules',
             ],
             'Requests Management' => [
-                'requests.leaves.view' => tr('View Leave Requests'),
-                'requests.leaves.create' => tr('Submit Leave Request'),
-                'requests.leaves.approve' => tr('Approve/Reject Leave Requests'),
-                'attendance.leaves.view' => tr('View Leave Balance & History'),
-                'attendance.leaves.view-subordinates' => tr('View Subordinates Leave Balances'),
-                'attendance.leaves.manage' => tr('Manage Leaves Manually'),
-                'attendance.leaves.approve' => tr('Approve Leave Requests (Old Path)'),
-                'requests.permissions.view' => tr('View Short Permission Requests'),
-                'requests.permissions.manage' => tr('Manage Permission Requests'),
-                'requests.overtime.view' => tr('View Overtime Requests'),
-                'requests.overtime.manage' => tr('Manage Overtime Requests'),
-                'requests.business-trip.manage' => tr('Manage Business Trip Requests'),
-                'attendance.missions.manage' => tr('Manage Work Missions'),
-                'settings.attendance.leaves.manage' => tr('Manage Global Leave Policies'),
+                'requests.leaves.view' => 'View Leave Requests',
+                'requests.leaves.create' => 'Submit Leave Request',
+                'requests.leaves.approve' => 'Approve/Reject Leave Requests',
+                'attendance.leaves.view' => 'View Leave Balance & History',
+                'attendance.leaves.view-subordinates' => 'View Subordinates Leave Balances',
+                'attendance.leaves.manage' => 'Manage Leaves Manually',
+                'attendance.leaves.approve' => 'Approve Leave Requests (Old Path)',
+                'requests.permissions.view' => 'View Short Permission Requests',
+                'requests.permissions.manage' => 'Manage Permission Requests',
+                'requests.overtime.view' => 'View Overtime Requests',
+                'requests.overtime.manage' => 'Manage Overtime Requests',
+                'requests.business-trip.manage' => 'Manage Business Trip Requests',
+                'attendance.missions.manage' => 'Manage Work Missions',
+                'settings.attendance.leaves.manage' => 'Manage Global Leave Policies',
             ],
             'Discipline & Penalties' => [
-                'attendance.penalties.view' => tr('View Attendance Penalties'),
-                'attendance.penalties.view-subordinates' => tr('View Subordinates Penalties'),
-                'attendance.penalties.manage' => tr('Process Attendance Penalties'),
-                'attendance.penalties.waive' => tr('Waive/Cancel Penalties'),
+                'attendance.penalties.view' => 'View Attendance Penalties',
+                'attendance.penalties.view-subordinates' => 'View Subordinates Penalties',
+                'attendance.penalties.manage' => 'Process Attendance Penalties',
+                'attendance.penalties.waive' => 'Waive/Cancel Penalties',
             ],
 
 
@@ -143,7 +143,7 @@ class AccessControlService
             if ($id) {
                 $role = Role::findOrFail($id);
                 
-                // 🛑 Block editing protected system roles
+                // ðŸ›‘ Block editing protected system roles
                 if (in_array($role->name, ['company-admin', 'saas-admin', 'super-admin', 'system-admin']) || is_null($role->saas_company_id)) {
                     throw new \Exception(tr('System roles cannot be edited.'));
                 }
@@ -239,7 +239,7 @@ class AccessControlService
     public function saveCustomPermissions(User $user, string $referencRoleName, array $permissions): void
     {
         DB::transaction(function () use ($user, $referencRoleName, $permissions) {
-            // Remove role assignment — only direct permissions are now authoritative
+            // Remove role assignment â€” only direct permissions are now authoritative
             $user->syncRoles([]);
             // Assign direct permissions
             $user->syncPermissions($permissions);
@@ -345,3 +345,4 @@ class AccessControlService
         ];
     }
 }
+

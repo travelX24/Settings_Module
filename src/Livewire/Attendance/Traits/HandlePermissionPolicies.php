@@ -11,14 +11,14 @@ trait HandlePermissionPolicies
         $this->authorize('settings.attendance.manage');
         
         if (!$this->selectedYearId) {
-            $this->dispatch('toast', type: 'error', message: tr('يرجى اختيار سنة أولاً.'));
+            $this->dispatch('toast', type: 'error', message: tr('Please select a year first.'));
             return;
         }
 
         // Validate hours fields
         $isEmpty = function($val) { return $val === '' || $val === null; };
         if ($isEmpty($this->perm_monthly_limit_hours) || $isEmpty($this->perm_max_request_hours) || !is_numeric($this->perm_monthly_limit_hours) || !is_numeric($this->perm_max_request_hours)) {
-            $errorMsg = tr('حقول الساعات إلزامية، يرجى إدخال القيم المطلوبة قبل الحفظ.');
+            $errorMsg = tr('Hour fields are required. Please enter the required values before saving.');
             $this->addError('perm_monthly_limit_hours', $errorMsg);
             $this->addError('perm_max_request_hours', $errorMsg);
             $this->dispatch('toast', type: 'error', message: $errorMsg);
@@ -26,7 +26,7 @@ trait HandlePermissionPolicies
         }
 
         if ((float)$this->perm_monthly_limit_hours > 0 && (float)$this->perm_monthly_limit_hours < (float)$this->perm_max_request_hours) {
-            $errorMsgConflict = tr('لا يمكن أن يكون الحد الشهري أقل من الحد الأقصى للطلب الواحد، يرجى تعديل القيم.');
+            $errorMsgConflict = tr('The monthly limit cannot be less than the maximum per request. Please adjust the values.');
             $this->addError('perm_monthly_limit_hours', $errorMsgConflict);
             $this->addError('perm_max_request_hours', $errorMsgConflict);
             $this->dispatch('toast', type: 'error', message: $errorMsgConflict);
@@ -35,7 +35,7 @@ trait HandlePermissionPolicies
 
         // ✅ New Validation: Ensure at least one limit is > 0
         if ((float)$this->perm_monthly_limit_hours <= 0 && (float)$this->perm_max_request_hours <= 0) {
-            $errorMsgInit = tr('يجب أن يكون أحد الحدين على الأقل (الشهري أو الأقصى للطلب) أكبر من الصفر لتهيئة الإعدادات.');
+            $errorMsgInit = tr('At least one limit, monthly or maximum per request, must be greater than zero to configure the settings.');
             $this->addError('perm_monthly_limit_hours', $errorMsgInit);
             $this->addError('perm_max_request_hours', $errorMsgInit);
             $this->dispatch('toast', type: 'error', message: $errorMsgInit);
@@ -53,7 +53,7 @@ trait HandlePermissionPolicies
             'attachment_types' => $this->perm_attachment_types,
         ], $this->selectedYearId);
 
-        $this->dispatch('toast', type: 'success', message: tr('تم تحديث إعدادات الأذونات بنجاح.'));
+        $this->dispatch('toast', type: 'success', message: tr('Permission settings updated successfully.'));
     }
 
     public function togglePermApp($val)

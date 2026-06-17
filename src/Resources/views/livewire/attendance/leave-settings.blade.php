@@ -1481,9 +1481,9 @@
                              <i class="fas fa-exclamation-triangle"></i>
                         </div>
                         <div>
-                            <h4 class="text-sm font-black text-[color:var(--warning)]">{{ tr('تنبيه: الإعدادات غير مهيأة') }}</h4>
+                            <h4 class="text-sm font-black text-[color:var(--warning)]">{{ tr('Permission settings are not configured') }}</h4>
                             <p class="text-[11px] text-[color:var(--warning)] mt-1 leading-relaxed">
-                                {{ tr('طلبات الأذونات معطلة حالياً في التطبيق لعدم تحديد حدود الساعات. يرجى إدخال قيمة للحد الشهري أو الحد الأقصى للطلب لتفعيل هذه الميزة.') }}
+                                {{ tr('Permission requests are currently disabled in the app because hourly limits are not configured. Enter a monthly limit or a maximum request limit to activate this feature.') }}
                             </p>
                         </div>
                     </div>
@@ -1493,9 +1493,9 @@
                              <i class="fas fa-check-circle"></i>
                         </div>
                         <div>
-                            <h4 class="text-sm font-black text-[color:var(--success)]">{{ tr('تم تهيئة الإعدادات بنجاح') }}</h4>
+                            <h4 class="text-sm font-black text-[color:var(--success)]">{{ tr('Settings configured successfully') }}</h4>
                             <p class="text-[11px] text-[color:var(--success)] mt-1 leading-relaxed">
-                                {{ tr('إعدادات الأذونات نشطة الآن. يمكن للموظفين تقديم الطلبات من التطبيق بناءً على الحدود المحددة.') }}
+                                {{ tr('Permission settings are active now. Employees can submit requests from the app based on the configured limits.') }}
                             </p>
                         </div>
                     </div>
@@ -1505,50 +1505,50 @@
 
                     <div>
                         <x-ui.input type="number" step="0.25" min="0"
-                            label="{{ tr('الحد الشهري (ساعات)') }}" wire:model.defer="perm_monthly_limit_hours"
+                            label="{{ tr('Monthly limit (hours)') }}" wire:model.defer="perm_monthly_limit_hours"
                             :disabled="!auth()->user()->can('settings.attendance.manage')" placeholder="0" 
-                            :hint="tr('إجمالي الساعات المسموح للموظف بطلبها خلال الشهر الواحد.')" />
+                            :hint="tr('Total hours an employee is allowed to request during one month.')" />
                     </div>
 
                     <div>
                         <x-ui.input type="number" step="0.25" min="0"
-                            label="{{ tr('الحد الأقصى لكل طلب (ساعات)') }}" wire:model.defer="perm_max_request_hours"
+                            label="{{ tr('Maximum per request (hours)') }}" wire:model.defer="perm_max_request_hours"
                             :disabled="!auth()->user()->can('settings.attendance.manage')" placeholder="0" 
-                            :hint="tr('أقصى عدد ساعات مسموح به لطلب الإذن الواحد.')" />
+                            :hint="tr('Maximum allowed hours for one permission request.')" />
                     </div>
 
                     <div class="md:col-span-2">
                         <div class="p-3 bg-[rgb(var(--accent-orange-rgb)/0.08)] border border-[rgb(var(--accent-orange-rgb)/0.16)] rounded-xl text-[10px] text-[color:var(--accent-orange)] italic flex items-center gap-2">
                             <i class="fas fa-info-circle"></i>
-                            <span>{{ tr('ملاحظة: يجب أن يكون أحد الحدين أعلاه على الأقل أكبر من الصفر للسماح بتقديم الطلبات عبر تطبيق الجوال.') }}</span>
+                            <span>{{ tr('Note: At least one of the limits above must be greater than zero to allow requests from the mobile app.') }}</span>
                         </div>
                     </div>
 
                     <div class="md:col-span-2">
-                        <x-ui.select label="{{ tr('سياسة الخصم') }}" wire:model.defer="perm_deduction_policy"
+                        <x-ui.select label="{{ tr('Deduction policy') }}" wire:model.defer="perm_deduction_policy"
                             :disabled="!auth()->user()->can('settings.attendance.manage')">
-                            <option value="not_allowed_after_limit">{{ tr('غير مسموح به بعد الحد') }}</option>
-                            <option value="salary_after_limit">{{ tr('خصم من الراتب بعد الحد') }}</option>
-                            <option value="allow_without_deduction">{{ tr('السماح بدون خصم') }}</option>
+                            <option value="not_allowed_after_limit">{{ tr('Not allowed after limit') }}</option>
+                            <option value="salary_after_limit">{{ tr('Deduct from salary after limit') }}</option>
+                            <option value="allow_without_deduction">{{ tr('Allow without deduction') }}</option>
                         </x-ui.select>
                     </div>
 
                     {{-- Attachments section --}}
                     <div class="md:col-span-2 pt-3 border-t border-gray-100">
-                        <div class="text-sm font-black text-gray-900 mb-2">{{ tr('إعدادات المرفقات') }}</div>
+                        <div class="text-sm font-black text-gray-900 mb-2">{{ tr('Attachment settings') }}</div>
 
                         <div class="mb-3">
                             <label class="flex items-center gap-2 text-sm font-semibold text-gray-700 cursor-pointer">
                                 <input type="checkbox" wire:model.live="perm_requires_attachment" class="cursor-pointer"
                                     @cannot('settings.attendance.manage') disabled @endcannot>
-                                <span>{{ tr('يتطلب مرفق') }}</span>
+                                <span>{{ tr('Requires attachment') }}</span>
                             </label>
                         </div>
 
                         <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
                             <div>
                                 <label
-                                    class="block text-[11px] font-black text-gray-500 mb-1">{{ tr('الأنواع المسموح بها') }}</label>
+                                    class="block text-[11px] font-black text-gray-500 mb-1">{{ tr('Allowed types') }}</label>
 
                                 <div class="flex flex-wrap gap-3">
                                     <label
@@ -1584,11 +1584,11 @@
 
                             <div>
                                 <label
-                                    class="block text-[11px] font-black text-gray-500 mb-1">{{ tr('الحجم الأقصى (ميجابايت)') }}</label>
+                                    class="block text-[11px] font-black text-gray-500 mb-1">{{ tr('Maximum size (MB)') }}</label>
                                 <input type="text" value="2 MB" readonly
                                     class="w-full h-[40px] px-3 rounded-xl border border-gray-200 text-sm bg-gray-100/70 text-gray-700 cursor-not-allowed">
                                 <div class="text-[10px] text-gray-400 mt-1">
-                                    {{ tr('حجم ثابت لجميع مرفقات الأذونات.') }}
+                                    {{ tr('Fixed size for all permission attachments.') }}
                                 </div>
                             </div>
                         </div>
@@ -1596,25 +1596,25 @@
 
                     {{-- General Settings --}}
                     <div class="md:col-span-2 pt-3 border-t border-gray-100">
-                        <div class="text-sm font-black text-gray-900 mb-2">{{ tr('إعدادات عامة') }}</div>
+                        <div class="text-sm font-black text-gray-900 mb-2">{{ tr('General settings') }}</div>
 
                         <div class="grid grid-cols-1 sm:grid-cols-3 gap-3">
                             <label class="flex items-center gap-2 text-sm font-semibold text-gray-700 cursor-pointer">
                                 <input type="checkbox" wire:model.defer="perm_is_active" class="cursor-pointer"
                                     @cannot('settings.attendance.manage') disabled @endcannot>
-                                <span>{{ tr('نشط') }}</span>
+                                <span>{{ tr('Active') }}</span>
                             </label>
 
                             <label class="flex items-center gap-2 text-sm font-semibold text-gray-700 cursor-pointer">
                                 <input type="checkbox" wire:model.defer="perm_approval_required" class="cursor-pointer"
                                     @cannot('settings.attendance.manage') disabled @endcannot>
-                                <span>{{ tr('يتطلب موافقة') }}</span>
+                                <span>{{ tr('Requires approval') }}</span>
                             </label>
 
                             <label class="flex items-center gap-2 text-sm font-semibold text-gray-700 cursor-pointer">
                                 <input type="checkbox" wire:model.defer="perm_show_in_app" class="cursor-pointer"
                                     @cannot('settings.attendance.manage') disabled @endcannot>
-                                <span>{{ tr('عرض في التطبيق') }}</span>
+                                <span>{{ tr('Show in app') }}</span>
                             </label>
                         </div>
                     </div>

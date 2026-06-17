@@ -72,26 +72,35 @@ class AttendanceService
         $status = 'present';
         $matchedPeriodId = null;
         $matchedPeriodEndTime = null;
+        $matchedPeriodKey = null;
 
         $isWithinPeriod = false;
 
-        if ($schedule && $schedule->periods) {
-            foreach ($schedule->periods as $p) {
-                $pStartAllowed = Carbon::parse($dateStr . " " . substr((string)$p->start_time, 0, 5))->subMinutes(30);
-                $pEnd = Carbon::parse($dateStr . " " . substr((string)$p->end_time, 0, 5));
-                
-                if ($now->between($pStartAllowed, $pEnd)) {
-                    $matchedPeriodId = $p->id;
-                    $matchedPeriodEndTime = $p->end_time;
-                    $isWithinPeriod = true;
+        foreach ($this->resolveCheckInPeriods($log, $schedule, $dateStr) as $p) {
+            $startTime = substr((string) $p['start_time'], 0, 5);
+            $endTime = substr((string) $p['end_time'], 0, 5);
+            if (!$startTime || !$endTime) {
+                continue;
+            }
 
-                    // Late calculation
-                    $realStart = Carbon::parse($dateStr . " " . substr((string)$p->start_time, 0, 5));
-                    if ($now->greaterThan($realStart->addMinutes($lateGraceMins))) {
-                        $status = 'late';
-                    }
-                    break;
+            $realStart = Carbon::parse($dateStr . " " . $startTime);
+            $pStartAllowed = $realStart->copy()->subMinutes(30);
+            $pEnd = Carbon::parse($dateStr . " " . $endTime);
+
+            if (!empty($p['is_night_shift']) || $pEnd->lt($realStart)) {
+                $pEnd->addDay();
+            }
+
+            if ($now->between($pStartAllowed, $pEnd)) {
+                $matchedPeriodId = $p['work_schedule_period_id'];
+                $matchedPeriodEndTime = $endTime;
+                $matchedPeriodKey = $p['period_key'];
+                $isWithinPeriod = true;
+
+                if ($now->greaterThan($realStart->copy()->addMinutes($lateGraceMins))) {
+                    $status = 'late';
                 }
+                break;
             }
         }
 
@@ -106,23 +115,34 @@ class AttendanceService
 
         if ($openSession) {
             $shouldAutoClose = false;
+            $openPeriodKey = $this->periodKeyFromDetail($openSession);
 
             // Case 1: We matched a NEW period — the open session is from a different one
             if ($matchedPeriodId && (int)$openSession->work_schedule_period_id !== (int)$matchedPeriodId) {
                 $shouldAutoClose = true;
             }
 
+            if (!$shouldAutoClose && $matchedPeriodKey && $openPeriodKey && $openPeriodKey !== $matchedPeriodKey) {
+                $shouldAutoClose = true;
+            }
+
             // Case 2: We're NOT within any period window BUT the open session's period has already ended
             // (employee is stuck between periods — auto-close the old session)
-            if (!$isWithinPeriod && !$shouldAutoClose && $openSession->work_schedule_period_id) {
-                $openPeriodRow = DB::table('work_schedule_periods')
-                    ->where('id', $openSession->work_schedule_period_id)
-                    ->first();
-                if ($openPeriodRow) {
-                    $openPeriodEnd = Carbon::parse($dateStr . " " . substr((string)$openPeriodRow->end_time, 0, 5));
-                    if ($now->gt($openPeriodEnd)) {
-                        $shouldAutoClose = true;
-                    }
+            if (!$isWithinPeriod && !$shouldAutoClose) {
+                $openPeriodEndTime = null;
+
+                if ($openSession->work_schedule_period_id) {
+                    $openPeriodRow = DB::table('work_schedule_periods')
+                        ->where('id', $openSession->work_schedule_period_id)
+                        ->first();
+                    $openPeriodEndTime = $openPeriodRow?->end_time;
+                }
+
+                $openPeriodEndTime = $openPeriodEndTime ?: $this->periodEndTimeFromDetail($openSession);
+
+                if ($openPeriodEndTime) {
+                    $openPeriodEnd = Carbon::parse($dateStr . " " . substr((string)$openPeriodEndTime, 0, 5));
+                    if ($now->gt($openPeriodEnd)) $shouldAutoClose = true;
                 }
             }
 
@@ -138,8 +158,9 @@ class AttendanceService
                 $limitMinutes = $limitHours * 60;
 
                 $autoOutMethod = 'fallback';
-                if ($prevPeriod) {
-                    $prevPeriodEnd  = Carbon::parse($dateStr . ' ' . substr((string) $prevPeriod->end_time, 0, 5));
+                $prevPeriodEndTime = $prevPeriod?->end_time ?: $this->periodEndTimeFromDetail($openSession);
+                if ($prevPeriodEndTime) {
+                    $prevPeriodEnd  = Carbon::parse($dateStr . ' ' . substr((string) $prevPeriodEndTime, 0, 5));
                     // Break = time elapsed since Period-1 ended (always positive here)
                     $breakMinutes = (int) $prevPeriodEnd->diffInMinutes($now);
 
@@ -183,15 +204,18 @@ class AttendanceService
         }
 
         // One more check: has this period already been used?
+        $alreadyUsed = false;
         if ($matchedPeriodId) {
             $alreadyUsed = DB::table('attendance_daily_details')
                 ->where('daily_log_id', $log->id)
                 ->where('work_schedule_period_id', $matchedPeriodId)
                 ->exists();
+        } elseif ($matchedPeriodKey) {
+            $alreadyUsed = $this->detailPeriodKeyExists((int) $log->id, $matchedPeriodKey);
+        }
 
-            if ($alreadyUsed) {
-                return ['ok' => false, 'code' => 'period_already_completed', 'message' => tr('You have already completed attendance registration for this period.')];
-            }
+        if ($alreadyUsed) {
+            return ['ok' => false, 'code' => 'period_already_completed', 'message' => tr('You have already completed attendance registration for this period.')];
         }
 
         // Insert Detail
@@ -200,7 +224,13 @@ class AttendanceService
             'work_schedule_period_id' => $matchedPeriodId,
             'check_in_time' => $nowTime,
             'attendance_status' => $status,
-            'meta_data' => json_encode(['method' => $method, 'lat' => $lat, 'lng' => $lng], JSON_UNESCAPED_UNICODE),
+            'meta_data' => json_encode([
+                'method' => $method,
+                'lat' => $lat,
+                'lng' => $lng,
+                'period_key' => $matchedPeriodKey,
+                'period_end_time' => $matchedPeriodEndTime,
+            ], JSON_UNESCAPED_UNICODE),
             'created_at' => $now,
             'updated_at' => $now,
         ]);
@@ -331,5 +361,103 @@ class AttendanceService
         $et = Carbon::parse($endTime);
         if ($et->lt($st)) $et->addDay();
         return (int) $st->diffInMinutes($et);
+    }
+
+    private function resolveCheckInPeriods(AttendanceDailyLog $log, $schedule, string $dateStr): array
+    {
+        if (!$schedule) {
+            return [];
+        }
+
+        $dayKey = $this->scheduleService->getDayKey(Carbon::parse($dateStr));
+        $scheduleExceptions = collect($schedule->exceptions ?? [])
+            ->filter(function ($e) use ($dateStr, $dayKey) {
+                $specificDate = $e->specific_date ? Carbon::parse($e->specific_date)->toDateString() : null;
+
+                return (bool)($e->is_active ?? true)
+                    && (($specificDate && $specificDate === $dateStr) || $e->day_of_week === $dayKey);
+            })
+            ->values();
+
+        if ($scheduleExceptions->isNotEmpty()) {
+            return $scheduleExceptions->map(fn ($e) => [
+                'start_time' => $e->start_time,
+                'end_time' => $e->end_time,
+                'is_night_shift' => (bool)($e->is_night_shift ?? false),
+                'work_schedule_period_id' => null,
+                'period_key' => 'schedule_exception:' . ($e->id ?? md5($dateStr . $e->start_time . $e->end_time)),
+            ])->all();
+        }
+
+        $metrics = $log->tempMetrics;
+        if (!$metrics) {
+            $employee = $log->employee;
+            $holidays = $this->scheduleService->getHolidays((int)$log->saas_company_id, $dateStr, $dateStr);
+            $requests = $employee
+                ? $this->scheduleService->getEmployeeRequests((int)$employee->id, $dateStr, $dateStr)
+                : [];
+
+            $metrics = $this->scheduleService->getMetricsForDate($dateStr, $schedule, $holidays, $employee, $requests);
+        }
+
+        $metricsPeriods = collect($metrics['periods'] ?? []);
+        if ($metricsPeriods->isNotEmpty()) {
+            $basePeriodIds = collect($schedule->periods ?? [])
+                ->pluck('id')
+                ->filter()
+                ->map(fn ($id) => (string)$id)
+                ->all();
+
+            return $metricsPeriods->map(function ($p) use ($basePeriodIds, $dateStr) {
+                $id = $p['id'] ?? null;
+                $isBasePeriod = $id && in_array((string)$id, $basePeriodIds, true);
+
+                return [
+                    'start_time' => $p['start_time'] ?? null,
+                    'end_time' => $p['end_time'] ?? null,
+                    'is_night_shift' => (bool)($p['is_night_shift'] ?? false),
+                    'work_schedule_period_id' => $isBasePeriod ? (int)$id : null,
+                    'period_key' => ($isBasePeriod ? 'work_schedule_period:' : 'effective_period:')
+                        . ($id ?: md5($dateStr . ($p['start_time'] ?? '') . ($p['end_time'] ?? ''))),
+                ];
+            })->all();
+        }
+
+        return collect($schedule->periods ?? [])->map(fn ($p) => [
+            'start_time' => $p->start_time,
+            'end_time' => $p->end_time,
+            'is_night_shift' => (bool)($p->is_night_shift ?? false),
+            'work_schedule_period_id' => $p->id ?? null,
+            'period_key' => 'work_schedule_period:' . ($p->id ?? md5($dateStr . $p->start_time . $p->end_time)),
+        ])->all();
+    }
+
+    private function periodKeyFromDetail($detail): ?string
+    {
+        $meta = json_decode($detail->meta_data ?? '{}', true);
+        if (is_array($meta) && !empty($meta['period_key'])) {
+            return (string)$meta['period_key'];
+        }
+
+        return $detail->work_schedule_period_id ? 'work_schedule_period:' . $detail->work_schedule_period_id : null;
+    }
+
+    private function periodEndTimeFromDetail($detail): ?string
+    {
+        $meta = json_decode($detail->meta_data ?? '{}', true);
+
+        return is_array($meta) && !empty($meta['period_end_time']) ? (string)$meta['period_end_time'] : null;
+    }
+
+    private function detailPeriodKeyExists(int $logId, string $periodKey): bool
+    {
+        return DB::table('attendance_daily_details')
+            ->where('daily_log_id', $logId)
+            ->get(['meta_data'])
+            ->contains(function ($detail) use ($periodKey) {
+                $meta = json_decode($detail->meta_data ?? '{}', true);
+
+                return is_array($meta) && ($meta['period_key'] ?? null) === $periodKey;
+            });
     }
 }
