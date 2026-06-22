@@ -91,7 +91,7 @@
                         </button>
                     </div>
 
-                    <div class="grid grid-cols-1 sm:flex sm:flex-wrap items-center gap-2">
+                    <div class="grid grid-cols-1 sm:grid-cols-2 xl:flex xl:flex-nowrap xl:items-center gap-2">
                         @can('settings.attendance.manage')
                             <x-ui.secondary-button :fullWidth="false" wire:click="openYears" class="cursor-pointer">
                                 <i class="fas fa-calendar"></i>

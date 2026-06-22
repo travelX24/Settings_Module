@@ -254,49 +254,22 @@
         <x-ui.server-table :paginator="$rows" pageName="page" tableClass="w-full text-start border-collapse">
             <x-slot name="head">
                 <tr class="bg-gray-50/50 border-b border-gray-100">
-                    <th
-                        class="w-10 px-6 py-4 text-[10px] font-black text-gray-400 uppercase tracking-widest text-right whitespace-nowrap">
+                    <th class="w-10 px-6 py-4 text-[10px] font-black text-gray-400 uppercase tracking-widest text-right whitespace-nowrap">
                         <input type="checkbox" wire:model.live="selectPage" class="rounded cursor-pointer">
                     </th>
-                    <th class="min-w-[200px] px-6 py-4 text-[10px] font-black text-gray-400 uppercase tracking-widest text-right whitespace-nowrap">
-                        {{ tr('Name') }}
-                    </th>
-                    <th class="min-w-[120px] px-6 py-4 text-[10px] font-black text-gray-400 uppercase tracking-widest text-center whitespace-nowrap">
-                        {{ tr('Period') }}
-                    </th>
-                    <th class="min-w-[150px] px-6 py-4 text-[10px] font-black text-gray-400 uppercase tracking-widest text-center whitespace-nowrap">
-                        {{ tr('Start') }}
-                    </th>
-                    <th class="min-w-[150px] px-6 py-4 text-[10px] font-black text-gray-400 uppercase tracking-widest text-center whitespace-nowrap">
-                        {{ tr('End') }}
-                    </th>
-                    <th class="min-w-[150px] px-6 py-4 text-[10px] font-black text-gray-400 uppercase tracking-widest text-center whitespace-nowrap">
-                        {{ tr('Apply') }}
-                    </th>
-                    <th class="min-w-[120px] px-6 py-4 text-[10px] font-black text-gray-400 uppercase tracking-widest text-center whitespace-nowrap">
-                        {{ tr('Deduction %') }}
-                    </th>
-                    <th class="min-w-[120px] px-6 py-4 text-[10px] font-black text-gray-400 uppercase tracking-widest text-center whitespace-nowrap">
-                        {{ tr('Grace Hours') }}
-                    </th>
-                    <th class="min-w-[150px] px-6 py-4 text-[10px] font-black text-gray-400 uppercase tracking-widest text-center whitespace-nowrap">
-                        {{ tr('Scope') }}
-                    </th>
-                    <th class="min-w-[120px] px-6 py-4 text-[10px] font-black text-gray-400 uppercase tracking-widest text-center whitespace-nowrap">
-                        {{ tr('Notified') }}
-                    </th>
-                    <th class="min-w-[150px] px-6 py-4 text-[10px] font-black text-gray-400 uppercase tracking-widest text-center whitespace-nowrap">
-                        {{ tr('Created By') }}
-                    </th>
-                    <th class="min-w-[150px] px-6 py-4 text-[10px] font-black text-gray-400 uppercase tracking-widest text-center whitespace-nowrap">
-                        {{ tr('Created At') }}
-                    </th>
-                    <th class="min-w-[100px] px-6 py-4 text-[10px] font-black text-gray-400 uppercase tracking-widest text-center whitespace-nowrap">
-                        {{ tr('Active') }}
-                    </th>
-                    <th class="min-w-[100px] px-6 py-4 text-[10px] font-black text-gray-400 uppercase tracking-widest text-right whitespace-nowrap">
-                        {{ tr('Actions') }}
-                    </th>
+                    <th class="px-6 py-4 text-[10px] font-black text-gray-400 uppercase tracking-widest text-right whitespace-nowrap">{{ tr('Name') }}</th>
+                    <th class="px-6 py-4 text-[10px] font-black text-gray-400 uppercase tracking-widest text-center whitespace-nowrap">{{ tr('Period') }}</th>
+                    <th class="px-6 py-4 text-[10px] font-black text-gray-400 uppercase tracking-widest text-center whitespace-nowrap">{{ tr('Start') }}</th>
+                    <th class="px-6 py-4 text-[10px] font-black text-gray-400 uppercase tracking-widest text-center whitespace-nowrap">{{ tr('End') }}</th>
+                    <th class="px-6 py-4 text-[10px] font-black text-gray-400 uppercase tracking-widest text-center whitespace-nowrap">{{ tr('Apply') }}</th>
+                    <th class="px-6 py-4 text-[10px] font-black text-gray-400 uppercase tracking-widest text-center whitespace-nowrap">{{ tr('Deduction %') }}</th>
+                    <th class="px-6 py-4 text-[10px] font-black text-gray-400 uppercase tracking-widest text-center whitespace-nowrap">{{ tr('Grace Hours') }}</th>
+                    <th class="px-6 py-4 text-[10px] font-black text-gray-400 uppercase tracking-widest text-center whitespace-nowrap">{{ tr('Scope') }}</th>
+                    <th class="px-6 py-4 text-[10px] font-black text-gray-400 uppercase tracking-widest text-center whitespace-nowrap">{{ tr('Notified') }}</th>
+                    <th class="px-6 py-4 text-[10px] font-black text-gray-400 uppercase tracking-widest text-center whitespace-nowrap">{{ tr('Created By') }}</th>
+                    <th class="px-6 py-4 text-[10px] font-black text-gray-400 uppercase tracking-widest text-center whitespace-nowrap">{{ tr('Created At') }}</th>
+                    <th class="px-6 py-4 text-[10px] font-black text-gray-400 uppercase tracking-widest text-center whitespace-nowrap">{{ tr('Active') }}</th>
+                    <th class="px-6 py-4 text-[10px] font-black text-gray-400 uppercase tracking-widest text-right whitespace-nowrap">{{ tr('Actions') }}</th>
                 </tr>
             </x-slot>
 
@@ -304,7 +277,6 @@
                 @forelse($rows as $row)
                     @php
                         $apply = (string) ($row->apply_on ?? 'absence');
-
                         $percent = 0.0;
                         if ($apply === 'absence') {
                             $percent = (float) $row->absence_multiplier * 100.0;
@@ -983,8 +955,8 @@
                 </x-ui.secondary-button>
             </x-slot>
         </x-ui.modal>
-    </div>
 
+    </div>
     {{-- Confirm Dialogs --}}
     <x-ui.confirm-dialog id="exceptional-day-delete" type="danger" icon="fa-trash" :title="tr('Delete Exceptional Day')"
         :message="tr('Are you sure you want to delete this exceptional day?')" :confirmText="tr('Delete')" :cancelText="tr('Cancel')" confirmAction="wire:deleteRow(__ID__)" />

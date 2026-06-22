@@ -254,7 +254,7 @@
     </div>
 
     {{-- Role Modal --}}
-    <x-ui.modal wire:model="showModal" maxWidth="5xl">
+    <x-ui.modal wire:model="showModal" maxWidth="4xl">
         <x-slot name="title">
             <div class="flex items-center gap-3">
                 <div class="w-10 h-10 rounded-xl flex items-center justify-center bg-[rgb(var(--accent-orange-rgb)/0.08)]">
@@ -271,18 +271,18 @@
             </div>
         </x-slot>
         <x-slot name="content">
-            <div class="space-y-6" x-data="{ permSearch: '', activeGroup: null }">
+            <div class="space-y-4" x-data="{ permSearch: '', activeGroup: null }">
                 @if($errors->any())
                     <div class="bg-[rgb(239_68_68/0.10)] border-s-4 border-[color:var(--error)] p-3 rounded-lg">
                         <ul class="list-disc list-inside text-xs text-[color:var(--error)]">
                             @foreach ($errors->all() as $error)
-                                <li>{{ tr($error) }}</li>
+                                <li>{{ $error }}</li>
                             @endforeach
                         </ul>
                     </div>
                 @endif
 
-                <div class="bg-gray-50/50 p-4 rounded-2xl border border-gray-100">
+                <div class="bg-gray-50/50 p-3 rounded-2xl border border-gray-100">
                     <x-ui.input 
                         label="{{ tr('Role Name') }}" 
                         wire:model="name" 
@@ -311,15 +311,15 @@
                         </div>
                     </div>
 
-                <div class="flex flex-col md:flex-row gap-6 min-h-[500px]" x-data="{ activeTab: 'core' }">
+                <div class="flex flex-col md:flex-row gap-4 min-h-[380px]" x-data="{ activeTab: 'core' }">
                     {{-- Tabs Navigation --}}
-                    <div class="w-full md:w-64 flex flex-row md:flex-col gap-2 overflow-x-auto md:overflow-y-auto custom-scrollbar border-b md:border-b-0 md:border-e border-gray-100 pb-4 md:pb-0 md:pe-4 min-w-0">
+                    <div class="w-full md:w-56 flex flex-row md:flex-col gap-2 overflow-x-auto md:overflow-y-auto custom-scrollbar border-b md:border-b-0 md:border-e border-gray-100 pb-3 md:pb-0 md:pe-3 min-w-0">
                         @foreach($permissionTabs as $tabKey => $tab)
                             <button 
                                 type="button"
                                 @click="activeTab = '{{ $tabKey }}'"
                                 :class="activeTab === '{{ $tabKey }}' ? 'bg-[color:var(--accent-orange)] text-white shadow-md scale-[1.02]' : 'bg-white text-gray-500 hover:bg-gray-50 border border-gray-100'"
-                                class="flex items-center gap-3 px-4 py-3 rounded-xl transition-all duration-200 text-sm font-bold whitespace-nowrap group shrink-0"
+                                class="flex items-center gap-2 px-3 py-2.5 rounded-xl transition-all duration-200 text-sm font-bold whitespace-nowrap group shrink-0"
                             >
                                 <div class="w-8 h-8 rounded-lg flex items-center justify-center transition-colors" :class="activeTab === '{{ $tabKey }}' ? 'bg-white/20' : 'bg-gray-50 text-gray-400 group-hover:text-[color:var(--accent-orange)]'">
                                     <i class="fas {{ $tab['icon'] }} text-xs"></i>
@@ -355,7 +355,7 @@
                                     </button>
                                 </div>
 
-                                <div class="grid grid-cols-1 lg:grid-cols-2 gap-4 max-h-[450px] overflow-y-auto custom-scrollbar pe-2">
+                                <div class="grid grid-cols-1 lg:grid-cols-2 gap-3 max-h-[360px] overflow-y-auto custom-scrollbar pe-2">
                                     @foreach($tab['groups'] as $groupName => $permissions)
                                         <div class="bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden flex flex-col group/card hover:border-[rgb(var(--accent-orange-rgb)/0.28)] transition-colors self-start">
                                             <div 
@@ -409,27 +409,30 @@
                         @endforeach
                     </div>
                 </div>
+                </div>
+            </div>
+        </x-slot>
+        <x-slot name="footer">
+            <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 w-full">
+                <div class="flex items-center gap-2">
+                    <span class="text-[10px] font-bold text-gray-400 uppercase tracking-widest">{{ tr('Total Permissions') }}:</span>
+                    <span class="text-xs font-extrabold text-[color:var(--accent-orange)] bg-[rgb(var(--accent-orange-rgb)/0.08)] px-3 py-1 rounded-full border border-[rgb(var(--accent-orange-rgb)/0.16)]">
+                        {{ count($selectedPermissions) }}
+                    </span>
+                </div>
 
-                <div class="flex items-center justify-between border-t border-gray-100 pt-4 mt-8">
-                     <div class="flex items-center gap-2">
-                         <span class="text-[10px] font-bold text-gray-400 uppercase tracking-widest">{{ tr('Total Permissions') }}:</span>
-                         <span class="text-xs font-extrabold text-[color:var(--accent-orange)] bg-[rgb(var(--accent-orange-rgb)/0.08)] px-3 py-1 rounded-full border border-[rgb(var(--accent-orange-rgb)/0.16)]">
-                            {{ count($selectedPermissions) }}
-                         </span>
-                     </div>
-                     <div class="flex items-center gap-3">
-                        <x-ui.secondary-button wire:click="$set('showModal', false)">
-                            {{ tr('Cancel') }}
-                        </x-ui.secondary-button>
-                        @can('uac.roles.manage')
-                            <x-ui.primary-button type="button" wire:click="save" wire:loading.attr="disabled">
-                                <span wire:loading.remove>{{ tr('Save Changes') }}</span>
-                                <span wire:loading>
-                                    <i class="fas fa-spinner fa-spin mr-1"></i> {{ tr('Saving...') }}
-                                </span>
-                            </x-ui.primary-button>
-                        @endcan
-                     </div>
+                <div class="flex items-center gap-3 justify-end">
+                    <x-ui.secondary-button type="button" x-on:click="show = false">
+                        {{ tr('Cancel') }}
+                    </x-ui.secondary-button>
+                    @can('uac.roles.manage')
+                        <x-ui.primary-button type="button" wire:click="save" wire:loading.attr="disabled">
+                            <span wire:loading.remove>{{ tr('Save Changes') }}</span>
+                            <span wire:loading>
+                                <i class="fas fa-spinner fa-spin mr-1"></i> {{ tr('Saving...') }}
+                            </span>
+                        </x-ui.primary-button>
+                    @endcan
                 </div>
             </div>
         </x-slot>

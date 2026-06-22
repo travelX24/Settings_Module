@@ -198,12 +198,13 @@
                                 @can('settings.attendance.manage')
                                     <x-ui.actions-menu>
                                         <x-ui.dropdown-item wire:click.stop="openEdit({{ (int) $row->id }})"
+                                            @click="$dispatch('close-actions-menu')"
                                             class="cursor-pointer">
                                             <i class="fas fa-edit me-2 text-[color:var(--accent-orange)]"></i> {{ tr('Edit') }}
                                         </x-ui.dropdown-item>
     
                                         <x-ui.dropdown-item danger
-                                            @click.stop="$dispatch('open-confirm-delete-holiday', { id: {{ $row->id }} })"
+                                            @click.stop="$dispatch('open-confirm-delete-holiday', { id: {{ $row->id }} }); $dispatch('close-actions-menu')"
                                             class="cursor-pointer">
                                             <i class="fas fa-trash-alt me-2 text-[color:var(--error)]"></i> {{ tr('Delete') }}
                                         </x-ui.dropdown-item>

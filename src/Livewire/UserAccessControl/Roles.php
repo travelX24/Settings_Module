@@ -20,6 +20,10 @@ class Roles extends Component
 
     public function updatingSearch() { $this->resetPage(); }
 
+    private function validationText(string $ar, string $en): string
+    {
+        return str_starts_with(app()->getLocale(), 'ar') ? $ar : $en;
+    }
     public function clearAllFilters()
     {
         $this->search = '';
@@ -93,6 +97,11 @@ class Roles extends Component
                     ->where(fn ($query) => $query->where('saas_company_id', $this->getCompanyId())->where('guard_name', 'web'))
                     ->ignore($this->editingId)
             ]
+        ], [
+            'name.required' => $this->validationText("\u{0627}\u{0633}\u{0645} \u{0627}\u{0644}\u{062F}\u{0648}\u{0631} \u{0645}\u{0637}\u{0644}\u{0648}\u{0628}", 'Role name is required'),
+            'name.string' => $this->validationText("\u{0627}\u{0633}\u{0645} \u{0627}\u{0644}\u{062F}\u{0648}\u{0631} \u{064A}\u{062C}\u{0628} \u{0623}\u{0646} \u{064A}\u{0643}\u{0648}\u{0646} \u{0646}\u{0635}\u{0627}\u{064B}", 'Role name must be text'),
+            'name.max' => $this->validationText("\u{0627}\u{0633}\u{0645} \u{0627}\u{0644}\u{062F}\u{0648}\u{0631} \u{0637}\u{0648}\u{064A}\u{0644} \u{062C}\u{062F}\u{0627}\u{064B}", 'Role name is too long'),
+            'name.unique' => $this->validationText("\u{0627}\u{0633}\u{0645} \u{0627}\u{0644}\u{062F}\u{0648}\u{0631} \u{0645}\u{0648}\u{062C}\u{0648}\u{062F} \u{0645}\u{0633}\u{0628}\u{0642}\u{0627}\u{064B}", 'Role name already exists'),
         ]);
 
         $this->uacService->saveRole([
