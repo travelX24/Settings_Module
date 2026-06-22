@@ -63,7 +63,7 @@ class AttendanceService
     /**
      * Record a check-in event.
      */
-    public function recordCheckIn(AttendanceDailyLog $log, string $method, ?float $lat, ?float $lng, $schedule, int $lateGraceMins = 15, string $trackingMode = "check_in_out"): array
+    public function recordCheckIn(AttendanceDailyLog $log, string $method, ?float $lat, ?float $lng, $schedule, int $lateGraceMins = 15, string $trackingMode = "check_in_out", ?array $locationMeta = null): array
     {
         $now = now();
         $dateStr = Carbon::parse($log->attendance_date)->toDateString();
@@ -224,13 +224,13 @@ class AttendanceService
             'work_schedule_period_id' => $matchedPeriodId,
             'check_in_time' => $nowTime,
             'attendance_status' => $status,
-            'meta_data' => json_encode([
+            'meta_data' => json_encode(array_merge([
                 'method' => $method,
                 'lat' => $lat,
                 'lng' => $lng,
                 'period_key' => $matchedPeriodKey,
                 'period_end_time' => $matchedPeriodEndTime,
-            ], JSON_UNESCAPED_UNICODE),
+            ], $locationMeta ?? []), JSON_UNESCAPED_UNICODE),
             'created_at' => $now,
             'updated_at' => $now,
         ]);
@@ -267,7 +267,7 @@ class AttendanceService
     /**
      * Record a check-out event.
      */
-    public function recordCheckOut($log, string $method, ?float $lat, ?float $lng): array
+    public function recordCheckOut($log, string $method, ?float $lat, ?float $lng, ?array $locationMeta = null): array
     {
         if (!$log instanceof AttendanceDailyLog) {
             $logId = is_object($log) ? ($log->id ?? null) : $log;
@@ -328,8 +328,21 @@ class AttendanceService
             }
         }
 
+        $checkoutMeta = array_filter([
+            'check_out_method' => $method,
+            'check_out_lat' => $lat,
+            'check_out_lng' => $lng,
+            'check_out_is_mocked' => $locationMeta['is_mocked'] ?? null,
+            'check_out_gps_accuracy' => $locationMeta['gps_accuracy'] ?? null,
+            'check_out_location_captured_at' => $locationMeta['location_captured_at'] ?? null,
+        ], fn ($value) => $value !== null);
+
         DB::table('attendance_daily_details')->where('id', $openSession->id)->update([
             'check_out_time' => $nowTime,
+            'meta_data' => json_encode(array_merge(
+                json_decode($openSession->meta_data ?? '{}', true) ?: [],
+                $checkoutMeta
+            ), JSON_UNESCAPED_UNICODE),
             'updated_at' => $now,
         ]);
 

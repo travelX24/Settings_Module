@@ -194,12 +194,19 @@ class DailyAttendanceController extends Controller
             'method' => ['required', 'in:gps,fingerprint,nfc'],
             'lat' => ['nullable', 'numeric'],
             'lng' => ['nullable', 'numeric'],
+            'is_mocked' => ['nullable', 'boolean'],
+            'gps_accuracy' => ['nullable', 'numeric'],
+            'location_captured_at' => ['nullable', 'date'],
         ]);
 
         $prep = app(AttendancePrepController::class)->show($request)->getData();
         if (!$prep->ok) return response()->json(['ok' => false, 'message' => 'Prep Error'], 422);
 
         if ($data['method'] === 'gps') {
+            if (!empty($data['is_mocked'])) {
+                return response()->json(['ok' => false, 'code' => 'fake_location_detected', 'message' => tr('Fake location detected. Please disable mock location apps and try again.')], 403);
+            }
+
             if (!$this->geofenceService->isWithinAny((float)$data['lat'], (float)$data['lng'], $prep->data->gps_locations ?? [])) {
                 return response()->json(['ok' => false, 'code' => 'geofence_error', 'message' => tr('Outside the geographical range.')], 403);
             }
@@ -223,7 +230,13 @@ class DailyAttendanceController extends Controller
         // [Security] Force set attendance_date as clean string to prevent double time specification
         $log->attendance_date = $dateStr;
 
-        $res = $this->attendanceService->recordCheckIn($log, $data['method'], $data['lat'], $data['lng'], $schedule, 15, $prep->data->tracking_mode ?? 'check_in_out');
+        $locationMeta = [
+            'is_mocked' => (bool)($data['is_mocked'] ?? false),
+            'gps_accuracy' => $data['gps_accuracy'] ?? null,
+            'location_captured_at' => $data['location_captured_at'] ?? null,
+        ];
+
+        $res = $this->attendanceService->recordCheckIn($log, $data['method'], $data['lat'], $data['lng'], $schedule, 15, $prep->data->tracking_mode ?? 'check_in_out', $locationMeta);
         return response()->json($res);
     }
 
@@ -239,12 +252,19 @@ class DailyAttendanceController extends Controller
             'method' => ['required', 'in:gps,fingerprint,nfc'],
             'lat' => ['nullable', 'numeric'],
             'lng' => ['nullable', 'numeric'],
+            'is_mocked' => ['nullable', 'boolean'],
+            'gps_accuracy' => ['nullable', 'numeric'],
+            'location_captured_at' => ['nullable', 'date'],
         ]);
 
         $prep = app(AttendancePrepController::class)->show($request)->getData();
         if ($data['method'] === 'gps') {
+            if (!empty($data['is_mocked'])) {
+                return response()->json(['ok' => false, 'code' => 'fake_location_detected', 'message' => tr('Fake location detected. Please disable mock location apps and try again.')], 403);
+            }
+
             if (!$this->geofenceService->isWithinAny((float)$data['lat'], (float)$data['lng'], $prep->data->gps_locations ?? [])) {
-                return response()->json(['ok' => false, 'message' => tr('Outside the geographical range.')], 403);
+                return response()->json(['ok' => false, 'code' => 'geofence_error', 'message' => tr('Outside the geographical range.')], 403);
             }
         }
 
@@ -255,7 +275,13 @@ class DailyAttendanceController extends Controller
 
         if (!$log) return response()->json(['ok' => false, 'message' => tr('No record found for today.')], 422);
 
-        $res = $this->attendanceService->recordCheckOut($log, $data['method'], $data['lat'], $data['lng']);
+        $locationMeta = [
+            'is_mocked' => (bool)($data['is_mocked'] ?? false),
+            'gps_accuracy' => $data['gps_accuracy'] ?? null,
+            'location_captured_at' => $data['location_captured_at'] ?? null,
+        ];
+
+        $res = $this->attendanceService->recordCheckOut($log, $data['method'], $data['lat'], $data['lng'], $locationMeta);
         return response()->json($res);
     }
 }
