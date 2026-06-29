@@ -13,7 +13,7 @@
             <input type="checkbox" 
                 wire:model.live="basicLatePenalty.enabled"
                 class="w-4 h-4 text-[color:var(--accent-orange)] rounded border-gray-300 focus:ring-[color:var(--accent-orange)]"
-                @cannot('settings.attendance.manage') disabled @endcannot
+                @if(!$canManageAttendance) disabled @endif
             >
             <span class="text-xs font-bold text-gray-700 group-hover:text-[color:var(--accent-orange)] transition-colors">{{ tr('Activate Penalties') }}</span>
         </label>
@@ -27,7 +27,7 @@
             type="number" 
             wire:model="basicLatePenalty.grace_minutes" 
             class="!py-3 !rounded-2xl"
-            :disabled="!auth()->user()->can('settings.attendance.manage')"
+            :disabled="!$canManageAttendance"
         />
 
         {{-- Interval Minutes --}}
@@ -37,7 +37,7 @@
             wire:model="basicLatePenalty.interval_minutes" 
             hint="{{ tr('Deduction will trigger every X minutes.') }}"
             class="!py-3 !rounded-2xl"
-            :disabled="!auth()->user()->can('settings.attendance.manage')"
+            :disabled="!$canManageAttendance"
         />
 
         {{-- Deduction --}}
@@ -49,7 +49,7 @@
                         label="{{ tr('Deduction Type') }}"
                         wire:model="basicLatePenalty.deduction_type" 
                         model="basicLatePenalty.deduction_type"
-                        :disabled="!auth()->user()->can('settings.attendance.manage')"
+                        :disabled="!$canManageAttendance"
                     >
                         <option value="percentage" {{ $basicLatePenalty['deduction_type'] === 'percentage' ? 'selected' : '' }}>{{ tr('Percentage (%)') }}</option>
                         <option value="fixed" {{ $basicLatePenalty['deduction_type'] === 'fixed' ? 'selected' : '' }}>{{ tr('Fixed Amount') }}</option>
@@ -60,7 +60,7 @@
                         type="number" 
                         wire:model="basicLatePenalty.deduction_value" 
                         class="!py-3 !rounded-2xl"
-                        :disabled="!auth()->user()->can('settings.attendance.manage')"
+                        :disabled="!$canManageAttendance"
                     />
                 </div>
             </div>
@@ -74,7 +74,7 @@
         </div>
     </div>
     
-    @can('settings.attendance.manage')
+    @if($canManageAttendance)
     <div class="flex justify-end pt-4 border-t border-gray-50">
         <x-ui.primary-button 
             wire:click="saveBasicLatePenalty"
@@ -93,6 +93,6 @@
             </span>
         </x-ui.primary-button>
     </div>
-    @endcan
+    @endif
     @endif
 </x-ui.card>

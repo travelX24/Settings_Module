@@ -6,9 +6,9 @@
                 <th class="px-6 py-3 text-[10px] font-black text-gray-400 uppercase tracking-widest text-center">{{ tr('Time') }}</th>
                 <th class="px-6 py-3 text-[10px] font-black text-gray-400 uppercase tracking-widest text-center">{{ tr('Recurrence') }}</th>
                 <th class="px-6 py-3 text-[10px] font-black text-gray-400 uppercase tracking-widest text-center">{{ tr('Penalty') }}</th>
-                @can('settings.attendance.manage')
+                @if($canManageAttendance)
                 <th class="px-6 py-3 text-[10px] font-black text-gray-400 uppercase tracking-widest text-end">{{ tr('Actions') }}</th>
-                @endcan
+                @endif
             </tr>
         </thead>
         <tbody class="divide-y divide-gray-50">
@@ -57,7 +57,7 @@
                     </x-ui.badge>
                 </td>
                 <td class="px-6 py-3 text-end">
-                    @can('settings.attendance.manage')
+                    @if($canManageAttendance)
                     <div class="flex items-center justify-end gap-2">
                         <button wire:click="{{ isset($item['absence_reason_type']) ? 'editAbsencePolicy' : 'editPenalty' }}('{{ $item['id'] }}')" 
                             class="p-1.5 text-[color:var(--accent-orange)] hover:bg-[rgb(var(--accent-orange-rgb)/0.08)] rounded-lg transition-colors cursor-pointer"
@@ -71,7 +71,7 @@
                             <i class="fas fa-trash-alt text-xs"></i>
                         </button>
                     </div>
-                    @endcan
+                    @endif
                 </td>
             </tr>
             @empty

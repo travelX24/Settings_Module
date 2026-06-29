@@ -38,7 +38,7 @@
                             </div>
                         </div>
                         <div class="p-4 flex items-center justify-center bg-gray-50/30">
-                            @can('settings.attendance.manage')
+                            @if($canManageAttendance)
                             <x-ui.actions-menu>
                                 <x-ui.dropdown-item wire:click="editGpsLocation({{ $loc['id'] }})">
                                     <i class="fas fa-edit me-2 text-[color:var(--accent-orange)]"></i>
@@ -54,7 +54,7 @@
                             </x-ui.actions-menu>
                             @else
                             <span class="text-[10px] font-bold text-gray-400 italic">{{ tr('View Only') }}</span>
-                            @endcan
+                            @endif
                         </div>
                     </div>
                 </x-ui.card>
@@ -121,11 +121,11 @@
                             <label class="text-[10px] font-black text-gray-400 uppercase tracking-widest">{{ tr('Location By') }}</label>
                             <div class="flex gap-4">
                                 <label class="flex items-center gap-2 cursor-pointer">
-                                    <input type="radio" wire:model.live="gpsTarget" value="branch" class="w-3.5 h-3.5 text-[color:var(--accent-orange)] border-gray-300" @cannot('settings.attendance.manage') disabled @endcannot>
+                                    <input type="radio" wire:model.live="gpsTarget" value="branch" class="w-3.5 h-3.5 text-[color:var(--accent-orange)] border-gray-300" @if(!$canManageAttendance) disabled @endif>
                                     <span class="text-xs font-bold text-gray-600">{{ tr('Branch') }}</span>
                                 </label>
                                 <label class="flex items-center gap-2 cursor-pointer">
-                                    <input type="radio" wire:model.live="gpsTarget" value="groups" class="w-3.5 h-3.5 text-[color:var(--accent-orange)] border-gray-300" @cannot('settings.attendance.manage') disabled @endcannot>
+                                    <input type="radio" wire:model.live="gpsTarget" value="groups" class="w-3.5 h-3.5 text-[color:var(--accent-orange)] border-gray-300" @if(!$canManageAttendance) disabled @endif>
                                     <span class="text-xs font-bold text-gray-600">{{ tr('Employee Group') }}</span>
                                 </label>
                             </div>
@@ -135,7 +135,7 @@
                             <div wire:key="gps-target-block-{{ $gpsTarget }}">
                                 @if($gpsTarget === 'branch')
                                     @if(count($branches) > 0)
-                                        <x-ui.select wire:key="select-branch-target-{{ $gpsTarget }}" id="gps_target_branch" label="{{ tr('Select Branch') }}" wire:model.defer="selectedBranch" name="selectedBranch" class="!py-2 shadow-sm" :disabled="!auth()->user()->can('settings.attendance.manage')">
+                                        <x-ui.select wire:key="select-branch-target-{{ $gpsTarget }}" id="gps_target_branch" label="{{ tr('Select Branch') }}" wire:model.defer="selectedBranch" name="selectedBranch" class="!py-2 shadow-sm" :disabled="!$canManageAttendance">
                                             <option value="">{{ tr('Select a Branch') }}</option>
                                             @foreach($branches as $branch)
                                                 @if(isset($branch['id']))
@@ -152,7 +152,7 @@
                                     @endif
                                 @else
                                     @if(count($groups) > 0)
-                                        <x-ui.select wire:key="select-groups-target-{{ $gpsTarget }}" id="gps_target_groups" label="{{ tr('Select Employee Groups') }}" wire:model.defer="selectedGroups" name="selectedGroups" multiple class="!py-2 shadow-sm" :disabled="!auth()->user()->can('settings.attendance.manage')">
+                                        <x-ui.select wire:key="select-groups-target-{{ $gpsTarget }}" id="gps_target_groups" label="{{ tr('Select Employee Groups') }}" wire:model.defer="selectedGroups" name="selectedGroups" multiple class="!py-2 shadow-sm" :disabled="!$canManageAttendance">
                                            @foreach($groups as $g)
                                                 <option value="{{ $g['id'] }}">{{ $g['name'] }}</option>
                                            @endforeach
@@ -167,7 +167,7 @@
                                 @endif
                             </div>
 
-                            <x-ui.input label="{{ tr('Location Name') }}" wire:model.defer="gpsData.name" name="gpsData.name" placeholder="{{ tr('e.g. Sales Dept Area') }}" required class="!py-2" :disabled="!auth()->user()->can('settings.attendance.manage')" />
+                            <x-ui.input label="{{ tr('Location Name') }}" wire:model.defer="gpsData.name" name="gpsData.name" placeholder="{{ tr('e.g. Sales Dept Area') }}" required class="!py-2" :disabled="!$canManageAttendance" />
                             @error('gpsData.name') <span class="text-[10px] text-[color:var(--error)] font-bold px-1">{{ tr($message) }}</span> @enderror
                         </div>
                     </div>
@@ -306,7 +306,7 @@
                                     type="button" 
                                     @click="getCurrentLocation()" 
                                     class="flex items-center gap-2 text-[10px] font-black text-[color:var(--accent-orange)] hover:text-white hover:bg-[color:var(--accent-orange)] bg-white/95 backdrop-blur-md px-4 py-2.5 rounded-2xl border border-[rgb(var(--accent-orange-rgb)/0.16)] transition-all shadow-xl active:scale-95 disabled:opacity-50" 
-                                    @cannot('settings.attendance.manage') disabled @endcannot
+                                    @if(!$canManageAttendance) disabled @endif
                                 >
                                     <i class="fas fa-location-arrow animate-pulse"></i> 
                                     <span class="hidden sm:inline">{{ tr('Sync My Location') }}</span>
@@ -320,7 +320,7 @@
                             <div class="flex-1 relative flex items-center">
                                 <input type="range" class="w-full h-1.5 bg-gray-200 rounded-lg appearance-none cursor-pointer accent-[color:var(--accent-orange)] ml-5" 
                                     min="10" max="1000" step="10" x-model="radius" @input="updateCircle()"
-                                    @cannot('settings.attendance.manage') disabled @endcannot
+                                    @if(!$canManageAttendance) disabled @endif
                                 >
                             </div>
                             <span class="text-xs font-black text-[color:var(--accent-orange)] w-12 text-end" x-text="radius + 'm'"></span>
@@ -343,7 +343,7 @@
             </span>
             <div class="flex gap-3">
                 <x-ui.secondary-button wire:click="$set('showGpsModal', false)">{{ tr('Cancel') }}</x-ui.secondary-button>
-                @can('settings.attendance.manage')
+                @if($canManageAttendance)
                 <x-ui.primary-button 
                     wire:click="saveGpsLocation" 
                     loading="saveGpsLocation"
@@ -352,7 +352,7 @@
                 >
                     {{ $isEditing ? tr('Update Location') : tr('Save Location') }}
                 </x-ui.primary-button>
-                @endcan
+                @endif
             </div>
         </div>
     </x-slot:footer>

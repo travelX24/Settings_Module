@@ -49,6 +49,7 @@ trait HandleLeavePolicies
 
     public function openCreate()
     {
+        $this->authorizeManage();
         $this->resetCreateLeaveForm();
         $this->createOpen = true;
     }
@@ -74,7 +75,7 @@ trait HandleLeavePolicies
 
     public function savePolicy()
     {
-        $this->authorize('settings.attendance.manage');
+        $this->authorizeManage();
         $this->validate([
             'name' => 'required|min:2',
             'days_per_year' => 'required|numeric',
@@ -124,9 +125,9 @@ trait HandleLeavePolicies
 
     public function openEdit($id)
     {
-        $this->authorize('settings.attendance.manage');
+        $this->authorizeManage();
         $this->resetValidation();
-        $policy = LeavePolicy::findOrFail($id);
+        $policy = LeavePolicy::where('company_id', auth()->user()->saas_company_id)->findOrFail($id);
         $this->editingId = $id;
         $this->name = $policy->name;
         $this->leave_type = $policy->leave_type;
@@ -172,6 +173,7 @@ trait HandleLeavePolicies
 
     public function confirmDelete($id)
     {
+        $this->authorizeManage();
         $this->editingId = $id;
         $this->deleteOpen = true;
     }
@@ -184,14 +186,16 @@ trait HandleLeavePolicies
 
     public function copyPolicy($id)
     {
-        $this->leaveSettingService->copyPolicy($id, $this->name . ' (Copy)');
+        $this->authorizeManage();
+        $policy = LeavePolicy::where('company_id', auth()->user()->saas_company_id)->findOrFail($id);
+        $this->leaveSettingService->copyPolicy($policy->id, ($policy->name ?: $this->name) . ' (Copy)');
         $this->dispatch('toast', type: 'success', message: tr('Policy copied.'));
     }
 
     public function deletePolicy($id)
     {
-        $this->authorize('settings.attendance.manage');
-        LeavePolicy::destroy($id);
+        $this->authorizeManage();
+        LeavePolicy::where('company_id', auth()->user()->saas_company_id)->where('id', $id)->delete();
         $this->dispatch('toast', type: 'success', message: tr('Policy deleted.'));
     }
 }

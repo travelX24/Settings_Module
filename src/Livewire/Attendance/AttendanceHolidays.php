@@ -13,6 +13,25 @@ use Athka\SystemSettings\Services\HolidayService;
 
 class AttendanceHolidays extends Component
 {
+    private const VIEW_PERMISSIONS = [
+        'settings.attendance.holidays.view',
+        'settings.attendance.holidays.manage',
+    ];
+
+    private const MANAGE_PERMISSIONS = [
+        'settings.attendance.holidays.manage',
+    ];
+
+    protected function authorizeView(): void
+    {
+        abort_unless(auth()->user() && collect(self::VIEW_PERMISSIONS)->contains(fn ($permission) => auth()->user()->can($permission)), 403);
+    }
+
+    protected function authorizeManage(): void
+    {
+        abort_unless(auth()->user() && collect(self::MANAGE_PERMISSIONS)->contains(fn ($permission) => auth()->user()->can($permission)), 403);
+    }
+
     use WithPagination;
 
     public string $search = '';
@@ -55,7 +74,7 @@ class AttendanceHolidays extends Component
 
     public function mount(): void
     {
-        $this->authorize('settings.attendance.view');
+        $this->authorizeView();
         $type = (string) config('company.calendar_type', 'gregorian');
         $this->companyCalendarType = in_array($type, ['hijri', 'gregorian'], true) ? $type : 'gregorian';
 
@@ -208,7 +227,7 @@ class AttendanceHolidays extends Component
     }
     public function openCreate(): void
     {
-        $this->authorize('settings.attendance.manage');
+        $this->authorizeManage();
         $this->resetValidation();
         $this->createOpen = true;
         $this->newCalendarType = $this->companyCalendarType;
@@ -226,7 +245,7 @@ class AttendanceHolidays extends Component
 
     public function saveNewHoliday(): void
     {
-        $this->authorize('settings.attendance.manage');
+        $this->authorizeManage();
 
         if (($companyId = $this->resolveCompanyId()) <= 0) {
             $this->dispatch('toast', ['type' => 'error', 'message' => tr('Company context not found')]);
@@ -252,7 +271,7 @@ class AttendanceHolidays extends Component
 
     public function openEdit(int $occurrenceId): void
     {
-        $this->authorize('settings.attendance.manage');
+        $this->authorizeManage();
         $this->resetValidation();
 
         $row = OfficialHolidayOccurrence::with('template')->find($occurrenceId);
@@ -288,7 +307,7 @@ class AttendanceHolidays extends Component
 
     public function saveEditHoliday(): void
     {
-        $this->authorize('settings.attendance.manage');
+        $this->authorizeManage();
 
         if ($this->editOccurrenceId <= 0 || $this->editTemplateId <= 0) {
             $this->dispatch('toast', ['type' => 'error', 'message' => tr('Invalid record')]);
@@ -323,7 +342,7 @@ class AttendanceHolidays extends Component
 
     public function deleteHoliday(int $occurrenceId): void
     {
-        $this->authorize('settings.attendance.manage');
+        $this->authorizeManage();
 
         if ($occurrenceId <= 0) {
             $this->dispatch('toast', ['type' => 'error', 'message' => tr('Invalid record')]);
@@ -342,7 +361,7 @@ class AttendanceHolidays extends Component
 
     public function exportExcel(ExcelExportService $exporter)
     {
-        $this->authorize('settings.attendance.view');
+        $this->authorizeView();
 
         $companyId = $this->resolveCompanyId();
         $q = OfficialHolidayOccurrence::query()->with('template');

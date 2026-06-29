@@ -13,6 +13,8 @@ class OrganizationalStructureController extends Controller
 {
     public function getEmployeesByDepartment($id)
     {
+        abort_unless(Auth::user()?->can('settings.organizational.view'), 403);
+
         $companyId = $this->getCompanyId();
         // Load department and its basic children structure
         $department = Department::forCompany($companyId)->findOrFail($id);
@@ -79,7 +81,7 @@ class OrganizationalStructureController extends Controller
     protected function getAllDescendantIds($department)
     {
         $ids = [];
-        $children = Department::where('parent_id', $department->id)->get();
+        $children = Department::forCompany($department->saas_company_id)->where('parent_id', $department->id)->get();
         
         foreach ($children as $child) {
             $ids[] = $child->id;
@@ -92,6 +94,8 @@ class OrganizationalStructureController extends Controller
 
     public function getEmployeesByJobTitle($id)
     {
+        abort_unless(Auth::user()?->can('settings.organizational.view'), 403);
+
         $companyId = $this->getCompanyId();
         $jobTitle = JobTitle::forCompany($companyId)->findOrFail($id);
         

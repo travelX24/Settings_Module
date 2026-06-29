@@ -31,7 +31,7 @@
                                     placeholder="{{ tr('e.g. Sales Team') }}" 
                                     required 
                                     class="!py-3 !rounded-2xl" 
-                                    :disabled="!auth()->user()->can('settings.attendance.manage')"
+                                    :disabled="!$canManageAttendance"
                                 />
                                 @error('newGroup.name') <span class="text-[10px] text-[color:var(--error)] font-bold px-2">{{ tr($message) }}</span> @enderror
                                 
@@ -39,7 +39,7 @@
                                     label="{{ tr('Policy Type') }}" 
                                     wire:model.live="newGroup.policy"
                                     required
-                                    :disabled="!auth()->user()->can('settings.attendance.manage')"
+                                    :disabled="!$canManageAttendance"
                                 >
                                     @foreach($policyTypes as $key => $label)
                                         <option value="{{ $key }}">{{ $label }}</option>
@@ -60,12 +60,12 @@
                                         'automatic' => ['icon' => 'fa-magic', 'title' => tr('Automatic')]
                                     ] as $mKey => $meta)
                                         <div 
-                                            @can('settings.attendance.manage')
+                                            @if($canManageAttendance)
                                             wire:click="$set('newGroup.tracking_mode', '{{ $mKey }}')"
                                             class="p-3 border rounded-2xl cursor-pointer transition-all flex flex-col items-center text-center gap-2 {{ $newGroup['tracking_mode'] === $mKey ? 'border-[color:var(--accent-orange)] bg-[rgb(var(--accent-orange-rgb)/0.08)] shadow-sm' : 'border-gray-50 bg-gray-50/50 hover:bg-white hover:border-[rgb(var(--accent-orange-rgb)/0.16)]' }}"
                                             @else
                                             class="p-3 border rounded-2xl cursor-not-allowed opacity-60 transition-all flex flex-col items-center text-center gap-2 {{ $newGroup['tracking_mode'] === $mKey ? 'border-[color:var(--accent-orange)] bg-[rgb(var(--accent-orange-rgb)/0.08)]' : 'border-gray-50 bg-gray-50/50' }}"
-                                            @endcan
+                                            @endif
                                         >
                                             <div class="w-8 h-8 rounded-xl flex items-center justify-center {{ $newGroup['tracking_mode'] === $mKey ? 'bg-[color:var(--accent-orange)] text-white shadow-lg' : 'bg-white text-gray-400' }}">
                                                 <i class="fas {{ $meta['icon'] }} text-xs"></i>
@@ -84,7 +84,7 @@
                                 rows="2" 
                                 placeholder="{{ tr('Describe the group purpose...') }}" 
                                 class="!py-3 !rounded-2xl" 
-                                :disabled="!auth()->user()->can('settings.attendance.manage')"
+                                :disabled="!$canManageAttendance"
                             />
                             @error('newGroup.description') <span class="text-[10px] text-[color:var(--error)] font-bold px-2">{{ tr($message) }}</span> @enderror
                         </div>
@@ -105,8 +105,8 @@
                                     'nfc' => ['icon' => 'fa-wifi', 'label' => 'NFC']
                                 ] as $mId => $cfg)
                                     @if($prepMethods[$mId]['enabled'] ?? false)
-                                    <label class="relative flex flex-col items-center p-4 rounded-2xl border transition-all {{ in_array($mId, $newGroup['methods']) ? 'border-[color:var(--accent-orange)] bg-[rgb(var(--accent-orange-rgb)/0.08)]' : 'border-gray-50 bg-gray-50/50 hover:bg-white' }} {{ auth()->user()->can('settings.attendance.manage') ? 'cursor-pointer' : 'cursor-not-allowed opacity-60' }}">
-                                        <input type="checkbox" wire:model.live="newGroup.methods" value="{{ $mId }}" class="sr-only" @cannot('settings.attendance.manage') disabled @endcannot>
+                                    <label class="relative flex flex-col items-center p-4 rounded-2xl border transition-all {{ in_array($mId, $newGroup['methods']) ? 'border-[color:var(--accent-orange)] bg-[rgb(var(--accent-orange-rgb)/0.08)]' : 'border-gray-50 bg-gray-50/50 hover:bg-white' }} {{ $canManageAttendance ? 'cursor-pointer' : 'cursor-not-allowed opacity-60' }}">
+                                        <input type="checkbox" wire:model.live="newGroup.methods" value="{{ $mId }}" class="sr-only" @if(!$canManageAttendance) disabled @endif>
                                         <div class="w-10 h-10 rounded-full flex items-center justify-center mb-2 {{ in_array($mId, $newGroup['methods']) ? 'bg-[color:var(--accent-orange)] text-white' : 'bg-white text-gray-400 shadow-sm' }}">
                                             <i class="fas {{ $cfg['icon'] }}"></i>
                                         </div>
@@ -137,22 +137,22 @@
                         <div class="bg-[rgb(245_158_11/0.08)] p-5 rounded-3xl border border-[rgb(245_158_11/0.18)]">
                             <div class="flex p-1 bg-white/50 rounded-xl mb-4 border border-[rgb(245_158_11/0.12)]">
                                 <button 
-                                    @can('settings.attendance.manage')
+                                    @if($canManageAttendance)
                                     wire:click="$set('newGroup.grace_periods_type', 'use_global')"
                                     class="flex-1 py-1.5 px-3 rounded-lg text-[10px] font-black transition-all cursor-pointer {{ $newGroup['grace_periods_type'] === 'use_global' ? 'bg-[color:var(--warning)] text-white shadow-md' : 'text-[color:var(--warning)] hover:bg-[rgb(245_158_11/0.10)]' }}"
                                     @else
                                     class="flex-1 py-1.5 px-3 rounded-lg text-[10px] font-black transition-all cursor-not-allowed {{ $newGroup['grace_periods_type'] === 'use_global' ? 'bg-[color:var(--warning)] text-white opacity-60' : 'text-[color:var(--warning)] opacity-60' }}"
-                                    @endcan
+                                    @endif
                                 >
                                     {{ tr('Company Defaults') }}
                                 </button>
                                 <button 
-                                    @can('settings.attendance.manage')
+                                    @if($canManageAttendance)
                                     wire:click="$set('newGroup.grace_periods_type', 'custom')"
                                     class="flex-1 py-1.5 px-3 rounded-lg text-[10px] font-black transition-all cursor-pointer {{ $newGroup['grace_periods_type'] === 'custom' ? 'bg-[rgb(245_158_11/0.12)] text-[color:var(--warning)] shadow-sm' : 'text-[color:var(--warning)] hover:bg-[rgb(245_158_11/0.10)]' }}"
                                     @else
                                     class="flex-1 py-1.5 px-3 rounded-lg text-[10px] font-black transition-all cursor-not-allowed {{ $newGroup['grace_periods_type'] === 'custom' ? 'bg-[rgb(245_158_11/0.10)] text-[color:var(--warning)] opacity-60' : 'text-[color:var(--warning)] opacity-60' }}"
-                                    @endcan
+                                    @endif
                                 >
                                     {{ tr('Custom Per Group') }}
                                 </button>
@@ -161,10 +161,10 @@
                             @if($newGroup['grace_periods_type'] === 'custom')
                                 <div class="space-y-4 animate-in fade-in slide-in-from-right-3 duration-300">
                                     <div class="grid grid-cols-2 gap-4">
-                                        <x-ui.input label="{{ tr('Late Arrival') }}" type="number" wire:model.defer="newGroup.custom_grace_periods.late_arrival" class="!py-2 !text-xs !rounded-xl" hint="{{ tr('Minutes') }}" :disabled="!auth()->user()->can('settings.attendance.manage')" />
-                                        <x-ui.input label="{{ tr('Early Departure') }}" type="number" wire:model.defer="newGroup.custom_grace_periods.early_departure" class="!py-2 !text-xs !rounded-xl" hint="{{ tr('Minutes') }}" :disabled="!auth()->user()->can('settings.attendance.manage')" />
+                                        <x-ui.input label="{{ tr('Late Arrival') }}" type="number" wire:model.defer="newGroup.custom_grace_periods.late_arrival" class="!py-2 !text-xs !rounded-xl" hint="{{ tr('Minutes') }}" :disabled="!$canManageAttendance" />
+                                        <x-ui.input label="{{ tr('Early Departure') }}" type="number" wire:model.defer="newGroup.custom_grace_periods.early_departure" class="!py-2 !text-xs !rounded-xl" hint="{{ tr('Minutes') }}" :disabled="!$canManageAttendance" />
                                     </div>
-                                                    <x-ui.input label="{{ tr('Auto Checkout After') }}" type="number" wire:model.defer="newGroup.custom_grace_periods.auto_departure" class="!py-2 !text-xs !rounded-xl" hint="{{ tr('Hours') }}" :disabled="!auth()->user()->can('settings.attendance.manage')" />
+                                                    <x-ui.input label="{{ tr('Auto Checkout After') }}" type="number" wire:model.defer="newGroup.custom_grace_periods.auto_departure" class="!py-2 !text-xs !rounded-xl" hint="{{ tr('Hours') }}" :disabled="!$canManageAttendance" />
                                 </div>
                             @else
                                 <div class="py-6 text-center space-y-2">
@@ -183,7 +183,7 @@
 
                         <div>
                             <div class="text-[11px] text-gray-500 mb-1 font-bold uppercase tracking-wider">{{ tr('Employee Status') }}</div>
-                            <x-ui.select wire:model.live="employeeStatus" :disabled="!auth()->user()->can('settings.attendance.manage')">
+                            <x-ui.select wire:model.live="employeeStatus" :disabled="!$canManageAttendance">
                                 @foreach(\Athka\Employees\Support\EmployeeStatus::filterOptions(true) as $option)
                                     <option value="{{ $option['value'] }}">{{ $option['label'] }}</option>
                                 @endforeach
@@ -212,7 +212,7 @@
                                     x-model="search"
                                     class="w-full px-4 py-2 bg-gray-50 border border-gray-100 rounded-2xl text-[11px] focus:outline-none focus:border-[color:var(--accent-orange)] focus:bg-white transition-all shadow-inner disabled:opacity-50"
                                     placeholder="{{ tr('Search employees...') }}"
-                                    @cannot('settings.attendance.manage') disabled @endcannot
+                                    @if(!$canManageAttendance) disabled @endif
                                 >
                             </div>
 
@@ -221,12 +221,12 @@
                                 <div class="grid grid-cols-1 gap-1">
                                     <template x-for="emp in allEmployees.filter(e => !search || e.name.toLowerCase().includes(search.toLowerCase()))" :key="emp.id">
                                         <div 
-                                            @click="if (@js(auth()->user()->can('settings.attendance.manage'))) toggle(emp.id)"
+                                            @click="if (@js($canManageAttendance)) toggle(emp.id)"
                                             class="flex items-center justify-between px-4 py-2 rounded-2xl transition-all"
                                             :class="{
                                                 'bg-[color:var(--accent-orange)] text-white': selected.includes(emp.id.toString()),
-                                                'hover:bg-white text-gray-700 cursor-pointer': !selected.includes(emp.id.toString()) && @js(auth()->user()->can('settings.attendance.manage')),
-                                                'cursor-not-allowed opacity-60': @js(!auth()->user()->can('settings.attendance.manage'))
+                                                'hover:bg-white text-gray-700 cursor-pointer': !selected.includes(emp.id.toString()) && @js($canManageAttendance),
+                                                'cursor-not-allowed opacity-60': @js(!$canManageAttendance)
                                             }"
                                         >
                                             <span class="text-[11px] font-bold" x-text="emp.name"></span>
@@ -255,7 +255,7 @@
             <x-ui.secondary-button wire:click="$set('showGroupModal', false)" class="!text-xs !py-3 !px-6 !rounded-2xl cursor-pointer">
                 {{ tr('Cancel') }}
             </x-ui.secondary-button>
-            @can('settings.attendance.manage')
+            @if($canManageAttendance)
             <x-ui.primary-button 
                 wire:click="saveGroup" 
                 wire:loading.attr="disabled"
@@ -270,7 +270,7 @@
                     {{ tr('Saving...') }}
                 </span>
             </x-ui.primary-button>
-            @endcan
+            @endif
         </div>
     </x-slot:footer>
 </x-ui.modal>

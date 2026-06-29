@@ -16,7 +16,7 @@
                 required 
                 hint="{{ tr('Monthly allowance for late arrival and early departure.') }}"
                 class="!py-2.5"
-                :disabled="!auth()->user()->can('settings.attendance.manage')"
+                :disabled="!$canManageAttendance"
             />
         </div>
 
@@ -29,7 +29,7 @@
                 required 
                 hint="{{ tr('System will auto-checkout employee after these hours.') }}"
                 class="!py-2.5"
-                :disabled="!auth()->user()->can('settings.attendance.manage')"
+                :disabled="!$canManageAttendance"
             />
             {{-- Warning note --}}
             <div class="flex items-start gap-2 rounded-xl border border-[rgb(245_158_11/0.22)] bg-[rgb(245_158_11/0.10)] px-3 py-2">
@@ -51,7 +51,7 @@
                 id="auto_departure_penalty_enabled"
                 wire:model.live="gracePeriods.auto_departure_penalty_enabled"
                 class="w-4 h-4 text-[color:var(--accent-orange)] rounded border-gray-300"
-                @cannot('settings.attendance.manage') disabled @endcannot
+                @if(!$canManageAttendance) disabled @endif
             >
             <span class="text-xs font-bold text-gray-700">{{ tr('Activate Auto-Checkout Penalties') }}</span>
         </label>
@@ -63,7 +63,7 @@
                     <x-ui.select 
                         label="{{ tr('Deduction Type') }}"
                         wire:model.live="gracePeriods.auto_checkout_deduction_type"
-                        :disabled="!auth()->user()->can('settings.attendance.manage')"
+                        :disabled="!$canManageAttendance"
                     >
                         <option value="fixed">{{ tr('Fixed Amount') }}</option>
                         <option value="daily">{{ tr('% of Daily Wage') }}</option>
@@ -74,7 +74,7 @@
                         type="number"
                         wire:model="gracePeriods.auto_departure_penalty_amount"
                         class="!py-3 !rounded-2xl"
-                        :disabled="!auth()->user()->can('settings.attendance.manage')"
+                        :disabled="!$canManageAttendance"
                     />
                 </div>
             </div>
@@ -89,7 +89,7 @@
         @endif
     </div>
 
-    @can('settings.attendance.manage')
+    @if($canManageAttendance)
     <div class="flex justify-end pt-2">
         <x-ui.primary-button 
             wire:click="saveGracePeriods"
@@ -108,7 +108,7 @@
             </span>
         </x-ui.primary-button>
     </div>
-    @endcan
+    @endif
 </x-ui.card>
 
 

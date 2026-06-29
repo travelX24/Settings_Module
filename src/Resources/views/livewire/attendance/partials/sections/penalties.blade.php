@@ -3,12 +3,12 @@
         <span class="w-1 h-5 bg-[color:var(--error)] rounded-full"></span>
         {{ tr('Penalty Policies') }}
     </h3>
-    @can('settings.attendance.manage')
+    @if($canManageAttendance)
     <x-ui.secondary-button wire:click="openPenaltyModal" class="!px-4 !py-2 !text-xs !rounded-xl shadow-sm">
         <i class="fas fa-plus me-1 text-[color:var(--accent-orange)]"></i>
         {{ tr('Add New Policy') }}
     </x-ui.secondary-button>
-    @endcan
+    @endif
 </div>
 
 <div class="bg-white rounded-3xl shadow-sm border border-gray-100 overflow-hidden">
@@ -60,7 +60,7 @@
                     </x-ui.badge>
                 </td>
                 <td class="px-6 py-4 text-end">
-                    @can('settings.attendance.manage')
+                    @if($canManageAttendance)
                     <x-ui.actions-menu>
                         <x-ui.dropdown-item wire:click="editPenalty('{{ $penalty['id'] }}')">
                             <i class="fas fa-edit me-2 text-[color:var(--accent-orange)]"></i> {{ tr('Edit') }}
@@ -74,7 +74,7 @@
                     </x-ui.actions-menu>
                     @else
                     <span class="text-xs text-gray-400 font-bold italic">{{ tr('View Only') }}</span>
-                    @endcan
+                    @endif
                 </td>
             </tr>
             @empty

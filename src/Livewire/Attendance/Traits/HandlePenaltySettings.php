@@ -9,7 +9,7 @@ trait HandlePenaltySettings
 {
     public function saveBasicLatePenalty()
     {
-        $this->authorize('settings.attendance.manage');
+        $this->authorizeManage();
         
         $this->attendanceSettingService->savePenalty(
             auth()->user()->saas_company_id,
@@ -30,7 +30,7 @@ trait HandlePenaltySettings
 
     public function saveBasicEarlyPenalty()
     {
-        $this->authorize('settings.attendance.manage');
+        $this->authorizeManage();
 
         $this->attendanceSettingService->savePenalty(
             auth()->user()->saas_company_id,
@@ -51,7 +51,7 @@ trait HandlePenaltySettings
 
     public function saveBasicAbsencePenalty()
     {
-        $this->authorize('settings.attendance.manage');
+        $this->authorizeManage();
 
         $this->attendanceSettingService->saveAbsencePolicy(
             auth()->user()->saas_company_id,
@@ -70,7 +70,7 @@ trait HandlePenaltySettings
     }
     public function openPenaltyModal($id = null)
     {
-        $this->authorize('settings.attendance.manage');
+        $this->authorizeManage();
         $this->resetValidation();
         
         $companyId = auth()->user()->saas_company_id;
@@ -105,12 +105,13 @@ trait HandlePenaltySettings
 
     public function editPenalty($id)
     {
+        $this->authorizeManage();
         $this->openPenaltyModal($id);
     }
 
     public function savePenalty()
     {
-        $this->authorize('settings.attendance.manage');
+        $this->authorizeManage();
         
         $this->validate([
             'newPenalty.violation_type' => 'required',
@@ -145,7 +146,7 @@ trait HandlePenaltySettings
 
     public function deletePenalty($id)
     {
-        $this->authorize('settings.attendance.manage');
+        $this->authorizeManage();
         $companyId = auth()->user()->saas_company_id;
         AttendancePenaltyPolicy::where('saas_company_id', $companyId)->where('id', $id)->delete();
         $this->refreshData();
@@ -154,7 +155,7 @@ trait HandlePenaltySettings
 
     public function openAbsenceModal($id = null)
     {
-        $this->authorize('settings.attendance.manage');
+        $this->authorizeManage();
         $this->resetValidation();
         
         $companyId = auth()->user()->saas_company_id;
@@ -195,12 +196,13 @@ trait HandlePenaltySettings
 
     public function editAbsencePolicy($id)
     {
+        $this->authorizeManage();
         $this->openAbsenceModal($id);
     }
 
     public function saveAbsencePolicy()
     {
-        $this->authorize('settings.attendance.manage');
+        $this->authorizeManage();
         
         $this->validate([
             'newAbsencePolicy.absence_reason_type' => 'required',
@@ -230,7 +232,7 @@ trait HandlePenaltySettings
 
     public function deleteAbsencePolicy($id)
     {
-        $this->authorize('settings.attendance.manage');
+        $this->authorizeManage();
         $companyId = auth()->user()->saas_company_id;
         UnexcusedAbsencePolicy::where('saas_company_id', $companyId)->where('id', $id)->delete();
         $this->refreshData();

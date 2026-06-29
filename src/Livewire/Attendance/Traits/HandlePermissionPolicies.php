@@ -8,7 +8,7 @@ trait HandlePermissionPolicies
 {
     public function savePermissionSettings()
     {
-        $this->authorize('settings.attendance.manage');
+        $this->authorizeManage();
         
         if (!$this->selectedYearId) {
             $this->dispatch('toast', type: 'error', message: tr('Please select a year first.'));
@@ -58,6 +58,7 @@ trait HandlePermissionPolicies
 
     public function togglePermApp($val)
     {
+        $this->authorizeManage();
         $this->perm_show_in_app = (bool)$val;
         $this->savePermissionSettings();
     }

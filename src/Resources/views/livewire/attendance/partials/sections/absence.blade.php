@@ -3,12 +3,12 @@
             <span class="w-1 h-5 bg-[color:var(--accent-orange)] rounded-full"></span>
             {{ tr('Absence Without Permission') }}
         </h3>
-        @can('settings.attendance.manage')
+        @if($canManageAttendance)
         <x-ui.secondary-button wire:click="openAbsenceModal" class="!px-4 !py-2 !text-xs !rounded-xl shadow-sm border-[rgb(var(--accent-orange-rgb)/0.16)]">
             <i class="fas fa-calendar-times me-1 text-[color:var(--accent-orange)]"></i>
             {{ tr('Add Absence Policy') }}
         </x-ui.secondary-button>
-        @endcan
+        @endif
 
 
     <div class="bg-white rounded-3xl shadow-sm border border-gray-100 overflow-hidden">
@@ -67,7 +67,7 @@
                         @endif
                     </td>
                     <td class="px-6 py-4 text-end">
-                        @can('settings.attendance.manage')
+                        @if($canManageAttendance)
                         <x-ui.actions-menu>
                             <x-ui.dropdown-item wire:click="editAbsencePolicy('{{ $ap['id'] }}')">
                                 <i class="fas fa-edit me-2 text-[color:var(--accent-orange)]"></i> {{ tr('Edit') }}
@@ -81,7 +81,7 @@
                         </x-ui.actions-menu>
                         @else
                         <span class="text-xs text-gray-400 font-bold italic">{{ tr('View Only') }}</span>
-                        @endcan
+                        @endif
                     </td>
                 </tr>
                 @empty

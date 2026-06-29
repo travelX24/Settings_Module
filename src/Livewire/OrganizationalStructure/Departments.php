@@ -89,7 +89,8 @@ class Departments extends Component
 
     public function openEditModal($id)
     {
-        $dept = Department::withCount('children')->findOrFail($id);
+        $this->authorize('settings.organizational.manage');
+        $dept = Department::forCompany($this->getCompanyId())->withCount('children')->findOrFail($id);
         $this->editingId = $id;
         $this->name = $dept->name;
         $this->code = $dept->code;
@@ -110,6 +111,7 @@ class Departments extends Component
 
     public function export(ExcelExportService $exporter)
     {
+        $this->authorize('settings.organizational.view');
         $companyId = $this->getCompanyId();
         $departments = Department::forCompany($companyId)->with(['manager', 'parent'])->get();
         

@@ -61,6 +61,7 @@ class Users extends Component
     public function mount()
     {
         $this->authorize('uac.users.view');
+        $this->uacService->syncPermissionDefinitions();
         $this->initBranchFilter();
     }
 
@@ -75,11 +76,13 @@ class Users extends Component
 
     public function openEditModal($id)
     {
+        $this->authorize('uac.users.manage');
         $this->edit($id);
     }
 
     public function updatedSelectedEmployeeId($id)
     {
+        $this->authorize('uac.users.manage');
         if (!$id) {
             $this->reset(['name', 'email']);
             return;
@@ -91,12 +94,14 @@ class Users extends Component
 
     public function selectEmployee($id)
     {
+        $this->authorize('uac.users.manage');
         $this->selectedEmployeeId = $id;
         $this->updatedSelectedEmployeeId($id);
     }
 
     public function sendPasswordReset($id)
     {
+        $this->authorize('uac.users.manage');
         $user = User::findOrFail($id);
         if (method_exists($user, 'sendWithAuthKitPasswordReset')) {
             $user->sendWithAuthKitPasswordReset();
@@ -106,6 +111,7 @@ class Users extends Component
 
     public function edit($id)
     {
+        $this->authorize('uac.users.manage');
         $user = User::where('saas_company_id', $this->getCompanyId())->with(['roles', 'allowedBranches'])->findOrFail($id);
         
         $this->editingId = $id;
@@ -251,7 +257,7 @@ class Users extends Component
         }
 
         // Load currently active permissions on the user
-        $this->customPermissions = $user->getAllPermissions()->pluck('name')->toArray();
+        $this->customPermissions = $this->uacService->normalizePermissionSelection($user->getAllPermissions()->pluck('name')->toArray());
 
         $this->showPermModal = true;
     }
@@ -290,6 +296,7 @@ class Users extends Component
 
     public function toggleGroupCustom(string $groupName)
     {
+        $this->authorize('uac.users.manage');
         $groups = $this->uacService->getPermissionGroups();
         if (!isset($groups[$groupName])) return;
         $groupKeys = array_keys($groups[$groupName]);
@@ -303,6 +310,7 @@ class Users extends Component
 
     public function toggleTabCustom(string $tabKey)
     {
+        $this->authorize('uac.users.manage');
         $tabs = $this->uacService->getPermissionTabs();
         if (!isset($tabs[$tabKey])) return;
 
@@ -385,7 +393,7 @@ class Users extends Component
             'display_department' => $selectedEmp?->department?->name ?? '-',
             'display_job_title' => $selectedEmp?->jobTitle?->name ?? '-',
             'permissionGroups' => $this->uacService->getPermissionGroups(),
-            'permissionsMap' => collect($this->uacService->getPermissionGroups())->flatMap(fn($g) => $g)->toArray(),
+            'permissionsMap' => $this->uacService->getPermissionLabels(),
             'permissionTabs' => $this->uacService->getPermissionTabs(),
             'primaryUserId' => $primaryUserId
         ]);

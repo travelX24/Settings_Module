@@ -1,6 +1,7 @@
 @php
     $locale = app()->getLocale();
     $isRtl  = in_array(substr($locale, 0, 2), ['ar','fa','ur','he']);
+    $canManageAttendance = auth()->user()?->can('settings.attendance.manage') ?? false;
 @endphp
 
 @section('topbar-left-content')

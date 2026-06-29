@@ -58,7 +58,7 @@ trait HandleGpsSettings
 
     public function openGpsModal($id = null)
     {
-        $this->authorize('settings.attendance.manage');
+        $this->authorizeManage();
         $this->resetValidation();
         
         $companyId = auth()->user()->saas_company_id;
@@ -118,7 +118,7 @@ trait HandleGpsSettings
 
     public function saveGpsLocation()
     {
-        $this->authorize('settings.attendance.manage');
+        $this->authorizeManage();
         
         $rules = [
             'gpsData.name' => 'required|min:3',
@@ -169,7 +169,7 @@ trait HandleGpsSettings
 
     public function deleteGpsLocation($id)
     {
-        $this->authorize('settings.attendance.manage');
+        $this->authorizeManage();
         $companyId = auth()->user()->saas_company_id;
         AttendanceGpsLocation::where('saas_company_id', $companyId)->where('id', $id)->delete();
         $this->refreshData();

@@ -55,8 +55,18 @@ class ApprovalSequenceSettings extends Component
 
     public function mount(): void
     {
-        $this->authorize('settings.approval.manage');
+        $this->authorizeView();
         $this->resetSteps();
+    }
+
+    private function authorizeView(): void
+    {
+        abort_unless(auth()->user()?->can('settings.approval.view') || auth()->user()?->can('settings.approval.manage'), 403);
+    }
+
+    private function authorizeManage(): void
+    {
+        $this->authorize('settings.approval.manage');
     }
 
     public function resetForm(): void
@@ -71,13 +81,15 @@ class ApprovalSequenceSettings extends Component
 
     public function openCreate(): void
     {
+        $this->authorizeManage();
         $this->resetForm();
         $this->showModal = true;
     }
 
     public function openEdit(int $id): void
     {
-        $policy = ApprovalPolicy::findOrFail($id);
+        $this->authorizeManage();
+        $policy = ApprovalPolicy::where('company_id', auth()->user()->saas_company_id)->findOrFail($id);
         $this->editingId = $id;
         $this->name = $policy->name;
         $this->is_active = $policy->is_active;
@@ -109,6 +121,7 @@ class ApprovalSequenceSettings extends Component
 
     public function save(): void
     {
+        $this->authorizeManage();
         $this->validate([
             'name'  => 'required|string|max:255',
             'steps' => 'required|array|min:1',
@@ -134,6 +147,7 @@ class ApprovalSequenceSettings extends Component
 
     public function addStep(): void
     {
+        $this->authorizeManage();
         $this->steps[] = [
             '_key' => Str::random(8),
             'approver_type' => 'direct_manager',
@@ -144,6 +158,7 @@ class ApprovalSequenceSettings extends Component
 
     public function removeStep(int $index): void
     {
+        $this->authorizeManage();
         if (count($this->steps) > 1) {
             unset($this->steps[$index]);
             $this->steps = array_values($this->steps);
@@ -152,6 +167,7 @@ class ApprovalSequenceSettings extends Component
 
     public function moveStepUp(int $index): void
     {
+        $this->authorizeManage();
         if ($index > 0) {
             $prev = $this->steps[$index - 1];
             $this->steps[$index - 1] = $this->steps[$index];
@@ -161,6 +177,7 @@ class ApprovalSequenceSettings extends Component
 
     public function moveStepDown(int $index): void
     {
+        $this->authorizeManage();
         if ($index < count($this->steps) - 1) {
             $next = $this->steps[$index + 1];
             $this->steps[$index + 1] = $this->steps[$index];
@@ -170,14 +187,16 @@ class ApprovalSequenceSettings extends Component
 
     public function confirmDelete(int $id): void
     {
+        $this->authorizeManage();
         $this->confirmedPolicyId = $id;
         $this->dispatch('open-confirm-delete-policy-dialog');
     }
 
     public function deletePolicy(): void
     {
+        $this->authorizeManage();
         if ($this->confirmedPolicyId) {
-            $policy = ApprovalPolicy::find($this->confirmedPolicyId);
+            $policy = ApprovalPolicy::where('company_id', auth()->user()->saas_company_id)->find($this->confirmedPolicyId);
             if ($policy) {
                 $policy->delete();
                 $this->dispatch('toast', ['type' => 'success', 'message' => tr('Policy deleted successfully')]);

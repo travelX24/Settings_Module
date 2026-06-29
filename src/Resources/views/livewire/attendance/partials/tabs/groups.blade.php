@@ -27,11 +27,11 @@
                     </div>
                 @endif
 
-                @can('settings.attendance.manage')
+                @if($canManageAttendance)
                     <x-ui.primary-button wire:click="openGroupModal" class="!rounded-xl shadow-md cursor-pointer">
                         <i class="fas fa-plus-circle me-1"></i> {{ tr('New Group') }}
                     </x-ui.primary-button>
-                @endcan
+                @endif
             </div>
         </div>
 
@@ -138,7 +138,7 @@
                         </div>
                     </td>
                     <td class="px-6 py-4 text-end whitespace-nowrap">
-                        @can('settings.attendance.manage')
+                        @if($canManageAttendance)
                         <div class="flex items-center justify-end gap-2">
                             <button wire:click="editGroup('{{ $group['id'] }}')" class="p-2 text-[color:var(--accent-orange)] hover:bg-[rgb(var(--accent-orange-rgb)/0.08)] rounded-xl transition-colors cursor-pointer">
                                 <i class="fas fa-edit text-xs"></i>
@@ -149,7 +149,7 @@
                         </div>
                         @else
                         <span class="text-[10px] font-bold text-gray-400 italic">{{ tr('View Only') }}</span>
-                        @endcan
+                        @endif
                     </td>
                 </tr>
                 @empty

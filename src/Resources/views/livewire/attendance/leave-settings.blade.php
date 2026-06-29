@@ -11,6 +11,7 @@
         'training' => tr('Training'),
         'freelancer_remote' => tr('Freelancer (Remote)'),
     ];
+    $canManageAttendance = auth()->user()?->canAny(['settings.attendance.leaves.manage']) ?? false;
 @endphp
 <div class="space-y-6" wire:poll.15s>
 
@@ -92,7 +93,7 @@
                     </div>
 
                     <div class="grid grid-cols-1 sm:grid-cols-2 xl:flex xl:flex-nowrap xl:items-center gap-2">
-                        @can('settings.attendance.manage')
+                        @if($canManageAttendance)
                             <x-ui.secondary-button :fullWidth="false" wire:click="openYears" class="cursor-pointer">
                                 <i class="fas fa-calendar"></i>
                                 <span class="ms-2">{{ tr('Manage Years') }}</span>
@@ -113,7 +114,7 @@
                                 <i class="fas fa-plus"></i>
                                 <span class="ms-2">{{ tr('New Leave Type') }}</span>
                             </x-ui.primary-button>
-                        @endcan
+                        @endif
                     </div>
                 </div>
 
@@ -266,10 +267,10 @@
                                     $isAnnualDefault =
                                         (string) data_get($row->settings ?? [], 'meta.system_key', '') ===
                                             'annual_default' || trim((string) $row->name) === 'سنوية' || trim((string) $row->name) === 'إجازة سنوية';
-                                @endphp
+@endphp
     
                                 <td class="px-6 py-4 text-end whitespace-nowrap">
-                                    @can('settings.attendance.manage')
+                                    @if($canManageAttendance)
                                         <x-ui.actions-menu>
                                             <x-ui.dropdown-item wire:click="openEdit({{ (int) $row->id }})"
                                                 class="cursor-pointer">
@@ -284,7 +285,7 @@
                                                 </x-ui.dropdown-item>
                                             @endif
                                         </x-ui.actions-menu>
-                                    @endcan
+                                    @endif
                                 </td>
                             </tr>
                     @empty
@@ -343,23 +344,23 @@
                         <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
                             <div class="md:col-span-2">
                                 <x-ui.input label="{{ tr('Name') }}" wire:model.defer="name"
-                                    placeholder="{{ tr('Leave name...') }}" :disabled="!auth()->user()->can('settings.attendance.manage')" />
+                                    placeholder="{{ tr('Leave name...') }}" :disabled="!$canManageAttendance" />
                             </div>
 
                             <div class="md:col-span-2">
                                 <x-ui.input label="{{ tr('Description') }}" wire:model.defer="description"
-                                    placeholder="{{ tr('Optional description...') }}" :disabled="!auth()->user()->can('settings.attendance.manage')" />
+                                    placeholder="{{ tr('Optional description...') }}" :disabled="!$canManageAttendance" />
                             </div>
 
                             <div>
                                 <x-ui.input type="number" step="0.5" min="0"
                                     label="{{ tr('Days per year') }}" wire:model.defer="days_per_year"
-                                    :disabled="!auth()->user()->can('settings.attendance.manage')" />
+                                    :disabled="!$canManageAttendance" />
                             </div>
 
                             <div>
                                 <x-ui.select label="{{ tr('Gender') }}" wire:model.defer="gender"
-                                    :disabled="!auth()->user()->can('settings.attendance.manage')">
+                                    :disabled="!$canManageAttendance">
                                     <option value="all">{{ tr('All') }}</option>
                                     <option value="male">{{ tr('Male') }}</option>
                                     <option value="female">{{ tr('Female') }}</option>
@@ -378,7 +379,7 @@
                             {{-- Deduction --}}
                             <div>
                                 <x-ui.select label="{{ tr('Deduction policy') }}" wire:model.defer="deduction_policy"
-                                    :disabled="!auth()->user()->can('settings.attendance.manage')">
+                                    :disabled="!$canManageAttendance">
                                     <option value="balance_only">{{ tr('Deduct from balance only') }}</option>
                                     <option value="salary_after_balance">{{ tr('Deduct from salary after balance') }}
                                     </option>
@@ -388,7 +389,7 @@
                             {{-- Duration --}}
                             <div>
                                 <x-ui.select label="{{ tr('Duration type') }}" wire:model.defer="duration_unit"
-                                    :disabled="!auth()->user()->can('settings.attendance.manage')">
+                                    :disabled="!$canManageAttendance">
                                     <option value="full_day">{{ tr('Full day only') }}</option>
                                     <option value="half_day">{{ tr('Full day or half day') }}</option>
                                 </x-ui.select>
@@ -397,12 +398,12 @@
                             {{-- Notice --}}
                             <div>
                                 <x-ui.input type="number" min="0" label="{{ tr('Min notice (days)') }}"
-                                    wire:model.defer="notice_min_days" :disabled="!auth()->user()->can('settings.attendance.manage')" />
+                                    wire:model.defer="notice_min_days" :disabled="!$canManageAttendance" />
                             </div>
 
                             <div>
                                 <x-ui.input type="number" min="0" label="{{ tr('Max advance (days)') }}"
-                                    wire:model.defer="notice_max_advance_days" :disabled="!auth()->user()->can('settings.attendance.manage')" />
+                                    wire:model.defer="notice_max_advance_days" :disabled="!$canManageAttendance" />
                             </div>
 
                             <div class="md:col-span-2">
@@ -410,7 +411,7 @@
                                     class="flex items-center gap-2 text-sm font-semibold text-gray-700 cursor-pointer">
                                     <input type="checkbox" wire:model.defer="allow_retroactive"
                                         class="cursor-pointer"
-                                        @cannot('settings.attendance.manage') disabled @endcannot>
+                                        @if(!$canManageAttendance) disabled @endif>
                                     <span>{{ tr('Allow retroactive requests') }}</span>
                                 </label>
                                 @error('allow_retroactive')
@@ -429,7 +430,7 @@
                                             <input type="checkbox" value="{{ $value }}"
                                                 wire:model.defer="selected_leave_excluded_contract_types"
                                                 class="w-4 h-4 text-[color:var(--accent-orange)] rounded border-gray-300 focus:ring-[color:var(--accent-orange)]"
-                                                @cannot('settings.attendance.manage') disabled @endcannot>
+                                                @if(!$canManageAttendance) disabled @endif>
                                             <span class="text-xs font-bold text-gray-700">{{ $label }}</span>
                                         </label>
                                     @endforeach
@@ -446,7 +447,7 @@
                                 <label
                                     class="flex items-center gap-2 text-sm font-semibold text-gray-700 cursor-pointer">
                                     <input type="checkbox" wire:model.defer="note_required" class="cursor-pointer"
-                                        @cannot('settings.attendance.manage') disabled @endcannot>
+                                        @if(!$canManageAttendance) disabled @endif>
                                     <span>{{ tr('Mandatory note') }}</span>
                                 </label>
                                 @error('note_required')
@@ -455,14 +456,14 @@
 
                                 <div class="mt-3">
                                     <x-ui.textarea label="{{ tr('Note text') }}" wire:model.defer="note_text"
-                                        rows="2" :disabled="!auth()->user()->can('settings.attendance.manage')" />
+                                        rows="2" :disabled="!$canManageAttendance" />
                                 </div>
 
                                 <label
                                     class="flex items-center gap-2 text-sm font-semibold text-gray-700 mt-2 cursor-pointer">
                                     <input type="checkbox" wire:model.defer="note_ack_required"
                                         class="cursor-pointer"
-                                        @cannot('settings.attendance.manage') disabled @endcannot>
+                                        @if(!$canManageAttendance) disabled @endif>
                                     <span>{{ tr('Require acknowledgment of the note') }}</span>
                                 </label>
                                 @error('note_ack_required')
@@ -480,7 +481,7 @@
                                         class="flex items-center gap-2 text-sm font-semibold text-gray-700 cursor-pointer">
                                         <input type="checkbox" wire:model.defer="requires_attachment"
                                             class="cursor-pointer"
-                                            @cannot('settings.attendance.manage') disabled @endcannot>
+                                            @if(!$canManageAttendance) disabled @endif>
                                         <span>{{ tr('Requires attachment') }}</span>
                                     </label>
                                 </div>
@@ -494,21 +495,21 @@
                                                 class="flex items-center gap-2 text-sm font-semibold text-gray-700 cursor-pointer">
                                                 <input type="checkbox" value="pdf"
                                                     wire:model.defer="attachment_types" class="cursor-pointer"
-                                                    @cannot('settings.attendance.manage') disabled @endcannot>
+                                                    @if(!$canManageAttendance) disabled @endif>
                                                 <span>PDF</span>
                                             </label>
                                             <label
                                                 class="flex items-center gap-2 text-sm font-semibold text-gray-700 cursor-pointer">
                                                 <input type="checkbox" value="jpg"
                                                     wire:model.defer="attachment_types" class="cursor-pointer"
-                                                    @cannot('settings.attendance.manage') disabled @endcannot>
+                                                    @if(!$canManageAttendance) disabled @endif>
                                                 <span>JPG</span>
                                             </label>
                                             <label
                                                 class="flex items-center gap-2 text-sm font-semibold text-gray-700 cursor-pointer">
                                                 <input type="checkbox" value="png"
                                                     wire:model.defer="attachment_types" class="cursor-pointer"
-                                                    @cannot('settings.attendance.manage') disabled @endcannot>
+                                                    @if(!$canManageAttendance) disabled @endif>
                                                 <span>PNG</span>
                                             </label>
                                         </div>
@@ -541,14 +542,14 @@
                                     <label
                                         class="flex items-center gap-2 text-sm font-semibold text-gray-700 cursor-pointer">
                                         <input type="checkbox" wire:model.defer="is_active" class="cursor-pointer"
-                                            @cannot('settings.attendance.manage') disabled @endcannot>
+                                            @if(!$canManageAttendance) disabled @endif>
                                         <span>{{ tr('Active') }}</span>
                                     </label>
 
                                     <label
                                         class="flex items-center gap-2 text-sm font-semibold text-gray-700 cursor-pointer">
                                         <input type="checkbox" wire:model.defer="show_in_app" class="cursor-pointer"
-                                            @cannot('settings.attendance.manage') disabled @endcannot>
+                                            @if(!$canManageAttendance) disabled @endif>
                                         <span>{{ tr('Show in App') }}</span>
                                     </label>
                                 </div>
@@ -564,13 +565,13 @@
                         <x-ui.secondary-button wire:click="closeCreate" class="!px-6 !rounded-xl cursor-pointer">
                             {{ tr('Cancel') }}
                         </x-ui.secondary-button>
-                        @can('settings.attendance.manage')
+                        @if($canManageAttendance)
                             <x-ui.primary-button wire:click="saveCreate" loading="saveCreate"
                                 class="!px-6 !rounded-xl shadow-lg cursor-pointer">
                                 <i class="fas fa-save me-2" wire:loading.remove wire:target="saveCreate"></i>
                                 {{ tr('Save Policy') }}
                             </x-ui.primary-button>
-                        @endcan
+                        @endif
                     </div>
                 </x-slot:footer>
             </x-ui.modal>
@@ -603,28 +604,28 @@
                         <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
                             <div class="md:col-span-2">
                                 <x-ui.input label="{{ tr('Name') }}" wire:model.defer="name" :readonly="$editingNameLocked"
-                                    :disabled="!auth()->user()->can('settings.attendance.manage')" placeholder="{{ tr('Leave name...') }}" :hint="$editingNameLocked
+                                    :disabled="!$canManageAttendance" placeholder="{{ tr('Leave name...') }}" :hint="$editingNameLocked
                                         ? tr('This is a system annual policy name and cannot be changed.')
                                         : null" />
                             </div>
 
                             <div class="md:col-span-2">
                                 <x-ui.input label="{{ tr('Description') }}" wire:model.defer="description"
-                                    placeholder="{{ tr('Optional description...') }}" :disabled="!auth()->user()->can('settings.attendance.manage')" />
+                                    placeholder="{{ tr('Optional description...') }}" :disabled="!$canManageAttendance" />
                             </div>
 
                             @if (!$editingNameLocked)
                                 <div>
                                     <x-ui.input type="number" step="0.5" min="0"
                                         label="{{ tr('Days per year') }}" wire:model.defer="days_per_year"
-                                        :disabled="!auth()->user()->can('settings.attendance.manage')" />
+                                        :disabled="!$canManageAttendance" />
                                 </div>
                             @endif
 
                             @if (!$editingNameLocked)
                                 <div>
                                     <x-ui.select label="{{ tr('Gender') }}" wire:model.defer="gender"
-                                        :disabled="!auth()->user()->can('settings.attendance.manage')">
+                                        :disabled="!$canManageAttendance">
                                         <option value="all">{{ tr('All') }}</option>
                                         <option value="male">{{ tr('Male') }}</option>
                                         <option value="female">{{ tr('Female') }}</option>
@@ -651,12 +652,12 @@
                                 <div>
                                     <x-ui.input type="number" step="0.5" min="0"
                                         label="{{ tr('Days per year') }}"
-                                        wire:model.live.debounce.150ms="days_per_year" :disabled="!auth()->user()->can('settings.attendance.manage')" />
+                                        wire:model.live.debounce.150ms="days_per_year" :disabled="!$canManageAttendance" />
                                 </div>
 
                                 <div>
                                     <x-ui.select label="{{ tr('Accrual method') }}" wire:model.live="accrual_method"
-                                        :disabled="!auth()->user()->can('settings.attendance.manage')">
+                                        :disabled="!$canManageAttendance">
                                         <option value="annual_grant">{{ tr('Annual full grant') }}</option>
                                         <option value="monthly">{{ tr('Monthly accrual') }}</option>
                                     </x-ui.select>
@@ -672,7 +673,7 @@
                                 <div>
                                     <x-ui.input type="number" step="0.5" min="0"
                                         label="{{ tr('Max balance') }}" wire:model.defer="max_balance"
-                                        :disabled="!auth()->user()->can('settings.attendance.manage')" />
+                                        :disabled="!$canManageAttendance" />
                                 </div>
 
                                 <div>
@@ -680,21 +681,21 @@
                                         class="flex items-center gap-2 text-sm font-semibold text-gray-700 mb-2 cursor-pointer">
                                         <input type="checkbox" wire:model.live="allow_carryover"
                                             class="cursor-pointer"
-                                            @cannot('settings.attendance.manage') disabled @endcannot>
+                                            @if(!$canManageAttendance) disabled @endif>
                                         <span>{{ tr('Allow carryover') }}</span>
                                     </label>
 
                                     <x-ui.input type="number" step="0.5" min="0"
                                         label="{{ tr('Carryover days allowed') }}" wire:model.defer="carryover_days"
                                         :disabled="!$allow_carryover ||
-                                            !auth()->user()->can('settings.attendance.manage')" :hint="$allow_carryover
+                                            !$canManageAttendance" :hint="$allow_carryover
                                             ? tr('Set how many days can be carried over.')
                                             : tr('Carryover is disabled.')" />
                                 </div>
 
                                 <div class="md:col-span-2">
                                     <x-ui.select label="{{ tr('Weekend days') }}" wire:model.defer="weekend_policy"
-                                        :disabled="!auth()->user()->can('settings.attendance.manage')">
+                                        :disabled="!$canManageAttendance">
                                         <option value="exclude">{{ tr('Auto exclude') }}</option>
                                         <option value="include">{{ tr('Auto include') }}</option>
                                     </x-ui.select>
@@ -713,7 +714,7 @@
                             {{-- Deduction --}}
                             <div>
                                 <x-ui.select label="{{ tr('Deduction policy') }}"
-                                    wire:model.defer="deduction_policy" :disabled="!auth()->user()->can('settings.attendance.manage')">
+                                    wire:model.defer="deduction_policy" :disabled="!$canManageAttendance">
                                     <option value="balance_only">{{ tr('Deduct from balance only') }}</option>
                                     <option value="salary_after_balance">{{ tr('Deduct from salary after balance') }}
                                     </option>
@@ -723,12 +724,12 @@
                             {{-- Notice --}}
                             <div>
                                 <x-ui.input type="number" min="0" label="{{ tr('Min notice (days)') }}"
-                                    wire:model.defer="notice_min_days" :disabled="!auth()->user()->can('settings.attendance.manage')" />
+                                    wire:model.defer="notice_min_days" :disabled="!$canManageAttendance" />
                             </div>
 
                             <div>
                                 <x-ui.input type="number" min="0" label="{{ tr('Max advance (days)') }}"
-                                    wire:model.defer="notice_max_advance_days" :disabled="!auth()->user()->can('settings.attendance.manage')" />
+                                    wire:model.defer="notice_max_advance_days" :disabled="!$canManageAttendance" />
                             </div>
 
                             <div class="md:col-span-2">
@@ -736,7 +737,7 @@
                                     class="flex items-center gap-2 text-sm font-semibold text-gray-700 cursor-pointer">
                                     <input type="checkbox" wire:model.defer="allow_retroactive"
                                         class="cursor-pointer"
-                                        @cannot('settings.attendance.manage') disabled @endcannot>
+                                        @if(!$canManageAttendance) disabled @endif>
                                     <span>{{ tr('Allow retroactive requests') }}</span>
                                 </label>
                                 @error('allow_retroactive')
@@ -755,7 +756,7 @@
                                             <input type="checkbox" value="{{ $value }}"
                                                 wire:model.defer="selected_leave_excluded_contract_types"
                                                 class="w-4 h-4 text-[color:var(--accent-orange)] rounded border-gray-300 focus:ring-[color:var(--accent-orange)]"
-                                                @cannot('settings.attendance.manage') disabled @endcannot>
+                                                @if(!$canManageAttendance) disabled @endif>
                                             <span class="text-xs font-bold text-gray-700">{{ $label }}</span>
                                         </label>
                                     @endforeach
@@ -772,7 +773,7 @@
                                 <label
                                     class="flex items-center gap-2 text-sm font-semibold text-gray-700 cursor-pointer">
                                     <input type="checkbox" wire:model.defer="note_required" class="cursor-pointer"
-                                        @cannot('settings.attendance.manage') disabled @endcannot>
+                                        @if(!$canManageAttendance) disabled @endif>
                                     <span>{{ tr('Mandatory note') }}</span>
                                 </label>
                                 @error('note_required')
@@ -781,14 +782,14 @@
 
                                 <div class="mt-3">
                                     <x-ui.textarea label="{{ tr('Note text') }}" wire:model.defer="note_text"
-                                        rows="2" :disabled="!auth()->user()->can('settings.attendance.manage')" />
+                                        rows="2" :disabled="!$canManageAttendance" />
                                 </div>
 
                                 <label
                                     class="flex items-center gap-2 text-sm font-semibold text-gray-700 mt-2 cursor-pointer">
                                     <input type="checkbox" wire:model.defer="note_ack_required"
                                         class="cursor-pointer"
-                                        @cannot('settings.attendance.manage') disabled @endcannot>
+                                        @if(!$canManageAttendance) disabled @endif>
                                     <span>{{ tr('Require acknowledgment of the note') }}</span>
                                 </label>
                                 @error('note_ack_required')
@@ -806,7 +807,7 @@
                                         class="flex items-center gap-2 text-sm font-semibold text-gray-700 cursor-pointer">
                                         <input type="checkbox" wire:model.defer="requires_attachment"
                                             class="cursor-pointer"
-                                            @cannot('settings.attendance.manage') disabled @endcannot>
+                                            @if(!$canManageAttendance) disabled @endif>
                                         <span>{{ tr('Requires attachment') }}</span>
                                     </label>
                                 </div>
@@ -820,21 +821,21 @@
                                                 class="flex items-center gap-2 text-sm font-semibold text-gray-700 cursor-pointer">
                                                 <input type="checkbox" value="pdf"
                                                     wire:model.defer="attachment_types" class="cursor-pointer"
-                                                    @cannot('settings.attendance.manage') disabled @endcannot>
+                                                    @if(!$canManageAttendance) disabled @endif>
                                                 <span>PDF</span>
                                             </label>
                                             <label
                                                 class="flex items-center gap-2 text-sm font-semibold text-gray-700 cursor-pointer">
                                                 <input type="checkbox" value="jpg"
                                                     wire:model.defer="attachment_types" class="cursor-pointer"
-                                                    @cannot('settings.attendance.manage') disabled @endcannot>
+                                                    @if(!$canManageAttendance) disabled @endif>
                                                 <span>JPG</span>
                                             </label>
                                             <label
                                                 class="flex items-center gap-2 text-sm font-semibold text-gray-700 cursor-pointer">
                                                 <input type="checkbox" value="png"
                                                     wire:model.defer="attachment_types" class="cursor-pointer"
-                                                    @cannot('settings.attendance.manage') disabled @endcannot>
+                                                    @if(!$canManageAttendance) disabled @endif>
                                                 <span>PNG</span>
                                             </label>
                                         </div>
@@ -867,14 +868,14 @@
                                     <label
                                         class="flex items-center gap-2 text-sm font-semibold text-gray-700 cursor-pointer">
                                         <input type="checkbox" wire:model.defer="is_active" class="cursor-pointer"
-                                            @cannot('settings.attendance.manage') disabled @endcannot>
+                                            @if(!$canManageAttendance) disabled @endif>
                                         <span>{{ tr('Active') }}</span>
                                     </label>
 
                                     <label
                                         class="flex items-center gap-2 text-sm font-semibold text-gray-700 cursor-pointer">
                                         <input type="checkbox" wire:model.defer="show_in_app" class="cursor-pointer"
-                                            @cannot('settings.attendance.manage') disabled @endcannot>
+                                            @if(!$canManageAttendance) disabled @endif>
                                         <span>{{ tr('Show in App') }}</span>
                                     </label>
                                 </div>
@@ -890,13 +891,13 @@
                         <x-ui.secondary-button wire:click="closeEdit" class="!px-6 !rounded-xl cursor-pointer">
                             {{ tr('Cancel') }}
                         </x-ui.secondary-button>
-                        @can('settings.attendance.manage')
+                        @if($canManageAttendance)
                             <x-ui.primary-button wire:click="saveEdit" loading="saveEdit"
                                 class="!px-6 !rounded-xl shadow-lg cursor-pointer">
                                 <i class="fas fa-save me-2" wire:loading.remove wire:target="saveEdit"></i>
                                 {{ tr('Update') }}
                             </x-ui.primary-button>
-                        @endcan
+                        @endif
                     </div>
                 </x-slot:footer>
             </x-ui.modal>
@@ -946,7 +947,7 @@
 
                             <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
                                 <x-ui.select label="{{ tr('Year') }}" wire:model.defer="newYear"
-                                    :disabled="!auth()->user()->can('settings.attendance.manage')">
+                                    :disabled="!$canManageAttendance">
                                     <option value="">{{ tr('Select year') }}</option>
                                     @foreach ($this->availableYears as $y)
                                         <option value="{{ $y['value'] }}">{{ $y['label'] }}</option>
@@ -954,7 +955,7 @@
                                 </x-ui.select>
 
                                 <x-ui.select label="{{ tr('Copy from year (optional)') }}"
-                                    wire:model.defer="copyFromYearId" :disabled="!auth()->user()->can('settings.attendance.manage')">
+                                    wire:model.defer="copyFromYearId" :disabled="!$canManageAttendance">
                                     <option value="">{{ tr('Do not copy') }}</option>
                                     @foreach ($years as $y)
                                         <option value="{{ (int) $y->id }}">{{ $y->year }}</option>
@@ -1003,7 +1004,7 @@
                                                 <button wire:click="setYearActive({{ (int) $y->id }})"
                                                     class="w-8 h-8 rounded-xl bg-gray-50 text-gray-400 hover:bg-[color:var(--success)]/10 hover:text-[color:var(--success)] border border-gray-100 transition-all flex items-center justify-center disabled:opacity-50 cursor-pointer"
                                                     title="{{ tr('Set Active') }}"
-                                                    @cannot('settings.attendance.manage') disabled @endcannot>
+                                                    @if(!$canManageAttendance) disabled @endif>
                                                     <i class="fas fa-bolt text-xs"></i>
                                                 </button>
                                             @endif
@@ -1012,7 +1013,7 @@
                                                 @click.stop="$dispatch('open-confirm-delete-leave-year', { id: {{ (int) $y->id }} })"
                                                 class="w-8 h-8 rounded-xl bg-gray-50 text-gray-400 hover:bg-[color:var(--error)]/10 hover:text-[color:var(--error)] border border-gray-100 transition-all flex items-center justify-center disabled:opacity-50 cursor-pointer"
                                                 title="{{ tr('Delete') }}"
-                                                @cannot('settings.attendance.manage') disabled @endcannot>
+                                                @if(!$canManageAttendance) disabled @endif>
                                                 <i class="fas fa-trash text-xs"></i>
                                             </button>
                                         </div>
@@ -1029,13 +1030,13 @@
                             {{ tr('Cancel') }}
                         </x-ui.secondary-button>
 
-                        @can('settings.attendance.manage')
+                        @if($canManageAttendance)
                             <x-ui.primary-button wire:click="saveYear" loading="saveYear"
                                 class="!px-6 !rounded-xl shadow-lg cursor-pointer">
                                 <i class="fas fa-save me-2" wire:loading.remove wire:target="saveYear"></i>
                                 {{ tr('Save') }}
                             </x-ui.primary-button>
-                        @endcan
+                        @endif
                     </div>
                 </x-slot:footer>
             </x-ui.modal>
@@ -1062,13 +1063,13 @@
                     @php
                         $yearA = $years->firstWhere('id', $compareYearAId)?->year;
                         $yearB = $years->firstWhere('id', $compareYearBId)?->year;
-                    @endphp
+@endphp
 
                     <div class="space-y-4 py-2">
 
                         <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
                             <x-ui.select id="select_compare_year_a" label="{{ tr('Year A') }}"
-                                wire:model.live="compareYearAId" :disabled="!auth()->user()->can('settings.attendance.manage')">
+                                wire:model.live="compareYearAId" :disabled="!$canManageAttendance">
                                 <option value="">{{ tr('Select year') }}</option>
                                 @foreach ($years as $y)
                                     @if (!$compareYearBId || $y->id != $compareYearBId)
@@ -1078,7 +1079,7 @@
                             </x-ui.select>
 
                             <x-ui.select id="select_compare_year_b" label="{{ tr('Year B') }}"
-                                wire:model.live="compareYearBId" :disabled="!auth()->user()->can('settings.attendance.manage')">
+                                wire:model.live="compareYearBId" :disabled="!$canManageAttendance">
                                 <option value="">{{ tr('Select year') }}</option>
                                 @foreach ($years as $y)
                                     @if (!$compareYearAId || $y->id != $compareYearAId)
@@ -1110,7 +1111,7 @@
                                     ];
                                     return $map[$valStr] ?? tr((string) $val);
                                 };
-                            @endphp
+@endphp
                             <div class="overflow-x-auto">
                                 <table class="w-full text-start border-collapse table-fixed">
                                     <thead>
@@ -1142,7 +1143,7 @@
                                                 } else {
                                                     $different = true;
                                                 }
-                                            @endphp
+@endphp
                                             <tr
                                                 class="{{ $different ? 'bg-[color:var(--warning)]/10' : 'hover:bg-gray-50/50' }} transition-colors">
                                                 <td class="px-5 py-3 border-e border-gray-50">
@@ -1190,7 +1191,7 @@
                                                                 wire:click="toggleCompareDetails('{{ $r['key'] }}')"
                                                                 class="px-2 py-1 bg-white rounded-md border border-gray-200 hover:bg-gray-50 text-gray-700 inline-flex items-center gap-2"
                                                                 title="{{ tr('View details') }}"
-                                                                @cannot('settings.attendance.manage') disabled @endcannot>
+                                                                @if(!$canManageAttendance) disabled @endif>
                                                                 <i class="fas fa-eye text-[11px]"></i>
                                                                 <span
                                                                     class="text-[11px] font-bold">{{ tr('Details') }}</span>
@@ -1219,7 +1220,7 @@
                                                                 <button type="button"
                                                                     wire:click="toggleCompareDetails('{{ $r['key'] }}')"
                                                                     class="text-xs font-black text-gray-500 hover:text-gray-900"
-                                                                    @cannot('settings.attendance.manage') disabled @endcannot>
+                                                                    @if(!$canManageAttendance) disabled @endif>
                                                                     {{ tr('Close') }}
                                                                 </button>
                                                             </div>
@@ -1252,7 +1253,8 @@
                                                                                 {{ $a->description ?: '—' }}
                                                                             </div>
 
-                                                                            @php $sA = $a->settings ?? []; @endphp
+                                                                            @php $sA = $a->settings ?? [];
+@endphp
                                                                             @if ($a->leave_type === 'annual')
                                                                                 <div>
                                                                                     <b>{{ tr('Accrual method') }}:</b>
@@ -1298,7 +1300,7 @@
                                                                                 @php
                                                                                     $exclA = $a->excluded_contract_types ?? [];
                                                                                     $exclLabsA = array_intersect_key($contractList, array_flip($exclA));
-                                                                                @endphp
+@endphp
                                                                                 {{ count($exclLabsA) > 0 ? implode(', ', $exclLabsA) : tr('None') }}
                                                                             </div>
 
@@ -1309,7 +1311,8 @@
 
                                                                             <div class="col-span-2">
                                                                                 <b>{{ tr('Attachment types') }}:</b>
-                                                                                @php $tA = $sA['attachments.types'] ?? $sA['attachment_types'] ?? []; @endphp
+                                                                                @php $tA = $sA['attachments.types'] ?? $sA['attachment_types'] ?? [];
+@endphp
                                                                                 {{ is_array($tA) ? implode(', ', $tA) : (string) $tA }}
                                                                             </div>
                                                                         </div>
@@ -1345,7 +1348,8 @@
                                                                                 {{ $b->description ?: '—' }}
                                                                             </div>
 
-                                                                            @php $sB = $b->settings ?? []; @endphp
+                                                                            @php $sB = $b->settings ?? [];
+@endphp
                                                                             @if ($b->leave_type === 'annual')
                                                                                 <div>
                                                                                     <b>{{ tr('Accrual method') }}:</b>
@@ -1391,7 +1395,7 @@
                                                                                 @php
                                                                                     $exclB = $b->excluded_contract_types ?? [];
                                                                                     $exclLabsB = array_intersect_key($contractList, array_flip($exclB));
-                                                                                @endphp
+@endphp
                                                                                 {{ count($exclLabsB) > 0 ? implode(', ', $exclLabsB) : tr('None') }}
                                                                             </div>
 
@@ -1402,7 +1406,8 @@
 
                                                                             <div class="col-span-2">
                                                                                 <b>{{ tr('Attachment types') }}:</b>
-                                                                                @php $tB = $sB['attachments.types'] ?? $sB['attachment_types'] ?? []; @endphp
+                                                                                @php $tB = $sB['attachments.types'] ?? $sB['attachment_types'] ?? [];
+@endphp
                                                                                 {{ is_array($tB) ? implode(', ', $tB) : (string) $tB }}
                                                                             </div>
                                                                         </div>
@@ -1461,19 +1466,19 @@
                         </div>
                     </div>
 
-                    @can('settings.attendance.manage')
+                    @if($canManageAttendance)
                         <x-ui.primary-button :arrow="false" :fullWidth="false" wire:click="savePermissionSettings"
                             loading="savePermissionSettings" class="!rounded-xl cursor-pointer">
                             <i class="fas fa-save" wire:loading.remove wire:target="savePermissionSettings"></i>
                             <span class="ms-2">{{ tr('Save') }}</span>
                         </x-ui.primary-button>
-                    @endcan
+                    @endif
                 </div>
 
                 {{-- ✅ Dynamic Status Banner for UX --}}
                 @php
                     $isPermConfigured = ((float)$perm_monthly_limit_hours > 0 || (float)$perm_max_request_hours > 0);
-                @endphp
+@endphp
 
                 @if(!$isPermConfigured)
                     <div class="p-4 bg-[color:var(--warning)]/10 border border-[color:var(--warning)]/25 rounded-2xl flex items-start gap-4 animate-pulse">
@@ -1506,14 +1511,14 @@
                     <div>
                         <x-ui.input type="number" step="0.25" min="0"
                             label="{{ tr('Monthly limit (hours)') }}" wire:model.defer="perm_monthly_limit_hours"
-                            :disabled="!auth()->user()->can('settings.attendance.manage')" placeholder="0" 
+                            :disabled="!$canManageAttendance" placeholder="0" 
                             :hint="tr('Total hours an employee is allowed to request during one month.')" />
                     </div>
 
                     <div>
                         <x-ui.input type="number" step="0.25" min="0"
                             label="{{ tr('Maximum per request (hours)') }}" wire:model.defer="perm_max_request_hours"
-                            :disabled="!auth()->user()->can('settings.attendance.manage')" placeholder="0" 
+                            :disabled="!$canManageAttendance" placeholder="0" 
                             :hint="tr('Maximum allowed hours for one permission request.')" />
                     </div>
 
@@ -1526,7 +1531,7 @@
 
                     <div class="md:col-span-2">
                         <x-ui.select label="{{ tr('Deduction policy') }}" wire:model.defer="perm_deduction_policy"
-                            :disabled="!auth()->user()->can('settings.attendance.manage')">
+                            :disabled="!$canManageAttendance">
                             <option value="not_allowed_after_limit">{{ tr('Not allowed after limit') }}</option>
                             <option value="salary_after_limit">{{ tr('Deduct from salary after limit') }}</option>
                             <option value="allow_without_deduction">{{ tr('Allow without deduction') }}</option>
@@ -1540,7 +1545,7 @@
                         <div class="mb-3">
                             <label class="flex items-center gap-2 text-sm font-semibold text-gray-700 cursor-pointer">
                                 <input type="checkbox" wire:model.live="perm_requires_attachment" class="cursor-pointer"
-                                    @cannot('settings.attendance.manage') disabled @endcannot>
+                                    @if(!$canManageAttendance) disabled @endif>
                                 <span>{{ tr('Requires attachment') }}</span>
                             </label>
                         </div>
@@ -1555,21 +1560,21 @@
                                         class="flex items-center gap-2 text-sm font-semibold text-gray-700 cursor-pointer">
                                         <input type="checkbox" value="pdf"
                                             wire:model.defer="perm_attachment_types" class="cursor-pointer"
-                                            @disabled(!$perm_requires_attachment || !auth()->user()->can('settings.attendance.manage'))>
+                                            @disabled(!$perm_requires_attachment || !$canManageAttendance)>
                                         <span>PDF</span>
                                     </label>
                                     <label
                                         class="flex items-center gap-2 text-sm font-semibold text-gray-700 cursor-pointer">
                                         <input type="checkbox" value="jpg"
                                             wire:model.defer="perm_attachment_types" class="cursor-pointer"
-                                            @disabled(!$perm_requires_attachment || !auth()->user()->can('settings.attendance.manage'))>
+                                            @disabled(!$perm_requires_attachment || !$canManageAttendance)>
                                         <span>JPG</span>
                                     </label>
                                     <label
                                         class="flex items-center gap-2 text-sm font-semibold text-gray-700 cursor-pointer">
                                         <input type="checkbox" value="png"
                                             wire:model.defer="perm_attachment_types" class="cursor-pointer"
-                                            @disabled(!$perm_requires_attachment || !auth()->user()->can('settings.attendance.manage'))>
+                                            @disabled(!$perm_requires_attachment || !$canManageAttendance)>
                                         <span>PNG</span>
                                     </label>
                                 </div>
@@ -1601,19 +1606,19 @@
                         <div class="grid grid-cols-1 sm:grid-cols-3 gap-3">
                             <label class="flex items-center gap-2 text-sm font-semibold text-gray-700 cursor-pointer">
                                 <input type="checkbox" wire:model.defer="perm_is_active" class="cursor-pointer"
-                                    @cannot('settings.attendance.manage') disabled @endcannot>
+                                    @if(!$canManageAttendance) disabled @endif>
                                 <span>{{ tr('Active') }}</span>
                             </label>
 
                             <label class="flex items-center gap-2 text-sm font-semibold text-gray-700 cursor-pointer">
                                 <input type="checkbox" wire:model.defer="perm_approval_required" class="cursor-pointer"
-                                    @cannot('settings.attendance.manage') disabled @endcannot>
+                                    @if(!$canManageAttendance) disabled @endif>
                                 <span>{{ tr('Requires approval') }}</span>
                             </label>
 
                             <label class="flex items-center gap-2 text-sm font-semibold text-gray-700 cursor-pointer">
                                 <input type="checkbox" wire:model.defer="perm_show_in_app" class="cursor-pointer"
-                                    @cannot('settings.attendance.manage') disabled @endcannot>
+                                    @if(!$canManageAttendance) disabled @endif>
                                 <span>{{ tr('Show in app') }}</span>
                             </label>
                         </div>

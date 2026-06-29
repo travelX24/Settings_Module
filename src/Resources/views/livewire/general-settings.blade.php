@@ -10,6 +10,8 @@
 <div class="space-y-6">
     {{-- Settings Buttons Grid --}}
     <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+
+
         {{-- Organizational Structure Settings --}}
         @can('settings.organizational.view')
         <x-ui.settings-button
@@ -21,17 +23,17 @@
         @endcan
 
         {{-- Approval Sequence Settings --}}
-        @can('settings.approval.manage')
+        @canany(['settings.approval.view', 'settings.approval.manage'])
        <x-ui.settings-button
                 href="{{ route('company-admin.settings.approval-sequences') }}"
                 icon="fa-tasks"
                 :title="tr('Approval Sequence Settings')"
                 :description="tr('Set up approval workflows and sequences')"
             />
-        @endcan
+        @endcanany
 
         {{-- Lists Settings --}}
-        @can('settings.lists.manage')
+        @can('settings.lists.view')
         <x-ui.settings-button
             href="#"
             icon="fa-list"

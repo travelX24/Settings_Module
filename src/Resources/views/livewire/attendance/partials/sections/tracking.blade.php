@@ -11,12 +11,12 @@
             'automatic' => ['icon' => 'fa-magic', 'title' => tr('Automatic Tracking'), 'desc' => tr('Auto-generate present records based on schedule.')]
         ] as $key => $opt)
         <div 
-            @can('settings.attendance.manage')
+            @if($canManageAttendance)
             wire:click="setTrackingPolicy('{{ $key }}')" 
             class="p-4 border rounded-xl cursor-pointer transition-all hover:shadow-md {{ $trackingPolicy === $key ? 'border-[color:var(--accent-orange)] bg-[rgb(var(--accent-orange-rgb)/0.08)] ring-1 ring-[rgb(var(--accent-orange-rgb)/0.20)] shadow-sm' : 'border-gray-200 bg-white hover:border-gray-300' }}"
             @else
             class="p-4 border rounded-xl cursor-not-allowed opacity-80 {{ $trackingPolicy === $key ? 'border-[color:var(--accent-orange)] bg-[rgb(var(--accent-orange-rgb)/0.08)]' : 'border-gray-200 bg-gray-50' }}"
-            @endcan
+            @endif
         >
             <div class="flex items-center justify-between mb-2">
                 <div class="w-9 h-9 rounded-lg flex items-center justify-center {{ $trackingPolicy === $key ? 'bg-[color:var(--accent-orange)] text-white' : 'bg-gray-100 text-gray-400' }}">

@@ -79,7 +79,7 @@ class Roles extends Component
 
         $this->editingId = $id;
         $this->name = $role->name;
-        $this->selectedPermissions = $role->permissions->pluck('name')->toArray();
+        $this->selectedPermissions = $this->uacService->normalizePermissionSelection($role->permissions->pluck('name')->toArray());
         $this->resetErrorBag();
         $this->showModal = true;
     }
@@ -161,7 +161,7 @@ class Roles extends Component
 
         $this->reset(['editingId']);
         $this->name = $role->name . ' - ' . tr('Copy');
-        $this->selectedPermissions = $role->permissions->pluck('name')->toArray();
+        $this->selectedPermissions = $this->uacService->normalizePermissionSelection($role->permissions->pluck('name')->toArray());
         $this->resetErrorBag();
         $this->showModal = true;
     }
@@ -196,6 +196,7 @@ class Roles extends Component
         return view('systemsettings::livewire.user-access-control.roles', [
             'roles' => $roles,
             'permissionGroups' => $this->uacService->getPermissionGroups(),
+            'permissionsMap' => $this->uacService->getPermissionLabels(),
             'permissionTabs' => $this->uacService->getPermissionTabs()
         ]);
     }

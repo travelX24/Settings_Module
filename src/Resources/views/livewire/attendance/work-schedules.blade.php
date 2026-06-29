@@ -1,6 +1,7 @@
 @php
     $locale = app()->getLocale();
     $isRtl = in_array(substr($locale, 0, 2), ['ar', 'fa', 'ur', 'he']);
+    $canManageAttendance = auth()->user()?->canAny(['settings.attendance.schedules.manage']) ?? false;
 @endphp
 
 @section('topbar-left-content')
@@ -59,13 +60,13 @@
                         <span class="ms-2">{{ tr('Export CSV') }}</span>
                     </x-ui.secondary-button>
 
-                    @can('settings.attendance.manage')
+                    @if($canManageAttendance)
                         <x-ui.primary-button wire:click="openScheduleModal" :arrow="false" :fullWidth="false"
                             class="cursor-pointer">
                             <i class="fas fa-plus"></i>
                             <span class="ms-2">{{ tr('New Schedule') }}</span>
                         </x-ui.primary-button>
-                    @endcan
+                    @endif
                 </div>
             </div>
 
@@ -199,14 +200,14 @@
                                                 'thursday' => 'Thu',
                                                 'friday' => 'Fri',
                                             ];
-                                @endphp
+@endphp
 
                                 <div
                                     class="flex flex-wrap items-center justify-center gap-1.5 {{ substr($locale, 0, 2) === 'ar' ? 'max-w-[440px]' : 'max-w-[260px]' }} mx-auto">
                                     @foreach ($weekDays as $day)
                                         @php
                                             $isActiveDay = in_array($day, $schedule->work_days ?? []);
-                                        @endphp
+@endphp
 
                                         <div class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg border {{ substr($locale, 0, 2) === 'ar' ? 'text-[9px]' : 'text-[10px]' }} font-black whitespace-nowrap transition-colors
                 {{ $isActiveDay
@@ -239,7 +240,7 @@
 
                             <td class="px-6 py-4 text-center whitespace-nowrap">
                                 <div class="flex justify-center">
-                                    @can('settings.attendance.manage')
+                                    @if($canManageAttendance)
                                         <button wire:click="toggleStatus({{ $schedule->id }})"
                                             class="w-9 h-4.5 rounded-full p-1 transition-all relative cursor-pointer {{ $schedule->is_active ? 'bg-[color:var(--success)]' : 'bg-gray-200' }}">
                                             <div
@@ -253,11 +254,11 @@
                                                 class="w-2.5 h-2.5 bg-white rounded-full shadow-sm {{ $schedule->is_active ? ($isRtl ? 'mr-4.5' : 'ml-4.5') : '' }}">
                                             </div>
                                         </button>
-                                    @endcan
+                                    @endif
                                 </div>
                             </td>
                             <td class="px-6 py-4 text-end whitespace-nowrap">
-                                @can('settings.attendance.manage')
+                                @if($canManageAttendance)
                                     <x-ui.actions-menu>
                                         <x-ui.dropdown-item wire:click="copySchedule({{ $schedule->id }})"
                                             class="cursor-pointer">
@@ -273,7 +274,7 @@
                                             <i class="fas fa-trash-alt me-2 text-[color:var(--error)]"></i> {{ tr('Delete Permanently') }}
                                         </x-ui.dropdown-item>
                                     </x-ui.actions-menu>
-                                @endcan
+                                @endif
                             </td>
                         </tr>
                     @empty

@@ -1,6 +1,7 @@
 @php
     $locale = app()->getLocale();
     $isRtl = in_array(substr($locale, 0, 2), ['ar', 'fa', 'ur', 'he']);
+    $canManageAttendance = auth()->user()?->canAny(['settings.attendance.exceptional.manage']) ?? false;
 @endphp
 
 <div>
@@ -30,7 +31,7 @@
         <x-ui.card class="!p-4">
             <div class="flex flex-col gap-3">
 
-                <div class="flex flex-wrap items-center gap-2 w-full justify-end"> @can('settings.attendance.manage')
+                <div class="flex flex-wrap items-center gap-2 w-full justify-end"> @if($canManageAttendance)
                         <x-ui.brand-button type="button" wire:click="openCreate" :arrow="false" :fullWidth="false"
                             class="!px-4 !py-2 !text-sm !rounded-xl !gap-2 cursor-pointer">
                             <i class="fas fa-plus text-xs"></i>
@@ -42,7 +43,7 @@
                             <i class="fas fa-chart-bar text-xs"></i>
                             <span>{{ tr('Compare Years') }}</span>
                         </x-ui.secondary-button>
-                    @endcan
+                    @endif
 
                     <x-ui.secondary-button type="button" wire:click="exportCsv" :arrow="false" :fullWidth="false"
                         class="!px-4 !py-2 !text-sm !rounded-xl !gap-2 cursor-pointer">
@@ -52,7 +53,7 @@
                 </div>
 
                 @if (!empty($selected))
-                    @can('settings.attendance.manage')
+                    @if($canManageAttendance)
                         <div class="flex flex-wrap items-center gap-2 {{ $isRtl ? 'justify-end' : 'justify-start' }}">
                             <div class="text-xs text-gray-600">
                                 {{ tr('Selected') }}: <span class="font-bold">{{ count($selected) }}</span>
@@ -82,7 +83,7 @@
                                 <span>{{ tr('Delete Selected') }}</span>
                             </x-ui.secondary-button>
                         </div>
-                    @endcan
+                    @endif
                 @endif
 
             </div>
@@ -309,7 +310,7 @@
                                             : tr('Employees'))));
 
                         $isWithout = $apply === 'none' || $percent <= 0;
-                    @endphp
+@endphp
 
                     <tr class="hover:bg-gray-50/40 transition-colors cursor-default border-t">
                         <td class="px-6 py-4 whitespace-nowrap">
@@ -368,7 +369,7 @@
 
                         <td class="px-6 py-4 text-center whitespace-nowrap">
                             <div class="flex justify-center">
-                                @can('settings.attendance.manage')
+                                @if($canManageAttendance)
                                     <button wire:click="toggleActive({{ $row->id }})"
                                         class="w-9 h-4.5 rounded-full p-1 transition-all relative cursor-pointer {{ $row->is_active ? 'bg-[color:var(--success)]' : 'bg-gray-200' }}">
                                         <div
@@ -382,12 +383,12 @@
                                             class="w-2.5 h-2.5 bg-white rounded-full shadow-sm transition-all {{ $row->is_active ? (app()->getLocale() == 'ar' ? 'mr-4.5' : 'ml-4.5') : '' }}">
                                         </div>
                                     </button>
-                                @endcan
+                                @endif
                             </div>
                         </td>
 
                         <td class="px-6 py-4 text-right whitespace-nowrap">
-                            @can('settings.attendance.manage')
+                            @if($canManageAttendance)
                                 <x-ui.actions-menu>
                                     <x-ui.dropdown-item wire:click="openEdit({{ $row->id }})"
                                         class="cursor-pointer">
@@ -400,7 +401,7 @@
                                         <i class="fas fa-trash-alt me-2 text-[color:var(--error)]"></i> {{ tr('Delete') }}
                                     </x-ui.dropdown-item>
                                 </x-ui.actions-menu>
-                            @endcan
+                            @endif
                         </td>
                     </tr>
                 @empty
@@ -439,7 +440,7 @@
 
                             <div class="md:col-span-2">
                                 <div class="text-xs text-gray-600 mb-1">{{ tr('Name') }}</div>
-                                <x-ui.input wire:model.defer="form.name" :disabled="!auth()->user()->can('settings.attendance.manage')" />
+                                <x-ui.input wire:model.defer="form.name" :disabled="!$canManageAttendance" />
                                 @error('form.name')
                                     <div class="text-xs text-[color:var(--error)] mt-1">{{ $message }}</div>
                                 @enderror
@@ -447,7 +448,7 @@
 
                             <div>
                                 <div class="text-xs text-gray-600 mb-1">{{ tr('Period') }}</div>
-                                <x-ui.select wire:model.live="form.period_type" :disabled="!auth()->user()->can('settings.attendance.manage')">
+                                <x-ui.select wire:model.live="form.period_type" :disabled="!$canManageAttendance">
                                     <option value="single">{{ tr('Single Day') }}</option>
                                     <option value="range">{{ tr('Date Range') }}</option>
                                 </x-ui.select>
@@ -481,7 +482,7 @@
 
                             <div>
                                 <div class="text-xs text-gray-600 mb-1">{{ tr('Apply') }}</div>
-                                <x-ui.select wire:model.live="form.apply_on" :disabled="!auth()->user()->can('settings.attendance.manage')">
+                                <x-ui.select wire:model.live="form.apply_on" :disabled="!$canManageAttendance">
                                     <option value="absence">{{ tr('Absence') }}</option>
                                     <option value="late">{{ tr('Late') }}</option>
                                 </x-ui.select>
@@ -510,7 +511,7 @@
                                     </div>
 
                                     <x-ui.input type="number" step="0.01" min="0" max="1000"
-                                        wire:model.defer="form.deduction_percent" :disabled="!auth()->user()->can('settings.attendance.manage')" />
+                                        wire:model.defer="form.deduction_percent" :disabled="!$canManageAttendance" />
                                     @error('form.deduction_percent')
                                         <div class="text-xs text-[color:var(--error)] mt-1">{{ $message }}</div>
                                     @enderror
@@ -645,7 +646,7 @@
                             <div class="md:col-span-2">
                                 <div class="text-xs text-gray-600 mb-1">{{ tr('Employee Alert Message') }}</div>
                                 <x-ui.textarea rows="2" wire:model.defer="form.notify_message"
-                                    :disabled="!auth()->user()->can('settings.attendance.manage')" />
+                                    :disabled="!$canManageAttendance" />
                                 @error('form.notify_message')
                                     <div class="text-xs text-[color:var(--error)] mt-1">{{ $message }}</div>
                                 @enderror
@@ -673,12 +674,12 @@
                     {{ tr('Cancel') }}
                 </x-ui.secondary-button>
 
-                @can('settings.attendance.manage')
+                @if($canManageAttendance)
                     <x-ui.primary-button type="button" wire:click="save" loading="save" :fullWidth="false" class="cursor-pointer">
                         <i class="fas fa-save me-2" wire:loading.remove wire:target="save"></i>
                         {{ tr('Save') }}
                     </x-ui.primary-button>
-                @endcan
+                @endif
             </x-slot>
         </x-ui.modal>
 

@@ -13,7 +13,7 @@
             <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
                 {{-- Left Column --}}
                 <div class="space-y-5">
-                    <x-ui.select label="{{ tr('Absence Type') }}" wire:model.live="newAbsencePolicy.absence_reason_type" required :disabled="!auth()->user()->can('settings.attendance.manage')">
+                    <x-ui.select label="{{ tr('Absence Type') }}" wire:model.live="newAbsencePolicy.absence_reason_type" required :disabled="!$canManageAttendance">
                         @foreach($absenceTypes as $key => $label)
                             <option value="{{ $key }}">{{ $label }}</option>
                         @endforeach
@@ -23,11 +23,11 @@
                         <label class="block text-xs font-black text-gray-400 uppercase tracking-widest">{{ tr('Duration Determination') }}</label>
                         <div class="flex gap-4">
                             <label class="flex items-center gap-2 cursor-pointer group">
-                                <input type="radio" wire:model.live="newAbsencePolicy.day_selector_type" value="single" class="w-3.5 h-3.5 text-[color:var(--accent-orange)] border-gray-300" @cannot('settings.attendance.manage') disabled @endcannot>
+                                <input type="radio" wire:model.live="newAbsencePolicy.day_selector_type" value="single" class="w-3.5 h-3.5 text-[color:var(--accent-orange)] border-gray-300" @if(!$canManageAttendance) disabled @endif>
                                 <span class="text-sm font-bold text-gray-600 group-hover:text-[color:var(--accent-orange)] transition-colors">{{ tr('Single Day (Custom)') }}</span>
                             </label>
                             <label class="flex items-center gap-2 cursor-pointer group">
-                                <input type="radio" wire:model.live="newAbsencePolicy.day_selector_type" value="range" class="w-3.5 h-3.5 text-[color:var(--accent-orange)] border-gray-300" @cannot('settings.attendance.manage') disabled @endcannot>
+                                <input type="radio" wire:model.live="newAbsencePolicy.day_selector_type" value="range" class="w-3.5 h-3.5 text-[color:var(--accent-orange)] border-gray-300" @if(!$canManageAttendance) disabled @endif>
                                 <span class="text-sm font-bold text-gray-600 group-hover:text-[color:var(--accent-orange)] transition-colors">{{ tr('Days Range') }}</span>
                             </label>
                         </div>
@@ -35,26 +35,26 @@
                         <div class="grid grid-cols-2 gap-4 mt-4">
                             @if(($newAbsencePolicy['day_selector_type'] ?? 'single') === 'single')
                                 <div class="col-span-2">
-                                    <x-ui.input label="{{ tr('Day Number') }}" type="number" wire:model.defer="newAbsencePolicy.day_from" placeholder="1" required :disabled="!auth()->user()->can('settings.attendance.manage')" />
+                                    <x-ui.input label="{{ tr('Day Number') }}" type="number" wire:model.defer="newAbsencePolicy.day_from" placeholder="1" required :disabled="!$canManageAttendance" />
                                 </div>
                             @else
-                                <x-ui.input label="{{ tr('From Day') }}" type="number" wire:model.defer="newAbsencePolicy.day_from" placeholder="1" required :disabled="!auth()->user()->can('settings.attendance.manage')" />
-                                <x-ui.input label="{{ tr('To Day') }}" type="number" wire:model.defer="newAbsencePolicy.day_to" placeholder="10" required :disabled="!auth()->user()->can('settings.attendance.manage')" />
+                                <x-ui.input label="{{ tr('From Day') }}" type="number" wire:model.defer="newAbsencePolicy.day_from" placeholder="1" required :disabled="!$canManageAttendance" />
+                                <x-ui.input label="{{ tr('To Day') }}" type="number" wire:model.defer="newAbsencePolicy.day_to" placeholder="10" required :disabled="!$canManageAttendance" />
                             @endif
                         </div>
                     </div>
 
                     @if(($newAbsencePolicy['absence_reason_type'] ?? '') === 'late_early')
                         <div class="grid grid-cols-2 gap-4 p-4 bg-[rgb(245_158_11/0.08)] rounded-2xl border border-[rgb(245_158_11/0.18)]">
-                            <x-ui.input label="{{ tr('Minutes') }}" type="number" wire:model.defer="newAbsencePolicy.late_minutes" required :disabled="!auth()->user()->can('settings.attendance.manage')" />
-                            <x-ui.input label="{{ tr('Repetitions') }}" type="number" wire:model.defer="newAbsencePolicy.recurrence_count" required :disabled="!auth()->user()->can('settings.attendance.manage')" />
+                            <x-ui.input label="{{ tr('Minutes') }}" type="number" wire:model.defer="newAbsencePolicy.late_minutes" required :disabled="!$canManageAttendance" />
+                            <x-ui.input label="{{ tr('Repetitions') }}" type="number" wire:model.defer="newAbsencePolicy.recurrence_count" required :disabled="!$canManageAttendance" />
                         </div>
                     @endif
                 </div>
 
                 {{-- Right Column --}}
                 <div class="space-y-5">
-                    <x-ui.select label="{{ tr('Penalty Action') }}" wire:model.live="newAbsencePolicy.penalty_action" required :disabled="!auth()->user()->can('settings.attendance.manage')">
+                    <x-ui.select label="{{ tr('Penalty Action') }}" wire:model.live="newAbsencePolicy.penalty_action" required :disabled="!$canManageAttendance">
                         <option value="notification">{{ tr('Notice/Notification') }}</option>
                         <option value="warning_verbal">{{ tr('Verbal Warning') }}</option>
                         <option value="warning_written">{{ tr('Written Warning') }}</option>
@@ -67,11 +67,11 @@
                     @if(($newAbsencePolicy['penalty_action'] ?? '') === 'deduction')
                         <div class="space-y-4 p-4 bg-[rgb(239_68_68/0.10)] rounded-2xl border border-[rgb(239_68_68/0.20)] shadow-inner">
                             <label class="block text-xs font-black text-[color:var(--error)] uppercase tracking-widest">{{ tr('Deduction Details') }}</label>
-                            <x-ui.select label="{{ tr('Deduction Type') }}" wire:model.defer="newAbsencePolicy.deduction_type" required :disabled="!auth()->user()->can('settings.attendance.manage')">
+                            <x-ui.select label="{{ tr('Deduction Type') }}" wire:model.defer="newAbsencePolicy.deduction_type" required :disabled="!$canManageAttendance">
                                 <option value="fixed">{{ tr('Fixed Amount (SAR)') }}</option>
                                 <option value="percentage">{{ tr('Percentage of Salary (%)') }}</option>
                             </x-ui.select>
-                            <x-ui.input label="{{ tr('Deduction Value') }}" type="number" wire:model.defer="newAbsencePolicy.deduction_value" placeholder="0.00" required :disabled="!auth()->user()->can('settings.attendance.manage')" />
+                            <x-ui.input label="{{ tr('Deduction Value') }}" type="number" wire:model.defer="newAbsencePolicy.deduction_value" placeholder="0.00" required :disabled="!$canManageAttendance" />
                         </div>
                     @endif
 
@@ -88,11 +88,11 @@
     </x-slot:content>
     <x-slot:footer>
         <x-ui.secondary-button wire:click="$set('showAbsenceModal', false)">{{ tr('Cancel') }}</x-ui.secondary-button>
-        @can('settings.attendance.manage')
+        @if($canManageAttendance)
         <x-ui.brand-button wire:click="saveAbsencePolicy" class="!px-10 !rounded-xl shadow-[0_10px_20px_rgb(var(--accent-orange-rgb)/0.20)]">
             {{ $isEditingAbsence ? tr('Update Policy') : tr('Save Policy') }}
         </x-ui.brand-button>
-        @endcan
+        @endif
     </x-slot:footer>
 </x-ui.modal>
 

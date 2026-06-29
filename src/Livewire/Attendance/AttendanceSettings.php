@@ -15,6 +15,25 @@ use Athka\Employees\Support\EmployeeStatus;
 
 class AttendanceSettings extends Component
 {
+    private const VIEW_PERMISSIONS = [
+        'settings.attendance.view',
+        'settings.attendance.manage',
+    ];
+
+    private const MANAGE_PERMISSIONS = [
+        'settings.attendance.manage',
+    ];
+
+    protected function authorizeView(): void
+    {
+        abort_unless(auth()->user() && collect(self::VIEW_PERMISSIONS)->contains(fn ($permission) => auth()->user()->can($permission)), 403);
+    }
+
+    protected function authorizeManage(): void
+    {
+        abort_unless(auth()->user() && collect(self::MANAGE_PERMISSIONS)->contains(fn ($permission) => auth()->user()->can($permission)), 403);
+    }
+
     use WithPagination, HandlePenaltySettings, HandleGpsSettings, HandleGroupSettings;
 
     public $activeTab = 'policies';
@@ -115,7 +134,7 @@ class AttendanceSettings extends Component
 
     public function mount()
     {
-        $this->authorize('settings.attendance.view');
+        $this->authorizeView();
         $companyId = auth()->user()->saas_company_id;
 
         $this->defaultPolicy = $this->attendanceSettingService->getDefaultPolicy($companyId);
@@ -276,7 +295,7 @@ class AttendanceSettings extends Component
 
     public function setTrackingPolicy($value)
     {
-        $this->authorize('settings.attendance.manage');
+        $this->authorizeManage();
         $this->defaultPolicy->update(['tracking_mode' => $value]);
         $this->trackingPolicy = $value;
         $this->dispatch('toast', type: 'success', message: tr('Tracking mode updated.'));
@@ -284,7 +303,7 @@ class AttendanceSettings extends Component
 
     public function togglePrepMethod($method)
     {
-        $this->authorize('settings.attendance.manage');
+        $this->authorizeManage();
         $companyId = auth()->user()->saas_company_id;
         
         $m = \Athka\SystemSettings\Models\AttendanceMethod::where('saas_company_id', $companyId)
@@ -300,7 +319,7 @@ class AttendanceSettings extends Component
 
     public function saveGracePeriods()
     {
-        $this->authorize('settings.attendance.manage');
+        $this->authorizeManage();
         $this->graceSettings->update([
             'late_grace_minutes' => $this->gracePeriods['late_arrival'],
             'early_leave_grace_minutes' => $this->gracePeriods['early_departure'],
@@ -366,7 +385,7 @@ class AttendanceSettings extends Component
 
     public function saveDevice() 
     { 
-        $this->authorize('settings.attendance.manage');
+        $this->authorizeManage();
         
         $this->validate([
             'deviceForm.name' => 'required|min:3',
@@ -400,17 +419,20 @@ class AttendanceSettings extends Component
         $this->dispatch('toast', type: 'success', message: tr('Device registered successfully.'));
     }
     public function openDeviceModal($type) { 
+        $this->authorizeManage();
         $this->deviceForm = ['id' => null, 'name' => '', 'branch' => 'main', 'location_inside' => '', 'serial_number' => ''];
         if ($type === 'fingerprint') $this->showFingerprintModal = true;
         if ($type === 'nfc') $this->showNfcModal = true;
     }
     public function editGpsLocation($id) 
     { 
+        $this->authorizeManage();
         $this->isEditing = true;
         $this->openGpsModal($id);
     }
     public function editDevice($id) 
     { 
+        $this->authorizeManage();
         $companyId = auth()->user()->saas_company_id;
         $dev = \Athka\SystemSettings\Models\AttendanceDevice::where('saas_company_id', $companyId)->findOrFail($id);
         $this->deviceForm = [
@@ -432,7 +454,7 @@ class AttendanceSettings extends Component
 
     public function deleteDevice($id)
     {
-        $this->authorize('settings.attendance.manage');
+        $this->authorizeManage();
         $companyId = auth()->user()->saas_company_id;
         \Athka\SystemSettings\Models\AttendanceDevice::where('saas_company_id', $companyId)->where('id', $id)->delete();
         $this->refreshData();

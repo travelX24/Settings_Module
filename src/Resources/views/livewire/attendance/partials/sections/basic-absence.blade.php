@@ -13,7 +13,7 @@
             <input type="checkbox" 
                 wire:model.live="basicAbsencePenalty.enabled"
                 class="w-4 h-4 text-[color:var(--error)] rounded border-gray-300 focus:ring-[color:var(--error)]"
-                @cannot('settings.attendance.manage') disabled @endcannot
+                @if(!$canManageAttendance) disabled @endif
             >
             <span class="text-xs font-bold text-gray-700 group-hover:text-[color:var(--error)] transition-colors">{{ tr('Activate Penalties') }}</span>
         </label>
@@ -28,7 +28,7 @@
             wire:model="basicAbsencePenalty.threshold_minutes" 
             hint="{{ tr('Cannot be less than late/early grace periods.') }}"
             class="!py-3 !rounded-2xl"
-            :disabled="!auth()->user()->can('settings.attendance.manage')"
+            :disabled="!$canManageAttendance"
         />
 
         {{-- Penalty Action --}}
@@ -40,7 +40,7 @@
                 wire:model="basicAbsencePenalty.notification_message" 
                 placeholder="{{ tr('Enter message to show to employee...') }}"
                 class="!py-3 !rounded-2xl"
-                :disabled="!auth()->user()->can('settings.attendance.manage')"
+                :disabled="!$canManageAttendance"
             />
 
             {{-- Deduction --}}
@@ -52,7 +52,7 @@
                             label="{{ tr('Additional Deduction') }}"
                             wire:model="basicAbsencePenalty.deduction_type" 
                             model="basicAbsencePenalty.deduction_type"
-                            :disabled="!auth()->user()->can('settings.attendance.manage')"
+                            :disabled="!$canManageAttendance"
                         >
                             <option value="percentage" {{ $basicAbsencePenalty['deduction_type'] === 'percentage' ? 'selected' : '' }}>{{ tr('Percentage (%)') }}</option>
                             <option value="fixed" {{ $basicAbsencePenalty['deduction_type'] === 'fixed' ? 'selected' : '' }}>{{ tr('Fixed Amount') }}</option>
@@ -63,7 +63,7 @@
                             type="number" 
                             wire:model="basicAbsencePenalty.deduction_value" 
                             class="!py-3 !rounded-2xl"
-                            :disabled="!auth()->user()->can('settings.attendance.manage')"
+                            :disabled="!$canManageAttendance"
                         />
                     </div>
                 </div>
@@ -78,7 +78,7 @@
         </div>
     </div>
 
-    @can('settings.attendance.manage')
+    @if($canManageAttendance)
     <div class="flex justify-end pt-4 border-t border-gray-50">
         <x-ui.primary-button 
             wire:click="saveBasicAbsencePenalty"
@@ -97,6 +97,6 @@
             </span>
         </x-ui.primary-button>
     </div>
-    @endcan
+    @endif
     @endif
 </x-ui.card>

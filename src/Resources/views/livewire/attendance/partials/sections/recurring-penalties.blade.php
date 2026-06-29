@@ -4,12 +4,12 @@
             <span class="w-1 h-5 bg-[color:var(--accent-orange)] rounded-full"></span>
             {{ tr('Recurring Violations (2, 3, 4)') }}
         </h3>
-        @can('settings.attendance.manage')
+        @if($canManageAttendance)
         <x-ui.secondary-button wire:click="openPenaltyModal" class="!px-4 !py-2 !text-xs !rounded-xl shadow-sm cursor-pointer">
             <i class="fas fa-plus me-1 text-[color:var(--accent-orange)]"></i>
             {{ tr('Add Recurring Violation') }}
         </x-ui.secondary-button>
-        @endcan
+        @endif
     </div>
 
     @php

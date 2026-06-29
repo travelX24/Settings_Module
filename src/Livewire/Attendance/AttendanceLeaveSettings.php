@@ -19,6 +19,25 @@ use Athka\Attendance\Models\AttendanceLeaveRequest;
 
 class AttendanceLeaveSettings extends Component
 {
+    private const VIEW_PERMISSIONS = [
+        'settings.attendance.leaves.view',
+        'settings.attendance.leaves.manage',
+    ];
+
+    private const MANAGE_PERMISSIONS = [
+        'settings.attendance.leaves.manage',
+    ];
+
+    protected function authorizeView(): void
+    {
+        abort_unless(auth()->user() && collect(self::VIEW_PERMISSIONS)->contains(fn ($permission) => auth()->user()->can($permission)), 403);
+    }
+
+    protected function authorizeManage(): void
+    {
+        abort_unless(auth()->user() && collect(self::MANAGE_PERMISSIONS)->contains(fn ($permission) => auth()->user()->can($permission)), 403);
+    }
+
     use WithPagination, WithFileUploads, HandleLeavePolicies, HandlePermissionPolicies;
 
     protected function getCompanyId()
@@ -198,7 +217,7 @@ class AttendanceLeaveSettings extends Component
 
     public function mount()
     {
-        $this->authorize('settings.attendance.view');
+        $this->authorizeView();
 
         // Ensure tab is synced from request if not already via URL attribute
         $this->tab = request()->query('tab', $this->tab ?: 'leaves');
@@ -317,7 +336,7 @@ class AttendanceLeaveSettings extends Component
 
     public function openYears()
     {
-        $this->authorize('settings.attendance.manage');
+        $this->authorizeManage();
         $this->resetValidation();
         $this->reset(['newYear', 'copyFromYearId']);
         $this->yearsOpen = true;
@@ -332,7 +351,7 @@ class AttendanceLeaveSettings extends Component
 
     public function saveYear()
     {
-        $this->authorize('settings.attendance.manage');
+        $this->authorizeManage();
 
         $rules = [
             'newYear' => 'required|integer',
@@ -398,7 +417,7 @@ class AttendanceLeaveSettings extends Component
 
     public function deleteYear($id)
     {
-        $this->authorize('settings.attendance.manage');
+        $this->authorizeManage();
 
         // 1. Check for Leave Policies linked to this year
         if (LeavePolicy::where('policy_year_id', $id)->exists()) {
@@ -430,7 +449,7 @@ class AttendanceLeaveSettings extends Component
 
     public function setYearActive($id)
     {
-        $this->authorize('settings.attendance.manage');
+        $this->authorizeManage();
         $companyId = auth()->user()->saas_company_id;
         LeavePolicyYear::where('company_id', $companyId)->update(['is_active' => false]);
         LeavePolicyYear::where('id', $id)->update(['is_active' => true]);
@@ -441,7 +460,7 @@ class AttendanceLeaveSettings extends Component
 
     public function openCompare()
     {
-        $this->authorize('settings.attendance.manage');
+        $this->authorizeManage();
         $this->resetValidation();
         $this->reset(['compareYearAId', 'compareYearBId', 'compareExpanded']);
         $this->compareOpen = true;
@@ -461,6 +480,7 @@ class AttendanceLeaveSettings extends Component
 
     public function exportPolicies(ExcelExportService $exporter)
     {
+        $this->authorizeView();
         $companyId = auth()->user()->saas_company_id;
         $filters = [
             'search' => $this->search,

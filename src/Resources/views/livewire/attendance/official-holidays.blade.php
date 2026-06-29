@@ -1,6 +1,7 @@
 @php
     $locale = app()->getLocale();
     $isRtl = in_array(substr($locale, 0, 2), ['ar', 'fa', 'ur', 'he']);
+    $canManageAttendance = auth()->user()?->canAny(['settings.attendance.holidays.manage']) ?? false;
 @endphp
 
 @section('topbar-left-content')
@@ -65,13 +66,13 @@
                         <span class="ms-2 leading-none">{{ tr('Export') }}</span>
                     </x-ui.secondary-button>
 
-                    @can('settings.attendance.manage')
+                    @if($canManageAttendance)
                         <x-ui.primary-button :arrow="false" :fullWidth="false" wire:click="openCreate"
                             class="cursor-pointer">
                             <i class="fas fa-plus"></i>
                             <span class="ms-2">{{ tr('New Holiday') }}</span>
                         </x-ui.primary-button>
-                    @endcan
+                    @endif
                 </div>
             </div>
 
@@ -171,7 +172,7 @@
                                     @if ($row->end_date && $row->start_date && $row->end_date->format('Y-m-d') !== $row->start_date->format('Y-m-d'))
                                         @php
                                             $endHijri = app(\Athka\SystemSettings\Services\HolidayService::class)->hijriFromGregorian($row->end_date->format('Y-m-d'));
-                                        @endphp
+@endphp
                                         @if ($endHijri)
                                             <span class="mx-1 text-gray-300">→</span>
                                             {{ $endHijri }}
@@ -195,7 +196,7 @@
                             </td>
     
                             <td class="px-6 py-4 text-end whitespace-nowrap">
-                                @can('settings.attendance.manage')
+                                @if($canManageAttendance)
                                     <x-ui.actions-menu>
                                         <x-ui.dropdown-item wire:click.stop="openEdit({{ (int) $row->id }})"
                                             @click="$dispatch('close-actions-menu')"
@@ -209,7 +210,7 @@
                                             <i class="fas fa-trash-alt me-2 text-[color:var(--error)]"></i> {{ tr('Delete') }}
                                         </x-ui.dropdown-item>
                                     </x-ui.actions-menu>
-                                @endcan
+                                @endif
                             </td>
                         </tr>
                 @empty
@@ -262,7 +263,7 @@
             <div class="grid grid-cols-1 md:grid-cols-2 gap-4 py-4">
                 <div class="md:col-span-2">
                     <x-ui.input label="{{ tr('Name') }}" wire:model.defer="newName"
-                        placeholder="{{ tr('Holiday name...') }}" required :disabled="!auth()->user()->can('settings.attendance.manage')" />
+                        placeholder="{{ tr('Holiday name...') }}" required :disabled="!$canManageAttendance" />
                 </div>
 
                 <div>
@@ -275,7 +276,7 @@
 
                 <div>
                     <x-ui.input type="number" min="1" label="{{ tr('Duration (days)') }}"
-                        wire:model.defer="newDurationDays" required :disabled="!auth()->user()->can('settings.attendance.manage')" />
+                        wire:model.defer="newDurationDays" required :disabled="!$canManageAttendance" />
                 </div>
 
                 {{-- Repeat Type --}}
@@ -333,13 +334,13 @@
                 <x-ui.secondary-button wire:click="closeCreate" class="!px-6 !rounded-xl cursor-pointer">
                     {{ tr('Cancel') }}
                 </x-ui.secondary-button>
-                @can('settings.attendance.manage')
+                @if($canManageAttendance)
                     <x-ui.primary-button wire:click="saveNewHoliday" loading="saveNewHoliday"
                         class="!px-6 !rounded-xl shadow-lg cursor-pointer" :arrow="false">
                         <i class="fas fa-save me-2"></i>
                         {{ tr('Save') }}
                     </x-ui.primary-button>
-                @endcan
+                @endif
             </div>
         </x-slot:footer>
     </x-ui.modal>
@@ -367,7 +368,7 @@
             <div class="grid grid-cols-1 md:grid-cols-2 gap-4 py-4">
                 <div class="md:col-span-2">
                     <x-ui.input label="{{ tr('Name') }}" wire:model.defer="editName" required
-                        :disabled="!auth()->user()->can('settings.attendance.manage')" />
+                        :disabled="!$canManageAttendance" />
                 </div>
 
                 <div>
@@ -381,7 +382,7 @@
 
                 <div>
                     <x-ui.input type="number" min="1" label="{{ tr('Duration (days)') }}"
-                        wire:model.defer="editDurationDays" required :disabled="!auth()->user()->can('settings.attendance.manage')" />
+                        wire:model.defer="editDurationDays" required :disabled="!$canManageAttendance" />
                 </div>
 
                 <div>
@@ -406,13 +407,13 @@
                 <x-ui.secondary-button wire:click="closeEdit" class="!px-6 !rounded-xl cursor-pointer">
                     {{ tr('Cancel') }}
                 </x-ui.secondary-button>
-                @can('settings.attendance.manage')
+                @if($canManageAttendance)
                     <x-ui.primary-button wire:click="saveEditHoliday" loading="saveEditHoliday"
                         class="!px-6 !rounded-xl shadow-lg cursor-pointer" :arrow="false">
                         <i class="fas fa-save me-2"></i>
                         {{ tr('Update') }}
                     </x-ui.primary-button>
-                @endcan
+                @endif
             </div>
         </x-slot:footer>
     </x-ui.modal>

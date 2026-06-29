@@ -14,6 +14,25 @@ use Athka\Employees\Support\EmployeeStatus;
 
 class ExceptionalDaysIndex extends Component
 {
+    private const VIEW_PERMISSIONS = [
+        'settings.attendance.exceptional.view',
+        'settings.attendance.exceptional.manage',
+    ];
+
+    private const MANAGE_PERMISSIONS = [
+        'settings.attendance.exceptional.manage',
+    ];
+
+    protected function authorizeView(): void
+    {
+        abort_unless(auth()->user() && collect(self::VIEW_PERMISSIONS)->contains(fn ($permission) => auth()->user()->can($permission)), 403);
+    }
+
+    protected function authorizeManage(): void
+    {
+        abort_unless(auth()->user() && collect(self::MANAGE_PERMISSIONS)->contains(fn ($permission) => auth()->user()->can($permission)), 403);
+    }
+
     use WithPagination;
 
     public int $year;
@@ -91,7 +110,7 @@ class ExceptionalDaysIndex extends Component
 
     public function mount(): void
     {
-        $this->authorize('settings.attendance.view');
+        $this->authorizeView();
 
         $type = $this->getCompanyCalendarType();
         if ($type === 'hijri') {
@@ -662,7 +681,7 @@ class ExceptionalDaysIndex extends Component
 
     public function openCreate(): void
     {
-        $this->authorize('settings.attendance.manage');
+        $this->authorizeManage();
         $this->resetValidation();
         $this->editingId = null;
 
@@ -698,7 +717,7 @@ class ExceptionalDaysIndex extends Component
 
     public function openEdit(int $id): void
     {
-        $this->authorize('settings.attendance.manage');
+        $this->authorizeManage();
         $this->resetValidation();
         $this->editingId = $id;
 
@@ -789,7 +808,7 @@ class ExceptionalDaysIndex extends Component
 
     public function save(): void
     {
-        $this->authorize('settings.attendance.manage');
+        $this->authorizeManage();
         $this->validate();
 
         if (($this->form['period_type'] ?? 'single') === 'single') {
@@ -867,7 +886,7 @@ class ExceptionalDaysIndex extends Component
 
     public function toggleActive(int $id): void
     {
-        $this->authorize('settings.attendance.manage');
+        $this->authorizeManage();
         $row = AttendanceExceptionalDay::query()
             ->where('company_id', $this->companyId())
             ->findOrFail($id);
@@ -878,7 +897,7 @@ class ExceptionalDaysIndex extends Component
 
     public function deleteRow(int $id): void
     {
-        $this->authorize('settings.attendance.manage');
+        $this->authorizeManage();
         AttendanceExceptionalDay::query()
             ->where('company_id', $this->companyId())
             ->where('id', $id)
@@ -908,7 +927,7 @@ class ExceptionalDaysIndex extends Component
 
     public function deleteSelected(): void
     {
-        $this->authorize('settings.attendance.manage');
+        $this->authorizeManage();
         if (empty($this->selected))
             return;
 
@@ -925,7 +944,7 @@ class ExceptionalDaysIndex extends Component
 
     public function setSelectedActive(bool $active): void
     {
-        $this->authorize('settings.attendance.manage');
+        $this->authorizeManage();
         if (empty($this->selected))
             return;
 
@@ -959,7 +978,7 @@ class ExceptionalDaysIndex extends Component
 
     public function openCompareModal(): void
     {
-        $this->authorize('settings.attendance.view');
+        $this->authorizeView();
         $this->resetValidation();
 
         $this->compareToYear = (int) $this->year;
@@ -1139,6 +1158,7 @@ class ExceptionalDaysIndex extends Component
     }
     public function exportCsv(ExcelExportService $exporter)
     {
+        $this->authorizeView();
         $companyId = $this->companyId();
         $rows = $this->exceptionalDayService->getRowsQuery($companyId, $this->getFilters())->get();
 

@@ -69,6 +69,7 @@
                     @endforeach
                 </div>
                 
+                @can('settings.approval.manage')
                 {{-- Add Button --}}
                 <div class="px-4 w-full sm:w-auto flex justify-end sm:border-s border-gray-200 py-0 sm:py-2">
                     <button
@@ -83,6 +84,7 @@
                         </span>
                     </button>
                 </div>
+                @endcan
             </div>
         </div>
 
@@ -252,6 +254,7 @@
                                         <span class="px-2 py-1 text-xs font-semibold rounded-full {{ $p->is_active ? 'bg-[color:var(--success)]/10 text-[color:var(--success)]' : 'bg-gray-100 text-gray-800' }}">
                                             {{ $p->is_active ? tr('Active') : tr('Inactive') }}
                                         </span>
+                                        @can('settings.approval.manage')
                                         <x-ui.actions-menu>
                                             <x-ui.dropdown-item wire:click="openEdit({{ $p->id }})" @click="$dispatch('close-actions-menu')">
                                                 <i class="fas fa-edit me-2"></i><span>{{ tr('Edit') }}</span>
@@ -260,6 +263,7 @@
                                                 <i class="fas fa-trash me-2"></i><span>{{ tr('Delete') }}</span>
                                             </x-ui.dropdown-item>
                                         </x-ui.actions-menu>
+                                        @endcan
                                     </div>
                                 </div>
 
@@ -480,6 +484,7 @@
                                 </td>
 
                                 <td class="py-4 px-6 align-top whitespace-nowrap text-sm font-medium">
+                                    @can('settings.approval.manage')
                                     <x-ui.actions-menu>
                                         <x-ui.dropdown-item
                                             class="cursor-pointer"
@@ -500,6 +505,7 @@
                                             <span>{{ tr('Delete') }}</span>
                                         </x-ui.dropdown-item>
                                     </x-ui.actions-menu>
+                                    @endcan
                                 </td>
                             </tr>
                         @empty
@@ -702,6 +708,7 @@
                                             </div>
                                         @endif
 
+                                        @can('settings.approval.manage')
                                         <div class="flex items-center gap-2">
                                             <div class="flex flex-col items-center bg-gray-50 border border-gray-200 rounded-lg overflow-hidden shrink-0">
                                                 <button
@@ -726,6 +733,7 @@
                                                 title="{{ tr('Remove') }}"
                                             ><i class="fas fa-trash-alt text-sm"></i></button>
                                         </div>
+                                        @endcan
                                     </div>
                                 </div>
 

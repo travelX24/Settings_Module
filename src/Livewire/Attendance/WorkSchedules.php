@@ -11,6 +11,25 @@ use Illuminate\Support\Facades\DB;
 
 class WorkSchedules extends Component
 {
+    private const VIEW_PERMISSIONS = [
+        'settings.attendance.schedules.view',
+        'settings.attendance.schedules.manage',
+    ];
+
+    private const MANAGE_PERMISSIONS = [
+        'settings.attendance.schedules.manage',
+    ];
+
+    protected function authorizeView(): void
+    {
+        abort_unless(auth()->user() && collect(self::VIEW_PERMISSIONS)->contains(fn ($permission) => auth()->user()->can($permission)), 403);
+    }
+
+    protected function authorizeManage(): void
+    {
+        abort_unless(auth()->user() && collect(self::MANAGE_PERMISSIONS)->contains(fn ($permission) => auth()->user()->can($permission)), 403);
+    }
+
     use WithPagination;
 
     public $activeTab = 'schedules';
@@ -44,12 +63,13 @@ class WorkSchedules extends Component
 
     public function mount()
     {
-        $this->authorize('settings.attendance.view');
-        $this->addPeriod();
+        $this->authorizeView();
+        $this->scheduleData['periods'][] = ['start_time' => '08:00', 'end_time' => '17:00', 'is_night_shift' => false];
     }
 
     public function addPeriod()
     {
+        $this->authorizeManage();
         if (count($this->scheduleData['periods']) < 4) {
             $this->scheduleData['periods'][] = ['start_time' => '08:00', 'end_time' => '17:00', 'is_night_shift' => false];
         }
@@ -57,23 +77,27 @@ class WorkSchedules extends Component
 
     public function removePeriod($index)
     {
+        $this->authorizeManage();
         unset($this->scheduleData['periods'][$index]);
         $this->scheduleData['periods'] = array_values($this->scheduleData['periods']);
     }
 
     public function addException()
     {
+        $this->authorizeManage();
         $this->scheduleData['exceptions'][] = ['day_of_week' => 'friday', 'start_time' => '08:00', 'end_time' => '12:00', 'is_night_shift' => false, 'is_active' => true];
     }
 
     public function removeException($index)
     {
+        $this->authorizeManage();
         unset($this->scheduleData['exceptions'][$index]);
         $this->scheduleData['exceptions'] = array_values($this->scheduleData['exceptions']);
     }
 
     public function openScheduleModal($id = null)
     {
+        $this->authorizeManage();
         $this->resetValidation();
         if ($id) {
             $this->isEditing = true;
@@ -125,7 +149,7 @@ class WorkSchedules extends Component
 
     public function save()
     {
-        $this->authorize('settings.attendance.manage');
+        $this->authorizeManage();
 
         foreach ($this->scheduleData['periods'] as $period) {
             $start = $period['start_time'] ?? null;
@@ -171,7 +195,7 @@ class WorkSchedules extends Component
     }
     public function exportSchedules(ExcelExportService $exporter)
     {
-        $this->authorize('settings.attendance.view');
+        $this->authorizeView();
         $companyId = auth()->user()->saas_company_id;
 
         $filename = "work_schedules_" . now()->format('Y_m_d_His');
@@ -200,13 +224,13 @@ class WorkSchedules extends Component
 
     public function confirmDelete($id)
     {
-        $this->authorize('settings.attendance.manage');
+        $this->authorizeManage();
         $this->dispatch('open-confirm-schedule-delete', id: $id);
     }
 
     public function deleteSchedule($id)
     {
-        $this->authorize('settings.attendance.manage');
+        $this->authorizeManage();
         $companyId = auth()->user()->saas_company_id;
 
         $schedule = WorkSchedule::where('saas_company_id', $companyId)->find($id);
@@ -235,7 +259,7 @@ class WorkSchedules extends Component
 
     public function toggleStatus($id)
     {
-        $this->authorize('settings.attendance.manage');
+        $this->authorizeManage();
         $companyId = auth()->user()->saas_company_id;
         $s = WorkSchedule::where('saas_company_id', $companyId)->find($id);
         if ($s) {
@@ -246,7 +270,7 @@ class WorkSchedules extends Component
 
     public function copySchedule($id)
     {
-        $this->authorize('settings.attendance.manage');
+        $this->authorizeManage();
         $companyId = auth()->user()->saas_company_id;
 
         $schedule = WorkSchedule::where('saas_company_id', $companyId)

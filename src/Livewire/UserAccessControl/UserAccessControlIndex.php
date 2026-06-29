@@ -17,13 +17,29 @@ class UserAccessControlIndex extends Component
 
     public function mount()
     {
-        if (!auth()->user()->can('uac.users.view') && !auth()->user()->can('uac.roles.view')) {
+        if (! auth()->user()->can('uac.users.view') && ! auth()->user()->can('uac.roles.view')) {
             abort(403);
+        }
+
+        if ($this->activeTab === 'users' && ! auth()->user()->can('uac.users.view')) {
+            $this->activeTab = 'roles';
+        }
+
+        if ($this->activeTab === 'roles' && ! auth()->user()->can('uac.roles.view')) {
+            $this->activeTab = 'users';
         }
     }
 
     public function setActiveTab($tab)
     {
+        if ($tab === 'users' && ! auth()->user()->can('uac.users.view')) {
+            abort(403);
+        }
+
+        if ($tab === 'roles' && ! auth()->user()->can('uac.roles.view')) {
+            abort(403);
+        }
+
         $this->activeTab = $tab;
     }
 
@@ -33,8 +49,3 @@ class UserAccessControlIndex extends Component
             ->layout('layouts.company-admin');
     }
 }
-
-
-
-
-

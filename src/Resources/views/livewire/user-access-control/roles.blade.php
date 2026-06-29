@@ -254,7 +254,7 @@
     </div>
 
     {{-- Role Modal --}}
-    <x-ui.modal wire:model="showModal" maxWidth="4xl">
+    <x-ui.modal wire:model="showModal" maxWidth="6xl">
         <x-slot name="title">
             <div class="flex items-center gap-3">
                 <div class="w-10 h-10 rounded-xl flex items-center justify-center bg-[rgb(var(--accent-orange-rgb)/0.08)]">
@@ -271,7 +271,7 @@
             </div>
         </x-slot>
         <x-slot name="content">
-            <div class="space-y-4" x-data="{ permSearch: '', activeGroup: null }">
+            <div class="space-y-4" x-data="{ permSearch: '' }">
                 @if($errors->any())
                     <div class="bg-[rgb(239_68_68/0.10)] border-s-4 border-[color:var(--error)] p-3 rounded-lg">
                         <ul class="list-disc list-inside text-xs text-[color:var(--error)]">
@@ -293,12 +293,12 @@
                 </div>
 
                 <div class="space-y-4">
-                    <div class="flex items-center justify-between border-b border-gray-100 pb-3">
+                    <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 border-b border-gray-100 pb-3">
                         <h4 class="text-sm font-extrabold text-gray-900 flex items-center gap-2">
                              <i class="fas fa-shield-alt text-[color:var(--accent-orange)]"></i>
                              {{ tr('Role Permissions') }}
                         </h4>
-                        <div class="relative w-64">
+                        <div class="relative w-full sm:w-72">
                             <input 
                                 type="text" 
                                 x-model="permSearch" 
@@ -311,21 +311,28 @@
                         </div>
                     </div>
 
-                <div class="flex flex-col md:flex-row gap-4 min-h-[380px]" x-data="{ activeTab: 'core' }">
+                <div class="flex flex-col xl:flex-row gap-4 min-h-[420px] overflow-hidden" x-data="{ activeTab: 'core', activeGroup: 'Dashboard', firstGroups: @js(collect($permissionTabs)->mapWithKeys(fn($tab, $key) => [$key => array_key_first($tab['groups'])])->all()) }">
                     {{-- Tabs Navigation --}}
-                    <div class="w-full md:w-56 flex flex-row md:flex-col gap-2 overflow-x-auto md:overflow-y-auto custom-scrollbar border-b md:border-b-0 md:border-e border-gray-100 pb-3 md:pb-0 md:pe-3 min-w-0">
+                    <div class="w-full xl:w-64 flex flex-row xl:flex-col gap-2 overflow-x-auto xl:overflow-y-auto custom-scrollbar border-b xl:border-b-0 xl:border-e border-gray-100 pb-3 xl:pb-0 xl:pe-3 min-w-0 shrink-0">
                         @foreach($permissionTabs as $tabKey => $tab)
+                            @php
+                                $tabPermissionKeys = collect($tab['groups'])->flatMap(fn($g) => array_keys($g))->toArray();
+                                $tabSelectedCount = count(array_intersect($tabPermissionKeys, $selectedPermissions));
+                            @endphp
                             <button 
                                 type="button"
-                                @click="activeTab = '{{ $tabKey }}'"
+                                @click="activeTab = '{{ $tabKey }}'; activeGroup = firstGroups['{{ $tabKey }}']"
                                 :class="activeTab === '{{ $tabKey }}' ? 'bg-[color:var(--accent-orange)] text-white shadow-md scale-[1.02]' : 'bg-white text-gray-500 hover:bg-gray-50 border border-gray-100'"
-                                class="flex items-center gap-2 px-3 py-2.5 rounded-xl transition-all duration-200 text-sm font-bold whitespace-nowrap group shrink-0"
+                                class="flex items-center gap-2 px-3 py-2.5 rounded-xl transition-all duration-200 text-sm font-bold whitespace-nowrap group min-w-[13rem] xl:min-w-0 xl:w-full"
                             >
                                 <div class="w-8 h-8 rounded-lg flex items-center justify-center transition-colors" :class="activeTab === '{{ $tabKey }}' ? 'bg-white/20' : 'bg-gray-50 text-gray-400 group-hover:text-[color:var(--accent-orange)]'">
                                     <i class="fas {{ $tab['icon'] }} text-xs"></i>
                                 </div>
-                                <span class="hidden md:inline">{{ $tab['label'] }}</span>
-                                <div class="ms-auto flex items-center" x-show="activeTab === '{{ $tabKey }}'">
+                                <span class="inline truncate">{{ $tab['label'] }}</span>
+                                <span class="ms-auto text-[10px] px-2 py-0.5 rounded-full border" :class="activeTab === '{{ $tabKey }}' ? 'bg-white/20 border-white/20 text-white' : 'bg-gray-50 border-gray-100 text-gray-400'">
+                                    {{ $tabSelectedCount }}/{{ count($tabPermissionKeys) }}
+                                </span>
+                                <div class="flex items-center" x-show="activeTab === '{{ $tabKey }}'">
                                     <i class="fas fa-chevron-left text-[10px] opacity-50 ltr:rotate-180"></i>
                                 </div>
                             </button>
@@ -333,7 +340,7 @@
                     </div>
 
                     {{-- Tabs Content --}}
-                    <div class="flex-1 min-w-0">
+                    <div class="flex-1 min-w-0 overflow-hidden">
                         @foreach($permissionTabs as $tabKey => $tab)
                             <div x-show="activeTab === '{{ $tabKey }}'" x-cloak class="space-y-6 animate-in fade-in slide-in-from-right-2 duration-300">
                                 <div class="flex items-center justify-between">
@@ -355,7 +362,7 @@
                                     </button>
                                 </div>
 
-                                <div class="grid grid-cols-1 lg:grid-cols-2 gap-3 max-h-[360px] overflow-y-auto custom-scrollbar pe-2">
+                                <div class="grid grid-cols-1 2xl:grid-cols-2 gap-3 max-h-[430px] overflow-y-auto overflow-x-hidden custom-scrollbar pe-2">
                                     @foreach($tab['groups'] as $groupName => $permissions)
                                         <div class="bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden flex flex-col group/card hover:border-[rgb(var(--accent-orange-rgb)/0.28)] transition-colors self-start">
                                             <div 
@@ -374,7 +381,12 @@
                                                         {{ $allSelectedInGroup ? 'checked' : '' }}
                                                         @cannot('uac.roles.manage') disabled @endcannot
                                                     />
-                                                    <span class="text-xs font-extrabold text-gray-800 group-hover:text-[color:var(--accent-orange)] transition-colors">{{ tr($groupName) }}</span>
+                                                    <div class="min-w-0">
+                                                        <span class="block text-xs font-extrabold text-gray-800 group-hover:text-[color:var(--accent-orange)] transition-colors truncate">{{ tr($groupName) }}</span>
+                                                        <span class="block text-[10px] text-gray-400 font-bold mt-0.5">
+                                                            {{ count(array_intersect($groupKeys, $selectedPermissions)) }}/{{ count($groupKeys) }} {{ tr('Permissions') }}
+                                                        </span>
+                                                    </div>
                                                 </div>
                                                 <i class="fas fa-chevron-down text-[10px] text-gray-400 transition-transform duration-300" :class="activeGroup === '{{ $groupName }}' ? 'rotate-180 text-[color:var(--accent-orange)]' : ''"></i>
                                             </div>
@@ -396,8 +408,8 @@
                                                             @cannot('uac.roles.manage') disabled @endcannot
                                                         >
                                                         <div class="flex flex-col min-w-0">
-                                                            <span class="text-xs font-bold text-slate-700 group-hover/item:text-[color:var(--accent-orange)] transition-colors break-words leading-tight">{{ tr($permLabel) }}</span>
-                                                            <span class="text-[9px] text-slate-400 font-mono tracking-tighter truncate mt-0.5">{{ $permKey }}</span>
+                                                                <span class="text-xs font-bold text-slate-700 group-hover/item:text-[color:var(--accent-orange)] transition-colors break-words leading-tight">{{ tr($permLabel) }}</span>
+                                                                <span class="text-[9px] text-slate-400 font-mono tracking-tighter truncate mt-0.5">{{ $permKey }}</span>
                                                         </div>
                                                     </label>
                                                 @endforeach

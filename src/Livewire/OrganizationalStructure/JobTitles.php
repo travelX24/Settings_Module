@@ -61,7 +61,8 @@ class JobTitles extends Component
 
     public function openEditModal($id)
     {
-        $jt = JobTitle::findOrFail($id);
+        $this->authorize('settings.organizational.manage');
+        $jt = JobTitle::forCompany($this->getCompanyId())->findOrFail($id);
         $this->editingId = $id;
         $this->name = $jt->name;
         $this->code = $jt->code;
@@ -79,6 +80,7 @@ class JobTitles extends Component
 
     public function export(ExcelExportService $exporter)
     {
+        $this->authorize('settings.organizational.view');
         $companyId = $this->getCompanyId();
         $jobTitles = JobTitle::forCompany($companyId)->get();
         

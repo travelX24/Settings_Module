@@ -10,7 +10,7 @@ trait HandleGroupSettings
 {
     public function openGroupModal($id = null)
     {
-        $this->authorize('settings.attendance.manage');
+        $this->authorizeManage();
         $this->resetValidation();
         
         $companyId = auth()->user()->saas_company_id;
@@ -60,12 +60,13 @@ trait HandleGroupSettings
 
     public function editGroup($id)
     {
+        $this->authorizeManage();
         $this->openGroupModal($id);
     }
 
     public function saveGroup()
     {
-        $this->authorize('settings.attendance.manage');
+        $this->authorizeManage();
         
         $rules = [
             'newGroup.name' => 'required|min:3',
@@ -141,7 +142,7 @@ trait HandleGroupSettings
 
     public function deleteGroup($id)
     {
-        $this->authorize('settings.attendance.manage');
+        $this->authorizeManage();
         $companyId = auth()->user()->saas_company_id;
         EmployeeGroup::where('saas_company_id', $companyId)->where('id', $id)->delete();
         $this->refreshData();

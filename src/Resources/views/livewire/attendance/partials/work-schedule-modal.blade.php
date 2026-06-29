@@ -75,7 +75,7 @@
                             placeholder="{{ tr('e.g. Morning Shift') }}"
                             class="!py-2 !text-xs"
                             required
-                            :disabled="!auth()->user()->can('settings.attendance.manage')"
+                            :disabled="!$canManageAttendance"
                         />
                     </div>
                     <div class="col-span-1">
@@ -84,7 +84,7 @@
                             wire:model.defer="scheduleData.description"
                             placeholder="{{ tr('Optional...') }}"
                             class="!py-2 !text-xs"
-                            :disabled="!auth()->user()->can('settings.attendance.manage')"
+                            :disabled="!$canManageAttendance"
                         />
                     </div>
                 </div>
@@ -96,7 +96,7 @@
                             label="{{ tr('Week Start') }}"
                             wire:model="scheduleData.week_start_day"
                             class="!bg-white shadow-sm !py-1.5 !text-xs"
-                            :disabled="!auth()->user()->can('settings.attendance.manage')"
+                            :disabled="!$canManageAttendance"
                         >
                             @foreach($daysOfWeek as $val => $lbl)
                                 <option value="{{ $val }}">{{ $lbl }}</option>
@@ -107,7 +107,7 @@
                             label="{{ tr('Week End') }}"
                             wire:model="scheduleData.week_end_day"
                             class="!bg-white shadow-sm !py-1.5 !text-xs"
-                            :disabled="!auth()->user()->can('settings.attendance.manage')"
+                            :disabled="!$canManageAttendance"
                         >
                             @foreach($daysOfWeek as $val => $lbl)
                                 <option value="{{ $val }}">{{ $lbl }}</option>
@@ -386,7 +386,7 @@
             {{ tr('Discard') }}
         </x-ui.secondary-button>
 
-        @can('settings.attendance.manage')
+        @if($canManageAttendance)
         <x-ui.primary-button 
             wire:click="save" 
             loading="save"
@@ -396,6 +396,6 @@
         >
             <i class="fas fa-save me-2"></i> {{ tr('Save Schedule') }}
         </x-ui.primary-button>
-        @endcan
+        @endif
     </x-slot:footer>
 </x-ui.modal>

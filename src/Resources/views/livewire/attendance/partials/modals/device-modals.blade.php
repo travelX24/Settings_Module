@@ -8,10 +8,10 @@
     </x-slot:title>
     <x-slot:content>
         <div class="space-y-5 py-2">
-            <x-ui.input label="{{ tr('Device Name') }}" wire:model.defer="deviceForm.name" placeholder="{{ tr('e.g. Front Office ZK') }}" required :disabled="!auth()->user()->can('settings.attendance.manage')" />
+            <x-ui.input label="{{ tr('Device Name') }}" wire:model.defer="deviceForm.name" placeholder="{{ tr('e.g. Front Office ZK') }}" required :disabled="!$canManageAttendance" />
             @error('deviceForm.name') <span class="text-[10px] text-[color:var(--error)] font-bold px-1">{{ tr($message) }}</span> @enderror
 
-            <x-ui.select label="{{ tr('Device Location (Branch)') }}" wire:model.defer="deviceForm.branch" required :disabled="!auth()->user()->can('settings.attendance.manage')">
+            <x-ui.select label="{{ tr('Device Location (Branch)') }}" wire:model.defer="deviceForm.branch" required :disabled="!$canManageAttendance">
                 <option value="main">{{ tr('Main Branch HQ') }}</option>
                 @foreach($branches as $branch)
                     @if(isset($branch['id']))
@@ -21,16 +21,16 @@
             </x-ui.select>
             @error('deviceForm.branch') <span class="text-[10px] text-[color:var(--error)] font-bold px-1">{{ tr($message) }}</span> @enderror
 
-            <x-ui.input label="{{ tr('Location Inside Branch') }}" wire:model.defer="deviceForm.location_inside" placeholder="{{ tr('e.g. 1st Floor Reception') }}" required :disabled="!auth()->user()->can('settings.attendance.manage')" />
+            <x-ui.input label="{{ tr('Location Inside Branch') }}" wire:model.defer="deviceForm.location_inside" placeholder="{{ tr('e.g. 1st Floor Reception') }}" required :disabled="!$canManageAttendance" />
             @error('deviceForm.location_inside') <span class="text-[10px] text-[color:var(--error)] font-bold px-1">{{ tr($message) }}</span> @enderror
 
-            <x-ui.input label="{{ tr('Serial Number (SN)') }}" wire:model.defer="deviceForm.serial_number" placeholder="{{ tr('SN-XXXX-XXXX') }}" :disabled="!auth()->user()->can('settings.attendance.manage')" />
+            <x-ui.input label="{{ tr('Serial Number (SN)') }}" wire:model.defer="deviceForm.serial_number" placeholder="{{ tr('SN-XXXX-XXXX') }}" :disabled="!$canManageAttendance" />
             @error('deviceForm.serial_number') <span class="text-[10px] text-[color:var(--error)] font-bold px-1">{{ tr($message) }}</span> @enderror
         </div>
     </x-slot:content>
     <x-slot:footer>
         <x-ui.secondary-button wire:click="$set('showFingerprintModal', false)">{{ tr('Cancel') }}</x-ui.secondary-button>
-        @can('settings.attendance.manage')
+        @if($canManageAttendance)
         <x-ui.brand-button 
             wire:click="saveDevice" 
             wire:loading.attr="disabled"
@@ -44,7 +44,7 @@
                 {{ tr('Saving...') }}
             </span>
         </x-ui.brand-button>
-        @endcan
+        @endif
     </x-slot:footer>
 </x-ui.modal>
 
@@ -58,10 +58,10 @@
     </x-slot:title>
     <x-slot:content>
         <div class="space-y-5 py-2">
-            <x-ui.input label="{{ tr('Device/Card Name') }}" wire:model.defer="deviceForm.name" placeholder="{{ tr('e.g. Security Chip A1') }}" required :disabled="!auth()->user()->can('settings.attendance.manage')" />
+            <x-ui.input label="{{ tr('Device/Card Name') }}" wire:model.defer="deviceForm.name" placeholder="{{ tr('e.g. Security Chip A1') }}" required :disabled="!$canManageAttendance" />
             @error('deviceForm.name') <span class="text-[10px] text-[color:var(--error)] font-bold px-1">{{ tr($message) }}</span> @enderror
 
-            <x-ui.select label="{{ tr('Location (Branch)') }}" wire:model.defer="deviceForm.branch" required :disabled="!auth()->user()->can('settings.attendance.manage')">
+            <x-ui.select label="{{ tr('Location (Branch)') }}" wire:model.defer="deviceForm.branch" required :disabled="!$canManageAttendance">
                 <option value="main">{{ tr('Main Branch HQ') }}</option>
                 @foreach($branches as $branch)
                     @if(isset($branch['id']))
@@ -71,16 +71,16 @@
             </x-ui.select>
             @error('deviceForm.branch') <span class="text-[10px] text-[color:var(--error)] font-bold px-1">{{ tr($message) }}</span> @enderror
 
-            <x-ui.input label="{{ tr('Installation Point') }}" wire:model.defer="deviceForm.location_inside" placeholder="{{ tr('e.g. Warehouse Entrance') }}" required :disabled="!auth()->user()->can('settings.attendance.manage')" />
+            <x-ui.input label="{{ tr('Installation Point') }}" wire:model.defer="deviceForm.location_inside" placeholder="{{ tr('e.g. Warehouse Entrance') }}" required :disabled="!$canManageAttendance" />
             @error('deviceForm.location_inside') <span class="text-[10px] text-[color:var(--error)] font-bold px-1">{{ tr($message) }}</span> @enderror
 
-            <x-ui.input label="{{ tr('Serial Number') }}" wire:model.defer="deviceForm.serial_number" placeholder="{{ tr('HEX-XXXX-XXXX') }}" :disabled="!auth()->user()->can('settings.attendance.manage')" />
+            <x-ui.input label="{{ tr('Serial Number') }}" wire:model.defer="deviceForm.serial_number" placeholder="{{ tr('HEX-XXXX-XXXX') }}" :disabled="!$canManageAttendance" />
             @error('deviceForm.serial_number') <span class="text-[10px] text-[color:var(--error)] font-bold px-1">{{ tr($message) }}</span> @enderror
         </div>
     </x-slot:content>
     <x-slot:footer>
         <x-ui.secondary-button wire:click="$set('showNfcModal', false)">{{ tr('Cancel') }}</x-ui.secondary-button>
-        @can('settings.attendance.manage')
+        @if($canManageAttendance)
         <x-ui.brand-button 
             wire:click="saveDevice" 
             wire:loading.attr="disabled"
@@ -94,7 +94,7 @@
                 {{ tr('Saving...') }}
             </span>
         </x-ui.brand-button>
-        @endcan
+        @endif
     </x-slot:footer>
 </x-ui.modal>
 
@@ -138,7 +138,7 @@
                             </div>
                         </div>
                         <div class="p-4 flex items-center justify-center bg-gray-50/30">
-                            @can('settings.attendance.manage')
+                            @if($canManageAttendance)
                             <x-ui.actions-menu>
                                 <x-ui.dropdown-item wire:click="editDevice({{ $dev['id'] }})">
                                     <i class="fas fa-edit me-2 text-[color:var(--accent-orange)]"></i>
@@ -154,7 +154,7 @@
                             </x-ui.actions-menu>
                             @else
                             <span class="text-[10px] font-bold text-gray-400 italic">{{ tr('View Only') }}</span>
-                            @endcan
+                            @endif
                         </div>
                     </div>
                 </x-ui.card>
@@ -211,7 +211,7 @@
                             </div>
                         </div>
                         <div class="p-4 flex items-center justify-center bg-gray-50/30">
-                            @can('settings.attendance.manage')
+                            @if($canManageAttendance)
                             <x-ui.actions-menu>
                                 <x-ui.dropdown-item wire:click="editDevice({{ $dev['id'] }})">
                                     <i class="fas fa-edit me-2 text-[color:var(--accent-orange)]"></i>
@@ -227,7 +227,7 @@
                             </x-ui.actions-menu>
                             @else
                             <span class="text-[10px] font-bold text-gray-400 italic">{{ tr('View Only') }}</span>
-                            @endcan
+                            @endif
                         </div>
                     </div>
                 </x-ui.card>
