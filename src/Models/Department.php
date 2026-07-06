@@ -7,9 +7,18 @@ use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\Builder;
+use Athka\SystemSettings\Observers\DepartmentCacheObserver;
 
 class Department extends Model
 {
+    /**
+     * يسجل Observer لمسح الكاش فور أي تغيير في الأقسام.
+     */
+    protected static function booted(): void
+    {
+        static::observe(DepartmentCacheObserver::class);
+    }
+
     protected $fillable = [
         'name',
         'code',
