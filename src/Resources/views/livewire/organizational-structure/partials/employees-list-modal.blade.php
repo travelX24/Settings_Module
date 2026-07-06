@@ -23,6 +23,26 @@
         get totalPages() {
             return Math.ceil(this.filteredEmployees.length / this.perPage);
         },
+
+        get pagesToShow() {
+            const total = this.totalPages;
+            const current = this.page;
+            const pages = [];
+            if (total <= 7) {
+                for (let i = 1; i <= total; i++) pages.push(i);
+            } else {
+                pages.push(1);
+                let start = Math.max(2, current - 1);
+                let end = Math.min(total - 1, current + 1);
+                if (current <= 3) end = 4;
+                if (current >= total - 2) start = total - 3;
+                if (start > 2) pages.push('...');
+                for (let i = start; i <= end; i++) pages.push(i);
+                if (end < total - 1) pages.push('...');
+                pages.push(total);
+            }
+            return pages;
+        },
         
         get paginatedEmployees() {
             const start = (this.page - 1) * this.perPage;
@@ -56,7 +76,7 @@
 >
     <div
         @click.stop
-        class="bg-white rounded-3xl shadow-2xl max-w-2xl w-full flex flex-col overflow-hidden border border-gray-100"
+        class="bg-white rounded-3xl shadow-2xl max-w-2xl w-full max-h-[90vh] flex flex-col overflow-hidden border border-gray-100"
     >
         {{-- Header --}}
         <div class="p-6 border-b border-gray-100 bg-gradient-to-r from-gray-50 to-white">
@@ -87,7 +107,7 @@
         </div>
 
         {{-- Content --}}
-        <div class="p-6 flex-1 min-h-[400px]">
+        <div class="p-6 flex-1 min-h-[400px] overflow-y-auto">
             <template x-if="loading">
                 <div class="flex flex-col items-center justify-center py-20">
                     <div class="w-12 h-12 border-4 border-[color:var(--accent-orange)]/20 border-t-[color:var(--accent-orange)] rounded-full animate-spin"></div>
@@ -154,12 +174,13 @@
                     {{ tr('Previous') }}
                 </button>
                 
-                <div class="flex items-center gap-2">
-                    <template x-for="p in totalPages" :key="p">
+                <div class="flex items-center gap-1 sm:gap-2">
+                    <template x-for="(p, index) in pagesToShow" :key="index">
                         <button 
-                            @click="page = p"
+                            @click="if (p !== '...') page = p"
+                            :disabled="p === '...'"
                             class="w-8 h-8 rounded-lg text-xs font-bold transition-all"
-                            :class="page === p ? 'bg-[color:var(--accent-orange)] text-white shadow-md' : 'text-gray-500 hover:bg-white'"
+                            :class="p === '...' ? 'text-gray-400 cursor-default' : (page === p ? 'bg-[color:var(--accent-orange)] text-white shadow-md' : 'text-gray-500 hover:bg-white')"
                             x-text="p"
                         ></button>
                     </template>
