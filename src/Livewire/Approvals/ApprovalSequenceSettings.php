@@ -127,6 +127,10 @@ class ApprovalSequenceSettings extends Component
             'steps' => 'required|array|min:1',
         ]);
 
+        if (!$this->validateApprovalSteps()) {
+            return;
+        }
+
         $this->approvalService->savePolicy(auth()->user()->saas_company_id, $this->tab, [
             'name' => $this->name,
             'is_active' => $this->is_active,
@@ -139,6 +143,39 @@ class ApprovalSequenceSettings extends Component
         $this->dispatch('toast', ['type' => 'success', 'message' => tr('Operation successful')]);
     }
 
+    private function validateApprovalSteps(): bool
+    {
+        $companyId = (int) auth()->user()->saas_company_id;
+
+        if (!Schema::hasColumn('users', 'employee_id')) {
+            $this->addError('steps', tr('Cannot validate approvers because users are not linked to employees in this installation.'));
+            return false;
+        }
+
+        foreach ($this->steps as $index => $step) {
+            $type = (string) ($step['approver_type'] ?? 'direct_manager');
+
+            if ($type !== 'user') {
+                continue;
+            }
+
+            $userId = (int) ($step['approver_id'] ?? 0);
+            $hasLinkedEmployee = $userId > 0 && DB::table('users')
+                ->when(Schema::hasColumn('users', 'saas_company_id'), fn ($q) => $q->where('saas_company_id', $companyId))
+                ->when(!Schema::hasColumn('users', 'saas_company_id') && Schema::hasColumn('users', 'company_id'), fn ($q) => $q->where('company_id', $companyId))
+                ->where('id', $userId)
+                ->whereNotNull('employee_id')
+                ->where('employee_id', '>', 0)
+                ->exists();
+
+            if (!$hasLinkedEmployee) {
+                $this->addError("steps.$index.approver_id", tr('The selected approver user is not linked to an employee.'));
+                return false;
+            }
+        }
+
+        return true;
+    }
     public function closeModal(): void
     {
         $this->showModal = false;

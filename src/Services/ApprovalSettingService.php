@@ -18,7 +18,7 @@ class ApprovalSettingService
             'job_titles' => $this->simpleList('job_titles', $companyId),
             'branches' => $this->simpleList('branches', $companyId),
             'employees' => $this->simpleList('employees', $companyId),
-            'users' => $this->simpleList('users', $companyId),
+            'users' => $this->approvalUserList($companyId),
         ];
     }
 
@@ -63,6 +63,33 @@ class ApprovalSettingService
         });
     }
 
+    private function approvalUserList(int $companyId): array
+    {
+        if (!Schema::hasTable('users')) return [];
+
+        $rows = $this->simpleList('users', $companyId);
+
+        if (!Schema::hasColumn('users', 'employee_id')) {
+            return [];
+        }
+
+        $linkedUserIds = DB::table('users')
+            ->whereNotNull('employee_id')
+            ->where('employee_id', '>', 0);
+
+        if (Schema::hasColumn('users', 'saas_company_id')) {
+            $linkedUserIds->where('saas_company_id', $companyId);
+        } elseif (Schema::hasColumn('users', 'company_id')) {
+            $linkedUserIds->where('company_id', $companyId);
+        }
+
+        $linkedUserIds = $linkedUserIds->pluck('id')->map(fn ($id) => (int) $id)->all();
+
+        return collect($rows)
+            ->filter(fn ($row) => in_array((int) ($row['id'] ?? 0), $linkedUserIds, true))
+            ->values()
+            ->toArray();
+    }
     private function simpleList(string $table, int $companyId): array
     {
         if (!Schema::hasTable($table)) return [];
