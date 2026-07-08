@@ -294,4 +294,29 @@ class DailyAttendanceController extends Controller
         $res = $this->attendanceService->recordCheckOut($log, $data['method'], $data['lat'], $data['lng'], $locationMeta);
         return response()->json($res);
     }
+
+    protected function attendanceMethodUnavailableResponse($prep, $method)
+    {
+        $methods = $prep->data->methods ?? null;
+        
+        if (!$methods) {
+            return response()->json([
+                'ok' => false,
+                'code' => 'method_unavailable',
+                'message' => tr('This attendance method is not available.')
+            ], 422);
+        }
+
+        $methodObj = $methods->{$method} ?? null;
+
+        if (!$methodObj || empty($methodObj->effective)) {
+            return response()->json([
+                'ok' => false,
+                'code' => 'method_unavailable',
+                'message' => tr('This attendance method is not available.')
+            ], 422);
+        }
+
+        return null;
+    }
 }
