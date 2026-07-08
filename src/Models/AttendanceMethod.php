@@ -47,16 +47,11 @@ class AttendanceMethod extends Model
      */
     public function updateDeviceCount(): void
     {
-        $companyId = (int) ($this->saas_company_id ?? 0);
-
         if ($this->method === 'gps') {
-            $this->device_count = AttendanceGpsLocation::active()
-                ->when($companyId > 0, fn ($query) => $query->where('saas_company_id', $companyId))
-                ->count();
+            $this->device_count = AttendanceGpsLocation::active()->count();
         } else {
             $this->device_count = AttendanceDevice::active()
                 ->where('device_type', $this->method)
-                ->when($companyId > 0, fn ($query) => $query->where('saas_company_id', $companyId))
                 ->count();
         }
         $this->save();
