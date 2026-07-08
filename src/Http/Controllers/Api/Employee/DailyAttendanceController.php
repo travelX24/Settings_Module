@@ -182,6 +182,76 @@ class DailyAttendanceController extends Controller
         return $this->index($request);
     }
 
+    private function methodLabel(string $method): string
+    {
+        if (app()->getLocale() === 'ar') {
+            return match ($method) {
+                'gps' => 'GPS',
+                'fingerprint' => 'البصمة',
+                'nfc' => 'NFC',
+                default => $method,
+            };
+        }
+
+        return match ($method) {
+            'gps' => 'GPS',
+            'fingerprint' => 'Fingerprint',
+            'nfc' => 'NFC',
+            default => $method,
+        };
+    }
+
+    private function attendanceMethodUnavailableResponse(object $prep, string $method)
+    {
+        $methodInfo = $prep->data->methods->{$method} ?? null;
+
+        if (! $methodInfo) {
+            return response()->json([
+                'ok' => false,
+                'code' => 'attendance_method_not_available',
+                'message' => tr('Selected attendance method is not available.'),
+            ], 403);
+        }
+
+        if (! (bool) ($methodInfo->enabled ?? false)) {
+            return response()->json([
+                'ok' => false,
+                'code' => 'attendance_method_disabled',
+                'message' => tr('Selected attendance method is disabled.'),
+            ], 403);
+        }
+
+        if (! (bool) ($methodInfo->allowed ?? false)) {
+            return response()->json([
+                'ok' => false,
+                'code' => 'attendance_method_not_allowed',
+                'message' => tr('Selected attendance method is not allowed for this employee.'),
+            ], 403);
+        }
+
+        if (! (bool) ($methodInfo->configured ?? false)) {
+            $label = $this->methodLabel($method);
+            $message = app()->getLocale() === 'ar'
+                ? "طريقة الحضور {$label} مفعلة لكنها غير مهيأة. يرجى التواصل مع الإدارة لإعداد الجهاز قبل تسجيل الحضور أو الانصراف."
+                : "The {$label} attendance method is enabled but not configured. Please contact administration to configure the device before checking in or out.";
+
+            return response()->json([
+                'ok' => false,
+                'code' => 'attendance_method_not_configured',
+                'message' => $message,
+            ], 422);
+        }
+
+        if (! (bool) ($methodInfo->effective ?? false)) {
+            return response()->json([
+                'ok' => false,
+                'code' => 'attendance_method_not_available',
+                'message' => tr('Selected attendance method is not available.'),
+            ], 403);
+        }
+
+        return null;
+    }
     public function checkIn(Request $request)
     {
         $user = $request->user();
@@ -201,6 +271,10 @@ class DailyAttendanceController extends Controller
 
         $prep = app(AttendancePrepController::class)->show($request)->getData();
         if (!$prep->ok) return response()->json(['ok' => false, 'message' => 'Prep Error'], 422);
+
+        if ($methodError = $this->attendanceMethodUnavailableResponse($prep, $data['method'])) {
+            return $methodError;
+        }
 
         if ($data['method'] === 'gps') {
             if (!empty($data['is_mocked'])) {
@@ -258,6 +332,12 @@ class DailyAttendanceController extends Controller
         ]);
 
         $prep = app(AttendancePrepController::class)->show($request)->getData();
+        if (!$prep->ok) return response()->json(['ok' => false, 'message' => 'Prep Error'], 422);
+
+        if ($methodError = $this->attendanceMethodUnavailableResponse($prep, $data['method'])) {
+            return $methodError;
+        }
+
         if ($data['method'] === 'gps') {
             if (!empty($data['is_mocked'])) {
                 return response()->json(['ok' => false, 'code' => 'fake_location_detected', 'message' => tr('Fake location detected. Please disable mock location apps and try again.')], 403);

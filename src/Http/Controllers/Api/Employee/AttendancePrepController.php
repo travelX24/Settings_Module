@@ -26,7 +26,6 @@ class AttendancePrepController extends Controller
             return response()->json(['ok' => false, 'message' => 'Company context not found'], 422);
         }
 
-        // ✅ resolve employee (عدة احتمالات بدون ما نكسر)
         $employee = null;
         if (property_exists($user, 'employee_id') && (int) ($user->employee_id ?? 0) > 0) {
             $employee = Employee::query()->where('id', (int) $user->employee_id)->first();
@@ -38,14 +37,12 @@ class AttendancePrepController extends Controller
             $employee = Employee::query()->where('user_id', (int) $user->id)->first();
         }
 
-        // ✅ default policy
         $defaultPolicy = AttendancePolicy::query()
             ->where('saas_company_id', $companyId)
             ->where('is_default', true)
             ->first();
 
         if (! $defaultPolicy) {
-            // لا ننشئ تلقائياً من الـ API حتى ما نسبب بيانات بدون قصد
             $defaultPolicy = AttendancePolicy::query()
                 ->where('saas_company_id', $companyId)
                 ->orderByDesc('id')
@@ -54,7 +51,6 @@ class AttendancePrepController extends Controller
 
         $trackingMode = (string) ($defaultPolicy->tracking_mode ?? 'check_in_out');
 
-        // ✅ global grace
         $grace = AttendanceGraceSetting::query()
             ->where('saas_company_id', $companyId)
             ->where('is_global_default', true)
@@ -69,7 +65,6 @@ class AttendancePrepController extends Controller
             'auto_checkout_deduction_type' => (string) ($grace->auto_checkout_deduction_type ?? 'fixed'),
         ];
 
-        // ✅ employee groups (لو الموظف معروف)
         $groups = collect();
         if ($employee) {
             $groups = EmployeeGroup::query()
@@ -79,20 +74,17 @@ class AttendancePrepController extends Controller
                 ->get();
         }
 
-        // ✅ لو فيه مجموعة سياسة خاصة نفضلها
         $special = $groups->first(fn ($g) => (int) ($g->applied_policy_id ?? 0) > 0);
         if ($special && $special->appliedPolicy) {
             $trackingMode = (string) ($special->appliedPolicy->tracking_mode ?? $trackingMode);
         }
 
-        // ✅ لو فيه grace مخصص للمجموعة نستخدمه
         if ($special && (string) ($special->grace_source ?? '') === 'custom' && $special->graceSetting) {
             $graceData['late_grace_minutes'] = (int) ($special->graceSetting->late_grace_minutes ?? $graceData['late_grace_minutes']);
             $graceData['early_leave_grace_minutes'] = (int) ($special->graceSetting->early_leave_grace_minutes ?? $graceData['early_leave_grace_minutes']);
             $graceData['auto_checkout_after_minutes'] = (int) ($special->graceSetting->auto_checkout_after_minutes ?? $graceData['auto_checkout_after_minutes']);
         }
 
-        // ✅ methods enabled globally
         $methodModels = AttendanceMethod::query()
             ->where('saas_company_id', $companyId)
             ->get()
@@ -104,7 +96,6 @@ class AttendancePrepController extends Controller
             'nfc' => (bool) ($methodModels['nfc']->is_enabled ?? false),
         ];
 
-        // ✅ allowed methods from groups (union)
         $allowed = [
             'gps' => false,
             'fingerprint' => false,
@@ -112,50 +103,38 @@ class AttendancePrepController extends Controller
         ];
 
         if ($groups->isEmpty()) {
-            // لو ما في مجموعات: نخليها تعتمد على تفعيل الشركة
             $allowed = $globalEnabled;
         } else {
             foreach ($groups as $g) {
                 if (method_exists($g, 'allowedMethods')) {
                     $arr = $g->allowedMethods()->where('is_allowed', true)->pluck('method')->toArray();
                     foreach ($arr as $m) {
-                        if (isset($allowed[$m])) $allowed[$m] = true;
+                        if (isset($allowed[$m])) {
+                            $allowed[$m] = true;
+                        }
                     }
                 }
             }
         }
 
-        // ✅ effective methods = enabled AND allowed
-        $methods = [];
-        foreach (['gps', 'fingerprint', 'nfc'] as $m) {
-            $methods[$m] = [
-                'enabled' => (bool) ($globalEnabled[$m] ?? false),
-                'allowed' => (bool) ($allowed[$m] ?? false),
-                'effective' => (bool) (($globalEnabled[$m] ?? false) && ($allowed[$m] ?? false)),
-                'device_count' => (int) ($methodModels[$m]->device_count ?? 0),
-            ];
-        }
+        $employeeGroupIds = $groups->pluck('id')->map(fn ($x) => (int) $x)->values()->all();
+        $employeeBranchId = ($employee && isset($employee->department_id)) ? (int) $employee->department_id : 0;
 
-        // ✅ gps locations filter (حسب المجموعة أو الفرع)
         $gpsQ = AttendanceGpsLocation::query()
             ->where('saas_company_id', $companyId)
-            ->where('is_active', true);
-
-        $employeeGroupIds = $groups->pluck('id')->map(fn ($x) => (int) $x)->values()->all();
-
-        if (!empty($employeeGroupIds)) {
-            $gpsQ->where(function ($q) use ($employeeGroupIds, $employee) {
-                // المجموعات الخاصة بالموظف أو المواقع العامة (الموحدة)
-                $q->whereIn('employee_group_id', $employeeGroupIds)
-                  ->orWhereNull('employee_group_id');
-
-                // الفروع الخاصة بالموظف أو المواقع العامة (الموحدة)
-                if ($employee && isset($employee->department_id)) {
-                    $q->orWhere('branch_id', (int) $employee->department_id);
+            ->where('is_active', true)
+            ->where(function ($q) use ($employeeGroupIds) {
+                $q->whereNull('employee_group_id');
+                if (! empty($employeeGroupIds)) {
+                    $q->orWhereIn('employee_group_id', $employeeGroupIds);
                 }
-                $q->orWhereNull('branch_id');
+            })
+            ->where(function ($q) use ($employeeBranchId) {
+                $q->whereNull('branch_id');
+                if ($employeeBranchId > 0) {
+                    $q->orWhere('branch_id', $employeeBranchId);
+                }
             });
-        }
 
         $gpsLocations = $gpsQ->get()->map(fn ($l) => [
             'id' => (int) $l->id,
@@ -168,23 +147,64 @@ class AttendancePrepController extends Controller
             'employee_group_id' => $l->employee_group_id ? (int) $l->employee_group_id : null,
         ])->values();
 
-        // ✅ devices
-        $devices = AttendanceDevice::query()
+        $devicesQ = AttendanceDevice::query()
             ->where('saas_company_id', $companyId)
-            ->where('is_active', true)
+            ->where('is_active', true);
+
+        if ($employeeBranchId > 0) {
+            $devicesQ->where(fn ($q) => $q->whereNull('branch_id')->orWhere('branch_id', $employeeBranchId));
+        }
+
+        $devices = $devicesQ
             ->orderBy('device_type')
             ->orderBy('name')
             ->get()
             ->map(fn ($d) => [
                 'id' => (int) $d->id,
-                'type' => (string) $d->device_type, // fingerprint|nfc
+                'type' => (string) $d->device_type,
                 'name' => (string) $d->name,
                 'serial_no' => (string) ($d->serial_no ?? ''),
                 'branch_id' => $d->branch_id ? (int) $d->branch_id : null,
                 'location_in_branch' => (string) ($d->location_in_branch ?? ''),
             ])->values();
 
-        // ✅ exceptional day check (today)
+        $methodDeviceCounts = [
+            'gps' => $gpsLocations->count(),
+            'fingerprint' => $devices->where('type', 'fingerprint')->count(),
+            'nfc' => $devices->where('type', 'nfc')->count(),
+        ];
+
+        $configured = [
+            'gps' => $methodDeviceCounts['gps'] > 0,
+            'fingerprint' => $methodDeviceCounts['fingerprint'] > 0,
+            'nfc' => $methodDeviceCounts['nfc'] > 0,
+        ];
+
+        $methods = [];
+        foreach (['gps', 'fingerprint', 'nfc'] as $m) {
+            $enabled = (bool) ($globalEnabled[$m] ?? false);
+            $isAllowed = (bool) ($allowed[$m] ?? false);
+            $isConfigured = (bool) ($configured[$m] ?? false);
+            $statusReason = null;
+
+            if (! $enabled) {
+                $statusReason = 'disabled';
+            } elseif (! $isAllowed) {
+                $statusReason = 'not_allowed';
+            } elseif (! $isConfigured) {
+                $statusReason = 'not_configured';
+            }
+
+            $methods[$m] = [
+                'enabled' => $enabled,
+                'allowed' => $isAllowed,
+                'configured' => $isConfigured,
+                'effective' => $enabled && $isAllowed && $isConfigured,
+                'device_count' => (int) ($methodDeviceCounts[$m] ?? 0),
+                'status_reason' => $statusReason,
+            ];
+        }
+
         $exceptionalDayInfo = null;
         if ($employee && class_exists(\Athka\SystemSettings\Services\WorkScheduleService::class)) {
             $wsService = app(\Athka\SystemSettings\Services\WorkScheduleService::class);
@@ -201,26 +221,25 @@ class AttendancePrepController extends Controller
                     'id'   => $exceptionalDay ? $exceptionalDay->id : $officialHoliday->id,
                     'name' => $name,
                     'is_holiday' => $isHoliday,
-                    'message' => $msgPart . ': ' . $name
+                    'message' => $msgPart . ': ' . $name,
                 ];
             }
         }
 
-        // ✅ Determine current attendance status (can_check_in or can_check_out)
         $currentStatus = 'can_check_in';
         if ($employee) {
             $log = \Athka\Attendance\Models\AttendanceDailyLog::where('saas_company_id', $companyId)
                 ->where('employee_id', $employee->id)
                 ->whereDate('attendance_date', now()->toDateString())
                 ->first();
-                
+
             if ($log) {
                 $openSession = \DB::table('attendance_daily_details')
                     ->where('daily_log_id', $log->id)
                     ->whereNull('check_out_time')
                     ->orderByDesc('id')
                     ->first();
-                    
+
                 if ($openSession) {
                     $currentStatus = 'can_check_out';
                 }
