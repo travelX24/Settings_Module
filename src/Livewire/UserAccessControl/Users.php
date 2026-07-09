@@ -104,8 +104,13 @@ class Users extends Component
         $this->authorize('uac.users.manage');
         $user = User::findOrFail($id);
         if (method_exists($user, 'sendWithAuthKitPasswordReset')) {
-            $user->sendWithAuthKitPasswordReset();
-            $this->dispatch('toast', type: 'success', message: tr('Password reset link sent'));
+            $status = $user->sendWithAuthKitPasswordReset();
+            $isSent = $status === \Illuminate\Support\Facades\Password::RESET_LINK_SENT;
+            $this->dispatch(
+                'toast',
+                type: $isSent ? 'success' : 'warning',
+                message: $isSent ? tr('Password reset link sent') : tr('Please wait before retrying.')
+            );
         }
     }
 

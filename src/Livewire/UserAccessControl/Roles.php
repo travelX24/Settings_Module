@@ -69,7 +69,7 @@ class Roles extends Component
         $this->authorize('uac.roles.manage');
         $role = Role::findOrFail($id);
 
-        if ($role->saas_company_id !== null && $role->saas_company_id !== $this->getCompanyId()) {
+        if ($role->saas_company_id !== null && (int) $role->saas_company_id !== (int) $this->getCompanyId()) {
             abort(403, tr('Unauthorized operation.'));
         }
 
@@ -155,7 +155,7 @@ class Roles extends Component
         $this->authorize('uac.roles.manage');
         $role = Role::findOrFail($id);
         
-        if ($role->saas_company_id !== null && $role->saas_company_id !== $this->getCompanyId()) {
+        if ($role->saas_company_id !== null && (int) $role->saas_company_id !== (int) $this->getCompanyId()) {
             abort(403, tr('Unauthorized operation.'));
         }
 

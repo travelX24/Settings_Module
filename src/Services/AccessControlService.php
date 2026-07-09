@@ -227,6 +227,10 @@ class AccessControlService
         return DB::transaction(function () use ($data, $id, $companyId) {
             if ($id) {
                 $role = Role::findOrFail($id);
+
+                if ($role->saas_company_id !== null && (int) $role->saas_company_id !== (int) $companyId) {
+                    throw new \Exception(tr('Unauthorized operation.'));
+                }
                 
                 // Ã°Å¸â€ºâ€˜ Block editing protected system roles
                 if (in_array($role->name, ['company-admin', 'saas-admin', 'super-admin', 'system-admin']) || is_null($role->saas_company_id)) {
@@ -256,7 +260,7 @@ class AccessControlService
     {
         $role = Role::findOrFail($id);
 
-        if ($role->saas_company_id !== null && $role->saas_company_id !== $companyId) {
+        if ($role->saas_company_id !== null && (int) $role->saas_company_id !== (int) $companyId) {
             return ['ok' => false, 'message' => tr('Unauthorized operation.')];
         }
         
