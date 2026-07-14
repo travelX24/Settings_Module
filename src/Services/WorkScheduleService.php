@@ -7,6 +7,7 @@ use Athka\SystemSettings\Models\OfficialHolidayOccurrence;
 use Athka\SystemSettings\Models\AttendanceExceptionalDay;
 use Athka\Employees\Models\Employee;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Cache;
 use Carbon\Carbon;
 
 class WorkScheduleService
@@ -14,93 +15,120 @@ class WorkScheduleService
     /**
      * Get the effective schedule for a company/employee.
      */
-    public function getEffectiveSchedule(int $companyId, ?Employee $employee = null, ?string $date = null, bool $fallback = true): ?WorkSchedule
-    {
+    public function getEffectiveSchedule(
+        int $companyId,
+        ?Employee $employee = null,
+        ?string $date = null,
+        bool $fallback = true
+    ): ?WorkSchedule {
         $resolveDate = $date ?: now()->toDateString();
-        $employeeId = $employee ? $employee->id : 0;
+        $employeeId = $employee ? (int) $employee->id : 0;
+        $fallbackFlag = $fallback ? 1 : 0;
+        $version = $this->scheduleCacheVersion($companyId);
 
-        static $scheduleCache = [];
-        $cacheKey = "{$companyId}_{$employeeId}_{$resolveDate}_{$fallback}";
-        if (array_key_exists($cacheKey, $scheduleCache)) {
-            return $scheduleCache[$cacheKey];
+        /*
+         * Request-local cache:
+         * preserves the previous behavior when the same schedule is requested
+         * more than once during a single HTTP request.
+         */
+        static $requestCache = [];
+
+        $requestKey = implode(':', [
+            $version,
+            $companyId,
+            $employeeId,
+            $resolveDate,
+            $fallbackFlag,
+        ]);
+
+        if (array_key_exists($requestKey, $requestCache)) {
+            return $requestCache[$requestKey];
         }
 
-        static $rotations = [];
-        static $assignments = [];
-        static $defaultSchedule = [];
-        static $wsCache = [];
+        /*
+         * Shared short-lived cache:
+         * store only the resolved schedule ID. This keeps the priority rules
+         * exactly the same while avoiding repeated resolution queries.
+         */
+        $resolvedScheduleId = Cache::remember(
+            "work-schedule:effective:v{$version}:company:{$companyId}:employee:{$employeeId}:date:{$resolveDate}:fallback:{$fallbackFlag}",
+            now()->addSeconds(15),
+            function () use ($companyId, $employee, $employeeId, $resolveDate, $fallback): int {
+                // Priority 1: active employee rotation.
+                if ($employee) {
+                    $rotation = DB::table('employee_shift_rotations')
+                        ->where('employee_id', $employeeId)
+                        ->whereDate('start_date', '<=', $resolveDate)
+                        ->where(function ($query) use ($resolveDate) {
+                            $query->whereNull('end_date')
+                                ->orWhereDate('end_date', '>=', $resolveDate);
+                        })
+                        ->orderByDesc('start_date')
+                        ->orderByDesc('id')
+                        ->first();
 
-        // 1. Try employee-specific assignment (Priority 1: Rotations)
-        if ($employee) {
-            if (!isset($rotations[$employeeId])) {
-                $rotations[$employeeId] = DB::table('employee_shift_rotations')
-                    ->where('employee_id', $employeeId)
-                    ->orderByDesc('start_date')
-                    ->orderByDesc('id')
-                    ->get();
-            }
+                    if ($rotation) {
+                        $rotationStart = Carbon::parse($rotation->start_date)->startOfDay();
+                        $currentDate = Carbon::parse($resolveDate)->startOfDay();
+                        $differenceInDays = (int) $rotationStart->diffInDays($currentDate);
+                        $rotationDays = (int) max(1, $rotation->rotation_days ?: 7);
+                        $cycleIndex = (int) floor($differenceInDays / $rotationDays);
+                        $useScheduleA = ($cycleIndex % 2) === 0;
 
-            $rotation = $rotations[$employeeId]->first(function ($r) use ($resolveDate) {
-                return $r->start_date <= $resolveDate && (is_null($r->end_date) || $r->end_date >= $resolveDate);
-            });
+                        return $useScheduleA
+                            ? (int) $rotation->work_schedule_id_a
+                            : (int) $rotation->work_schedule_id_b;
+                    }
 
-            if ($rotation) {
-                $rotStart = Carbon::parse($rotation->start_date)->startOfDay();
-                $current  = Carbon::parse($resolveDate)->startOfDay();
-                $diffDays = (int) $rotStart->diffInDays($current);
-                $rotDays  = (int) max(1, $rotation->rotation_days ?: 7);
-                
-                $cycleIndex = (int) floor($diffDays / $rotDays);
-                $isA = ($cycleIndex % 2) === 0;
-                
-                $scheduleId = $isA ? (int)$rotation->work_schedule_id_a : (int)$rotation->work_schedule_id_b;
-                
-                if (!isset($wsCache[$scheduleId])) {
-                    $wsCache[$scheduleId] = WorkSchedule::query()
-                        ->with(['periods', 'exceptions'])
-                        ->find($scheduleId);
+                    // Priority 2: active fixed employee assignment.
+                    $assignment = DB::table('employee_work_schedules')
+                        ->where('employee_id', $employeeId)
+                        ->whereDate('start_date', '<=', $resolveDate)
+                        ->where(function ($query) use ($resolveDate) {
+                            $query->whereNull('end_date')
+                                ->orWhereDate('end_date', '>=', $resolveDate);
+                        })
+                        ->orderByDesc('start_date')
+                        ->orderByDesc('id')
+                        ->first();
+
+                    if ($assignment) {
+                        return (int) $assignment->work_schedule_id;
+                    }
                 }
-                
-                return $scheduleCache[$cacheKey] = $wsCache[$scheduleId];
-            }
 
-            // Priority 2: Fixed Assignments
-            if (!isset($assignments[$employeeId])) {
-                $assignments[$employeeId] = DB::table('employee_work_schedules')
-                    ->where('employee_id', $employeeId)
-                    ->orderByDesc('start_date')
-                    ->orderByDesc('id')
-                    ->get();
-            }
-
-            $assignment = $assignments[$employeeId]->first(function ($a) use ($resolveDate) {
-                return $a->start_date <= $resolveDate && (is_null($a->end_date) || $a->end_date >= $resolveDate);
-            });
-
-            if ($assignment) {
-                $scheduleId = (int)$assignment->work_schedule_id;
-                if (!isset($wsCache[$scheduleId])) {
-                    $wsCache[$scheduleId] = WorkSchedule::query()
-                        ->with(['periods', 'exceptions'])
-                        ->find($scheduleId);
+                if (!$fallback) {
+                    return 0;
                 }
-                
-                return $scheduleCache[$cacheKey] = $wsCache[$scheduleId];
+
+                // Priority 3: company default schedule.
+                return (int) (
+                    WorkSchedule::query()
+                        ->where('saas_company_id', $companyId)
+                        ->where('is_default', true)
+                        ->value('id') ?? 0
+                );
             }
+        );
+
+        if ($resolvedScheduleId <= 0) {
+            return $requestCache[$requestKey] = null;
         }
 
-        if (!$fallback) return $scheduleCache[$cacheKey] = null;
-
-        // 2. Fallback to default company schedule
-        if (!isset($defaultSchedule[$companyId])) {
-            $defaultSchedule[$companyId] = WorkSchedule::query()
+        /*
+         * A schedule and its periods/exceptions are shared by many employees.
+         * Cache the fully-loaded model briefly so simultaneous users do not
+         * query the same schedule relations repeatedly.
+         */
+        $schedule = Cache::remember(
+            "work-schedule:model:v{$version}:{$resolvedScheduleId}",
+            now()->addSeconds(30),
+            fn () => WorkSchedule::query()
                 ->with(['periods', 'exceptions'])
-                ->where('saas_company_id', $companyId)
-                ->where('is_default', true)
-                ->first();
-        }
-        
-        return $scheduleCache[$cacheKey] = $defaultSchedule[$companyId];
+                ->find($resolvedScheduleId)
+        );
+
+        return $requestCache[$requestKey] = $schedule;
     }
 
     /**
@@ -121,7 +149,7 @@ class WorkScheduleService
      */
     public function saveSchedule(int $companyId, array $data, ?int $id = null): WorkSchedule
     {
-        return DB::transaction(function () use ($companyId, $data, $id) {
+        $schedule = DB::transaction(function () use ($companyId, $data, $id) {
             if (!empty($data['is_default'])) {
                 WorkSchedule::where('saas_company_id', $companyId)
                     ->where('is_default', true)
@@ -166,6 +194,10 @@ class WorkScheduleService
 
             return $schedule;
         });
+
+        $this->invalidateScheduleCache($companyId);
+
+        return $schedule;
     }
 
     /**
@@ -174,9 +206,19 @@ class WorkScheduleService
     public function deleteSchedule(int $id): bool
     {
         $schedule = WorkSchedule::find($id);
-        if (!$schedule || $schedule->is_default) return false;
-        
-        return $schedule->delete();
+
+        if (!$schedule || $schedule->is_default) {
+            return false;
+        }
+
+        $companyId = (int) $schedule->saas_company_id;
+        $deleted = (bool) $schedule->delete();
+
+        if ($deleted) {
+            $this->invalidateScheduleCache($companyId);
+        }
+
+        return $deleted;
     }
 
     /**
@@ -579,4 +621,26 @@ class WorkScheduleService
         if ($isNight || $e->lt($s)) $e->addDay();
         return (int) $s->diffInMinutes($e);
     }
+    /**
+     * Return the current cache namespace version for a company's schedules.
+     */
+    private function scheduleCacheVersion(int $companyId): int
+    {
+        return (int) Cache::rememberForever(
+            "work-schedule:version:{$companyId}",
+            fn (): int => 1
+        );
+    }
+
+    /**
+     * Invalidate all versioned schedule cache entries without wildcard scans.
+     */
+    private function invalidateScheduleCache(int $companyId): void
+    {
+        $key = "work-schedule:version:{$companyId}";
+        $currentVersion = (int) Cache::get($key, 1);
+
+        Cache::forever($key, $currentVersion + 1);
+    }
+
 }

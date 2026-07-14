@@ -4,6 +4,7 @@ namespace Athka\SystemSettings\Http\Controllers\Api\Employee;
 
 use Illuminate\Http\Request;
 use Illuminate\Routing\Controller;
+use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Schema;
 use Carbon\Carbon;
@@ -13,6 +14,9 @@ use Athka\Attendance\Models\AttendanceDailyLog;
 use Athka\SystemSettings\Models\WorkSchedule;
 use Athka\SystemSettings\Models\OfficialHolidayOccurrence;
 use Athka\SystemSettings\Models\AttendanceGraceSetting;
+use Athka\SystemSettings\Models\AttendanceGpsLocation;
+use Athka\SystemSettings\Models\AttendanceMethod;
+use Athka\SystemSettings\Models\EmployeeGroup;
 
 use Athka\SystemSettings\Services\EmployeeService;
 use Athka\SystemSettings\Services\AttendanceService;
@@ -88,15 +92,24 @@ class DailyAttendanceController extends Controller
             }
         }
 
-        AttendanceDailyLog::where('saas_company_id', $companyId)
-            ->where('employee_id', $employee->id)
-            ->whereBetween('attendance_date', [$fromStr, $toStr])
-            ->whereHas('details', fn ($query) => $query->whereNull('check_out_time'))
-            ->with(['employee', 'details'])
-            ->get()
-            ->each(function ($log) {
-                $log->save();
-            });
+        $syncOpenSessions = (int) $request->query(
+    'sync_open_sessions',
+    0
+) === 1;
+
+if ($syncOpenSessions) {
+    AttendanceDailyLog::where('saas_company_id', $companyId)
+        ->where('employee_id', $employee->id)
+        ->whereBetween('attendance_date', [$fromStr, $toStr])
+        ->whereHas(
+            'details',
+            fn ($query) => $query->whereNull('check_out_time')
+        )
+        ->get()
+        ->each(function ($log) {
+            $log->save();
+        });
+}
 
         $logs = $this->attendanceService->getLogs($companyId, $employee->id, $fromStr, $toStr);
 
@@ -199,10 +212,9 @@ class DailyAttendanceController extends Controller
             'location_captured_at' => ['nullable', 'date'],
         ]);
 
-        $prep = app(AttendancePrepController::class)->show($request)->getData();
-        if (!$prep->ok) return response()->json(['ok' => false, 'message' => 'Prep Error'], 422);
+        $context = $this->resolveAttendanceMethodContext($companyId, $employee, $data['method']);
 
-        if ($methodError = $this->attendanceMethodUnavailableResponse($prep, $data['method'])) {
+        if ($methodError = $this->attendanceMethodUnavailableResponse($context, $data['method'])) {
             return $methodError;
         }
 
@@ -211,7 +223,16 @@ class DailyAttendanceController extends Controller
                 return response()->json(['ok' => false, 'code' => 'fake_location_detected', 'message' => tr('Fake location detected. Please disable mock location apps and try again.')], 403);
             }
 
-            if (!$this->geofenceService->isWithinAny((float)$data['lat'], (float)$data['lng'], $prep->data->gps_locations ?? [])) {
+if (!$this->geofenceService->isWithinAny(
+    (float) $data['lat'],
+    (float) $data['lng'],
+    collect($context->data->gps_locations ?? [])
+        ->pluck('id')
+        ->map(fn ($id) => (int) $id)
+        ->filter()
+        ->values()
+        ->all()
+)) {
                 return response()->json(['ok' => false, 'code' => 'geofence_error', 'message' => tr('Outside the geographical range.')], 403);
             }
         }
@@ -228,19 +249,53 @@ class DailyAttendanceController extends Controller
             return response()->json(['ok' => false, 'code' => 'exceptional_day', 'message' => $msg], 422);
         }
 
-        $schedule = $this->scheduleService->getEffectiveSchedule($companyId, $employee);
-        $log = $this->attendanceService->ensureLog($companyId, $employee->id, $dateStr, $schedule, $this->scheduleService->getHolidays($companyId, $dateStr, $dateStr));
-
-        // [Security] Force set attendance_date as clean string to prevent double time specification
-        $log->attendance_date = $dateStr;
-
         $locationMeta = [
             'is_mocked' => (bool)($data['is_mocked'] ?? false),
             'gps_accuracy' => $data['gps_accuracy'] ?? null,
             'location_captured_at' => $data['location_captured_at'] ?? null,
         ];
 
-        $res = $this->attendanceService->recordCheckIn($log, $data['method'], $data['lat'], $data['lng'], $schedule, 15, $prep->data->tracking_mode ?? 'check_in_out', $locationMeta);
+        $lock = Cache::lock("attendance:checkin:{$companyId}:{$employee->id}:{$dateStr}", 15);
+
+        if (!$lock->get()) {
+            return response()->json([
+                'ok' => false,
+                'code' => 'already_processing',
+                'message' => tr('Your attendance request is already being processed.'),
+            ], 409);
+        }
+
+        try {
+            $res = DB::transaction(function () use ($companyId, $employee, $dateStr, $data, $context, $locationMeta) {
+                $schedule = $this->scheduleService->getEffectiveSchedule($companyId, $employee);
+
+$holidays = Cache::remember(
+    "attendance:holidays:{$companyId}:{$dateStr}",
+    now()->addSeconds(60),
+    fn () => $this->scheduleService->getHolidays(
+        $companyId,
+        $dateStr,
+        $dateStr
+    )
+);
+
+$log = $this->attendanceService->ensureLog(
+    companyId: $companyId,
+    employeeId: $employee->id,
+    date: $dateStr,
+    schedule: $schedule,
+    holidays: $holidays,
+);
+
+                // [Security] Force set attendance_date as clean string to prevent double time specification
+                $log->attendance_date = $dateStr;
+
+                return $this->attendanceService->recordCheckIn($log, $data['method'], $data['lat'], $data['lng'], $schedule, 15, $context->data->tracking_mode ?? 'check_in_out', $locationMeta);
+            });
+        } finally {
+            optional($lock)->release();
+        }
+
         return response()->json($res);
     }
 
@@ -261,10 +316,9 @@ class DailyAttendanceController extends Controller
             'location_captured_at' => ['nullable', 'date'],
         ]);
 
-        $prep = app(AttendancePrepController::class)->show($request)->getData();
-        if (!$prep->ok) return response()->json(['ok' => false, 'message' => 'Prep Error'], 422);
+        $context = $this->resolveAttendanceMethodContext($companyId, $employee, $data['method']);
 
-        if ($methodError = $this->attendanceMethodUnavailableResponse($prep, $data['method'])) {
+        if ($methodError = $this->attendanceMethodUnavailableResponse($context, $data['method'])) {
             return $methodError;
         }
 
@@ -273,17 +327,19 @@ class DailyAttendanceController extends Controller
                 return response()->json(['ok' => false, 'code' => 'fake_location_detected', 'message' => tr('Fake location detected. Please disable mock location apps and try again.')], 403);
             }
 
-            if (!$this->geofenceService->isWithinAny((float)$data['lat'], (float)$data['lng'], $prep->data->gps_locations ?? [])) {
+if (!$this->geofenceService->isWithinAny(
+    (float) $data['lat'],
+    (float) $data['lng'],
+    collect($context->data->gps_locations ?? [])
+        ->pluck('id')
+        ->map(fn ($id) => (int) $id)
+        ->filter()
+        ->values()
+        ->all()
+)) {
                 return response()->json(['ok' => false, 'code' => 'geofence_error', 'message' => tr('Outside the geographical range.')], 403);
             }
         }
-
-        $log = AttendanceDailyLog::where('saas_company_id', $companyId)
-            ->where('employee_id', $employee->id)
-            ->whereDate('attendance_date', now()->toDateString())
-            ->first();
-
-        if (!$log) return response()->json(['ok' => false, 'message' => tr('No record found for today.')], 422);
 
         $locationMeta = [
             'is_mocked' => (bool)($data['is_mocked'] ?? false),
@@ -291,8 +347,203 @@ class DailyAttendanceController extends Controller
             'location_captured_at' => $data['location_captured_at'] ?? null,
         ];
 
-        $res = $this->attendanceService->recordCheckOut($log, $data['method'], $data['lat'], $data['lng'], $locationMeta);
+        $dateStr = now()->toDateString();
+        $lock = Cache::lock("attendance:checkout:{$companyId}:{$employee->id}:{$dateStr}", 15);
+
+        if (!$lock->get()) {
+            return response()->json([
+                'ok' => false,
+                'code' => 'already_processing',
+                'message' => tr('Your attendance request is already being processed.'),
+            ], 409);
+        }
+
+        try {
+            $res = DB::transaction(function () use ($companyId, $employee, $dateStr, $data, $locationMeta) {
+                $log = AttendanceDailyLog::where('saas_company_id', $companyId)
+                    ->where('employee_id', $employee->id)
+                    ->where('attendance_date', $dateStr)
+                    ->lockForUpdate()
+                    ->first();
+
+                if (!$log) {
+                    return ['ok' => false, 'message' => tr('No record found for today.')];
+                }
+
+                return $this->attendanceService->recordCheckOut($log, $data['method'], $data['lat'], $data['lng'], $locationMeta);
+            });
+        } finally {
+            optional($lock)->release();
+        }
+
         return response()->json($res);
+    }
+
+    protected function resolveAttendanceMethodContext(int $companyId, Employee $employee, string $method): object
+    {
+        $ttl = now()->addSeconds(15);
+
+        $methodConfig = Cache::remember(
+            "attendance:config:method:{$companyId}:{$method}",
+            $ttl,
+            function () use ($companyId, $method): array {
+                $row = AttendanceMethod::query()
+                    ->where('saas_company_id', $companyId)
+                    ->where('method', $method)
+                    ->first(['is_enabled', 'device_count']);
+
+                return [
+                    'is_enabled' => (bool) ($row->is_enabled ?? false),
+                    'device_count' => (int) ($row->device_count ?? 0),
+                ];
+            }
+        );
+
+        $globalEnabled = (bool) $methodConfig['is_enabled'];
+
+        $policyConfig = Cache::remember(
+            "attendance:config:policies:{$companyId}",
+            $ttl,
+            function () use ($companyId): array {
+                $rows = DB::table('attendance_policies')
+                    ->where('saas_company_id', $companyId)
+                    ->orderByDesc('is_default')
+                    ->orderByDesc('id')
+                    ->get(['id', 'tracking_mode', 'is_default']);
+
+                return [
+                    'default' => (string) ($rows->first()->tracking_mode ?? 'check_in_out'),
+                    'by_id' => $rows
+                        ->mapWithKeys(fn ($row) => [
+                            (int) $row->id => (string) $row->tracking_mode,
+                        ])
+                        ->all(),
+                ];
+            }
+        );
+
+        $trackingMode = $policyConfig['default'] ?: 'check_in_out';
+
+        $groups = EmployeeGroup::query()
+            ->where('saas_company_id', $companyId)
+            ->whereHas(
+                'employees',
+                fn ($query) => $query->where('employees.id', (int) $employee->id)
+            )
+            ->get(['id', 'applied_policy_id']);
+
+        if ($groups->isEmpty()) {
+            $allowed = $globalEnabled;
+        } else {
+            $appliedPolicyId = (int) (
+                $groups
+                    ->first(fn ($group) => (int) ($group->applied_policy_id ?? 0) > 0)
+                    ?->applied_policy_id ?? 0
+            );
+
+            if ($appliedPolicyId > 0) {
+                $trackingMode = $policyConfig['by_id'][$appliedPolicyId]
+                    ?? $trackingMode;
+            }
+
+            $allowed = EmployeeGroup::query()
+                ->whereIn('id', $groups->pluck('id'))
+                ->whereHas(
+                    'allowedMethods',
+                    fn ($query) => $query
+                        ->where('method', $method)
+                        ->where('is_allowed', true)
+                )
+                ->exists();
+        }
+
+        $gpsLocations = collect();
+
+        if ($method === 'gps') {
+            $allLocations = Cache::remember(
+                "attendance:config:gps-locations:{$companyId}",
+                $ttl,
+                fn (): array => AttendanceGpsLocation::query()
+                    ->where('saas_company_id', $companyId)
+                    ->where('is_active', true)
+                    ->get([
+                        'id',
+                        'name',
+                        'lat',
+                        'lng',
+                        'radius_meters',
+                        'employee_group_id',
+                        'branch_id',
+                    ])
+                    ->map(fn ($location) => [
+                        'id' => (int) $location->id,
+                        'name' => (string) $location->name,
+                        'lat' => (float) $location->lat,
+                        'lng' => (float) $location->lng,
+                        'radius_meters' => (int) $location->radius_meters,
+                        'employee_group_id' => $location->employee_group_id !== null
+                            ? (int) $location->employee_group_id
+                            : null,
+                        'branch_id' => $location->branch_id !== null
+                            ? (int) $location->branch_id
+                            : null,
+                    ])
+                    ->all()
+            );
+
+            $employeeGroupIds = $groups
+                ->pluck('id')
+                ->map(fn ($id) => (int) $id)
+                ->values()
+                ->all();
+
+            $departmentId = isset($employee->department_id)
+                ? (int) $employee->department_id
+                : null;
+
+            $gpsLocations = collect($allLocations)
+                ->filter(function (array $location) use ($employeeGroupIds, $departmentId): bool {
+                    if (empty($employeeGroupIds)) {
+                        return true;
+                    }
+
+                    return $location['employee_group_id'] === null
+                        || in_array(
+                            (int) $location['employee_group_id'],
+                            $employeeGroupIds,
+                            true
+                        )
+                        || $location['branch_id'] === null
+                        || (
+                            $departmentId !== null
+                            && (int) $location['branch_id'] === $departmentId
+                        );
+                })
+                ->map(fn (array $location) => (object) [
+                    'id' => $location['id'],
+                    'name' => $location['name'],
+                    'lat' => $location['lat'],
+                    'lng' => $location['lng'],
+                    'radius_meters' => $location['radius_meters'],
+                ])
+                ->values();
+        }
+
+        return (object) [
+            'ok' => true,
+            'data' => (object) [
+                'tracking_mode' => $trackingMode,
+                'methods' => (object) [
+                    $method => (object) [
+                        'enabled' => $globalEnabled,
+                        'allowed' => $allowed,
+                        'effective' => $globalEnabled && $allowed,
+                        'device_count' => (int) $methodConfig['device_count'],
+                    ],
+                ],
+                'gps_locations' => $gpsLocations,
+            ],
+        ];
     }
 
     protected function attendanceMethodUnavailableResponse($prep, $method)

@@ -2,19 +2,23 @@
 
 namespace Athka\SystemSettings\Http\Controllers\Api\Employee;
 
-use Illuminate\Http\Request;
-use Illuminate\Routing\Controller;
-use Carbon\Carbon;
 use Athka\SystemSettings\Services\EmployeeService;
 use Athka\SystemSettings\Services\WorkScheduleService;
+use Carbon\Carbon;
+use Illuminate\Http\Request;
+use Illuminate\Routing\Controller;
+use Illuminate\Support\Facades\Cache;
 
 class WorkScheduleController extends Controller
 {
     protected $employeeService;
+
     protected $scheduleService;
 
-    public function __construct(EmployeeService $employeeService, WorkScheduleService $scheduleService)
-    {
+    public function __construct(
+        EmployeeService $employeeService,
+        WorkScheduleService $scheduleService
+    ) {
         $this->employeeService = $employeeService;
         $this->scheduleService = $scheduleService;
     }
@@ -22,76 +26,153 @@ class WorkScheduleController extends Controller
     public function index(Request $request)
     {
         $user = $request->user();
+
         $companyId = $this->employeeService->getCompanyId($user);
         $employee = $this->employeeService->resolve($user);
 
         if (!$employee) {
-            return response()->json(['ok' => false, 'message' => 'Employee record not found'], 403);
+            return response()->json([
+                'ok' => false,
+                'message' => 'Employee record not found',
+            ], 403);
         }
 
         $start = $request->query('start');
-        $end   = $request->query('end');
+        $end = $request->query('end');
 
         try {
-            $from = $start ? Carbon::parse($start)->startOfDay() : now()->startOfMonth();
-            $to   = $end ? Carbon::parse($end)->startOfDay() : (clone $from)->endOfMonth();
+            $from = $start
+                ? Carbon::parse($start)->startOfDay()
+                : now()->startOfMonth();
+
+            $to = $end
+                ? Carbon::parse($end)->startOfDay()
+                : $from->copy()->endOfMonth();
         } catch (\Throwable $e) {
-            return response()->json(['ok' => false, 'message' => 'Invalid date range'], 422);
+            return response()->json([
+                'ok' => false,
+                'message' => 'Invalid date range',
+            ], 422);
         }
 
-        if ($to->lt($from)) [$from, $to] = [$to, $from];
+        if ($to->lt($from)) {
+            [$from, $to] = [$to, $from];
+        }
 
-        // Cap to 62 days manually if needed for performance
         if ($from->diffInDays($to) > 62) {
             $to = $from->copy()->addDays(62);
         }
 
-        $holidays = $this->scheduleService->getHolidays($companyId, $from->toDateString(), $to->toDateString());
-        $requests = $this->scheduleService->getEmployeeRequests($employee->id, $from->toDateString(), $to->toDateString());
+        $fromStr = $from->toDateString();
+        $toStr = $to->toDateString();
 
-        $days = [];
-        $cursor = $from->copy();
+        /*
+         * The schedule output is expensive because it calculates every
+         * date in the requested range. Cache the final employee response
+         * so repeated mobile requests do not recalculate the whole month.
+         */
+        $cacheKey = implode(':', [
+            'mobile',
+            'work-schedule',
+            'v2',
+            (int) $companyId,
+            (int) $employee->id,
+            $fromStr,
+            $toStr,
+            app()->getLocale(),
+        ]);
 
-        while ($cursor->lte($to)) {
-            $dateStr = $cursor->toDateString();
-            
-            // Resolve the specific schedule for THIS date (no fallback to match web exactly)
-            $effectiveSchedule = $this->scheduleService->getEffectiveSchedule($companyId, $employee, $dateStr, false);
-            $metrics = $this->scheduleService->getMetricsForDate($dateStr, $effectiveSchedule, $holidays, $employee, $requests);
+        $data = Cache::remember(
+            $cacheKey,
+            now()->addMinutes(5),
+            function () use (
+                $companyId,
+                $employee,
+                $from,
+                $to,
+                $fromStr,
+                $toStr
+            ) {
+                $holidays = $this->scheduleService->getHolidays(
+                    $companyId,
+                    $fromStr,
+                    $toStr
+                );
 
-            $days[] = [
-                'date' => $dateStr,
-                'day_key' => $this->scheduleService->getDayKey($cursor),
-                'status' => $metrics['status'],
-                'is_holiday' => $metrics['is_holiday'],
-                'holiday_name' => $metrics['holiday_name'],
-                'leave_name' => $metrics['leave_name'],
-                'is_workday' => $metrics['is_workday'],
-                'total_minutes' => $metrics['total_minutes'],
-                'periods' => $metrics['periods'],
-                'permissions' => $metrics['permissions'],
-            ];
+                $requests = $this->scheduleService->getEmployeeRequests(
+                    $employee->id,
+                    $fromStr,
+                    $toStr
+                );
 
-            $cursor->addDay();
-        }
+                $days = [];
+                $cursor = $from->copy();
 
-        // For the top-level 'schedule' info, we can show the one from the start date
-        $initialSchedule = $this->scheduleService->getEffectiveSchedule($companyId, $employee, $from->toDateString());
+                while ($cursor->lte($to)) {
+                    $dateStr = $cursor->toDateString();
+
+                    $effectiveSchedule =
+                        $this->scheduleService->getEffectiveSchedule(
+                            $companyId,
+                            $employee,
+                            $dateStr,
+                            false
+                        );
+
+                    $metrics =
+                        $this->scheduleService->getMetricsForDate(
+                            $dateStr,
+                            $effectiveSchedule,
+                            $holidays,
+                            $employee,
+                            $requests
+                        );
+
+                    $days[] = [
+                        'date' => $dateStr,
+                        'day_key' => $this->scheduleService->getDayKey(
+                            $cursor
+                        ),
+                        'status' => $metrics['status'],
+                        'is_holiday' => $metrics['is_holiday'],
+                        'holiday_name' => $metrics['holiday_name'],
+                        'leave_name' => $metrics['leave_name'],
+                        'is_workday' => $metrics['is_workday'],
+                        'total_minutes' => $metrics['total_minutes'],
+                        'periods' => $metrics['periods'],
+                        'permissions' => $metrics['permissions'],
+                    ];
+
+                    $cursor->addDay();
+                }
+
+                $initialSchedule =
+                    $this->scheduleService->getEffectiveSchedule(
+                        $companyId,
+                        $employee,
+                        $fromStr
+                    );
+
+                return [
+                    'range' => [
+                        'start' => $fromStr,
+                        'end' => $toStr,
+                    ],
+                    'schedule' => $initialSchedule
+                        ? [
+                            'id' => (int) $initialSchedule->id,
+                            'name' => (string) $initialSchedule->name,
+                            'work_days' => $initialSchedule->work_days,
+                        ]
+                        : null,
+                    'days' => $days,
+                ];
+            }
+        );
 
         return response()->json([
             'ok' => true,
-            'data' => [
-                'range' => [
-                    'start' => $from->toDateString(),
-                    'end' => $to->toDateString(),
-                ],
-                'schedule' => $initialSchedule ? [
-                    'id' => (int) $initialSchedule->id,
-                    'name' => (string) $initialSchedule->name,
-                    'work_days' => $initialSchedule->work_days,
-                ] : null,
-                'days' => $days,
-            ],
+            'data' => $data,
         ]);
     }
 }

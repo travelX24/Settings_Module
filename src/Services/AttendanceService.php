@@ -21,13 +21,20 @@ class AttendanceService
     /**
      * Ensure a daily log exists.
      */
-    public function ensureLog(int $companyId, int $employeeId, string $date, $schedule = null, $holidays = null, bool $force = false, $requests = null)
+    public function ensureLog(
+    int $companyId,
+    int $employeeId,
+    string $date,
+    $schedule = null,
+    $holidays = null,
+    bool $force = false,
+    $requests = null,
+)
     {
         $log = AttendanceDailyLog::where('saas_company_id', $companyId)
             ->where('employee_id', $employeeId)
             ->whereDate('attendance_date', $date)
             ->first();
-
         if (!$force && $log && !is_null($log->scheduled_hours) && (float)$log->scheduled_hours > 0) {
             $hasOpenSession = $log->details()
                 ->whereNull('check_out_time')
@@ -57,7 +64,7 @@ class AttendanceService
         // Saving triggers syncWithSchedule and other calculations in the model
         $log->save();
 
-        return $log;
+return $log;
     }
 
     /**
