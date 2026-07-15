@@ -62,7 +62,7 @@ class DailyAttendanceController extends Controller
         $fromStr = $from->toDateString();
         $toStr = $to->toDateString();
 
-        // 🚀 [Optimization] Bulk fetch context data (Holidays and Requests are safe for range)
+        // ðŸš€ [Optimization] Bulk fetch context data (Holidays and Requests are safe for range)
         $holidays = $this->scheduleService->getHolidays($companyId, $fromStr, $toStr);
         $requests = $this->scheduleService->getEmployeeRequests($employee->id, $fromStr, $toStr);
 
@@ -130,7 +130,7 @@ if ($syncOpenSessions) {
             }
             $daySchedule = $schedulesCache[$dateStr];
 
-            // 🚀 [Optimization] Pass pre-fetched requests and accurate schedule
+            // ðŸš€ [Optimization] Pass pre-fetched requests and accurate schedule
             $metrics = $this->scheduleService->getMetricsForDate($dateStr, $daySchedule, $holidays, $employee, $requests);
             $periods = collect($metrics['periods'] ?? [])->values();
             $detailsByPeriod = $details
@@ -180,7 +180,15 @@ if ($syncOpenSessions) {
                 'scheduled_check_out' => company_time($log->scheduled_check_out),
                 'punches' => $punches->values(),
                 'periods' => $periods
-                    ->map(fn($p) => company_time($p['start_time']) . ' - ' . company_time($p['end_time']))
+                    ->map(function ($p) {
+                        $range = company_time($p['start_time']) . ' - ' . company_time($p['end_time']);
+
+                        if (!empty($p['is_leave'])) {
+                            return '__leave__|' . trim((string) ($p['leave_name'] ?? '')) . '|' . $range;
+                        }
+
+                        return $range;
+                    })
                     ->all(),
             ];
         });

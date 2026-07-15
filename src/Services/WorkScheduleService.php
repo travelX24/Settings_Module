@@ -515,6 +515,9 @@ class WorkScheduleService
         $dayPermissions = ($requests['permissions'] ?? collect())->filter(fn($p) => (string)$p->permission_date === $dateStr);
 
         $leaveName = null;
+        $leaveDurationUnit = $leave ? (string) ($leave->duration_unit ?? 'full_day') : '';
+        $isPartialLeave = $leave && in_array($leaveDurationUnit, ['half_day', 'hours'], true) && !empty($leave->from_time) && !empty($leave->to_time);
+        $isFullDayLeave = $leave && !$isPartialLeave;
 
         if ($leave) {
             $leaveName = $leave->policy?->name ?: tr('Leave');
@@ -523,7 +526,7 @@ class WorkScheduleService
             $holidayName = $missionLabel;
         }
 
-        if ($schedule && !$isHolidayFinal && !$leave && !$mission) {
+        if ($schedule && !$isHolidayFinal && (!$leave || $isPartialLeave) && !$mission) {
             $isWorkday = in_array($dayKey, (array)$schedule->work_days);
             
             if ($schedule->exceptions) {
@@ -557,12 +560,24 @@ class WorkScheduleService
         $firstCheckIn = $periodsOut->isNotEmpty() ? $periodsOut->first()['start_time'] : null;
         $lastCheckOut = $periodsOut->isNotEmpty() ? $periodsOut->last()['end_time'] : null;
 
-        // If it's a partial leave, we can augment the periods
-        if ($leave && $leave->type === 'partial' && $leave->from_time && $leave->to_time) {
-            $periodsOut = $periodsOut->map(function($p) use ($leave) {
-                // Simplified: If the period overlaps with leave, mark it? 
-                // Actually Flutter expects each period to be either work or leave.
-                // For now, we'll just keep it simple as the mobile UI handles full-day status too.
+        // If it is a period leave, mark only the selected work period.
+        if ($isPartialLeave) {
+            $leavePeriodId = (int) ($leave->work_schedule_period_id ?? 0);
+            $leaveFrom = substr((string) $leave->from_time, 0, 5);
+            $leaveTo = substr((string) $leave->to_time, 0, 5);
+
+            $periodsOut = $periodsOut->map(function ($p) use ($leave, $leavePeriodId, $leaveFrom, $leaveTo) {
+                $periodId = (int) ($p['id'] ?? 0);
+                $periodFrom = substr((string) ($p['start_time'] ?? ''), 0, 5);
+                $periodTo = substr((string) ($p['end_time'] ?? ''), 0, 5);
+                $matches = ($leavePeriodId > 0 && $periodId === $leavePeriodId)
+                    || ($periodFrom === $leaveFrom && $periodTo === $leaveTo);
+
+                if ($matches) {
+                    $p['is_leave'] = true;
+                    $p['leave_name'] = $leave->policy?->name ?: tr('Leave');
+                }
+
                 return $p;
             });
         }
@@ -576,9 +591,9 @@ class WorkScheduleService
         // Final Status Determination (Priority)
         // Order: Leave > Mission > Holiday/Exceptional > Workday > Off
         // If no schedule is assigned and no other events exist, set to 'no_schedule' to show empty in UI
-        $finalStatus = ($schedule === null && !$isHolidayFinal && !$leave && !$mission) ? 'no_schedule' : 'off';
+        $finalStatus = ($schedule === null && !$isHolidayFinal && !$isFullDayLeave && !$mission) ? 'no_schedule' : 'off';
         
-        if ($leave) {
+        if ($isFullDayLeave) {
             $finalStatus = 'on_leave';
         } elseif ($mission) {
             $finalStatus = 'mission';
@@ -611,6 +626,8 @@ class WorkScheduleService
             'start_time' => substr((string)$p->start_time, 0, 5),
             'end_time' => substr((string)$p->end_time, 0, 5),
             'is_night_shift' => (bool)$p->is_night_shift,
+            'is_leave' => false,
+            'leave_name' => null,
         ];
     }
 

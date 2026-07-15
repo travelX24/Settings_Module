@@ -721,6 +721,14 @@
                                 </x-ui.select>
                             </div>
 
+                            {{-- Duration --}}
+                            <div>
+                                <x-ui.select label="{{ tr('Duration type') }}" wire:model.defer="duration_unit"
+                                    :disabled="!$canManageAttendance">
+                                    <option value="full_day">{{ tr('Full day only') }}</option>
+                                    <option value="half_day">{{ tr('Full day or half day') }}</option>
+                                </x-ui.select>
+                            </div>
                             {{-- Notice --}}
                             <div>
                                 <x-ui.input type="number" min="0" label="{{ tr('Min notice (days)') }}"

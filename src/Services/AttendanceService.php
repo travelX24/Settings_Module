@@ -43,7 +43,7 @@ class AttendanceService
             if (!$hasOpenSession) {
                 return $log;
             }
-            // Fall through → save() → calculateStatus() → auto-checkout applied
+            // Fall through â†’ save() â†’ calculateStatus() â†’ auto-checkout applied
         }
 
         if (!$log) {
@@ -80,6 +80,8 @@ return $log;
         $matchedPeriodId = null;
         $matchedPeriodEndTime = null;
         $matchedPeriodKey = null;
+        $matchedPeriodIsLeave = false;
+        $matchedPeriodLeaveName = null;
 
         $isWithinPeriod = false;
 
@@ -102,6 +104,8 @@ return $log;
                 $matchedPeriodId = $p['work_schedule_period_id'];
                 $matchedPeriodEndTime = $endTime;
                 $matchedPeriodKey = $p['period_key'];
+                $matchedPeriodIsLeave = (bool) ($p['is_leave'] ?? false);
+                $matchedPeriodLeaveName = $p['leave_name'] ?? null;
                 $isWithinPeriod = true;
 
                 if ($now->greaterThan($realStart->copy()->addMinutes($lateGraceMins))) {
@@ -111,7 +115,7 @@ return $log;
             }
         }
 
-        // ─── Check & Auto-Close open sessions ──────────────────────────────
+        // â”€â”€â”€ Check & Auto-Close open sessions â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
         // This MUST happen before the too_early_for_checkin gate so that an
         // employee who forgot to check out from period 1 can still trigger
         // check-in for period 2 (or get unblocked between periods).
@@ -124,7 +128,7 @@ return $log;
             $shouldAutoClose = false;
             $openPeriodKey = $this->periodKeyFromDetail($openSession);
 
-            // Case 1: We matched a NEW period — the open session is from a different one
+            // Case 1: We matched a NEW period â€” the open session is from a different one
             if ($matchedPeriodId && (int)$openSession->work_schedule_period_id !== (int)$matchedPeriodId) {
                 $shouldAutoClose = true;
             }
@@ -134,7 +138,7 @@ return $log;
             }
 
             // Case 2: We're NOT within any period window BUT the open session's period has already ended
-            // (employee is stuck between periods — auto-close the old session)
+            // (employee is stuck between periods â€” auto-close the old session)
             if (!$isWithinPeriod && !$shouldAutoClose) {
                 $openPeriodEndTime = null;
 
@@ -158,7 +162,7 @@ return $log;
                     ->where('id', $openSession->work_schedule_period_id)
                     ->first();
 
-                // ─── Smart Auto-Checkout Time Calculation ───────────────────────
+                // â”€â”€â”€ Smart Auto-Checkout Time Calculation â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
                 // Fetch the company's auto-checkout limit (stored in hours despite the column name)
                 $grace = AttendanceGraceSetting::where('saas_company_id', $log->saas_company_id)->first();
                 $limitHours   = (int) ($grace->auto_checkout_after_minutes ?? 2);
@@ -172,17 +176,17 @@ return $log;
                     $breakMinutes = (int) $prevPeriodEnd->diffInMinutes($now);
 
                     if ($breakMinutes < $limitMinutes) {
-                        // Case 1: Break < limit → employee returned within the window.
+                        // Case 1: Break < limit â†’ employee returned within the window.
                         // Auto-checkout = moment the employee checked in for Period 2.
                         $autoOutTime = $nowTime;
                         $autoOutMethod = 'next_period_checkin';
                     } else {
-                        // Case 2: Break ≥ limit → cap the session at Period-1 end + limit.
+                        // Case 2: Break â‰¥ limit â†’ cap the session at Period-1 end + limit.
                         $autoOutTime = $prevPeriodEnd->copy()->addHours($limitHours)->format('H:i:s');
                         $autoOutMethod = 'period_end_plus_limit';
                     }
                 } else {
-                    // No period record found — fallback to scheduled checkout or now
+                    // No period record found â€” fallback to scheduled checkout or now
                     $autoOutTime = $log->scheduled_check_out ?? $nowTime;
                 }
 
@@ -198,16 +202,21 @@ return $log;
                     ), JSON_UNESCAPED_UNICODE),
                     'updated_at'     => $now,
                 ]);
-                $openSession = null; // session closed — proceed with check-in
+                $openSession = null; // session closed â€” proceed with check-in
             } else {
-                // Session is still active for the CURRENT period — block duplicate check-in
+                // Session is still active for the CURRENT period â€” block duplicate check-in
                 return ['ok' => false, 'code' => 'already_checked_in', 'message' => tr('You already have an open attendance session.')];
             }
         }
 
-        // ─── Period window gate (after auto-close) ─────────────────────────
+        // â”€â”€â”€ Period window gate (after auto-close) â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
         if (!$isWithinPeriod) {
             return ['ok' => false, 'code' => 'too_early_for_checkin', 'message' => tr('You cannot check-in more than 30 minutes before the period starts.')];
+        }
+
+        if ($matchedPeriodIsLeave) {
+            $leaveLabel = $matchedPeriodLeaveName ?: tr('Leave');
+            return ['ok' => false, 'code' => 'on_leave_period', 'message' => tr('You have leave during this work period.') . ' ' . $leaveLabel];
         }
 
         // One more check: has this period already been used?
@@ -329,7 +338,7 @@ return $log;
                     'ok' => false, 
                     'code' => 'checkout_too_early', 
                     'message' => app()->getLocale() === 'ar' 
-                        ? 'لا يمكنك تسجيل الانصراف إلا بعد مرور ساعة كاملة من وقت التحضير أو بعد انتهاء فترة الدوام الرسمية.'
+                        ? 'Ù„Ø§ ÙŠÙ…ÙƒÙ†Ùƒ ØªØ³Ø¬ÙŠÙ„ Ø§Ù„Ø§Ù†ØµØ±Ø§Ù Ø¥Ù„Ø§ Ø¨Ø¹Ø¯ Ù…Ø±ÙˆØ± Ø³Ø§Ø¹Ø© ÙƒØ§Ù…Ù„Ø© Ù…Ù† ÙˆÙ‚Øª Ø§Ù„ØªØ­Ø¶ÙŠØ± Ø£Ùˆ Ø¨Ø¹Ø¯ Ø§Ù†ØªÙ‡Ø§Ø¡ ÙØªØ±Ø© Ø§Ù„Ø¯ÙˆØ§Ù… Ø§Ù„Ø±Ø³Ù…ÙŠØ©.'
                         : 'You cannot check-out within 1 hour of check-in, or before the period ends.'
                 ];
             }
@@ -406,6 +415,8 @@ return $log;
                 'is_night_shift' => (bool)($e->is_night_shift ?? false),
                 'work_schedule_period_id' => null,
                 'period_key' => 'schedule_exception:' . ($e->id ?? md5($dateStr . $e->start_time . $e->end_time)),
+                'is_leave' => false,
+                'leave_name' => null,
             ])->all();
         }
 
@@ -439,6 +450,8 @@ return $log;
                     'work_schedule_period_id' => $isBasePeriod ? (int)$id : null,
                     'period_key' => ($isBasePeriod ? 'work_schedule_period:' : 'effective_period:')
                         . ($id ?: md5($dateStr . ($p['start_time'] ?? '') . ($p['end_time'] ?? ''))),
+                    'is_leave' => (bool)($p['is_leave'] ?? false),
+                    'leave_name' => $p['leave_name'] ?? null,
                 ];
             })->all();
         }
@@ -449,6 +462,8 @@ return $log;
             'is_night_shift' => (bool)($p->is_night_shift ?? false),
             'work_schedule_period_id' => $p->id ?? null,
             'period_key' => 'work_schedule_period:' . ($p->id ?? md5($dateStr . $p->start_time . $p->end_time)),
+            'is_leave' => false,
+            'leave_name' => null,
         ])->all();
     }
 
