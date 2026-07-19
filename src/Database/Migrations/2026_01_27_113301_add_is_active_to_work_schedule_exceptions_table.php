@@ -1,10 +1,4 @@
-php artisan make:migration add_is_active_to_work_schedule_exceptions_table --table=work_schedule_exceptions
-
-   INFO  Migration [C:\xampp\htdocs\Laravel\Athka_HR\HrWithModules\database\migrations\2026_01_27_113202_add_is_active_to_work_schedule_exceptions_table.php] created successfully.
-
-PS C:\xampp\htdocs\Laravel\Athka_HR\HrWithModules> php artisan make:migration add_is_active_to_work_schedule_exceptions_table --table=work_schedule_exceptions
-
-   INFO  Migration [C:\xampp\htdocs\Laravel\Athka_HR\HrWithModules\database\migrations\2026_01_27_113301_add_is_active_to_work_schedule_exceptions_table.php] created successfully.  <?php
+<?php
 
 use Illuminate\Database\Migrations\Migration;
 use Illuminate\Database\Schema\Blueprint;
