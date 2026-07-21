@@ -13,6 +13,21 @@ use Illuminate\Database\QueryException;
 
 class ApprovalPolicyController extends Controller
 {
+    private function authorizeApprovalView(): void
+    {
+        $user = Auth::user();
+
+        abort_unless(
+            $user && ($user->can('settings.approval.view') || $user->can('settings.approval.manage')),
+            403
+        );
+    }
+
+    private function authorizeApprovalManage(): void
+    {
+        abort_unless(Auth::user()?->can('settings.approval.manage'), 403);
+    }
+
     private function companyId(): int
     {
         if (app()->bound('currentCompany') && app('currentCompany')) {
@@ -81,6 +96,8 @@ class ApprovalPolicyController extends Controller
 
     public function tabs()
     {
+        $this->authorizeApprovalView();
+
         return response()->json([
             'ok'   => true,
             'data' => [
@@ -96,6 +113,8 @@ class ApprovalPolicyController extends Controller
 
     public function lookups()
     {
+        $this->authorizeApprovalView();
+
         $companyId = $this->companyId();
 
         $departments = Schema::hasTable('departments')
@@ -134,6 +153,8 @@ class ApprovalPolicyController extends Controller
 
     public function index(Request $request)
     {
+        $this->authorizeApprovalView();
+
         $companyId = $this->companyId();
 
         $operationKey = (string) $request->query('operation_key', '');
@@ -183,6 +204,8 @@ class ApprovalPolicyController extends Controller
 
     public function show(int $id)
     {
+        $this->authorizeApprovalView();
+
         $companyId = $this->companyId();
 
         $policy = ApprovalPolicy::query()
@@ -216,11 +239,15 @@ class ApprovalPolicyController extends Controller
 
     public function store(Request $request)
     {
+        $this->authorizeApprovalManage();
+
         return $this->savePolicy($request, null);
     }
 
     public function update(Request $request, int $id)
     {
+        $this->authorizeApprovalManage();
+
         return $this->savePolicy($request, $id);
     }
 
@@ -342,6 +369,8 @@ class ApprovalPolicyController extends Controller
 
     public function destroy(int $id)
     {
+        $this->authorizeApprovalManage();
+
         $companyId = $this->companyId();
 
         $policy = ApprovalPolicy::query()
@@ -374,6 +403,8 @@ class ApprovalPolicyController extends Controller
      */
     public function effective(Request $request)
     {
+        $this->authorizeApprovalView();
+
         $companyId = $this->companyId();
 
         $request->validate([
