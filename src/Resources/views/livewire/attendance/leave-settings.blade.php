@@ -415,7 +415,7 @@
                                     <span>{{ tr('Allow retroactive requests') }}</span>
                                 </label>
                                 @error('allow_retroactive')
-                                    <div class="text-xs text-[color:var(--error)] mt-1">{{ $message }}</div>
+                                    <div class="text-xs text-[color:var(--error)] mt-1">{{ \Athka\AuthKit\Support\UiMsg::toText($message) ?? $message }}</div>
                                 @enderror
                             </div>
 
@@ -451,7 +451,7 @@
                                     <span>{{ tr('Mandatory note') }}</span>
                                 </label>
                                 @error('note_required')
-                                    <div class="text-xs text-[color:var(--error)] mt-1">{{ $message }}</div>
+                                    <div class="text-xs text-[color:var(--error)] mt-1">{{ \Athka\AuthKit\Support\UiMsg::toText($message) ?? $message }}</div>
                                 @enderror
 
                                 <div class="mt-3">
@@ -467,7 +467,7 @@
                                     <span>{{ tr('Require acknowledgment of the note') }}</span>
                                 </label>
                                 @error('note_ack_required')
-                                    <div class="text-xs text-[color:var(--error)] mt-1">{{ $message }}</div>
+                                    <div class="text-xs text-[color:var(--error)] mt-1">{{ \Athka\AuthKit\Support\UiMsg::toText($message) ?? $message }}</div>
                                 @enderror
                             </div>
 
@@ -514,10 +514,10 @@
                                             </label>
                                         </div>
                                         @error('attachment_types')
-                                            <div class="text-xs text-[color:var(--error)] mt-1">{{ $message }}</div>
+                                            <div class="text-xs text-[color:var(--error)] mt-1">{{ \Athka\AuthKit\Support\UiMsg::toText($message) ?? $message }}</div>
                                         @enderror
                                         @error('attachment_types.*')
-                                            <div class="text-xs text-[color:var(--error)] mt-1">{{ $message }}</div>
+                                            <div class="text-xs text-[color:var(--error)] mt-1">{{ \Athka\AuthKit\Support\UiMsg::toText($message) ?? $message }}</div>
                                         @enderror
                                     </div>
 
@@ -749,7 +749,7 @@
                                     <span>{{ tr('Allow retroactive requests') }}</span>
                                 </label>
                                 @error('allow_retroactive')
-                                    <div class="text-xs text-[color:var(--error)] mt-1">{{ $message }}</div>
+                                    <div class="text-xs text-[color:var(--error)] mt-1">{{ \Athka\AuthKit\Support\UiMsg::toText($message) ?? $message }}</div>
                                 @enderror
                             </div>
 
@@ -785,7 +785,7 @@
                                     <span>{{ tr('Mandatory note') }}</span>
                                 </label>
                                 @error('note_required')
-                                    <div class="text-xs text-[color:var(--error)] mt-1">{{ $message }}</div>
+                                    <div class="text-xs text-[color:var(--error)] mt-1">{{ \Athka\AuthKit\Support\UiMsg::toText($message) ?? $message }}</div>
                                 @enderror
 
                                 <div class="mt-3">
@@ -801,7 +801,7 @@
                                     <span>{{ tr('Require acknowledgment of the note') }}</span>
                                 </label>
                                 @error('note_ack_required')
-                                    <div class="text-xs text-[color:var(--error)] mt-1">{{ $message }}</div>
+                                    <div class="text-xs text-[color:var(--error)] mt-1">{{ \Athka\AuthKit\Support\UiMsg::toText($message) ?? $message }}</div>
                                 @enderror
                             </div>
 
@@ -848,10 +848,10 @@
                                             </label>
                                         </div>
                                         @error('attachment_types')
-                                            <div class="text-xs text-[color:var(--error)] mt-1">{{ $message }}</div>
+                                            <div class="text-xs text-[color:var(--error)] mt-1">{{ \Athka\AuthKit\Support\UiMsg::toText($message) ?? $message }}</div>
                                         @enderror
                                         @error('attachment_types.*')
-                                            <div class="text-xs text-[color:var(--error)] mt-1">{{ $message }}</div>
+                                            <div class="text-xs text-[color:var(--error)] mt-1">{{ \Athka\AuthKit\Support\UiMsg::toText($message) ?? $message }}</div>
                                         @enderror
                                     </div>
 
@@ -1588,10 +1588,10 @@
                                 </div>
 
                                 @error('perm_attachment_types')
-                                    <div class="text-xs text-[color:var(--error)] mt-1">{{ $message }}</div>
+                                    <div class="text-xs text-[color:var(--error)] mt-1">{{ \Athka\AuthKit\Support\UiMsg::toText($message) ?? $message }}</div>
                                 @enderror
                                 @error('perm_attachment_types.*')
-                                    <div class="text-xs text-[color:var(--error)] mt-1">{{ $message }}</div>
+                                    <div class="text-xs text-[color:var(--error)] mt-1">{{ \Athka\AuthKit\Support\UiMsg::toText($message) ?? $message }}</div>
                                 @enderror
                             </div>
 

@@ -624,7 +624,7 @@
                                 </select>
 
                                 @error('scope_ids')
-                                    <div class="text-xs text-[color:var(--error)] mt-1">{{ $message }}</div>
+                                    <div class="text-xs text-[color:var(--error)] mt-1">{{ \Athka\AuthKit\Support\UiMsg::toText($message) ?? $message }}</div>
                                 @enderror
                             @endif
                         </div>
@@ -738,11 +738,11 @@
                                 </div>
 
                                 @error("steps.$i.approver_type")
-                                    <div class="text-xs text-[color:var(--error)] mt-2">{{ $message }}</div>
+                                    <div class="text-xs text-[color:var(--error)] mt-2">{{ \Athka\AuthKit\Support\UiMsg::toText($message) ?? $message }}</div>
                                 @enderror
 
                                 @error("steps.$i.approver_id")
-                                    <div class="text-xs text-[color:var(--error)] mt-1">{{ $message }}</div>
+                                    <div class="text-xs text-[color:var(--error)] mt-1">{{ \Athka\AuthKit\Support\UiMsg::toText($message) ?? $message }}</div>
                                 @enderror
                             </div>
                         @endforeach
@@ -755,7 +755,7 @@
                         @endif
                         
                         @error("steps")
-                            <div class="text-sm font-semibold text-[color:var(--error)] mt-2 text-center">{{ $message }}</div>
+                            <div class="text-sm font-semibold text-[color:var(--error)] mt-2 text-center">{{ \Athka\AuthKit\Support\UiMsg::toText($message) ?? $message }}</div>
                         @enderror
                     </div>
                 </div>

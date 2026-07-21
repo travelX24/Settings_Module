@@ -442,7 +442,7 @@
                                 <div class="text-xs text-gray-600 mb-1">{{ tr('Name') }}</div>
                                 <x-ui.input wire:model.defer="form.name" :disabled="!$canManageAttendance" />
                                 @error('form.name')
-                                    <div class="text-xs text-[color:var(--error)] mt-1">{{ $message }}</div>
+                                    <div class="text-xs text-[color:var(--error)] mt-1">{{ \Athka\AuthKit\Support\UiMsg::toText($message) ?? $message }}</div>
                                 @enderror
                             </div>
 
@@ -487,7 +487,7 @@
                                     <option value="late">{{ tr('Late') }}</option>
                                 </x-ui.select>
                                 @error('form.apply_on')
-                                    <div class="text-xs text-[color:var(--error)] mt-1">{{ $message }}</div>
+                                    <div class="text-xs text-[color:var(--error)] mt-1">{{ \Athka\AuthKit\Support\UiMsg::toText($message) ?? $message }}</div>
                                 @enderror
                             </div>
 
@@ -498,7 +498,7 @@
                                     <option value="without">{{ tr('Without Deduction') }}</option>
                                 </x-ui.select>
                                 @error('form.deduction_mode')
-                                    <div class="text-xs text-[color:var(--error)] mt-1">{{ $message }}</div>
+                                    <div class="text-xs text-[color:var(--error)] mt-1">{{ \Athka\AuthKit\Support\UiMsg::toText($message) ?? $message }}</div>
                                 @enderror
                             </div>
 
@@ -513,7 +513,7 @@
                                     <x-ui.input type="number" step="0.01" min="0" max="1000"
                                         wire:model.defer="form.deduction_percent" :disabled="!$canManageAttendance" />
                                     @error('form.deduction_percent')
-                                        <div class="text-xs text-[color:var(--error)] mt-1">{{ $message }}</div>
+                                        <div class="text-xs text-[color:var(--error)] mt-1">{{ \Athka\AuthKit\Support\UiMsg::toText($message) ?? $message }}</div>
                                     @enderror
 
                                     <div class="mt-1 text-xs text-gray-500">
@@ -527,7 +527,7 @@
                                         <x-ui.input type="number" min="0" max="24"
                                             wire:model.defer="form.grace_hours" />
                                         @error('form.grace_hours')
-                                            <div class="text-xs text-[color:var(--error)] mt-1">{{ $message }}</div>
+                                            <div class="text-xs text-[color:var(--error)] mt-1">{{ \Athka\AuthKit\Support\UiMsg::toText($message) ?? $message }}</div>
                                         @enderror
                                     </div>
                                 @endif
@@ -554,7 +554,7 @@
                                     <option value="employees">{{ tr('Specific Employees') }}</option>
                                 </x-ui.select>
                                 @error('form.scope_type')
-                                    <div class="text-xs text-[color:var(--error)] mt-1">{{ $message }}</div>
+                                    <div class="text-xs text-[color:var(--error)] mt-1">{{ \Athka\AuthKit\Support\UiMsg::toText($message) ?? $message }}</div>
                                 @enderror
                             </div>
 
@@ -576,7 +576,7 @@
                                         @endforeach
                                     </x-ui.select>
                                     @error('form.include.departments')
-                                        <div class="text-xs text-[color:var(--error)] mt-1">{{ $message }}</div>
+                                        <div class="text-xs text-[color:var(--error)] mt-1">{{ \Athka\AuthKit\Support\UiMsg::toText($message) ?? $message }}</div>
                                     @enderror
                                 </div>
 
@@ -601,7 +601,7 @@
                                         @endforeach
                                     </x-ui.select>
                                     @error('form.include.branches')
-                                        <div class="text-xs text-[color:var(--error)] mt-1">{{ $message }}</div>
+                                        <div class="text-xs text-[color:var(--error)] mt-1">{{ \Athka\AuthKit\Support\UiMsg::toText($message) ?? $message }}</div>
                                     @enderror
                                 </div>
                             @endif
@@ -616,7 +616,7 @@
                                         @endforeach
                                     </x-ui.select>
                                     @error('form.include.contract_types')
-                                        <div class="text-xs text-[color:var(--error)] mt-1">{{ $message }}</div>
+                                        <div class="text-xs text-[color:var(--error)] mt-1">{{ \Athka\AuthKit\Support\UiMsg::toText($message) ?? $message }}</div>
                                     @enderror
                                 </div>
                             @endif
@@ -638,7 +638,7 @@
                                         @endforeach
                                     </x-ui.select>
                                     @error('form.include.employees')
-                                        <div class="text-xs text-[color:var(--error)] mt-1">{{ $message }}</div>
+                                        <div class="text-xs text-[color:var(--error)] mt-1">{{ \Athka\AuthKit\Support\UiMsg::toText($message) ?? $message }}</div>
                                     @enderror
                                 </div>
                             @endif
@@ -648,7 +648,7 @@
                                 <x-ui.textarea rows="2" wire:model.defer="form.notify_message"
                                     :disabled="!$canManageAttendance" />
                                 @error('form.notify_message')
-                                    <div class="text-xs text-[color:var(--error)] mt-1">{{ $message }}</div>
+                                    <div class="text-xs text-[color:var(--error)] mt-1">{{ \Athka\AuthKit\Support\UiMsg::toText($message) ?? $message }}</div>
                                 @enderror
                             </div>
 

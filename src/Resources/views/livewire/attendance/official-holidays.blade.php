@@ -315,7 +315,7 @@
                 <div>
                     <x-ui.company-date-picker model="newStartDate" :label="tr('Start Date')" :calendarType="$newCalendarType" />
                     @error('newStartDate')
-                        <div class="text-xs text-[color:var(--error)] mt-1">{{ $message }}</div>
+                        <div class="text-xs text-[color:var(--error)] mt-1">{{ \Athka\AuthKit\Support\UiMsg::toText($message) ?? $message }}</div>
                     @enderror
                 </div>
 
@@ -388,7 +388,7 @@
                 <div>
                     <x-ui.company-date-picker model="editStartDate" :label="tr('Start Date')" :calendarType="$editCalendarType" />
                     @error('editStartDate')
-                        <div class="text-xs text-[color:var(--error)] mt-1">{{ $message }}</div>
+                        <div class="text-xs text-[color:var(--error)] mt-1">{{ \Athka\AuthKit\Support\UiMsg::toText($message) ?? $message }}</div>
                     @enderror
                 </div>
 

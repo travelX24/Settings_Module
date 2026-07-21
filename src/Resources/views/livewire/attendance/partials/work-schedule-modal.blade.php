@@ -193,13 +193,13 @@
 
                                 @error('scheduleData.periods.'.$idx.'.end_time')
                                     <p class="text-[9px] font-bold text-[color:var(--error)] px-3 flex items-center gap-1">
-                                        <i class="fas fa-exclamation-circle text-[8px]"></i> {{ $message }}
+                                        <i class="fas fa-exclamation-circle text-[8px]"></i> {{ \Athka\AuthKit\Support\UiMsg::toText($message) ?? $message }}
                                     </p>
                                 @enderror
 
                                 @error('scheduleData.periods.'.$idx.'.start_time')
                                     <p class="text-[9px] font-bold text-[color:var(--error)] px-3 flex items-center gap-1">
-                                        <i class="fas fa-exclamation-circle text-[8px]"></i> {{ $message }}
+                                        <i class="fas fa-exclamation-circle text-[8px]"></i> {{ \Athka\AuthKit\Support\UiMsg::toText($message) ?? $message }}
                                     </p>
                                 @enderror
                             </div>

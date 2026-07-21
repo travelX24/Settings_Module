@@ -335,11 +335,9 @@ return $log;
 
             if (!$canCheckOut) {
                 return [
-                    'ok' => false, 
-                    'code' => 'checkout_too_early', 
-                    'message' => app()->getLocale() === 'ar' 
-                        ? 'Ù„Ø§ ÙŠÙ…ÙƒÙ†Ùƒ ØªØ³Ø¬ÙŠÙ„ Ø§Ù„Ø§Ù†ØµØ±Ø§Ù Ø¥Ù„Ø§ Ø¨Ø¹Ø¯ Ù…Ø±ÙˆØ± Ø³Ø§Ø¹Ø© ÙƒØ§Ù…Ù„Ø© Ù…Ù† ÙˆÙ‚Øª Ø§Ù„ØªØ­Ø¶ÙŠØ± Ø£Ùˆ Ø¨Ø¹Ø¯ Ø§Ù†ØªÙ‡Ø§Ø¡ ÙØªØ±Ø© Ø§Ù„Ø¯ÙˆØ§Ù… Ø§Ù„Ø±Ø³Ù…ÙŠØ©.'
-                        : 'You cannot check-out within 1 hour of check-in, or before the period ends.'
+                    'ok' => false,
+                    'code' => 'checkout_too_early',
+                    'message' => tr('You cannot check-out within 1 hour of check-in, or before the period ends.'),
                 ];
             }
         }

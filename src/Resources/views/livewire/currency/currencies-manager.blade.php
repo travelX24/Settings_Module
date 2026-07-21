@@ -281,7 +281,7 @@
                         </div>
                     @endif
                     @error('code')
-                        <p class="mt-1.5 text-[11px] font-bold text-[color:var(--error)]">{{ $message }}</p>
+                        <p class="mt-1.5 text-[11px] font-bold text-[color:var(--error)]">{{ \Athka\AuthKit\Support\UiMsg::toText($message) ?? $message }}</p>
                     @enderror
                 </div>
 

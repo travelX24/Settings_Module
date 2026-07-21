@@ -81,7 +81,7 @@
                 </div>
 
                 @error('calendar_type')
-                    <p class="text-[11px] font-bold text-red-500 text-center">{{ $message }}</p>
+                    <p class="text-[11px] font-bold text-red-500 text-center">{{ \Athka\AuthKit\Support\UiMsg::toText($message) ?? $message }}</p>
                 @enderror
             </div>
 
