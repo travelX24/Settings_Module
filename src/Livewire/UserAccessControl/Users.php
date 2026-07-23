@@ -364,7 +364,7 @@ class Users extends Component
 
         // Detailed info for selected employee
         $selectedEmp = null;
-        if ($this->selectedEmployeeId) {
+        if ($this->showModal && $this->selectedEmployeeId) {
             $selectedEmp = Employee::withoutGlobalScope('active_only')
                 ->with(['department', 'jobTitle'])
                 ->find($this->selectedEmployeeId);
@@ -376,30 +376,30 @@ class Users extends Component
 
         return view('systemsettings::livewire.user-access-control.users', [
             'users' => $users,
-            'roles' => Role::where('name', '!=', 'saas-admin')
+            'roles' => $this->showModal ? Role::where('name', '!=', 'saas-admin')
                 ->where(function ($q) use ($companyId) {
                     $q->where('saas_company_id', $companyId)
                       ->orWhere(function($subQ) {
                           $subQ->whereNull('saas_company_id')
                                ->whereIn('name', ['company-admin', 'system-admin', 'super-admin']);
                       });
-                })->get(),
-            'foundEmployees' => Employee::withoutGlobalScope('active_only')
+                })->get() : collect(),
+            'foundEmployees' => $this->showModal ? Employee::withoutGlobalScope('active_only')
                 ->forCompany($companyId)
                 ->when($this->employeeStatus !== 'all', fn ($query) => $query->where('status', $this->employeeStatus))
                 ->where(function($query) {
                     $query->whereDoesntHave('user')
                         ->orWhere('id', $this->selectedEmployeeId);
-                })->get(),
+                })->get() : collect(),
             'employeeBranchCol' => $metadata['col'],
             'branchesById' => $branchesById,
             'display_name' => $selectedEmp ? ($selectedEmp->name_ar ?? $selectedEmp->name_en) : '',
             'display_phone' => $selectedEmp ? ($selectedEmp->mobile ?? '') : '',
             'display_department' => $selectedEmp?->department?->name ?? '-',
             'display_job_title' => $selectedEmp?->jobTitle?->name ?? '-',
-            'permissionGroups' => $this->uacService->getPermissionGroups(),
+            'permissionGroups' => $this->showPermModal ? $this->uacService->getPermissionGroups() : [],
             'permissionsMap' => $this->uacService->getPermissionLabels(),
-            'permissionTabs' => $this->uacService->getPermissionTabs(),
+            'permissionTabs' => $this->showPermModal ? $this->uacService->getPermissionTabs() : [],
             'primaryUserId' => $primaryUserId
         ]);
     }

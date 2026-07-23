@@ -60,11 +60,11 @@ class Departments extends Component
 
         return view('systemsettings::livewire.organizational-structure.departments', [
             'departments' => $departments,
-            'managers' => $this->orgService->getManagersList($companyId, app()->getLocale()),
-            'parentDepartments' => Department::forCompany($companyId)
+            'managers' => $this->showModal ? $this->orgService->getManagersList($companyId, app()->getLocale()) : collect(),
+            'parentDepartments' => $this->showModal ? Department::forCompany($companyId)
                 ->when($this->editingId, fn($q) => $q->where('id', '!=', $this->editingId))
                 ->whereNull('parent_id') // Only root departments can be parents
-                ->get(),
+                ->get() : collect(),
             'rootDepartments' => Department::forCompany($companyId)
                 ->root()
                 ->get()

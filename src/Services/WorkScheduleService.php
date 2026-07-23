@@ -57,6 +57,7 @@ class WorkScheduleService
                 // Priority 1: active employee rotation.
                 if ($employee) {
                     $rotation = DB::table('employee_shift_rotations')
+                        ->where('saas_company_id', $companyId)
                         ->where('employee_id', $employeeId)
                         ->whereDate('start_date', '<=', $resolveDate)
                         ->where(function ($query) use ($resolveDate) {
@@ -82,6 +83,7 @@ class WorkScheduleService
 
                     // Priority 2: active fixed employee assignment.
                     $assignment = DB::table('employee_work_schedules')
+                        ->where('saas_company_id', $companyId)
                         ->where('employee_id', $employeeId)
                         ->whereDate('start_date', '<=', $resolveDate)
                         ->where(function ($query) use ($resolveDate) {
@@ -124,6 +126,7 @@ class WorkScheduleService
             "work-schedule:model:v{$version}:{$resolvedScheduleId}",
             now()->addSeconds(30),
             fn () => WorkSchedule::query()
+                ->where('saas_company_id', $companyId)
                 ->with(['periods', 'exceptions'])
                 ->find($resolvedScheduleId)
         );

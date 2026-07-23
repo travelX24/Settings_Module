@@ -416,6 +416,7 @@
     </div>
 
     {{-- User Modal --}}
+    @if($showModal)
     <x-ui.modal wire:model="showModal" maxWidth="2xl">
         <x-slot name="title">
             {{ $editingId ? tr('Edit User') : tr('Add New User') }}
@@ -528,6 +529,7 @@
             </form>
         </x-slot>
     </x-ui.modal>
+    @endif
 
     {{-- Confirm Dialog --}}
     <x-ui.confirm-dialog
@@ -551,6 +553,7 @@
     />
 
     {{-- Custom Permissions Modal --}}
+    @if($showPermModal)
     <x-ui.modal wire:model="showPermModal" maxWidth="5xl">
         <x-slot name="title">
             <div class="flex items-center gap-3">
@@ -735,5 +738,6 @@
             </div>
         </x-slot>
     </x-ui.modal>
+    @endif
 
 </div>

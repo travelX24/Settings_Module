@@ -298,6 +298,7 @@
     </x-ui.card>
 
     {{-- Add/Edit Modal --}}
+    @if($showModal)
     <x-ui.modal wire:model="showModal" maxWidth="4xl">
         <x-slot:title>
             <div class="space-y-1">
@@ -384,6 +385,7 @@
             @endcan
         </x-slot:footer>
     </x-ui.modal>
+    @endif
 
     {{-- Deletion Confirmation Dialog --}}
     <x-ui.confirm-dialog

@@ -86,17 +86,23 @@
     </div>
 
     {{-- MODALS --}}
-    @include('systemsettings::livewire.attendance.partials.modals.group-modal')
-    @include('systemsettings::livewire.attendance.partials.modals.penalty-modal')
-    @include('systemsettings::livewire.attendance.partials.modals.absence-modal')
-    @include('systemsettings::livewire.attendance.partials.modals.gps-modals')
-    @include('systemsettings::livewire.attendance.partials.modals.device-modals')
+    @if($showGroupModal)
+        @include('systemsettings::livewire.attendance.partials.modals.group-modal')
+    @endif
+    @if($showPenaltyModal)
+        @include('systemsettings::livewire.attendance.partials.modals.penalty-modal')
+    @endif
+    @if($showAbsenceModal)
+        @include('systemsettings::livewire.attendance.partials.modals.absence-modal')
+    @endif
+    @if($showSavedLocationsModal || $showGpsModal)
+        @include('systemsettings::livewire.attendance.partials.modals.gps-modals')
+    @endif
+    @if($showFingerprintModal || $showNfcModal || $showSavedFingerprintModal || $showSavedNfcModal)
+        @include('systemsettings::livewire.attendance.partials.modals.device-modals')
+    @endif
 
     {{-- Confirmation Dialogs & Assets --}}
-    @include('systemsettings::livewire.attendance.partials.modals.confirmations')
-</div>
-
-
-
-
-
+    @if($showSavedLocationsModal || $showSavedFingerprintModal || $showSavedNfcModal)
+        @include('systemsettings::livewire.attendance.partials.modals.confirmations')
+    @endif</div>

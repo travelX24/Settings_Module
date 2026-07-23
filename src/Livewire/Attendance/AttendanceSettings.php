@@ -477,7 +477,7 @@ class AttendanceSettings extends Component
         // We'll just load all and map them for the view's requirements.
 
         $isAr = app()->getLocale() === 'ar';
-        $groups = $groupsQuery->get()->map(function($g) use ($isAr) {
+        $groups = $this->activeTab === 'groups' ? $groupsQuery->get()->map(function($g) use ($isAr) {
             return [
                 'id' => $g->id,
                 'name' => $g->name,
@@ -491,10 +491,12 @@ class AttendanceSettings extends Component
                 'tracking_mode' => $g->appliedPolicy ? $g->appliedPolicy->tracking_mode : 'check_in_out',
                 'branch_name' => '-' // Groups are global in this schema
             ];
-        })->toArray();
+        })->toArray() : [];
 
         return view('systemsettings::livewire.attendance.attendance-settings', [
-            'gpsLocations' => AttendanceGpsLocation::where('saas_company_id', $companyId)->get(),
+            'gpsLocations' => ($this->showSavedLocationsModal || $this->showGpsModal)
+                ? AttendanceGpsLocation::where('saas_company_id', $companyId)->get()
+                : collect(),
             'penalties' => $this->defaultPolicy ? $this->defaultPolicy->penalties : collect(),
             'absencePolicies' => $this->defaultPolicy ? $this->defaultPolicy->absencePolicies : collect(),
             'groups' => $groups,
