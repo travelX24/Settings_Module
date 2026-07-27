@@ -8,10 +8,6 @@
     <x-ui.page-header :title="tr('Official Holidays')" :subtitle="tr('Manage official holidays and non-working days')"
         class="!flex-col {{ $isRtl ? '!items-end !text-right' : '!items-start !text-left' }} !justify-start !gap-1"
         titleSize="xl" />
-
-    <div class="text-xs text-gray-400">
-        calendar_type: {{ config('company.calendar_type') }}
-    </div>
 @endsection
 
 @section('topbar-actions')
