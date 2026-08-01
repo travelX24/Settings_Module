@@ -58,9 +58,9 @@
         ::-webkit-scrollbar-thumb:hover { background: #d1d5db; }
     </style>
 
-    {{-- Leaflet Assets (Only loaded if GPS is used, but safe to keep here or in GPS modal) --}}
+    {{-- Leaflet Assets (Cloudflare CDN for maximum availability & speed) --}}
     @push('styles')
-    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY=" crossorigin=""/>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.css" integrity="sha512-h9FcoyWjHcOcmEVkxOfTLnmZFWIH0iZhVI1ZXJyTtLirkiVNUucGVMxvacunWScRBZPGXLNV4CYAio4mYRLOFQ==" crossorigin="anonymous" referrerpolicy="no-referrer" />
     <style>
         .leaflet-container { font-family: inherit; }
         .leaflet-bar { border: none !important; border-radius: 12px !important; overflow: hidden; box-shadow: 0 4px 15px rgba(0,0,0,0.1) !important; }
@@ -70,7 +70,7 @@
     @endpush
 
     @push('scripts')
-    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo=" crossorigin=""></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.js" integrity="sha512-BwHfrr4c9kmRkLh6RiK25PNL0YXqs1PWo48188d60uPpZE+dbwfTXhnTly5fd4sQqOmauTI77EHYqUXjkXVO9A==" crossorigin="anonymous" referrerpolicy="no-referrer"></script>
     <script>
         document.addEventListener('alpine:init', () => {
             Alpine.data('mapPicker', (config) => ({

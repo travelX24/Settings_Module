@@ -103,6 +103,6 @@
     @endif
 
     {{-- Confirmation Dialogs & Assets --}}
-    @if($showSavedLocationsModal || $showSavedFingerprintModal || $showSavedNfcModal)
+    @if($showGpsModal || $showSavedLocationsModal || $showSavedFingerprintModal || $showSavedNfcModal)
         @include('systemsettings::livewire.attendance.partials.modals.confirmations')
     @endif</div>
