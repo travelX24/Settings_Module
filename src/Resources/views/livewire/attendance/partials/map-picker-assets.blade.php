@@ -7,7 +7,7 @@
     .leaflet-bar a { background: white !important; border: none !important; color: #64748b !important; }
     .leaflet-bar a:hover { color: var(--accent-orange) !important; }
 </style>
-@endpush
+@endpushOnce
 
 <script>
     (function () {
@@ -305,4 +305,4 @@
 
 @pushOnce('scripts', 'attendance-map-picker-scripts')
 <script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.js" integrity="sha512-BwHfrr4c9kmRkLh6RiK25PNL0YXqs1PWo48188d60uPpZE+dbwfTXhnTly5fd4sQqOmauTI77EHYqUXjkXVO9A==" crossorigin="anonymous" referrerpolicy="no-referrer"></script>
-@endpush
+@endpushOnce
