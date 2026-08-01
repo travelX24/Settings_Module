@@ -31,6 +31,8 @@
                 searchQuery: '',
                 searchResults: [],
                 isSearching: false,
+                isLocating: false,
+                currentAccuracy: null,
 
                 map: null,
                 marker: null,
@@ -174,7 +176,7 @@
                     this.isSearching = true;
 
                     try {
-                        this.searchResults = await this.$wire.searchLocation(this.searchQuery);
+                        this.searchResults = await this.$wire.searchLocation(this.searchQuery, this.lat, this.lng, this.city, this.country);
                     } catch (error) {
                         console.error('Search Error:', error);
                     } finally {
@@ -251,40 +253,110 @@
                         return;
                     }
 
-                    navigator.geolocation.getCurrentPosition(
-                        (position) => {
-                            const lat = position.coords.latitude;
-                            const lng = position.coords.longitude;
+                    if (this.isLocating) {
+                        return;
+                    }
 
-                            this.updatePosition(lat, lng);
+                    this.isLocating = true;
+                    this.currentAccuracy = null;
 
-                            if (this.map) {
-                                this.map.setView([lat, lng], 16);
-                            }
+                    let bestPosition = null;
+                    let watchId = null;
+                    let finished = false;
 
-                            window.dispatchEvent(new CustomEvent('toast', {
-                                detail: { type: 'success', message: "{{ tr('Location synchronized successfully') }}" }
-                            }));
-                        },
-                        (error) => {
-                            let message = "{{ tr('Unable to retrieve location') }}";
+                    const clearWatch = () => {
+                        if (watchId !== null) {
+                            navigator.geolocation.clearWatch(watchId);
+                            watchId = null;
+                        }
+                    };
 
-                            if (error.code === error.PERMISSION_DENIED) {
-                                message = "{{ tr('Location access denied. Please enable location permissions in your browser.') }}";
-                            } else if (error.code === error.POSITION_UNAVAILABLE) {
-                                message = "{{ tr('Location information is unavailable.') }}";
-                            } else if (error.code === error.TIMEOUT) {
-                                message = "{{ tr('The request to get user location timed out.') }}";
-                            }
+                    const applyPosition = (position) => {
+                        const lat = position.coords.latitude;
+                        const lng = position.coords.longitude;
+                        const accuracy = Math.round(position.coords.accuracy || 0);
 
-                            alert(message);
-                        },
+                        this.currentAccuracy = accuracy;
+                        this.updatePosition(lat, lng);
+
+                        if (this.map) {
+                            this.map.setView([lat, lng], accuracy > 0 && accuracy <= 50 ? 18 : 16);
+                        }
+
+                        window.dispatchEvent(new CustomEvent('toast', {
+                            detail: { type: 'success', message: "{{ tr('Location synchronized successfully') }}" }
+                        }));
+                    };
+
+                    const finish = (position) => {
+                        if (finished) {
+                            return;
+                        }
+
+                        finished = true;
+                        clearWatch();
+                        this.isLocating = false;
+
+                        if (position) {
+                            applyPosition(position);
+                            return;
+                        }
+
+                        alert("{{ tr('Unable to retrieve location') }}");
+                    };
+
+                    const handlePosition = (position) => {
+                        const accuracy = position.coords.accuracy || Number.MAX_SAFE_INTEGER;
+                        const bestAccuracy = bestPosition?.coords?.accuracy || Number.MAX_SAFE_INTEGER;
+
+                        if (!bestPosition || accuracy < bestAccuracy) {
+                            bestPosition = position;
+                        }
+
+                        if (accuracy <= 30) {
+                            finish(position);
+                        }
+                    };
+
+                    const handleError = (error) => {
+                        if (bestPosition) {
+                            finish(bestPosition);
+                            return;
+                        }
+
+                        clearWatch();
+                        this.isLocating = false;
+
+                        let message = "{{ tr('Unable to retrieve location') }}";
+
+                        if (error.code === error.PERMISSION_DENIED) {
+                            message = "{{ tr('Location access denied. Please enable location permissions in your browser.') }}";
+                        } else if (error.code === error.POSITION_UNAVAILABLE) {
+                            message = "{{ tr('Location information is unavailable.') }}";
+                        } else if (error.code === error.TIMEOUT) {
+                            message = "{{ tr('The request to get user location timed out.') }}";
+                        }
+
+                        alert(message);
+                    };
+
+                    watchId = navigator.geolocation.watchPosition(
+                        handlePosition,
+                        handleError,
                         {
                             enableHighAccuracy: true,
-                            timeout: 5000,
+                            timeout: 15000,
                             maximumAge: 0
                         }
                     );
+
+                    setTimeout(() => {
+                        if (bestPosition) {
+                            finish(bestPosition);
+                        }
+                    }, 10000);
+
+                    setTimeout(() => finish(null), 16000);
                 }
             };
         };

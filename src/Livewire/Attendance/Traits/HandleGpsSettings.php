@@ -22,38 +22,94 @@ trait HandleGpsSettings
     {
         try {
             $response = \Illuminate\Support\Facades\Http::withHeaders([
-                'User-Agent' => 'AthkaHR-App'
-            ])->get("https://nominatim.openstreetmap.org/reverse", [
+                'User-Agent' => 'AthkaHR-App',
+                'Accept-Language' => app()->getLocale(),
+            ])->timeout(8)->retry(1, 300)->get("https://nominatim.openstreetmap.org/reverse", [
                 'format' => 'jsonv2',
                 'lat' => $lat,
                 'lon' => $lng,
                 'zoom' => 18,
-                'addressdetails' => 1
+                'addressdetails' => 1,
+                'namedetails' => 1,
             ]);
 
-            return $response->json();
+            return $response->successful() ? $response->json() : null;
         } catch (\Exception $e) {
             return null;
         }
     }
 
-    public function searchLocation($query)
+    public function searchLocation($query, $lat = null, $lng = null, $city = null, $country = null)
     {
-        try {
-            $response = \Illuminate\Support\Facades\Http::withHeaders([
-                'User-Agent' => 'AthkaHR-App'
-            ])->get("https://nominatim.openstreetmap.org/search", [
-                'format' => 'jsonv2',
-                'q' => $query,
-                'limit' => 15,
-                'addressdetails' => 1,
-                'namedetails' => 1
-            ]);
+        $query = trim((string) $query);
 
-            return $response->json();
+        if (mb_strlen($query) < 2) {
+            return [];
+        }
+
+        $params = [
+            'format' => 'jsonv2',
+            'q' => $query,
+            'limit' => 15,
+            'addressdetails' => 1,
+            'namedetails' => 1,
+            'extratags' => 1,
+            'dedupe' => 1,
+        ];
+
+        if (is_numeric($lat) && is_numeric($lng)) {
+            $lat = (float) $lat;
+            $lng = (float) $lng;
+            $delta = 0.35;
+
+            // Bias results around the current map center without hiding wider matches.
+            $params['viewbox'] = implode(',', [
+                $lng - $delta,
+                $lat + $delta,
+                $lng + $delta,
+                $lat - $delta,
+            ]);
+            $params['bounded'] = 0;
+        }
+
+        $city = $this->cleanSearchContext($city);
+        $country = $this->cleanSearchContext($country);
+        $queries = [$query];
+
+        if ($city || $country) {
+            $queries[] = implode(', ', array_filter([$query, $city, $country]));
+        }
+
+        if ($country) {
+            $queries[] = implode(', ', array_filter([$query, $country]));
+        }
+
+        try {
+            foreach (array_unique($queries) as $searchQuery) {
+                $params['q'] = $searchQuery;
+                $response = \Illuminate\Support\Facades\Http::withHeaders([
+                    'User-Agent' => 'AthkaHR-App',
+                    'Accept-Language' => app()->getLocale(),
+                ])->timeout(8)->retry(1, 300)->get("https://nominatim.openstreetmap.org/search", $params);
+
+                $results = $response->successful() ? ($response->json() ?: []) : [];
+
+                if (!empty($results)) {
+                    return $results;
+                }
+            }
+
+            return [];
         } catch (\Exception $e) {
             return [];
         }
+    }
+
+    private function cleanSearchContext($value): ?string
+    {
+        $value = trim((string) $value);
+
+        return in_array($value, ['', '...', '---'], true) ? null : $value;
     }
 
     public function openGpsModal($id = null)
