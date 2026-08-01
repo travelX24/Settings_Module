@@ -123,20 +123,27 @@
                 initMap() {
                     this.$watch('show', (val) => {
                         if (val) {
-                            setTimeout(() => {
+                            const setup = () => {
                                 if (!this.map) {
                                     this.createMap();
-                                } else {
+                                }
+                                if (this.map) {
                                     this.map.invalidateSize();
                                     const currentLat = this.lat || 15.37946;
                                     const currentLng = this.lng || 44.17241;
-                                    this.map.setView([currentLat, currentLng], 16);
-                                    this.marker.setLatLng([currentLat, currentLng]);
-                                    this.circle.setLatLng([currentLat, currentLng]);
-                                    this.circle.setRadius(this.radius || 100);
+                                    this.map.setView([currentLat, currentLng], 15);
+                                    if (this.marker) this.marker.setLatLng([currentLat, currentLng]);
+                                    if (this.circle) {
+                                        this.circle.setLatLng([currentLat, currentLng]);
+                                        this.circle.setRadius(this.radius || 100);
+                                    }
                                     this.fetchAddress(currentLat, currentLng);
                                 }
-                            }, 500);
+                            };
+                            
+                            setTimeout(setup, 100);
+                            setTimeout(setup, 400);
+                            setTimeout(setup, 800);
                         }
                     });
 
@@ -149,12 +156,24 @@
                     const defaultLat = this.lat || 15.37946;
                     const defaultLng = this.lng || 44.17241;
                     
+                    const container = document.getElementById('map-picker-container');
+                    if (!container) return;
+
+                    if (this.map) {
+                        this.map.remove();
+                        this.map = null;
+                    }
+
                     this.map = L.map('map-picker-container', {
                         zoomControl: true,
                         attributionControl: false
-                    }).setView([defaultLat, defaultLng], 13);
+                    }).setView([defaultLat, defaultLng], 15);
 
-                    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png').addTo(this.map);
+                    // Reliable tile layer with fast loading
+                    L.tileLayer('https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png', {
+                        maxZoom: 19,
+                        subdomains: 'abcd'
+                    }).addTo(this.map);
 
                     this.marker = L.marker([defaultLat, defaultLng], { draggable: true }).addTo(this.map);
                     this.circle = L.circle([defaultLat, defaultLng], {
