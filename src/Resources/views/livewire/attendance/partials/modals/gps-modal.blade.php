@@ -88,7 +88,7 @@
                 {{-- Right: Map Area --}}
                 <div class="lg:col-span-8 space-y-4">
                     <div class="relative w-full h-[450px] bg-gray-100 rounded-2xl overflow-hidden border border-gray-200 shadow-inner group">
-                        <div id="map" class="w-full h-full z-0" wire:ignore></div>
+                        <div id="map" data-map-picker-container class="w-full h-full z-0" wire:ignore></div>
                         
                         {{-- Search Box Overlay --}}
                         <div class="absolute top-4 left-4 right-4 z-10 max-w-sm">
@@ -131,8 +131,3 @@
         </div>
     </x-slot:footer>
 </x-ui.modal>
-
-
-
-
-

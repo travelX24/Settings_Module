@@ -85,6 +85,8 @@
         @endif
     </div>
 
+    @include('systemsettings::livewire.attendance.partials.map-picker-assets')
+
     {{-- MODALS --}}
     @if($showGroupModal)
         @include('systemsettings::livewire.attendance.partials.modals.group-modal')

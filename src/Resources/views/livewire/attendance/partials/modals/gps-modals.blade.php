@@ -223,7 +223,7 @@
                 {{-- Right: Map Area --}}
                 <div class="lg:col-span-8 space-y-4">
                     <div class="relative w-full h-[450px] bg-gray-100 rounded-2xl overflow-hidden border border-gray-200 shadow-inner group">
-                        <div id="map-picker-container" class="absolute inset-0 z-10" wire:ignore></div>
+                        <div id="map-picker-container" data-map-picker-container class="absolute inset-0 z-10" wire:ignore></div>
                         
                         {{-- Top Controls Container (Search + Sync) --}}
                         <div class="absolute top-4 left-16 right-4 z-20 flex items-start gap-3 pointer-events-none">
