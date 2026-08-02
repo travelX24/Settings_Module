@@ -38,6 +38,16 @@ class ApprovalService
             'leaves' => [
                 'tables' => ['attendance_leave_requests', 'attendance_leave_cut_requests', 'leave_requests', 'employee_leave_requests'],
                 'operation_key' => 'leaves',
+                'conditions' => [
+                    ['is_exception', 'not_truthy', true],
+                ],
+            ],
+            'leave_exceptions' => [
+                'tables' => ['attendance_leave_requests'],
+                'operation_key' => 'leave_exceptions',
+                'conditions' => [
+                    ['is_exception', '=', 1],
+                ],
             ],
             'permissions' => [
                 'tables' => ['attendance_permission_requests', 'permission_requests', 'employee_permission_requests'],
@@ -84,6 +94,7 @@ class ApprovalService
             'type'              => $type,
             'table'             => $table,
             'operation_key'     => $map[$type]['operation_key'],
+            'conditions'        => $map[$type]['conditions'] ?? [],
             'idCol'             => $idCol,
             'companyCol'        => $companyCol,
             'employeeCol'       => $employeeCol,
@@ -283,11 +294,14 @@ class ApprovalService
         $uCol = $src['approvalStatusCol'] ?: $src['statusCol'];
         if (!$uCol) return;
 
-        $pendingRequests = DB::table($src['table'])
+        $query = DB::table($src['table'])
             ->where($src['companyCol'], $companyId)
             ->where($uCol, 'pending')
-            ->where($src['createdAtCol'], '>=', now()->subMonths(3))
-            ->get();
+            ->where($src['createdAtCol'], '>=', now()->subMonths(3));
+
+        $this->applySourceConditions($query, $src);
+
+        $pendingRequests = $query->get();
 
         foreach ($pendingRequests as $req) {
             $this->ensureTasksForRequest($src, $req, $companyId);
@@ -299,9 +313,13 @@ class ApprovalService
      */
     public function ensureTasksForRequest(array $src, object $request, int $companyId): void
     {
+        if (!$this->requestMatchesSourceConditions($request, $src)) {
+            return;
+        }
+
         $requestId = $request->{$src['idCol']};
         
-        $existing = ApprovalTask::where('approvable_type', $src['type'])
+        $existing = ApprovalTask::whereIn('approvable_type', $this->equivalentApprovalTypes($src))
             ->where('approvable_id', $requestId)
             ->exists();
 
@@ -370,6 +388,79 @@ class ApprovalService
         }
     }
 
+    protected function applySourceConditions($query, array $src): void
+    {
+        foreach (($src['conditions'] ?? []) as $condition) {
+            [$column, $operator, $value] = $this->normalizeSourceCondition($condition);
+            if ($column === '' || !Schema::hasColumn($src['table'], $column)) {
+                continue;
+            }
+
+            if ($operator === 'not_truthy') {
+                $query->where(function ($q) use ($column) {
+                    $q->whereNull($column)
+                        ->orWhere($column, 0)
+                        ->orWhere($column, false);
+                });
+                continue;
+            }
+
+            $query->where($column, $operator, $value);
+        }
+    }
+
+    protected function requestMatchesSourceConditions(object $request, array $src): bool
+    {
+        foreach (($src['conditions'] ?? []) as $condition) {
+            [$column, $operator, $value] = $this->normalizeSourceCondition($condition);
+            if ($column === '') {
+                continue;
+            }
+
+            $actual = $request->{$column} ?? null;
+
+            if ($operator === 'not_truthy') {
+                if ((bool) $actual) return false;
+                continue;
+            }
+
+            if ($operator !== '=') {
+                if (!version_compare((string) $actual, (string) $value, $operator)) {
+                    return false;
+                }
+                continue;
+            }
+
+            if (is_bool($value)) {
+                if ((bool) $actual !== $value) return false;
+            } elseif (is_int($value)) {
+                if ((int) $actual !== $value) return false;
+            } else {
+                if ((string) $actual !== (string) $value) return false;
+            }
+        }
+
+        return true;
+    }
+
+    protected function normalizeSourceCondition(array $condition): array
+    {
+        if (count($condition) >= 3) {
+            return [(string) $condition[0], (string) $condition[1], $condition[2]];
+        }
+
+        return [(string) ($condition[0] ?? ''), '=', $condition[1] ?? null];
+    }
+
+    protected function equivalentApprovalTypes(array $src): array
+    {
+        if (($src['table'] ?? null) === 'attendance_leave_requests'
+            && in_array(($src['type'] ?? ''), ['leaves', 'leave_exceptions'], true)) {
+            return ['leaves', 'leave_exceptions'];
+        }
+
+        return [$src['type']];
+    }
     /**
      * Process task action (Approve/Reject).
      */

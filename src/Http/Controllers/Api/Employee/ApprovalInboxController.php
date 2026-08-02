@@ -153,8 +153,14 @@ class ApprovalInboxController extends Controller
 
         // ✅ Bulk load leave policies (for 'leaves' type only)
         $leavePoliciesMap = [];
-        if (isset($rawDataMap['leaves'])) {
-            $policyIds = array_unique(array_filter(array_column(array_values($rawDataMap['leaves']), 'leave_policy_id')));
+        $leaveRows = [];
+        foreach (['leaves', 'leave_exceptions'] as $leaveType) {
+            if (isset($rawDataMap[$leaveType])) {
+                $leaveRows = array_merge($leaveRows, array_values($rawDataMap[$leaveType]));
+            }
+        }
+        if (!empty($leaveRows)) {
+            $policyIds = array_unique(array_filter(array_column($leaveRows, 'leave_policy_id')));
             if (!empty($policyIds)) {
                 $policyTable = 'leave_policies';
                 $policyCols = ['id', 'days_per_year', 'leave_type', 'policy_year_id'];
@@ -169,7 +175,7 @@ class ApprovalInboxController extends Controller
         // ✅ Bulk load consumed leave days per (employee, policy)
         $consumedBalanceMap = [];  // key: "{employeeId}_{policyId}"
         $monthlyLeaveMap   = [];   // key: "{employeeId}_{policyId}"
-        if (isset($rawDataMap['leaves']) && !empty($employeeIds)) {
+        if (!empty($leaveRows) && !empty($employeeIds)) {
             $src = $this->approvalService->getRequestSource('leaves');
             if ($src) {
                 $policyIds = array_keys($leavePoliciesMap);
@@ -272,7 +278,7 @@ class ApprovalInboxController extends Controller
             $data['to_time']      = (string) ($data['to_time'] ?? '');
 
             // Leave Specifics (from pre-fetched maps)
-            if ($task->approvable_type === 'leaves') {
+            if (in_array($task->approvable_type, ['leaves', 'leave_exceptions'], true)) {
                 $policyId = (int) ($data['leave_policy_id'] ?? 0);
                 $policy   = $policyId ? ($leavePoliciesMap[$policyId] ?? null) : null;
 
@@ -390,6 +396,7 @@ class ApprovalInboxController extends Controller
     {
         return [
             'leaves' => ['ar' => 'إجازة', 'en' => 'Leave'],
+            'leave_exceptions' => ['ar' => 'إجازة استثنائية', 'en' => 'Exceptional Leave'],
             'permissions' => ['ar' => 'إذن', 'en' => 'Permission'],
             'missions' => ['ar' => 'مهمة', 'en' => 'Mission'],
             'replacements' => ['ar' => 'بديل', 'en' => 'Replacement'],
