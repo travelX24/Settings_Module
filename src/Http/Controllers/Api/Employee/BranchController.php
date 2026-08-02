@@ -28,24 +28,13 @@ class BranchController extends Controller
             return response()->json(['ok' => false, 'message' => 'Company context not found'], 422);
         }
 
-        $employee = $this->employeeService->resolve($user);
-        $scope = $user->access_scope ?? 'all_branches';
-
         $query = Branch::where('saas_company_id', $companyId)
             ->where('is_active', true);
 
-        if ($scope === 'my_branch') {
-            $branchId = $employee->branch_id ?? null;
-            if (!$branchId) return response()->json(['ok' => true, 'data' => []]);
-            $query->where('id', $branchId);
-        } elseif ($scope === 'selected_branches') {
-            if (method_exists($user, 'allowedBranches')) {
-                $branchIds = $user->allowedBranches()->pluck('branches.id')->toArray();
-                $query->whereIn('id', $branchIds);
-            } else {
-                $branchId = $employee->branch_id ?? null;
-                if ($branchId) $query->where('id', $branchId);
-            }
+        $restrictedBranchIds = $this->restrictedBranchIds($user, $companyId);
+
+        if (is_array($restrictedBranchIds)) {
+            $query->whereIn('id', $restrictedBranchIds);
         }
 
         $branches = $query->get()->map(fn($b) => [
@@ -58,5 +47,41 @@ class BranchController extends Controller
             'ok' => true,
             'data' => $branches
         ]);
+    }
+
+    private function restrictedBranchIds($user, int $companyId): ?array
+    {
+        if (method_exists($user, 'restrictedBranchIds')) {
+            return $user->restrictedBranchIds();
+        }
+
+        if (method_exists($user, 'hasAnyRole') && $user->hasAnyRole(['saas-admin', 'super-admin', 'company-admin', 'system-admin'])) {
+            return null;
+        }
+
+        $scope = $user->access_scope ?? 'all_branches';
+
+        if ($scope === 'all_branches') {
+            return null;
+        }
+
+        if ($scope === 'my_branch') {
+            $employee = $this->employeeService->resolve($user);
+            $branchId = (int) ($employee->branch_id ?? $user->branch_id ?? 0);
+
+            return $branchId > 0 ? [$branchId] : [];
+        }
+
+        if ($scope === 'selected_branches' && method_exists($user, 'allowedBranches')) {
+            return $user->allowedBranches()
+                ->wherePivot('saas_company_id', $companyId)
+                ->pluck('branches.id')
+                ->map(fn ($id) => (int) $id)
+                ->unique()
+                ->values()
+                ->all();
+        }
+
+        return [];
     }
 }
