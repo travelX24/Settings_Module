@@ -349,6 +349,11 @@ return $log;
             'check_out_is_mocked' => $locationMeta['is_mocked'] ?? null,
             'check_out_gps_accuracy' => $locationMeta['gps_accuracy'] ?? null,
             'check_out_location_captured_at' => $locationMeta['location_captured_at'] ?? null,
+            'check_out_location_gate' => $locationMeta['location_gate'] ?? null,
+            'check_out_verified_location_id' => $locationMeta['verified_location_id'] ?? null,
+            'check_out_verified_location_name' => $locationMeta['verified_location_name'] ?? null,
+            'check_out_verified_geofence_type' => $locationMeta['verified_geofence_type'] ?? null,
+            'check_out_distance_to_geofence_meters' => $locationMeta['distance_to_geofence_meters'] ?? null,
         ], fn ($value) => $value !== null);
 
         DB::table('attendance_daily_details')->where('id', $openSession->id)->update([

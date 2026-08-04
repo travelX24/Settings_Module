@@ -365,6 +365,8 @@ class AttendanceSettings extends Component
             'gpsData.lat' => tr('Latitude'),
             'gpsData.lng' => tr('Longitude'),
             'gpsData.radius' => tr('Radius'),
+            'gpsData.geofence_type' => tr('Geofence Type'),
+            'gpsData.boundary_geojson' => tr('Geographic Boundary'),
             'selectedBranch' => tr('Branch'),
             'selectedGroups' => tr('Employee Groups'),
         ];

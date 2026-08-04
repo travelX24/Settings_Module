@@ -29,8 +29,12 @@
                                 <x-ui.badge type="info" size="xs" class="!text-[8px] !font-black !px-2">{{ $loc['target_name'] ?? ($loc['employee_group_id'] ? 'Group' : 'Branch') }}</x-ui.badge>
                             </div>
                             <div class="hidden md:block">
-                                <span class="text-[8px] font-black text-gray-400 uppercase tracking-widest block">{{ tr('Radius') }}</span>
-                                <span class="text-xs font-bold text-gray-600">{{ $loc['radius_meters'] ?? $loc['radius'] ?? 0 }}m</span>
+                                <span class="text-[8px] font-black text-gray-400 uppercase tracking-widest block">{{ tr('Geofence Type') }}</span>
+                                @if(($loc['geofence_type'] ?? 'circle') === 'polygon')
+                                    <span class="text-xs font-bold text-gray-600">{{ tr('Custom Boundary') }}</span>
+                                @else
+                                    <span class="text-xs font-bold text-gray-600">{{ $loc['radius_meters'] ?? $loc['radius'] ?? 0 }}m</span>
+                                @endif
                             </div>
                             <div class="col-span-2 md:col-span-1 flex flex-col justify-center">
                                 <span class="text-[8px] font-black text-gray-400 uppercase tracking-widest block">{{ tr('Coordinates') }}</span>
@@ -44,7 +48,7 @@
                                     <i class="fas fa-edit me-2 text-[color:var(--accent-orange)]"></i>
                                     <span>{{ tr('Edit') }}</span>
                                 </x-ui.dropdown-item>
-                                <x-ui.dropdown-item 
+                                <x-ui.dropdown-item
                                     danger
                                     @click="$dispatch('open-confirm-delete-location', { id: {{ $loc['id'] }} })"
                                 >
@@ -103,11 +107,13 @@
             </div>
         @endif
 
-        <div class="space-y-4 py-1" 
-            x-data="mapPicker({ 
-                lat: @entangle('gpsData.lat'), 
-                lng: @entangle('gpsData.lng'), 
+        <div class="space-y-4 py-1"
+            x-data="mapPicker({
+                lat: @entangle('gpsData.lat'),
+                lng: @entangle('gpsData.lng'),
                 radius: @entangle('gpsData.radius'),
+                boundaryType: @entangle('gpsData.geofence_type'),
+                boundaryGeoJson: @entangle('gpsData.boundary_geojson'),
                 show: @entangle('showGpsModal')
             })"
             x-init="initMap()"
@@ -169,6 +175,22 @@
 
                             <x-ui.input label="{{ tr('Location Name') }}" wire:model.defer="gpsData.name" name="gpsData.name" placeholder="{{ tr('e.g. Sales Dept Area') }}" required class="!py-2" :disabled="!$canManageAttendance" />
                             @error('gpsData.name') <span class="text-[10px] text-[color:var(--error)] font-bold px-1">{{ tr($message) }}</span> @enderror
+
+                            <div class="space-y-2">
+                                <label class="text-[10px] font-black text-gray-400 uppercase tracking-widest block">{{ tr('Geofence Type') }}</label>
+                                <div class="grid grid-cols-2 gap-2">
+                                    <label class="flex items-center gap-2 rounded-xl border border-gray-200 bg-white px-3 py-2 cursor-pointer">
+                                        <input type="radio" x-model="boundaryType" value="circle" class="w-3.5 h-3.5 text-[color:var(--accent-orange)] border-gray-300" @if(!$canManageAttendance) disabled @endif>
+                                        <span class="text-[11px] font-bold text-gray-700">{{ tr('Circular Radius') }}</span>
+                                    </label>
+                                    <label class="flex items-center gap-2 rounded-xl border border-gray-200 bg-white px-3 py-2 cursor-pointer">
+                                        <input type="radio" x-model="boundaryType" value="polygon" class="w-3.5 h-3.5 text-[color:var(--accent-orange)] border-gray-300" @if(!$canManageAttendance) disabled @endif>
+                                        <span class="text-[11px] font-bold text-gray-700">{{ tr('Custom Boundary') }}</span>
+                                    </label>
+                                </div>
+                                @error('gpsData.geofence_type') <span class="text-[10px] text-[color:var(--error)] font-bold px-1">{{ tr($message) }}</span> @enderror
+                                @error('gpsData.boundary_geojson') <span class="text-[10px] text-[color:var(--error)] font-bold px-1">{{ tr($message) }}</span> @enderror
+                            </div>
                         </div>
                     </div>
 
@@ -180,7 +202,7 @@
                         </div>
 
                         <h5 class="text-[9px] font-black text-[color:var(--accent-orange)] uppercase tracking-widest border-b border-gray-50 pb-2 mb-2">{{ tr('Location Metadata') }}</h5>
-                        
+
                         <div class="grid grid-cols-2 gap-3">
                             <div>
                                 <label class="text-[10px] text-gray-400 block mb-1">{{ tr('Latitude') }}</label>
@@ -200,8 +222,13 @@
                                 <i class="fas fa-map-signs text-gray-300 mt-0.5 text-xs"></i>
                                 <span x-text="address || '{{ tr('Drag marker to fetch address...') }}'" class="text-[11px] font-medium text-gray-600 leading-snug"></span>
                             </div>
+                            <p
+                                x-show="geocodingError"
+                                x-text="geocodingError"
+                                class="mt-2 text-[9px] font-bold text-amber-600 leading-relaxed"
+                            ></p>
                         </div>
-                        
+
                         <div class="grid grid-cols-2 gap-3 border-t border-gray-50 pt-2" :class="isFetching ? 'opacity-40' : ''">
                              <div>
                                 <span class="text-[8px] font-bold text-gray-400 block mb-0.5">{{ tr('Country') }}</span>
@@ -211,10 +238,14 @@
                                 <span class="text-[8px] font-bold text-gray-400 block mb-0.5">{{ tr('City') }}</span>
                                 <span class="text-[11px] font-black text-gray-700 block truncate" x-text="city"></span>
                             </div>
-                            <div>
+                            <div x-show="boundaryType === 'circle'">
                                 <span class="text-[8px] font-bold text-gray-400 block mb-0.5">{{ tr('Radius Accuracy') }}</span>
                                 <span class="text-[11px] font-black text-[color:var(--success)] block truncate" x-text="radius + 'm'"></span>
                                 @error('gpsData.radius') <span class="text-[9px] text-[color:var(--error)] font-bold">{{ tr($message) }}</span> @enderror
+                            </div>
+                            <div x-show="boundaryType === 'polygon'">
+                                <span class="text-[8px] font-bold text-gray-400 block mb-0.5">{{ tr('Boundary Points') }}</span>
+                                <span class="text-[11px] font-black text-[color:var(--success)] block truncate" x-text="polygonPointCount"></span>
                             </div>
                         </div>
                     </div>
@@ -222,103 +253,187 @@
 
                 {{-- Right: Map Area --}}
                 <div class="lg:col-span-8 space-y-4">
-                    <div class="relative w-full h-[450px] bg-gray-100 rounded-2xl overflow-hidden border border-gray-200 shadow-inner group">
+                    <div
+                        class="athka-map-picker-shell relative w-full h-[470px] bg-slate-100 rounded-2xl overflow-hidden border border-slate-200 shadow-[inset_0_0_0_1px_rgba(255,255,255,0.65),0_12px_28px_rgba(15,23,42,0.07)]"
+                        :data-map-style="mapStyle"
+                    >
                         <div id="map-picker-container" data-map-picker-container class="absolute inset-0 z-10" wire:ignore></div>
-                        
-                        {{-- Top Controls Container (Search + Sync) --}}
-                        <div class="absolute top-4 left-16 right-4 z-20 flex items-start gap-3 pointer-events-none">
-                            {{-- Search Bar --}}
-                            <div class="flex-1 pointer-events-auto max-w-2xl">
-                                <div class="relative group/search">
-                                    <div class="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
-                                        <i class="fas" :class="isSearching ? 'fa-circle-notch fa-spin text-[color:var(--accent-orange)]' : 'fa-search text-gray-400 group-focus-within/search:text-[color:var(--accent-orange)]'"></i>
-                                    </div>
-                                    <input 
-                                        type="text" 
-                                        x-model="searchQuery" 
-                                        @input.debounce.500ms="searchLocation()"
-                                        placeholder="{{ tr('Search for a place or address...') }}"
-                                        class="block w-full pl-11 pr-11 py-2.5 bg-white/95 backdrop-blur-xl border border-gray-200/50 rounded-2xl text-xs font-bold shadow-xl focus:ring-4 focus:ring-[rgb(var(--accent-orange-rgb)/0.16)] focus:border-[color:var(--accent-orange)] transition-all placeholder:text-gray-400 placeholder:font-medium"
-                                    >
-                                    <button 
-                                        x-show="searchQuery.length > 0" 
-                                        @click="searchQuery = ''; searchResults = []; isSearching = false" 
-                                        class="absolute inset-y-0 right-0 pr-4 flex items-center text-gray-300 hover:text-[color:var(--error)] transition-colors"
-                                        type="button"
-                                    >
-                                        <i class="fas fa-times-circle text-lg"></i>
-                                    </button>
-                                </div>
 
-                                {{-- Search Results Dropdown --}}
-                                <div 
-                                    x-show="searchResults.length > 0 || isSearching" 
-                                    x-transition:enter="transition ease-out duration-300"
-                                    x-transition:enter-start="opacity-0 translate-y-4"
-                                    x-transition:enter-end="opacity-100 translate-y-0"
-                                    class="mt-3 bg-white/98 backdrop-blur-xl rounded-2xl shadow-[0_20px_50px_rgba(0,0,0,0.15)] border border-gray-100 overflow-hidden max-h-80 overflow-y-auto custom-scrollbar z-30"
-                                    @click.away="searchResults = []"
-                                >
-                                    <div class="p-3 border-b border-gray-50 bg-gray-50/50 flex items-center justify-between">
-                                        <span class="text-[10px] font-black text-gray-400 uppercase tracking-widest px-1">
-                                            <span x-show="!isSearching">{{ tr('Found Locations') }}</span>
-                                            <span x-show="isSearching">{{ tr('Searching...') }}</span>
-                                        </span>
-                                        <span x-show="!isSearching" class="text-[10px] font-bold text-[color:var(--accent-orange)] bg-[rgb(var(--accent-orange-rgb)/0.08)] px-2 py-0.5 rounded-full" x-text="searchResults.length"></span>
-                                        <i x-show="isSearching" class="fas fa-circle-notch fa-spin text-[color:var(--accent-orange)] text-[10px]"></i>
+                        {{-- Compact map controls: one place search, current location, and layers --}}
+                        <div class="absolute top-4 left-14 right-4 z-20 pointer-events-none">
+                            <div class="mx-auto flex max-w-2xl items-start gap-2">
+                                {{-- Single specialized place search --}}
+                                <div class="min-w-0 flex-1 pointer-events-auto">
+                                    <div class="relative group/search">
+                                        <div class="absolute inset-y-0 start-0 ps-3.5 flex items-center pointer-events-none">
+                                            <i
+                                                class="fas text-sm"
+                                                :class="isSearching
+                                                    ? 'fa-circle-notch fa-spin text-[color:var(--accent-orange)]'
+                                                    : 'fa-search-location text-slate-400 group-focus-within/search:text-[color:var(--accent-orange)]'"
+                                            ></i>
+                                        </div>
+                                        <input
+                                            type="text"
+                                            x-model="searchQuery"
+                                            @input.debounce.450ms="searchLocation()"
+                                            @keydown.enter.prevent="searchLocation()"
+                                            placeholder="{{ app()->getLocale() === 'ar' ? 'ابحث عن دولة، مدينة، منطقة، حي أو شارع...' : 'Search for a country, city, area, neighborhood, or street...' }}"
+                                            dir="auto"
+                                            autocomplete="off"
+                                            class="block w-full ps-11 pe-10 py-3 bg-white/[0.97] backdrop-blur-xl border border-slate-200/90 rounded-xl text-xs font-bold shadow-[0_10px_26px_rgba(15,23,42,0.14)] focus:ring-4 focus:ring-[rgb(var(--accent-orange-rgb)/0.14)] focus:border-[color:var(--accent-orange)] transition-all placeholder:text-slate-400 placeholder:font-medium"
+                                        >
+                                        <button
+                                            x-show="searchQuery.length > 0"
+                                            x-cloak
+                                            @click="clearPlaceSearch()"
+                                            class="absolute inset-y-0 end-0 pe-3.5 flex items-center text-slate-300 hover:text-[color:var(--error)] transition-colors"
+                                            type="button"
+                                            title="{{ tr('Clear') }}"
+                                        >
+                                            <i class="fas fa-times-circle text-base"></i>
+                                        </button>
                                     </div>
 
-                                    <div class="divide-y divide-gray-50">
+                                    {{-- Compact search results dropdown --}}
+                                    <div
+                                        x-show="searchResults.length > 0 || isSearching || searchHasRun"
+                                        x-cloak
+                                        x-transition:enter="transition ease-out duration-180"
+                                        x-transition:enter-start="opacity-0 -translate-y-1"
+                                        x-transition:enter-end="opacity-100 translate-y-0"
+                                        class="mt-2 bg-white/[0.98] backdrop-blur-xl rounded-xl shadow-[0_18px_42px_rgba(15,23,42,0.18)] border border-slate-100 overflow-hidden max-h-64 overflow-y-auto custom-scrollbar z-30"
+                                        @click.away="closePlaceSearchResults()"
+                                    >
                                         <template x-if="isSearching && searchResults.length === 0">
-                                            <div class="p-8 text-center">
-                                                <div class="w-12 h-12 bg-[rgb(var(--accent-orange-rgb)/0.08)] rounded-full flex items-center justify-center mx-auto mb-3">
-                                                    <i class="fas fa-search-location text-[color:var(--accent-orange)] animate-bounce"></i>
-                                                </div>
-                                                <p class="text-xs font-bold text-gray-400">{{ tr('Looking for places...') }}</p>
+                                            <div class="flex items-center gap-3 px-4 py-3 text-slate-500">
+                                                <i class="fas fa-circle-notch fa-spin text-[color:var(--accent-orange)]"></i>
+                                                <span class="text-[11px] font-bold">{{ app()->getLocale() === 'ar' ? 'جارٍ البحث عن الأماكن...' : 'Searching places...' }}</span>
                                             </div>
                                         </template>
 
-                                        <template x-for="result in searchResults" :key="result.place_id">
-                                            <button 
-                                                type="button"
-                                                @click="selectLocation(result)"
-                                                class="w-full text-start px-4 py-3.5 hover:bg-[rgb(var(--accent-orange-rgb)/0.08)] transition-colors flex items-start gap-4 group"
-                                            >
-                                                <div class="w-10 h-10 rounded-xl bg-[rgb(var(--accent-orange-rgb)/0.08)] flex items-center justify-center text-[color:var(--accent-orange)] group-hover:bg-[color:var(--accent-orange)] group-hover:text-white transition-all shrink-0 shadow-sm">
-                                                    <i class="fas fa-map-marker-alt text-sm"></i>
-                                                </div>
-                                                <div class="flex-1 min-w-0 pt-0.5">
-                                                    <p class="text-[12px] font-bold text-gray-800 truncate mb-0.5" x-text="result.display_name.split(',')[0]"></p>
-                                                    <p class="text-[10px] text-gray-500 truncate font-medium leading-relaxed" x-text="result.display_name"></p>
-                                                </div>
-                                                <div class="self-center opacity-0 group-hover:opacity-100 transition-opacity pr-1">
-                                                    <i class="fas fa-chevron-right text-[color:var(--accent-orange)] text-[10px]"></i>
-                                                </div>
-                                            </button>
+                                        <template x-if="searchHasRun && !isSearching && searchResults.length === 0">
+                                            <div class="px-4 py-5 text-center">
+                                                <i class="fas fa-map-marker-alt mb-2 text-lg text-slate-300"></i>
+                                                <p class="text-[11px] font-black text-slate-600">
+                                                    {{ app()->getLocale() === 'ar' ? 'لم نجد مكانًا مطابقًا' : 'No matching place found' }}
+                                                </p>
+                                                <p class="mt-1 text-[9px] font-medium text-slate-400">
+                                                    {{ app()->getLocale() === 'ar' ? 'اكتب اسم الدولة أو المدينة أو المنطقة أو الحي أو الشارع، أو أدخل الإحداثيات.' : 'Enter a country, city, area, neighborhood, street, or coordinates.' }}
+                                                </p>
+                                            </div>
                                         </template>
+
+                                        <div class="divide-y divide-slate-100">
+                                            <template x-for="result in searchResults" :key="result.place_id">
+                                                <button
+                                                    type="button"
+                                                    @click="selectLocation(result)"
+                                                    class="w-full text-start px-3 py-2.5 hover:bg-[rgb(var(--accent-orange-rgb)/0.07)] transition-colors flex items-center gap-3 group"
+                                                >
+                                                    <div class="w-8 h-8 rounded-lg bg-[rgb(var(--accent-orange-rgb)/0.08)] flex items-center justify-center text-[color:var(--accent-orange)] group-hover:bg-[color:var(--accent-orange)] group-hover:text-white transition-colors shrink-0">
+                                                        <i class="fas text-xs" :class="resultIconClass(result)"></i>
+                                                    </div>
+                                                    <div class="flex-1 min-w-0">
+                                                        <div class="flex items-center gap-2 min-w-0">
+                                                            <p
+                                                                class="text-[11px] font-black text-slate-800 truncate"
+                                                                x-text="result.name || result.display_name.split(',')[0]"
+                                                            ></p>
+                                                            <span
+                                                                class="athka-map-result-type shrink-0 truncate rounded-full bg-slate-100 px-1.5 py-0.5 text-[7px] font-black text-slate-500"
+                                                                x-text="resultTypeLabel(result)"
+                                                            ></span>
+                                                        </div>
+                                                        <div class="mt-0.5 flex items-center gap-2 min-w-0">
+                                                            <p class="flex-1 text-[9px] text-slate-500 truncate font-medium" x-text="result.display_name"></p>
+                                                            <span
+                                                                x-show="formatResultDistance(result)"
+                                                                class="shrink-0 text-[8px] font-bold text-slate-400"
+                                                                x-text="formatResultDistance(result)"
+                                                            ></span>
+                                                        </div>
+                                                    </div>
+                                                    <i class="fas {{ app()->getLocale() === 'ar' ? 'fa-chevron-left' : 'fa-chevron-right' }} text-[9px] text-slate-300 group-hover:text-[color:var(--accent-orange)]"></i>
+                                                </button>
+                                            </template>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                {{-- Current location --}}
+                                <button
+                                    type="button"
+                                    @click="getCurrentLocation()"
+                                    class="pointer-events-auto grid h-11 w-11 shrink-0 place-items-center rounded-xl border border-white/90 bg-white/[0.97] text-[color:var(--accent-orange)] shadow-[0_10px_26px_rgba(15,23,42,0.14)] backdrop-blur-xl transition hover:bg-[color:var(--accent-orange)] hover:text-white active:scale-95 disabled:opacity-50"
+                                    title="{{ tr('Sync My Location') }}"
+                                    aria-label="{{ tr('Sync My Location') }}"
+                                    @if(!$canManageAttendance) disabled @endif
+                                >
+                                    <i class="fas fa-location-crosshairs" :class="isLocating ? 'fa-spin' : ''"></i>
+                                </button>
+
+                                {{-- Compact basemap menu --}}
+                                <div
+                                    class="relative pointer-events-auto"
+                                    @click.outside="mapStyleMenuOpen = false"
+                                >
+                                    <button
+                                        type="button"
+                                        @click="mapStyleMenuOpen = !mapStyleMenuOpen"
+                                        class="grid h-11 w-11 shrink-0 place-items-center rounded-xl border border-white/90 bg-white/[0.97] text-slate-600 shadow-[0_10px_26px_rgba(15,23,42,0.14)] backdrop-blur-xl transition hover:text-[color:var(--accent-orange)] active:scale-95"
+                                        title="{{ app()->getLocale() === 'ar' ? 'نوع الخريطة' : 'Map style' }}"
+                                        aria-label="{{ app()->getLocale() === 'ar' ? 'نوع الخريطة' : 'Map style' }}"
+                                        :aria-expanded="mapStyleMenuOpen"
+                                    >
+                                        <i class="fas fa-layer-group"></i>
+                                    </button>
+
+                                    <div
+                                        x-show="mapStyleMenuOpen"
+                                        x-cloak
+                                        x-transition:enter="transition ease-out duration-150"
+                                        x-transition:enter-start="opacity-0 scale-95 -translate-y-1"
+                                        x-transition:enter-end="opacity-100 scale-100 translate-y-0"
+                                        class="absolute top-[52px] end-0 w-36 overflow-hidden rounded-xl border border-slate-100 bg-white/[0.98] p-1.5 shadow-[0_16px_36px_rgba(15,23,42,0.18)] backdrop-blur-xl"
+                                    >
+                                        <button
+                                            type="button"
+                                            @click="setMapStyle('streets')"
+                                            class="flex w-full items-center gap-2 rounded-lg px-3 py-2 text-[9px] font-black transition"
+                                            :class="mapStyle === 'streets' ? 'bg-[rgb(var(--accent-orange-rgb)/0.10)] text-[color:var(--accent-orange)]' : 'text-slate-500 hover:bg-slate-50'"
+                                        >
+                                            <i class="fas fa-road w-3"></i>
+                                            {{ app()->getLocale() === 'ar' ? 'الشوارع' : 'Streets' }}
+                                        </button>
+                                        <button
+                                            type="button"
+                                            @click="setMapStyle('satellite')"
+                                            class="flex w-full items-center gap-2 rounded-lg px-3 py-2 text-[9px] font-black transition"
+                                            :class="mapStyle === 'satellite' ? 'bg-[rgb(var(--accent-orange-rgb)/0.10)] text-[color:var(--accent-orange)]' : 'text-slate-500 hover:bg-slate-50'"
+                                        >
+                                            <i class="fas fa-satellite w-3"></i>
+                                            {{ app()->getLocale() === 'ar' ? 'القمر الصناعي' : 'Satellite' }}
+                                        </button>
+                                        <button
+                                            type="button"
+                                            @click="setMapStyle('light')"
+                                            class="flex w-full items-center gap-2 rounded-lg px-3 py-2 text-[9px] font-black transition"
+                                            :class="mapStyle === 'light' ? 'bg-[rgb(var(--accent-orange-rgb)/0.10)] text-[color:var(--accent-orange)]' : 'text-slate-500 hover:bg-slate-50'"
+                                        >
+                                            <i class="fas fa-pen-ruler w-3"></i>
+                                            {{ app()->getLocale() === 'ar' ? 'هادئة للرسم' : 'Light drawing' }}
+                                        </button>
                                     </div>
                                 </div>
                             </div>
-
-                            {{-- Sync Button --}}
-                            <div class="pointer-events-auto shrink-0">
-                                <button 
-                                    type="button" 
-                                    @click="getCurrentLocation()" 
-                                    class="flex items-center gap-2 text-[10px] font-black text-[color:var(--accent-orange)] hover:text-white hover:bg-[color:var(--accent-orange)] bg-white/95 backdrop-blur-md px-4 py-2.5 rounded-2xl border border-[rgb(var(--accent-orange-rgb)/0.16)] transition-all shadow-xl active:scale-95 disabled:opacity-50" 
-                                    @if(!$canManageAttendance) disabled @endif
-                                >
-                                    <i class="fas fa-location-arrow animate-pulse"></i> 
-                                    <span class="hidden sm:inline">{{ tr('Sync My Location') }}</span>
-                                </button>
-                            </div>
                         </div>
 
-                        {{-- Radius Control Overlay --}}
-                        <div class="absolute bottom-6 left-1/2 -translate-x-1/2 bg-white/90 backdrop-blur-md px-6 py-3 rounded-full shadow-lg border border-gray-200 flex items-center gap-4 z-20 w-3/4 max-w-md transition-all hover:scale-105 pointer-events-auto">
+                        {{-- Circle radius control --}}
+                        <div x-show="boundaryType === 'circle'" x-transition class="absolute bottom-5 left-1/2 -translate-x-1/2 bg-white/95 backdrop-blur-md px-4 py-2.5 rounded-xl shadow-lg border border-gray-200 flex items-center gap-3 z-20 w-[72%] max-w-sm pointer-events-auto">
                             <span class="text-xs font-bold text-gray-600 whitespace-nowrap">{{ tr('Geofence Radius') }}</span>
                             <div class="flex-1 relative flex items-center">
-                                <input type="range" class="w-full h-1.5 bg-gray-200 rounded-lg appearance-none cursor-pointer accent-[color:var(--accent-orange)] ml-5" 
+                                <input type="range" class="w-full h-1.5 bg-gray-200 rounded-lg appearance-none cursor-pointer accent-[color:var(--accent-orange)] ml-5"
                                     min="10" max="1000" step="10" x-model="radius" @input="updateCircle()"
                                     @if(!$canManageAttendance) disabled @endif
                                 >
@@ -326,11 +441,23 @@
                             <span class="text-xs font-black text-[color:var(--accent-orange)] w-12 text-end" x-text="radius + 'm'"></span>
                         </div>
 
+                        {{-- Polygon helper --}}
+                        <div x-show="boundaryType === 'polygon'" x-transition class="absolute bottom-5 left-1/2 -translate-x-1/2 z-20 pointer-events-auto">
+                            <div class="flex items-center gap-3 rounded-2xl border border-gray-200 bg-white/95 backdrop-blur-md px-4 py-2.5 shadow-xl">
+                                <span class="text-[10px] font-bold text-gray-600">{{ tr('Use the polygon tool, then edit or remove the boundary from the map toolbar.') }}</span>
+                                <button type="button" @click="clearPolygon()" class="text-[10px] font-black text-[color:var(--error)] hover:underline" @if(!$canManageAttendance) disabled @endif>
+                                    {{ tr('Clear Boundary') }}
+                                </button>
+                            </div>
+                        </div>
+
                     </div>
-                    
+
                     <div class="flex items-center justify-between text-[11px] text-gray-400 px-2">
-                        <span><i class="fas fa-mouse-pointer me-1"></i> {{ tr('Click map to move pin') }}</span>
-                        <span><i class="fas fa-layer-group me-1"></i> {{ tr('Drag circle edge to resize') }}</span>
+                        <span x-show="boundaryType === 'circle'"><i class="fas fa-mouse-pointer me-1"></i> {{ tr('Click map to move pin') }}</span>
+                        <span x-show="boundaryType === 'circle'"><i class="fas fa-layer-group me-1"></i> {{ tr('Adjust the radius from the slider') }}</span>
+                        <span x-show="boundaryType === 'polygon'"><i class="fas fa-draw-polygon me-1"></i> {{ tr('Draw at least three boundary points') }}</span>
+                        <span x-show="boundaryType === 'polygon'"><i class="fas fa-edit me-1"></i> {{ tr('Use edit mode to move boundary points') }}</span>
                     </div>
                 </div>
             </div>
@@ -344,8 +471,8 @@
             <div class="flex gap-3">
                 <x-ui.secondary-button wire:click="$set('showGpsModal', false)">{{ tr('Cancel') }}</x-ui.secondary-button>
                 @if($canManageAttendance)
-                <x-ui.primary-button 
-                    wire:click="saveGpsLocation" 
+                <x-ui.primary-button
+                    wire:click="saveGpsLocation"
                     loading="saveGpsLocation"
                     class="!px-8 !rounded-xl shadow-[0_10px_20px_rgb(var(--accent-orange-rgb)/0.20)]"
                     :fullWidth="false"

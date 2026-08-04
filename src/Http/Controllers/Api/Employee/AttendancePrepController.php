@@ -14,9 +14,15 @@ use Athka\SystemSettings\Models\AttendanceDevice;
 use Athka\SystemSettings\Models\EmployeeGroup;
 
 use Athka\Employees\Models\Employee;
+use Athka\SystemSettings\Services\AttendanceLocationGateService;
 
 class AttendancePrepController extends Controller
 {
+    public function __construct(
+        private readonly AttendanceLocationGateService $locationGateService
+    ) {
+    }
+
     public function show(Request $request)
     {
         $user = $request->user();
@@ -127,34 +133,35 @@ class AttendancePrepController extends Controller
             ];
         }
 
-        $gpsQ = AttendanceGpsLocation::query()
-            ->where('saas_company_id', $companyId)
-            ->where('is_active', true);
-
-        $employeeGroupIds = $groups->pluck('id')->map(fn ($x) => (int) $x)->values()->all();
-
-        if (!empty($employeeGroupIds)) {
-            $gpsQ->where(function ($q) use ($employeeGroupIds, $employee) {
-                $q->whereIn('employee_group_id', $employeeGroupIds)
-                  ->orWhereNull('employee_group_id');
-
-                if ($employee && isset($employee->department_id)) {
-                    $q->orWhere('branch_id', (int) $employee->department_id);
-                }
-                $q->orWhereNull('branch_id');
-            });
-        }
-
-        $gpsLocations = $gpsQ->get()->map(fn ($l) => [
-            'id' => (int) $l->id,
-            'name' => (string) $l->name,
-            'lat' => (float) $l->lat,
-            'lng' => (float) $l->lng,
-            'radius_meters' => (int) $l->radius_meters,
-            'address_text' => (string) ($l->address_text ?? ''),
-            'branch_id' => $l->branch_id ? (int) $l->branch_id : null,
-            'employee_group_id' => $l->employee_group_id ? (int) $l->employee_group_id : null,
-        ])->values();
+        $gpsLocations = $employee
+            ? $this->locationGateService
+                ->allowedLocationsForEmployee($companyId, $employee)
+                ->map(fn (AttendanceGpsLocation $location) => [
+                    'id' => (int) $location->id,
+                    'name' => (string) $location->name,
+                    'lat' => (float) $location->lat,
+                    'lng' => (float) $location->lng,
+                    'radius_meters' => (int) $location->radius_meters,
+                    'geofence_type' => (string) (
+                        $location->geofence_type
+                        ?: AttendanceGpsLocation::GEOFENCE_TYPE_CIRCLE
+                    ),
+                    'boundary_geojson' => $location->boundary_geojson,
+                    'address_text' => (string) (
+                        $location->address_text ?? ''
+                    ),
+                    'country' => (string) ($location->country ?? ''),
+                    'city' => (string) ($location->city ?? ''),
+                    'region' => (string) ($location->region ?? ''),
+                    'branch_id' => $location->branch_id
+                        ? (int) $location->branch_id
+                        : null,
+                    'employee_group_id' => $location->employee_group_id
+                        ? (int) $location->employee_group_id
+                        : null,
+                ])
+                ->values()
+            : collect();
 
         $devices = AttendanceDevice::query()
             ->where('saas_company_id', $companyId)
@@ -214,10 +221,12 @@ class AttendancePrepController extends Controller
         return response()->json([
             'ok' => true,
             'data' => [
+                'employee_id' => (int) ($employee?->id ?? 0),
                 'tracking_mode' => $trackingMode,
                 'grace' => $graceData,
                 'methods' => $methods,
                 'gps_locations' => $gpsLocations,
+                'location_gate' => $this->locationGateService->settings(),
                 'devices' => $devices,
                 'exceptional_day' => $exceptionalDayInfo,
                 'current_status' => $currentStatus,

@@ -21,25 +21,25 @@ use Athka\SystemSettings\Models\EmployeeGroup;
 use Athka\SystemSettings\Services\EmployeeService;
 use Athka\SystemSettings\Services\AttendanceService;
 use Athka\SystemSettings\Services\WorkScheduleService;
-use Athka\SystemSettings\Services\GeofenceService;
+use Athka\SystemSettings\Services\AttendanceLocationGateService;
 
 class DailyAttendanceController extends Controller
 {
     protected $employeeService;
     protected $attendanceService;
     protected $scheduleService;
-    protected $geofenceService;
+    protected AttendanceLocationGateService $locationGateService;
 
     public function __construct(
         EmployeeService $employeeService,
         AttendanceService $attendanceService,
         WorkScheduleService $scheduleService,
-        GeofenceService $geofenceService
+        AttendanceLocationGateService $locationGateService
     ) {
         $this->employeeService = $employeeService;
         $this->attendanceService = $attendanceService;
         $this->scheduleService = $scheduleService;
-        $this->geofenceService = $geofenceService;
+        $this->locationGateService = $locationGateService;
     }
 
     public function index(Request $request)
@@ -213,10 +213,10 @@ if ($syncOpenSessions) {
 
         $data = $request->validate([
             'method' => ['required', 'in:gps,fingerprint,nfc'],
-            'lat' => ['nullable', 'numeric'],
-            'lng' => ['nullable', 'numeric'],
+            'lat' => ['nullable', 'numeric', 'between:-90,90'],
+            'lng' => ['nullable', 'numeric', 'between:-180,180'],
             'is_mocked' => ['nullable', 'boolean'],
-            'gps_accuracy' => ['nullable', 'numeric'],
+            'gps_accuracy' => ['nullable', 'numeric', 'min:0'],
             'location_captured_at' => ['nullable', 'date'],
         ]);
 
@@ -226,22 +226,20 @@ if ($syncOpenSessions) {
             return $methodError;
         }
 
-        if ($data['method'] === 'gps') {
-            if (!empty($data['is_mocked'])) {
-                return response()->json(['ok' => false, 'code' => 'fake_location_detected', 'message' => tr('Fake location detected. Please disable mock location apps and try again.')], 403);
-            }
+        $locationDecision = null;
 
-if (!$this->geofenceService->isWithinAny(
-    (float) $data['lat'],
-    (float) $data['lng'],
-    collect($context->data->gps_locations ?? [])
-        ->pluck('id')
-        ->map(fn ($id) => (int) $id)
-        ->filter()
-        ->values()
-        ->all()
-)) {
-                return response()->json(['ok' => false, 'code' => 'geofence_error', 'message' => tr('Outside the geographical range.')], 403);
+        if ($data['method'] === 'gps') {
+            $locationDecision = $this->locationGateService->evaluateOnline(
+                companyId: $companyId,
+                employee: $employee,
+                payload: $data,
+            );
+
+            if (! $locationDecision->allowed) {
+                return response()->json(
+                    $locationDecision->toResponseArray(),
+                    $locationDecision->httpStatus
+                );
             }
         }
 
@@ -261,6 +259,11 @@ if (!$this->geofenceService->isWithinAny(
             'is_mocked' => (bool)($data['is_mocked'] ?? false),
             'gps_accuracy' => $data['gps_accuracy'] ?? null,
             'location_captured_at' => $data['location_captured_at'] ?? null,
+            'location_gate' => $locationDecision?->toArray(),
+            'verified_location_id' => $locationDecision?->locationId,
+            'verified_location_name' => $locationDecision?->locationName,
+            'verified_geofence_type' => $locationDecision?->geofenceType,
+            'distance_to_geofence_meters' => $locationDecision?->distanceMeters,
         ];
 
         $lock = Cache::lock("attendance:checkin:{$companyId}:{$employee->id}:{$dateStr}", 15);
@@ -298,10 +301,14 @@ $log = $this->attendanceService->ensureLog(
                 // [Security] Force set attendance_date as clean string to prevent double time specification
                 $log->attendance_date = $dateStr;
 
-                return $this->attendanceService->recordCheckIn($log, $data['method'], $data['lat'], $data['lng'], $schedule, 15, $context->data->tracking_mode ?? 'check_in_out', $locationMeta);
+                return $this->attendanceService->recordCheckIn($log, $data['method'], $data['lat'] ?? null, $data['lng'] ?? null, $schedule, 15, $context->data->tracking_mode ?? 'check_in_out', $locationMeta);
             });
         } finally {
             optional($lock)->release();
+        }
+
+        if ($locationDecision !== null) {
+            $res['location_gate'] = $locationDecision->toArray();
         }
 
         return response()->json($res);
@@ -317,10 +324,10 @@ $log = $this->attendanceService->ensureLog(
 
         $data = $request->validate([
             'method' => ['required', 'in:gps,fingerprint,nfc'],
-            'lat' => ['nullable', 'numeric'],
-            'lng' => ['nullable', 'numeric'],
+            'lat' => ['nullable', 'numeric', 'between:-90,90'],
+            'lng' => ['nullable', 'numeric', 'between:-180,180'],
             'is_mocked' => ['nullable', 'boolean'],
-            'gps_accuracy' => ['nullable', 'numeric'],
+            'gps_accuracy' => ['nullable', 'numeric', 'min:0'],
             'location_captured_at' => ['nullable', 'date'],
         ]);
 
@@ -330,22 +337,20 @@ $log = $this->attendanceService->ensureLog(
             return $methodError;
         }
 
-        if ($data['method'] === 'gps') {
-            if (!empty($data['is_mocked'])) {
-                return response()->json(['ok' => false, 'code' => 'fake_location_detected', 'message' => tr('Fake location detected. Please disable mock location apps and try again.')], 403);
-            }
+        $locationDecision = null;
 
-if (!$this->geofenceService->isWithinAny(
-    (float) $data['lat'],
-    (float) $data['lng'],
-    collect($context->data->gps_locations ?? [])
-        ->pluck('id')
-        ->map(fn ($id) => (int) $id)
-        ->filter()
-        ->values()
-        ->all()
-)) {
-                return response()->json(['ok' => false, 'code' => 'geofence_error', 'message' => tr('Outside the geographical range.')], 403);
+        if ($data['method'] === 'gps') {
+            $locationDecision = $this->locationGateService->evaluateOnline(
+                companyId: $companyId,
+                employee: $employee,
+                payload: $data,
+            );
+
+            if (! $locationDecision->allowed) {
+                return response()->json(
+                    $locationDecision->toResponseArray(),
+                    $locationDecision->httpStatus
+                );
             }
         }
 
@@ -353,6 +358,11 @@ if (!$this->geofenceService->isWithinAny(
             'is_mocked' => (bool)($data['is_mocked'] ?? false),
             'gps_accuracy' => $data['gps_accuracy'] ?? null,
             'location_captured_at' => $data['location_captured_at'] ?? null,
+            'location_gate' => $locationDecision?->toArray(),
+            'verified_location_id' => $locationDecision?->locationId,
+            'verified_location_name' => $locationDecision?->locationName,
+            'verified_geofence_type' => $locationDecision?->geofenceType,
+            'distance_to_geofence_meters' => $locationDecision?->distanceMeters,
         ];
 
         $dateStr = now()->toDateString();
@@ -378,10 +388,14 @@ if (!$this->geofenceService->isWithinAny(
                     return ['ok' => false, 'message' => tr('No record found for today.')];
                 }
 
-                return $this->attendanceService->recordCheckOut($log, $data['method'], $data['lat'], $data['lng'], $locationMeta);
+                return $this->attendanceService->recordCheckOut($log, $data['method'], $data['lat'] ?? null, $data['lng'] ?? null, $locationMeta);
             });
         } finally {
             optional($lock)->release();
+        }
+
+        if ($locationDecision !== null) {
+            $res['location_gate'] = $locationDecision->toArray();
         }
 
         return response()->json($res);
@@ -480,6 +494,8 @@ if (!$this->geofenceService->isWithinAny(
                         'lat',
                         'lng',
                         'radius_meters',
+                        'geofence_type',
+                        'boundary_geojson',
                         'employee_group_id',
                         'branch_id',
                     ])
@@ -489,6 +505,8 @@ if (!$this->geofenceService->isWithinAny(
                         'lat' => (float) $location->lat,
                         'lng' => (float) $location->lng,
                         'radius_meters' => (int) $location->radius_meters,
+                        'geofence_type' => (string) ($location->geofence_type ?: AttendanceGpsLocation::GEOFENCE_TYPE_CIRCLE),
+                        'boundary_geojson' => $location->boundary_geojson,
                         'employee_group_id' => $location->employee_group_id !== null
                             ? (int) $location->employee_group_id
                             : null,
@@ -533,6 +551,8 @@ if (!$this->geofenceService->isWithinAny(
                     'lat' => $location['lat'],
                     'lng' => $location['lng'],
                     'radius_meters' => $location['radius_meters'],
+                    'geofence_type' => $location['geofence_type'],
+                    'boundary_geojson' => $location['boundary_geojson'],
                 ])
                 ->values();
         }
