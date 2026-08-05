@@ -244,7 +244,7 @@
     </div>
 
     {{-- Modal: Add/Edit Currency --}}
-    <x-ui.modal id="currency-modal" wire:model="modalOpen" maxWidth="lg">
+    <x-ui.modal id="currency-modal" wire:model="modalOpen" maxWidth="lg" contentOverflow="visible">
         <x-slot name="title">
             <div class="flex items-center gap-3">
                 <div
@@ -266,7 +266,7 @@
             <div class="space-y-6">
                 {{-- Currency Selection Component --}}
                 <div>
-                    <x-ui.select :label="tr('Currency Selection')" wire:model.live="code" class="w-full" :disabled="$mode === 'edit' && $codeLocked">
+                    <x-ui.select :label="tr('Currency Selection')" wire:model.live="code" class="w-full" dropdownMaxHeight="min(40vh, 18rem)" :disabled="$mode === 'edit' && $codeLocked">
                         <option value="">{{ tr('Choose a currency from list...') }}</option>
                         @foreach ($catalog as $ccode => $meta)
                             <option value="{{ $ccode }}">{{ $meta['name'] }} ({{ $ccode }})</option>

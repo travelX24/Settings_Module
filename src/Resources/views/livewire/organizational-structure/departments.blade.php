@@ -521,6 +521,7 @@
                             placeholder="{{ tr('Select Manager') }}"
                             hint="{{ tr('Optional') }}"
                             searchable="true"
+                            align="up"
                             :disabled="!auth()->user()->can('settings.organizational.manage')"
                         >
                             <option value="">{{ tr('Select Manager') }}</option>
