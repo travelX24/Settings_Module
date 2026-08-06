@@ -737,13 +737,7 @@
                                     </div>
                                 </div>
 
-                                @error("steps.$i.approver_type")
-                                    <div class="text-xs text-[color:var(--error)] mt-2">{{ \Athka\AuthKit\Support\UiMsg::toText($message) ?? $message }}</div>
-                                @enderror
 
-                                @error("steps.$i.approver_id")
-                                    <div class="text-xs text-[color:var(--error)] mt-1">{{ \Athka\AuthKit\Support\UiMsg::toText($message) ?? $message }}</div>
-                                @enderror
                             </div>
                         @endforeach
 

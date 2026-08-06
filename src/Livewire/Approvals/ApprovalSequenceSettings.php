@@ -169,7 +169,12 @@ class ApprovalSequenceSettings extends Component
                 ->exists();
 
             if (!$hasLinkedEmployee) {
-                $this->addError("steps.$index.approver_id", tr('The selected approver user is not linked to an employee.'));
+                $this->addError(
+                    "steps.$index.approver_id",
+                    substr(strtolower(app()->getLocale()), 0, 2) === 'ar'
+                        ? "\u{0627}\u{0644}\u{0645}\u{0633}\u{062A}\u{062E}\u{062F}\u{0645} \u{0627}\u{0644}\u{0645}\u{062D}\u{062F}\u{062F} \u{063A}\u{064A}\u{0631} \u{0645}\u{0631}\u{062A}\u{0628}\u{0637} \u{0628}\u{0623}\u{064A} \u{0645}\u{0648}\u{0638}\u{0641}."
+                        : tr('The selected approver user is not linked to an employee.')
+                );
                 return false;
             }
         }
