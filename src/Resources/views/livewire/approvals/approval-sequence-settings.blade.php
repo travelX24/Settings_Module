@@ -608,20 +608,30 @@
                                     {{ tr('Applies to all employees') }}
                                 </div>
                             @else
-                                <select
-                                    wire:model.defer="scope_ids"
-                                    multiple
-                                    class="w-full rounded-xl border bg-white px-4 py-2.5 text-sm shadow-sm
-                                        border-gray-200 text-gray-900
-                                        focus:outline-none focus:ring-2 focus:ring-[color:var(--accent-orange)]/20
-                                        focus:border-[color:var(--accent-orange)] transition
-                                        min-h-[110px]"
-                                    @cannot('settings.approval.manage') disabled @endcannot
-                                >
-                                    @foreach($list as $item)
-                                        <option value="{{ $item['id'] }}">{{ $item['name'] }}</option>
-                                    @endforeach
-                                </select>
+                                <div class="max-h-[240px] overflow-y-auto rounded-xl border border-gray-200 bg-white p-2">
+    @forelse($list as $item)
+        <label
+            wire:key="approval-scope-option-{{ $scope_type }}-{{ $item['id'] }}"
+            class="flex cursor-pointer items-center gap-3 rounded-lg border-b border-gray-100 px-3 py-2.5 transition hover:bg-gray-50 last:border-b-0"
+        >
+            <input
+                type="checkbox"
+                wire:model.defer="scope_ids"
+                value="{{ $item['id'] }}"
+                class="h-5 w-5 shrink-0 rounded border-gray-300 text-[color:var(--accent-orange)] focus:ring-[color:var(--accent-orange)]/20"
+                @cannot('settings.approval.manage') disabled @endcannot
+            >
+
+            <span class="min-w-0 flex-1 text-sm font-medium text-gray-800">
+                {{ $item['name'] }}
+            </span>
+        </label>
+    @empty
+        <div class="px-3 py-4 text-center text-sm text-gray-500">
+            {{ tr('No values found') }}
+        </div>
+    @endforelse
+</div>
 
                                 @error('scope_ids')
                                     <div class="text-xs text-[color:var(--error)] mt-1">{{ \Athka\AuthKit\Support\UiMsg::toText($message) ?? $message }}</div>

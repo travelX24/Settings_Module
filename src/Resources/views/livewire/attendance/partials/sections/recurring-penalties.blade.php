@@ -5,10 +5,10 @@
             {{ tr('Recurring Violations (2, 3, 4)') }}
         </h3>
         @if($canManageAttendance)
-        <x-ui.secondary-button wire:click="openPenaltyModal" class="!px-4 !py-2 !text-xs !rounded-xl shadow-sm cursor-pointer">
-            <i class="fas fa-plus me-1 text-[color:var(--accent-orange)]"></i>
+        <x-ui.primary-button :arrow="false" :fullWidth="false" wire:click="openPenaltyModal" class="!px-4 !py-2 !text-xs !rounded-xl shadow-sm cursor-pointer">
+            <i class="fas fa-plus me-1"></i>
             {{ tr('Add Recurring Violation') }}
-        </x-ui.secondary-button>
+        </x-ui.primary-button>
         @endif
     </div>
 

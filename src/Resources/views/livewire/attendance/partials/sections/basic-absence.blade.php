@@ -85,7 +85,7 @@
             wire:loading.attr="disabled"
             :arrow="false"
             :fullWidth="false"
-            class="!px-6 !py-2 !rounded-xl !bg-[color:var(--error)] hover:!brightness-95 cursor-pointer"
+            class="!px-6 !py-2 !rounded-xl cursor-pointer"
         >
             <span wire:loading.remove wire:target="saveBasicAbsencePenalty">
                 <i class="fas fa-save me-2"></i>
