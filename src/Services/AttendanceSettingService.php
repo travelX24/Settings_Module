@@ -46,7 +46,7 @@ class AttendanceSettingService
             'penalty_action' => 'deduction', 
             'is_active' => true,
             'recurrence_from' => 1,
-            'recurrence_to' => 1,
+            'recurrence_to' => 255,
             'minutes_from' => $data['threshold_minutes'] ?? 0,
             'minutes_to' => 9999,
         ]);
@@ -72,7 +72,7 @@ class AttendanceSettingService
             'is_active' => true,
             'day_selector_type' => 'single',
             'day_from' => 1,
-            'day_to' => 1,
+            'day_to' => 255,
             'recurrence_count' => 1,
         ]);
 
