@@ -1,4 +1,8 @@
 {{-- Leaflet and Leaflet-Geoman are bundled locally by HrWithModules/Vite. --}}
+@once
+    @vite('resources/js/saas-maps.js')
+@endonce
+
 @pushOnce('styles', 'attendance-map-picker-styles')
 <style>
     .leaflet-container {

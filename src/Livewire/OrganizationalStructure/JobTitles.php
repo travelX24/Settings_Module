@@ -3,6 +3,7 @@
 namespace Athka\SystemSettings\Livewire\OrganizationalStructure;
 
 use Livewire\Component;
+use Livewire\WithPagination;
 use App\Services\ExcelExportService;
 use Athka\SystemSettings\Models\JobTitle;
 use Athka\SystemSettings\Services\OrganizationService;
@@ -11,11 +12,13 @@ use Athka\SystemSettings\Livewire\OrganizationalStructure\Traits\HandleJobTitleL
 class JobTitles extends Component
 {
     use HandleJobTitleLogic;
+    use WithPagination;
 
     public $search = '';
     public $showModal = false;
     public $editingId = null;
     public $viewMode = 'table';
+    public int $perPage = 10;
 
     // Form fields
     public $name = '', $code = '', $description = '', $is_active = true;
@@ -43,8 +46,13 @@ class JobTitles extends Component
             ->orderBy('name');
 
         return view('systemsettings::livewire.organizational-structure.job-titles', [
-            'jobTitles' => $query->get(),
+            'jobTitles' => $query->paginate($this->perPage),
         ]);
+    }
+
+    public function updatedSearch(): void
+    {
+        $this->resetPage();
     }
 
     public function clearAllFilters()

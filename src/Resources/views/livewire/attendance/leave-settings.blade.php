@@ -13,7 +13,7 @@
     ];
     $canManageAttendance = auth()->user()?->canAny(['settings.attendance.leaves.manage']) ?? false;
 @endphp
-<div class="space-y-6" wire:poll.15s>
+<div class="space-y-6" wire:poll.60s.visible>
 
     <x-ui.toast />
     @section('topbar-left-content')

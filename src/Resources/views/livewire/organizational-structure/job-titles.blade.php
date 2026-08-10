@@ -198,7 +198,7 @@
                         tr('Actions')
                     ]"
                     :perPage="10"
-                    :enablePagination="true"
+                    :enablePagination="false"
                 >
                     @foreach($jobTitles as $jobTitle)
                         <tr
@@ -287,6 +287,12 @@
                     @endforeach
                 </x-ui.table>
             </div>
+
+            @if($jobTitles->hasPages())
+                <div class="mt-6">
+                    {{ $jobTitles->links() }}
+                </div>
+            @endif
 
         @else
             <div class="p-12 text-center">

@@ -195,9 +195,9 @@ class Roles extends Component
 
         return view('systemsettings::livewire.user-access-control.roles', [
             'roles' => $roles,
-            'permissionGroups' => $this->uacService->getPermissionGroups(),
-            'permissionsMap' => $this->uacService->getPermissionLabels(),
-            'permissionTabs' => $this->uacService->getPermissionTabs()
+            'permissionGroups' => $this->showModal ? $this->uacService->getPermissionGroups() : [],
+            'permissionsMap' => $this->showModal ? $this->uacService->getPermissionLabels() : [],
+            'permissionTabs' => $this->showModal ? $this->uacService->getPermissionTabs() : [],
         ]);
     }
 }

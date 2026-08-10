@@ -398,7 +398,7 @@ class Users extends Component
             'display_department' => $selectedEmp?->department?->name ?? '-',
             'display_job_title' => $selectedEmp?->jobTitle?->name ?? '-',
             'permissionGroups' => $this->showPermModal ? $this->uacService->getPermissionGroups() : [],
-            'permissionsMap' => $this->uacService->getPermissionLabels(),
+            'permissionsMap' => $this->showPermModal ? $this->uacService->getPermissionLabels() : [],
             'permissionTabs' => $this->showPermModal ? $this->uacService->getPermissionTabs() : [],
             'primaryUserId' => $primaryUserId
         ]);

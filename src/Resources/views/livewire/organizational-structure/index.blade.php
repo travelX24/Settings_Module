@@ -113,7 +113,7 @@
     </div>
 
     {{-- Global Employee Detail Modal (Summoned by ID) --}}
-    @livewire('employees.detail-modal')
+    <livewire:employees.detail-modal lazy />
 
     {{-- Global Employees List Modal (Fetched via AJAX) --}}
     @include('systemsettings::livewire.organizational-structure.partials.employees-list-modal')

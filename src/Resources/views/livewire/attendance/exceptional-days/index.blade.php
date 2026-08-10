@@ -150,13 +150,13 @@
                 <div class="md:col-span-2">
                     <div class="mb-1 text-xs text-gray-500">{{ tr('Min Deduction %') }}</div>
                     <x-ui.input type="number" step="0.01" min="0" max="1000"
-                        wire:model.live.debounce.0ms="minMultiplier" :placeholder="tr('Min %')" />
+                        wire:model.live.debounce.500ms="minMultiplier" :placeholder="tr('Min %')" />
                 </div>
 
                 <div class="md:col-span-2">
                     <div class="mb-1 text-xs text-gray-500">{{ tr('Max Deduction %') }}</div>
                     <x-ui.input type="number" step="0.01" min="0" max="1000"
-                        wire:model.live.debounce.0ms="maxMultiplier" :placeholder="tr('Max %')" />
+                        wire:model.live.debounce.500ms="maxMultiplier" :placeholder="tr('Max %')" />
                 </div>
 
                 {{-- الصف الثاني: قسم الهدف + فرع الهدف + نوع العقد المستهدف --}}

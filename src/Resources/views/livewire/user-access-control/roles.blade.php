@@ -254,6 +254,7 @@
     </div>
 
     {{-- Role Modal --}}
+    @if($showModal)
     <x-ui.modal wire:model="showModal" maxWidth="6xl">
         <x-slot name="title">
             <div class="flex items-center gap-3">
@@ -449,6 +450,7 @@
             </div>
         </x-slot>
     </x-ui.modal>
+    @endif
 
     {{-- Confirm Dialog --}}
     <x-ui.confirm-dialog
