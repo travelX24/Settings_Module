@@ -7,8 +7,13 @@ use Athka\SystemSettings\Http\Controllers\Api\Employee\DailyAttendanceController
 use Athka\SystemSettings\Http\Controllers\Api\Company\ApprovalPolicyController;
 use Athka\SystemSettings\Http\Controllers\Api\Employee\ApprovalInboxController;
 use Athka\SystemSettings\Http\Controllers\Api\Employee\BranchController;
+use Athka\Attendance\Http\Controllers\Api\Employee\TrackingController;
 
-Route::middleware(['api', 'auth:sanctum'])
+Route::middleware([
+    'api',
+    'auth:sanctum',
+    \Athka\Saas\Http\Middleware\SetCompanyTimezone::class,
+])
     ->prefix('api/employee')
     ->group(function () {
 
@@ -22,6 +27,13 @@ Route::middleware(['api', 'auth:sanctum'])
 
         Route::post('attendance/check-in', [DailyAttendanceController::class, 'checkIn'])->middleware('throttle:attendance-action');
         Route::post('attendance/check-out', [DailyAttendanceController::class, 'checkOut'])->middleware('throttle:attendance-action');
+
+        Route::prefix('tracking')->group(function () {
+            Route::get('active', [TrackingController::class, 'active']);
+            Route::post('start', [TrackingController::class, 'start'])->middleware('throttle:attendance-action');
+            Route::post('points', [TrackingController::class, 'points']);
+            Route::post('stop', [TrackingController::class, 'stop'])->middleware('throttle:attendance-action');
+        });
 
         Route::prefix('approvals')->group(function () {
             Route::get('meta', [ApprovalInboxController::class, 'meta']);
