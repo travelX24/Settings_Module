@@ -99,6 +99,21 @@ class HolidayService
     }
 
     /**
+     * Check if a holiday occurrence date range overlaps with an existing one for the company.
+     */
+    public function hasOverlappingHoliday(int $companyId, string $startDate, string $endDate, ?int $ignoreOccurrenceId = null): bool
+    {
+        return OfficialHolidayOccurrence::query()
+            ->where('company_id', $companyId)
+            ->when($ignoreOccurrenceId, fn($q) => $q->where('id', '!=', $ignoreOccurrenceId))
+            ->where(function ($q) use ($startDate, $endDate) {
+                $q->where('start_date', '<=', $endDate)
+                  ->where('end_date', '>=', $startDate);
+            })
+            ->exists();
+    }
+
+    /**
      * Create a new official holiday template and occurrence(s).
      * If repeat_type is 'annual' with hijri calendar, generates occurrences for 5 years.
      * If repeat_type is 'annual' with gregorian calendar, generates occurrences for 5 years on same month/day.
@@ -116,6 +131,17 @@ class HolidayService
                 $hijriMonth = $hijriParts['month'] ?? null;
                 $hijriDay   = $hijriParts['day']   ?? null;
 
+                // Validate first occurrence for overlap
+                $currentHijriYear = $this->currentHijriYear();
+                $firstGregDate = $this->hijriToGregorian($currentHijriYear, $hijriMonth, $hijriDay);
+                if ($firstGregDate) {
+                    $start = Carbon::parse($firstGregDate)->startOfDay();
+                    $end   = (clone $start)->addDays($duration - 1);
+                    if ($this->hasOverlappingHoliday($companyId, $start->toDateString(), $end->toDateString())) {
+                        throw new \InvalidArgumentException('لا يمكن إضافة أكثر من عطلة بنفس التاريخ.');
+                    }
+                }
+
                 $template = OfficialHolidayTemplate::create([
                     'company_id'    => $companyId,
                     'name'          => $data['newName'],
@@ -128,7 +154,6 @@ class HolidayService
                 ]);
 
                 // Generate occurrences for current Hijri year + 4 future years
-                $currentHijriYear = $this->currentHijriYear();
                 for ($i = 0; $i <= 4; $i++) {
                     $hijriYear = $currentHijriYear + $i;
                     $gregDate  = $this->hijriToGregorian($hijriYear, $hijriMonth, $hijriDay);
@@ -158,6 +183,14 @@ class HolidayService
                 $gregMonth   = (int) $startCarbon->month;
                 $gregDay     = (int) $startCarbon->day;
 
+                $currentYear = (int) now()->year;
+                $firstStart = Carbon::create($currentYear, $gregMonth, $gregDay)->startOfDay();
+                $firstEnd   = (clone $firstStart)->addDays($duration - 1);
+
+                if ($this->hasOverlappingHoliday($companyId, $firstStart->toDateString(), $firstEnd->toDateString())) {
+                    throw new \InvalidArgumentException('لا يمكن إضافة أكثر من عطلة بنفس التاريخ.');
+                }
+
                 $template = OfficialHolidayTemplate::create([
                     'company_id'    => $companyId,
                     'name'          => $data['newName'],
@@ -169,7 +202,6 @@ class HolidayService
                     'is_active'     => true,
                 ]);
 
-                $currentYear = (int) now()->year;
                 for ($i = 0; $i <= 4; $i++) {
                     $year  = $currentYear + $i;
                     $start = Carbon::create($year, $gregMonth, $gregDay)->startOfDay();
@@ -192,6 +224,13 @@ class HolidayService
 
             } else {
                 // once — original behavior
+                $start = Carbon::parse($data['newStartDate'])->startOfDay();
+                $end   = (clone $start)->addDays($duration - 1);
+
+                if ($this->hasOverlappingHoliday($companyId, $start->toDateString(), $end->toDateString())) {
+                    throw new \InvalidArgumentException('لا يمكن إضافة أكثر من عطلة بنفس التاريخ.');
+                }
+
                 $template = OfficialHolidayTemplate::create([
                     'company_id'      => $companyId,
                     'name'            => $data['newName'],
@@ -201,9 +240,6 @@ class HolidayService
                     'duration_days'   => $duration,
                     'is_active'       => true,
                 ]);
-
-                $start = Carbon::parse($data['newStartDate'])->startOfDay();
-                $end   = (clone $start)->addDays($duration - 1);
 
                 OfficialHolidayOccurrence::create([
                     'company_id'    => $companyId,
@@ -295,6 +331,10 @@ class HolidayService
 
             $start = Carbon::parse($data['editStartDate'])->startOfDay();
             $end = (clone $start)->addDays(((int) $data['editDurationDays']) - 1);
+
+            if ($this->hasOverlappingHoliday($companyId, $start->toDateString(), $end->toDateString(), $occurrenceId)) {
+                throw new \InvalidArgumentException('لا يمكن إضافة أكثر من عطلة بنفس التاريخ.');
+            }
 
             $template->update([
                 'name' => $data['editName'],

@@ -262,7 +262,16 @@ class AttendanceHolidays extends Component
             'newDurationDays'=> ['required', 'integer', 'min:1', 'max:60'],
         ]);
 
-        $this->holidayService->createHoliday($companyId, $data, $this->newDisplayHijriAuto ?: null);
+        try {
+            $this->holidayService->createHoliday($companyId, $data, $this->newDisplayHijriAuto ?: null);
+        } catch (\InvalidArgumentException $e) {
+            $this->addError('newStartDate', tr($e->getMessage()));
+            $this->dispatch('toast', ['type' => 'error', 'message' => tr($e->getMessage())]);
+            return;
+        } catch (\Exception $e) {
+            $this->dispatch('toast', ['type' => 'error', 'message' => tr('Failed to save holiday')]);
+            return;
+        }
 
         $this->dispatch('toast', ['type' => 'success', 'message' => tr('Saved successfully')]);
         $this->closeCreate();
@@ -332,8 +341,13 @@ class AttendanceHolidays extends Component
                 $this->editDisplayHijriAuto ?: null
             );
             $this->dispatch('toast', ['type' => 'success', 'message' => tr('Updated successfully')]);
+        } catch (\InvalidArgumentException $e) {
+            $this->addError('editStartDate', tr($e->getMessage()));
+            $this->dispatch('toast', ['type' => 'error', 'message' => tr($e->getMessage())]);
+            return;
         } catch (\Exception $e) {
             $this->dispatch('toast', ['type' => 'error', 'message' => tr('Failed to update')]);
+            return;
         }
 
         $this->closeEdit();
