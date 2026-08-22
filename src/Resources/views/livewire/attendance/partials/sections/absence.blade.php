@@ -1,15 +1,14 @@
 <div class="space-y-4">
-        <h3 class="text-base font-bold text-gray-800 flex items-center gap-2">
-            <span class="w-1 h-5 bg-[color:var(--accent-orange)] rounded-full"></span>
-            {{ tr('Absence Without Permission') }}
-        </h3>
-        @if($canManageAttendance)
-        <x-ui.secondary-button wire:click="openAbsenceModal" class="!px-4 !py-2 !text-xs !rounded-xl shadow-sm border-[rgb(var(--accent-orange-rgb)/0.16)]">
-            <i class="fas fa-calendar-times me-1 text-[color:var(--accent-orange)]"></i>
-            {{ tr('Add Absence Policy') }}
-        </x-ui.secondary-button>
-        @endif
-
+    <h3 class="text-base font-bold text-gray-800 flex items-center gap-2">
+        <span class="w-1 h-5 bg-[color:var(--accent-orange)] rounded-full"></span>
+        {{ tr('Absence Without Permission') }}
+    </h3>
+    @if($canManageAttendance)
+    <x-ui.secondary-button wire:click="openAbsenceModal" class="!px-4 !py-2 !text-xs !rounded-xl shadow-sm border-[rgb(var(--accent-orange-rgb)/0.16)]">
+        <i class="fas fa-calendar-times me-1 text-[color:var(--accent-orange)]"></i>
+        {{ tr('Add Absence Policy') }}
+    </x-ui.secondary-button>
+    @endif
 
     <div class="bg-white rounded-3xl shadow-sm border border-gray-100 overflow-hidden">
         <table class="w-full text-start border-collapse">
@@ -33,7 +32,7 @@
                             <div class="flex flex-col">
                                 <span class="text-sm font-bold text-gray-700">{{ $absenceTypes[$ap['absence_reason_type'] ?? ''] ?? ($ap['absence_reason_type'] ?? '') }}</span>
                                 @if(($ap['absence_reason_type'] ?? '') === 'late_early')
-                                    <span class="text-[9px] text-gray-400 font-bold uppercase">{{ $ap['late_minutes'] ?? 0 }} {{ tr('min') }} | {{ $ap['recurrence_count'] ?? 0 }} {{ tr('times') }}</span>
+                                    <span class="text-[9px] text-gray-400 font-bold uppercase">{{ tr('Late') }}: {{ $ap['late_minutes'] ?? 0 }} {{ tr('min') }} | {{ tr('Early') }}: {{ $ap['early_leave_minutes'] ?? ($ap['late_minutes'] ?? 0) }} {{ tr('min') }} | {{ $ap['recurrence_count'] ?? 0 }} {{ tr('times') }}</span>
                                 @endif
                             </div>
                         </div>
@@ -98,8 +97,3 @@
         </table>
     </div>
 </div>
-
-
-
-
-

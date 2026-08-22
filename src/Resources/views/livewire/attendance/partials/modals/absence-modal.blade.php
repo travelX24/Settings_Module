@@ -46,8 +46,11 @@
 
                     @if(($newAbsencePolicy['absence_reason_type'] ?? '') === 'late_early')
                         <div class="grid grid-cols-2 gap-4 p-4 bg-[rgb(245_158_11/0.08)] rounded-2xl border border-[rgb(245_158_11/0.18)]">
-                            <x-ui.input label="{{ tr('Minutes') }}" type="number" wire:model.defer="newAbsencePolicy.late_minutes" required :disabled="!$canManageAttendance" />
-                            <x-ui.input label="{{ tr('Repetitions') }}" type="number" wire:model.defer="newAbsencePolicy.recurrence_count" required :disabled="!$canManageAttendance" />
+                            <x-ui.input label="{{ tr('Late Limit (Minutes)') }}" type="number" wire:model.defer="newAbsencePolicy.late_minutes" placeholder="60" required :disabled="!$canManageAttendance" />
+                            <x-ui.input label="{{ tr('Early Departure Limit (Minutes)') }}" type="number" wire:model.defer="newAbsencePolicy.early_leave_minutes" placeholder="60" required :disabled="!$canManageAttendance" />
+                            <div class="col-span-2">
+                                <x-ui.input label="{{ tr('Repetitions') }}" type="number" wire:model.defer="newAbsencePolicy.recurrence_count" required :disabled="!$canManageAttendance" />
+                            </div>
                         </div>
                     @endif
                 </div>
@@ -95,8 +98,3 @@
         @endif
     </x-slot:footer>
 </x-ui.modal>
-
-
-
-
-

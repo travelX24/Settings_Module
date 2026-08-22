@@ -168,8 +168,9 @@ trait HandlePenaltySettings
                 'day_selector_type' => $policy->day_selector_type,
                 'day_from' => $policy->day_from,
                 'day_to' => $policy->day_to,
-                'late_minutes' => $policy->late_minutes,
-                'recurrence_count' => $policy->recurrence_count,
+                'late_minutes' => $policy->late_minutes ?? 0,
+                'early_leave_minutes' => $policy->early_leave_minutes ?? ($policy->late_minutes ?? 0),
+                'recurrence_count' => $policy->recurrence_count ?? 1,
                 'penalty_action' => $policy->penalty_action,
                 'deduction_type' => $policy->deduction_type,
                 'deduction_value' => $policy->deduction_value,
@@ -184,6 +185,7 @@ trait HandlePenaltySettings
                 'day_from' => 1,
                 'day_to' => 1,
                 'late_minutes' => 0,
+                'early_leave_minutes' => 0,
                 'recurrence_count' => 1,
                 'penalty_action' => 'notification',
                 'deduction_type' => 'fixed',
@@ -215,6 +217,11 @@ trait HandlePenaltySettings
         $data['saas_company_id'] = auth()->user()->saas_company_id;
         $data['is_active'] = true;
         $data['is_enabled'] = true;
+
+        if (($data['absence_reason_type'] ?? '') === 'late_early') {
+            $data['late_minutes'] = !empty($data['late_minutes']) ? (int) $data['late_minutes'] : 0;
+            $data['early_leave_minutes'] = !empty($data['early_leave_minutes']) ? (int) $data['early_leave_minutes'] : $data['late_minutes'];
+        }
 
         if ($this->selectedId) {
             UnexcusedAbsencePolicy::where('saas_company_id', auth()->user()->saas_company_id)
