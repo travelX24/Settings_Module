@@ -107,7 +107,6 @@ class AttendanceSettings extends Component
     // Data Lists
     public $policyTypes = [];
     public $absenceTypes = [];
-    public $availableEmployees = [];
     public string $employeeStatus = EmployeeStatus::ACTIVE;
     public $branches = [];
     public $geographicLocations = [];
@@ -151,8 +150,6 @@ class AttendanceSettings extends Component
             'late_early' => tr('Late/Early Cumulative')
         ];
 
-        $this->loadAvailableEmployees($companyId);
-
         // Load Branches
         $this->branches = \Athka\Saas\Models\Branch::where('saas_company_id', $companyId)
             ->get(['id', 'name'])
@@ -163,16 +160,17 @@ class AttendanceSettings extends Component
 
     public function updatedEmployeeStatus(): void
     {
-        $this->loadAvailableEmployees((int) auth()->user()->saas_company_id);
+        // Handled dynamically on render when modal is active
     }
 
-    private function loadAvailableEmployees(int $companyId): void
+    public function getAvailableEmployees(int $companyId): array
     {
         $isAr = app()->getLocale() === 'ar';
 
-        $this->availableEmployees = \Athka\Employees\Models\Employee::withoutGlobalScope('active_only')
+        return \Athka\Employees\Models\Employee::withoutGlobalScope('active_only')
             ->where('saas_company_id', $companyId)
             ->when($this->employeeStatus !== 'all', fn ($query) => $query->where('status', $this->employeeStatus))
+            ->select('id', 'name_ar', 'name_en', 'status')
             ->get()
             ->map(function ($employee) use ($isAr) {
                 $name = $isAr ? ($employee->name_ar ?? $employee->name_en) : ($employee->name_en ?? $employee->name_ar);
@@ -469,14 +467,10 @@ class AttendanceSettings extends Component
         
         $groupsQuery = \Athka\SystemSettings\Models\EmployeeGroup::where('saas_company_id', $companyId)
             ->with([
-                'employees' => fn ($employees) => $employees->withoutGlobalScope('active_only'),
+                'employees' => fn ($employees) => $employees->withoutGlobalScope('active_only')->select('employees.id', 'employees.name_ar', 'employees.name_en'),
                 'allowedMethods',
                 'appliedPolicy',
             ]);
-
-        // Since EmployeeGroup doesn't have branch_id, we might not be able to filter by branch directly 
-        // unless we join with employees and their departments, but that's complex for now.
-        // We'll just load all and map them for the view's requirements.
 
         $isAr = app()->getLocale() === 'ar';
         $groups = $this->activeTab === 'groups' ? $groupsQuery->get()->map(function($g) use ($isAr) {
@@ -502,7 +496,8 @@ class AttendanceSettings extends Component
             'penalties' => $this->defaultPolicy ? $this->defaultPolicy->penalties : collect(),
             'absencePolicies' => $this->defaultPolicy ? $this->defaultPolicy->absencePolicies : collect(),
             'groups' => $groups,
-            'branchesOptions' => $this->branches
+            'branchesOptions' => $this->branches,
+            'availableEmployees' => $this->showGroupModal ? $this->getAvailableEmployees($companyId) : [],
         ])->layout('layouts.company-admin');
     }
 }

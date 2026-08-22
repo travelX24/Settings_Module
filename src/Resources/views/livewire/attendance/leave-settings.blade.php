@@ -318,8 +318,7 @@
 
 
         {{-- Create Modal --}}
-        <template x-teleport="body">
-            <x-ui.modal wire:model="createOpen" maxWidth="4xl">
+        <x-ui.modal wire:model="createOpen" maxWidth="4xl">
                 <x-slot:title>
                     <div class="flex items-center gap-3">
                         <div
@@ -575,11 +574,9 @@
                     </div>
                 </x-slot:footer>
             </x-ui.modal>
-        </template>
 
         {{-- Edit Modal --}}
-        <template x-teleport="body">
-            <x-ui.modal wire:model="editOpen" maxWidth="4xl">
+        <x-ui.modal wire:model="editOpen" maxWidth="4xl">
                 <x-slot:title>
                     <div class="flex items-center gap-3">
                         <div
@@ -909,26 +906,22 @@
                     </div>
                 </x-slot:footer>
             </x-ui.modal>
-        </template>
 
         {{-- Delete Confirm Dialog --}}
-        <template x-teleport="body">
-            <x-ui.confirm-dialog id="delete-leave" confirmText="{{ tr('Yes, Delete') }}"
-                cancelText="{{ tr('Cancel') }}" confirmAction="wire:deletePolicy(__ID__)"
-                title="{{ tr('Delete Leave') }}"
-                message="{{ tr('Are you sure you want to delete this leave type? This action cannot be reversed.') }}"
-                type="danger" />
-        </template>
-        <template x-teleport="body">
-            <x-ui.confirm-dialog id="delete-leave-year" confirmText="{{ tr('Yes, Delete') }}"
-                cancelText="{{ tr('Cancel') }}" confirmAction="wire:deleteYear(__ID__)"
-                title="{{ tr('Delete Year') }}"
-                message="{{ tr('Are you sure you want to delete this year? This action cannot be reversed.') }}"
-                type="danger" />
-        </template>
+        <x-ui.confirm-dialog id="delete-leave" confirmText="{{ tr('Yes, Delete') }}"
+            cancelText="{{ tr('Cancel') }}" confirmAction="wire:deletePolicy(__ID__)"
+            title="{{ tr('Delete Leave') }}"
+            message="{{ tr('Are you sure you want to delete this leave type? This action cannot be reversed.') }}"
+            type="danger" />
+
+        <x-ui.confirm-dialog id="delete-leave-year" confirmText="{{ tr('Yes, Delete') }}"
+            cancelText="{{ tr('Cancel') }}" confirmAction="wire:deleteYear(__ID__)"
+            title="{{ tr('Delete Year') }}"
+            message="{{ tr('Are you sure you want to delete this year? This action cannot be reversed.') }}"
+            type="danger" />
+
         {{-- Manage Years Modal --}}
-        <template x-teleport="body">
-            <x-ui.modal wire:model="yearsOpen" maxWidth="2xl">
+        <x-ui.modal wire:model="yearsOpen" maxWidth="2xl">
                 <x-slot:title>
                     <div class="flex items-center gap-3">
                         <div
@@ -1048,11 +1041,9 @@
                     </div>
                 </x-slot:footer>
             </x-ui.modal>
-        </template>
 
         {{-- Compare Years Modal --}}
-        <template x-teleport="body">
-            <x-ui.modal wire:model="compareOpen" maxWidth="4xl">
+        <x-ui.modal wire:model="compareOpen" maxWidth="4xl">
                 <x-slot:title>
                     <div class="flex items-center gap-3">
                         <div
@@ -1455,7 +1446,6 @@
                     </div>
                 </x-slot:footer>
             </x-ui.modal>
-        </template>
     @else
         <x-ui.card>
             <div class="p-6 space-y-6">
