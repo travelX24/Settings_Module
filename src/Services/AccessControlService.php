@@ -285,6 +285,21 @@ class AccessControlService
     public function saveUser(int $companyId, array $data, ?int $id = null): User
     {
         return DB::transaction(function () use ($companyId, $data, $id) {
+            if (!$id) {
+                $company = \Athka\Saas\Models\SaasCompany::with('settings')->where('id', $companyId)->lockForUpdate()->first();
+                if ($company && $company->settings) {
+                    $allowedUsers = (int) ($company->settings->allowed_users ?? 0);
+                    if ($allowedUsers > 0) {
+                        $currentUsersCount = User::where('saas_company_id', $companyId)->count();
+                        if ($currentUsersCount >= $allowedUsers) {
+                            throw new \InvalidArgumentException(function_exists('tr') 
+                                ? tr('Cannot add user. The maximum limit of allowed users for your company has been reached.') 
+                                : 'Cannot add user. The maximum limit of allowed users for your company has been reached.');
+                        }
+                    }
+                }
+            }
+
             $user = $id ? User::where('saas_company_id', $companyId)->findOrFail($id) : new User();
             
             $userData = array_intersect_key($data, array_flip([
