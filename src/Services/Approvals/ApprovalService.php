@@ -468,26 +468,42 @@ class ApprovalService
 
         return [$src['type']];
     }
+
     /**
-     * Process task action (Approve/Reject).
+     * Process task action (Approve/Reject) using atomic Compare-And-Swap (CAS).
      */
-    public function processTask(ApprovalTask $task, int $actedByEmployeeId, string $status, ?string $comment = null): bool
+    public function processTask(ApprovalTask $task, int $actedByEmployeeId, string $status, ?string $comment = null, ?int $expectedVersion = null): bool
     {
-        return DB::transaction(function() use ($task, $actedByEmployeeId, $status, $comment) {
-            $task->update([
+        return DB::transaction(function() use ($task, $actedByEmployeeId, $status, $comment, $expectedVersion) {
+            $query = ApprovalTask::where('id', $task->id)
+                ->where('status', 'pending');
+
+            if ($expectedVersion !== null && $expectedVersion > 0) {
+                $query->where('version', $expectedVersion);
+            }
+
+            $updated = $query->update([
                 'status' => $status,
                 'acted_by_employee_id' => $actedByEmployeeId,
                 'acted_at' => now(),
                 'comment' => $comment ?: '',
+                'version' => DB::raw('version + 1'),
             ]);
 
-            $src = $this->getRequestSource($task->approvable_type);
+            if (!$updated) {
+                return false;
+            }
+
+            $freshTask = ApprovalTask::find($task->id);
+            if (!$freshTask) return false;
+
+            $src = $this->getRequestSource($freshTask->approvable_type);
 
             if ($status === 'rejected') {
-                $this->cancelRemainingTasks($task, 'Rejected by another approver');
-                $this->updateRequestStatus($src, $task->approvable_id, 'rejected');
+                $this->cancelRemainingTasks($freshTask, 'Rejected by another approver');
+                $this->updateRequestStatus($src, $freshTask->approvable_id, 'rejected');
             } else if ($status === 'approved') {
-                $this->handleSuccessiveApprovals($task, $src);
+                $this->handleSuccessiveApprovals($freshTask, $src);
             }
 
             return true;

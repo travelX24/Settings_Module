@@ -404,7 +404,21 @@ class ApprovalInboxController extends Controller
         if (!$task) return response()->json(['ok' => false, 'message' => 'Task not found or already processed'], 404);
 
         $comment = $request->input('comment');
-        $this->approvalService->processTask($task, $employee->id, $status, $comment);
+        $expectedVersion = $request->input('version') ? (int) $request->input('version') : null;
+
+        $processed = $this->approvalService->processTask($task, $employee->id, $status, $comment, $expectedVersion);
+
+        if (!$processed) {
+            $msg = function_exists('tr')
+                ? tr('This request has already been processed or updated by another user.')
+                : 'This request has already been processed or updated by another user.';
+
+            return response()->json([
+                'ok'      => false,
+                'error'   => 'state_conflict',
+                'message' => $msg,
+            ], 409);
+        }
 
         return response()->json(['ok' => true, 'message' => "Request $status successfully"]);
     }
