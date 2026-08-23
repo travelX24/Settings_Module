@@ -119,9 +119,9 @@ class AccessControlService
             ],
         ];
     }
+
     /**
-     * Permissions kept for backward compatibility only. They are synced in the
-     * database but hidden from the role/user permission picker.
+     * Permissions kept for backward compatibility only.
      */
     public function getLegacyPermissionGroups(): array
     {
@@ -229,12 +229,11 @@ class AccessControlService
                 $role = Role::findOrFail($id);
 
                 if ($role->saas_company_id !== null && (int) $role->saas_company_id !== (int) $companyId) {
-                    throw new \Exception(tr('Unauthorized operation.'));
+                    throw new \Exception(function_exists('tr') ? tr('Unauthorized operation.') : 'Unauthorized operation.');
                 }
                 
-                // Ã°Å¸â€ºâ€˜ Block editing protected system roles
                 if (in_array($role->name, ['company-admin', 'saas-admin', 'super-admin', 'system-admin']) || is_null($role->saas_company_id)) {
-                    throw new \Exception(tr('System roles cannot be edited.'));
+                    throw new \Exception(function_exists('tr') ? tr('System roles cannot be edited.') : 'System roles cannot be edited.');
                 }
 
                 $role->name = $data['name'];
@@ -261,16 +260,19 @@ class AccessControlService
         $role = Role::findOrFail($id);
 
         if ($role->saas_company_id !== null && (int) $role->saas_company_id !== (int) $companyId) {
-            return ['ok' => false, 'message' => tr('Unauthorized operation.')];
+            return ['ok' => false, 'message' => function_exists('tr') ? tr('Unauthorized operation.') : 'Unauthorized operation.'];
         }
         
         if (in_array($role->name, ['company-admin', 'saas-admin', 'super-admin', 'system-admin']) || $role->saas_company_id === null) {
-            return ['ok' => false, 'message' => tr('System roles cannot be deleted.')];
+            return ['ok' => false, 'message' => function_exists('tr') ? tr('System roles cannot be deleted.') : 'System roles cannot be deleted.'];
         }
 
         $usersCount = $role->users()->where('saas_company_id', $companyId)->count();
         if ($usersCount > 0) {
-            return ['ok' => false, 'message' => str_replace(':count', $usersCount, tr('Cannot delete role. It is assigned to :count users.'))];
+            $msg = function_exists('tr')
+                ? str_replace(':count', $usersCount, tr('Cannot delete role. It is assigned to :count users.'))
+                : "Cannot delete role. It is assigned to {$usersCount} users.";
+            return ['ok' => false, 'message' => $msg];
         }
 
         $role->delete();
@@ -278,12 +280,12 @@ class AccessControlService
     }
 
     /**
-     * Save/Update User.
+     * Save/Update User with strict Tenant Isolation & Privilege Escalation Prevention.
      */
     public function saveUser(int $companyId, array $data, ?int $id = null): User
     {
         return DB::transaction(function () use ($companyId, $data, $id) {
-            $user = $id ? User::findOrFail($id) : new User();
+            $user = $id ? User::where('saas_company_id', $companyId)->findOrFail($id) : new User();
             
             $userData = array_intersect_key($data, array_flip([
                 'name', 'email', 'employee_id', 'access_scope', 'access_type', 'is_active'
@@ -297,12 +299,24 @@ class AccessControlService
             $user->fill($userData);
             $user->save();
 
-            // Sync Role
+            // Sync Role with strict Privilege Escalation Prevention
             if (isset($data['role'])) {
                 if ($data['access_type'] === 'hr_app_only') {
                     $user->syncRoles([]);
                 } else {
-                    $user->syncRoles([$data['role']]);
+                    $roleName = (string) $data['role'];
+                    if ($roleName !== '') {
+                        $restrictedRoles = ['saas-admin', 'super-admin', 'system-admin', 'platform-admin'];
+                        $currentUser = Auth::user();
+                        $isGlobalAdmin = $currentUser && method_exists($currentUser, 'hasAnyRole')
+                            && $currentUser->hasAnyRole(['saas-admin', 'super-admin', 'system-admin']);
+
+                        if (in_array($roleName, $restrictedRoles, true) && !$isGlobalAdmin) {
+                            throw new \InvalidArgumentException(function_exists('tr') ? tr('Assigning platform administrator roles is strictly forbidden.') : 'Assigning platform administrator roles is strictly forbidden.');
+                        }
+                    }
+
+                    $user->syncRoles([$roleName]);
                 }
             }
 
@@ -323,16 +337,12 @@ class AccessControlService
 
     /**
      * Save custom permissions for a specific user (overrides their role).
-     * Detaches the role, assigns direct permissions, and stores the reference role name.
      */
     public function saveCustomPermissions(User $user, string $referencRoleName, array $permissions): void
     {
         DB::transaction(function () use ($user, $referencRoleName, $permissions) {
-            // Remove role assignment Ã¢â‚¬â€ only direct permissions are now authoritative
             $user->syncRoles([]);
-            // Assign direct permissions
             $user->syncPermissions($this->normalizePermissionSelection($permissions));
-            // Store reference so we can reset later
             $user->update([
                 'reference_role' => $referencRoleName,
                 'has_custom_permissions' => true,
@@ -348,21 +358,18 @@ class AccessControlService
         $roleName = $user->reference_role;
 
         if (!$roleName) {
-            return ['ok' => false, 'message' => tr('No reference role found for this user.')];
+            return ['ok' => false, 'message' => function_exists('tr') ? tr('No reference role found for this user.') : 'No reference role found for this user.'];
         }
 
         $role = Role::where('name', $roleName)->first();
 
         if (!$role) {
-            return ['ok' => false, 'message' => tr('The reference role no longer exists.')];
+            return ['ok' => false, 'message' => function_exists('tr') ? tr('The reference role no longer exists.') : 'The reference role no longer exists.'];
         }
 
         DB::transaction(function () use ($user, $role) {
-            // Remove direct permissions
             $user->syncPermissions([]);
-            // Restore the role
             $user->syncRoles([$role->name]);
-            // Clear custom flag
             $user->update([
                 'has_custom_permissions' => false,
             ]);
@@ -401,7 +408,7 @@ class AccessControlService
         
         return [
             'core' => [
-                'label' => tr('Core Settings'),
+                'label' => function_exists('tr') ? tr('Core Settings') : 'Core Settings',
                 'icon' => 'fa-cog',
                 'groups' => [
                     'Dashboard' => $groups['Dashboard'],
@@ -414,7 +421,7 @@ class AccessControlService
                 ],
             ],
             'hr' => [
-                'label' => tr('HR Management'),
+                'label' => function_exists('tr') ? tr('HR Management') : 'HR Management',
                 'icon' => 'fa-users',
                 'groups' => [
                     'Employees - List & Profile' => $groups['Employees - List & Profile'],
@@ -425,7 +432,7 @@ class AccessControlService
                 ],
             ],
             'operations' => [
-                'label' => tr('Operations'),
+                'label' => function_exists('tr') ? tr('Operations') : 'Operations',
                 'icon' => 'fa-calendar-check',
                 'groups' => [
                     'Daily Attendance' => $groups['Daily Attendance'],
@@ -435,7 +442,7 @@ class AccessControlService
                 ],
             ],
             'attendance-settings' => [
-                'label' => tr('Attendance Settings'),
+                'label' => function_exists('tr') ? tr('Attendance Settings') : 'Attendance Settings',
                 'icon' => 'fa-clock',
                 'groups' => [
                     'Attendance Settings - General' => $groups['Attendance Settings - General'],
@@ -448,4 +455,3 @@ class AccessControlService
         ];
     }
 }
-

@@ -206,19 +206,24 @@ class WorkScheduleService
     /**
      * Safely delete a schedule.
      */
-    public function deleteSchedule(int $id): bool
+    public function deleteSchedule(int $id, ?int $companyId = null): bool
     {
-        $schedule = WorkSchedule::find($id);
+        $query = WorkSchedule::query();
+        if ($companyId !== null && $companyId > 0) {
+            $query->where('saas_company_id', $companyId);
+        }
+
+        $schedule = $query->find($id);
 
         if (!$schedule || $schedule->is_default) {
             return false;
         }
 
-        $companyId = (int) $schedule->saas_company_id;
+        $cId = (int) $schedule->saas_company_id;
         $deleted = (bool) $schedule->delete();
 
         if ($deleted) {
-            $this->invalidateScheduleCache($companyId);
+            $this->invalidateScheduleCache($cId);
         }
 
         return $deleted;

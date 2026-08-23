@@ -77,7 +77,7 @@ trait HandleDepartmentLogic
     public function delete($id)
     {
         $this->authorize('settings.organizational.manage');
-        $dept = Department::findOrFail($id);
+        $dept = Department::forCompany($this->getCompanyId())->findOrFail($id);
         
         if (!$dept->canDelete()) {
             $this->dispatch('toast', type: 'error', title: tr('Deletion Blocked'), message: tr('Department has linked employees or sub-departments.'));
@@ -93,7 +93,7 @@ trait HandleDepartmentLogic
     public function toggleActive($id)
     {
         $this->authorize('settings.organizational.manage');
-        $dept = Department::findOrFail($id);
+        $dept = Department::forCompany($this->getCompanyId())->findOrFail($id);
         
         if ($dept->is_active && $dept->employees()->exists()) {
             $this->dispatch('toast', type: 'error', title: tr('Deactivation Blocked'), message: tr('Cannot deactivate because there are linked employees.'));

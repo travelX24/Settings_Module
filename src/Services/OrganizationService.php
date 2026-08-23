@@ -56,7 +56,7 @@ class OrganizationService
      */
     public function saveJobTitle(int $companyId, array $data, ?int $id = null): JobTitle
     {
-        $jt = $id ? JobTitle::findOrFail($id) : new JobTitle();
+        $jt = $id ? JobTitle::forCompany($companyId)->findOrFail($id) : new JobTitle();
         $jt->fill(array_merge($data, ['saas_company_id' => $companyId]));
         $jt->save();
         return $jt;
@@ -86,7 +86,7 @@ class OrganizationService
 
     public function saveDepartment(int $companyId, array $data, ?int $id = null): Department
     {
-        $dept = $id ? Department::findOrFail($id) : new Department();
+        $dept = $id ? Department::forCompany($companyId)->findOrFail($id) : new Department();
         $dept->fill(array_merge($data, ['saas_company_id' => $companyId]));
         $dept->save();
         return $dept;

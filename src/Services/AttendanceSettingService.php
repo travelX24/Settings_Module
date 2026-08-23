@@ -91,7 +91,7 @@ class AttendanceSettingService
      */
     public function saveGpsLocation(int $companyId, array $data, ?int $id = null): AttendanceGpsLocation
     {
-        $location = $id ? AttendanceGpsLocation::find($id) : new AttendanceGpsLocation();
+        $location = $id ? AttendanceGpsLocation::where('saas_company_id', $companyId)->findOrFail($id) : new AttendanceGpsLocation();
         $location->fill(array_merge($data, ['saas_company_id' => $companyId]));
         $location->save();
         return $location;

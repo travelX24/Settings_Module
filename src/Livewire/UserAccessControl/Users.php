@@ -102,7 +102,7 @@ class Users extends Component
     public function sendPasswordReset($id)
     {
         $this->authorize('uac.users.manage');
-        $user = User::findOrFail($id);
+        $user = User::where('saas_company_id', $this->getCompanyId())->findOrFail($id);
         if (method_exists($user, 'sendWithAuthKitPasswordReset')) {
             $status = $user->sendWithAuthKitPasswordReset();
             $isSent = $status === \Illuminate\Support\Facades\Password::RESET_LINK_SENT;
@@ -376,12 +376,12 @@ class Users extends Component
 
         return view('systemsettings::livewire.user-access-control.users', [
             'users' => $users,
-            'roles' => $this->showModal ? Role::where('name', '!=', 'saas-admin')
+            'roles' => $this->showModal ? Role::whereNotIn('name', ['saas-admin', 'super-admin', 'system-admin', 'platform-admin'])
                 ->where(function ($q) use ($companyId) {
                     $q->where('saas_company_id', $companyId)
                       ->orWhere(function($subQ) {
                           $subQ->whereNull('saas_company_id')
-                               ->whereIn('name', ['company-admin', 'system-admin', 'super-admin']);
+                               ->where('name', 'company-admin');
                       });
                 })->get() : collect(),
             'foundEmployees' => $this->showModal ? Employee::withoutGlobalScope('active_only')

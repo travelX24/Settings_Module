@@ -36,11 +36,15 @@ class ApprovalService
 
         $map = [
             'leaves' => [
-                'tables' => ['attendance_leave_requests', 'attendance_leave_cut_requests', 'leave_requests', 'employee_leave_requests'],
+                'tables' => ['attendance_leave_requests', 'leave_requests', 'employee_leave_requests'],
                 'operation_key' => 'leaves',
                 'conditions' => [
                     ['is_exception', 'not_truthy', true],
                 ],
+            ],
+            'leave_cut' => [
+                'tables' => ['attendance_leave_cut_requests'],
+                'operation_key' => 'leave_cut',
             ],
             'leave_exceptions' => [
                 'tables' => ['attendance_leave_requests'],
@@ -319,73 +323,72 @@ class ApprovalService
 
         $requestId = $request->{$src['idCol']};
         
-        $existing = ApprovalTask::whereIn('approvable_type', $this->equivalentApprovalTypes($src))
-            ->where('approvable_id', $requestId)
-            ->exists();
-
-        if ($existing) return;
-
         // 1. Find Policy
         $policy = $this->resolvePolicyForEmployee($src['operation_key'], (int)$request->{$src['employeeCol']}, $companyId);
-
-        if (!$policy) {
-            // No policy? Default to direct manager if possible
-            $managerId = $this->resolveDirectManagerId((int)$request->{$src['employeeCol']});
-            if ($managerId > 0) {
-                ApprovalTask::create([
-                    'company_id' => $companyId,
-                    'operation_key' => $src['operation_key'],
-                    'approvable_type' => $src['type'],
-                    'approvable_id' => $requestId,
-                    'request_employee_id' => $request->{$src['employeeCol']},
-                    'position' => 1,
-                    'approver_employee_id' => $managerId,
-                    'status' => 'pending',
-                ]);
-            }
-            return;
-        }
-
-
-
+        
         // 2. Fetch steps
-        $steps = DB::table('approval_policy_steps')
+        $steps = $policy ? DB::table('approval_policy_steps')
             ->where('policy_id', $policy->id)
             ->orderBy('position')
-            ->get();
+            ->get() : collect();
 
+        DB::transaction(function () use ($src, $request, $requestId, $companyId, $policy, $steps) {
+            $existing = ApprovalTask::whereIn('approvable_type', $this->equivalentApprovalTypes($src))
+                ->where('approvable_id', $requestId)
+                ->lockForUpdate()
+                ->exists();
 
+            if ($existing) return;
 
-        if ($steps->isEmpty()) {
-            return;
-        }
-
-        foreach ($steps as $step) {
-            $approverId = 0;
-
-            if ($step->approver_type === 'direct_manager') {
-                $approverId = $this->resolveDirectManagerId((int)$request->{$src['employeeCol']});
-            } elseif ($step->approver_type === 'user') {
-                $approverId = DB::table('users')->where('id', $step->approver_id)->value('employee_id') ?: 0;
-            } elseif ($step->approver_type === 'employee') {
-                $approverId = $step->approver_id;
+            if (!$policy) {
+                // No policy? Default to direct manager if possible
+                $managerId = $this->resolveDirectManagerId((int)$request->{$src['employeeCol']});
+                if ($managerId > 0) {
+                    ApprovalTask::firstOrCreate([
+                        'company_id' => $companyId,
+                        'operation_key' => $src['operation_key'],
+                        'approvable_type' => $src['type'],
+                        'approvable_id' => $requestId,
+                        'position' => 1,
+                    ], [
+                        'request_employee_id' => $request->{$src['employeeCol']},
+                        'approver_employee_id' => $managerId,
+                        'status' => 'pending',
+                    ]);
+                }
+                return;
             }
 
-            if ($approverId > 0) {
-                ApprovalTask::create([
-                    'company_id' => $companyId,
-                    'operation_key' => $src['operation_key'],
-                    'approvable_type' => $src['type'],
-                    'approvable_id' => $requestId,
-                    'request_employee_id' => $request->{$src['employeeCol']},
-                    'position' => $step->position,
-                    'approver_employee_id' => $approverId,
-                    'status' => ((int) $step->position === 1) ? 'pending' : 'waiting',
-                ]);
-            } else {
-
+            if ($steps->isEmpty()) {
+                return;
             }
-        }
+
+            foreach ($steps as $step) {
+                $approverId = 0;
+
+                if ($step->approver_type === 'direct_manager') {
+                    $approverId = $this->resolveDirectManagerId((int)$request->{$src['employeeCol']});
+                } elseif ($step->approver_type === 'user') {
+                    $approverId = DB::table('users')->where('id', $step->approver_id)->value('employee_id') ?: 0;
+                } elseif ($step->approver_type === 'employee') {
+                    $approverId = $step->approver_id;
+                }
+
+                if ($approverId > 0) {
+                    ApprovalTask::firstOrCreate([
+                        'company_id' => $companyId,
+                        'operation_key' => $src['operation_key'],
+                        'approvable_type' => $src['type'],
+                        'approvable_id' => $requestId,
+                        'position' => $step->position,
+                    ], [
+                        'request_employee_id' => $request->{$src['employeeCol']},
+                        'approver_employee_id' => $approverId,
+                        'status' => ((int) $step->position === 1) ? 'pending' : 'waiting',
+                    ]);
+                }
+            }
+        });
     }
 
     protected function applySourceConditions($query, array $src): void
@@ -457,6 +460,10 @@ class ApprovalService
         if (($src['table'] ?? null) === 'attendance_leave_requests'
             && in_array(($src['type'] ?? ''), ['leaves', 'leave_exceptions'], true)) {
             return ['leaves', 'leave_exceptions'];
+        }
+
+        if (($src['table'] ?? null) === 'attendance_leave_cut_requests' || ($src['type'] ?? '') === 'leave_cut') {
+            return ['leave_cut'];
         }
 
         return [$src['type']];

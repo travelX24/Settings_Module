@@ -63,7 +63,7 @@ trait HandleJobTitleLogic
     public function delete($id)
     {
         $this->authorize('settings.organizational.manage');
-        $jt = JobTitle::findOrFail($id);
+        $jt = JobTitle::forCompany($this->getCompanyId())->findOrFail($id);
         
         if (!$jt->canDelete()) {
             $this->dispatch('toast', type: 'error', title: tr('Deletion Blocked'), message: tr('Job title is linked to employees.'));
@@ -78,7 +78,7 @@ trait HandleJobTitleLogic
     public function toggleActive($id)
     {
         $this->authorize('settings.organizational.manage');
-        $jt = JobTitle::findOrFail($id);
+        $jt = JobTitle::forCompany($this->getCompanyId())->findOrFail($id);
         
         if ($jt->is_active && $jt->employees()->exists()) {
             $this->dispatch('toast', type: 'error', title: tr('Deactivation Blocked'), message: tr('Cannot deactivate because there are linked employees.'));

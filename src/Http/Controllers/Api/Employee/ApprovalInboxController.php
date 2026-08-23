@@ -330,6 +330,53 @@ class ApprovalInboxController extends Controller
         ]);
     }
 
+    public function meta(Request $request)
+    {
+        $employee = $this->employeeService->resolve();
+        if (!$employee) return response()->json(['ok' => false, 'message' => 'Employee not found'], 403);
+
+        $labels = $this->getLabels();
+        $formattedLabels = [];
+        foreach ($labels as $key => $lbl) {
+            $formattedLabels[] = [
+                'key' => $key,
+                'label_ar' => $lbl['ar'] ?? $key,
+                'label_en' => $lbl['en'] ?? $key,
+            ];
+        }
+
+        return response()->json([
+            'ok' => true,
+            'data' => [
+                'types' => $formattedLabels,
+                'statuses' => [
+                    ['key' => 'pending', 'label_ar' => 'قيد الانتظار', 'label_en' => 'Pending'],
+                    ['key' => 'approved', 'label_ar' => 'مقبول', 'label_en' => 'Approved'],
+                    ['key' => 'rejected', 'label_ar' => 'مرفوض', 'label_en' => 'Rejected'],
+                ],
+            ],
+        ]);
+    }
+
+    public function timeline(Request $request, string $type, int $id)
+    {
+        $employee = $this->employeeService->resolve();
+        if (!$employee) return response()->json(['ok' => false, 'message' => 'Employee not found'], 403);
+
+        $companyId = $this->employeeService->getCompanyId();
+
+        $tasks = ApprovalTask::where('company_id', $companyId)
+            ->where('approvable_type', $type)
+            ->where('approvable_id', $id)
+            ->orderBy('id', 'asc')
+            ->get();
+
+        return response()->json([
+            'ok' => true,
+            'data' => $tasks,
+        ]);
+    }
+
     public function approve(Request $request, string $type, int $id)
     {
         return $this->processAction($request, $type, $id, 'approved');
@@ -345,7 +392,10 @@ class ApprovalInboxController extends Controller
         $employee = $this->employeeService->resolve();
         if (!$employee) return response()->json(['ok' => false, 'message' => 'Employee not found'], 403);
 
-        $task = ApprovalTask::where('approvable_type', $type)
+        $companyId = $this->employeeService->getCompanyId();
+
+        $task = ApprovalTask::where('company_id', $companyId)
+            ->where('approvable_type', $type)
             ->where('approvable_id', $id)
             ->where('approver_employee_id', $employee->id)
             ->where('status', 'pending')
