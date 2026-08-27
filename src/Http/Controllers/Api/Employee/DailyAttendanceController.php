@@ -523,12 +523,12 @@ $log = $this->attendanceService->ensureLog(
                 ->values()
                 ->all();
 
-            $departmentId = isset($employee->department_id)
-                ? (int) $employee->department_id
+            $branchId = isset($employee->branch_id)
+                ? (int) $employee->branch_id
                 : null;
 
             $gpsLocations = collect($allLocations)
-                ->filter(function (array $location) use ($employeeGroupIds, $departmentId): bool {
+                ->filter(function (array $location) use ($employeeGroupIds, $branchId, $departmentId): bool {
                     if (empty($employeeGroupIds)) {
                         return true;
                     }
@@ -540,6 +540,10 @@ $log = $this->attendanceService->ensureLog(
                             true
                         )
                         || $location['branch_id'] === null
+                        || (
+                            $branchId !== null
+                            && (int) $location['branch_id'] === $branchId
+                        )
                         || (
                             $departmentId !== null
                             && (int) $location['branch_id'] === $departmentId

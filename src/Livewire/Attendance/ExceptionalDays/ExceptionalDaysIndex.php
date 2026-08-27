@@ -862,7 +862,8 @@ class ExceptionalDaysIndex extends Component
                 $end,
                 $this->editingId,
                 $type,
-                $this->form['include'] ?? []
+                $this->form['include'] ?? [],
+                (string) ($this->form['apply_on'] ?? 'absence')
             )
         ) {
             $this->addError('form.start_date', tr('Date range overlaps with another exceptional day in the same scope.'));
