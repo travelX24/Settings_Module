@@ -220,7 +220,12 @@ if ($syncOpenSessions) {
             'location_captured_at' => ['nullable', 'date'],
         ]);
 
-        $context = $this->resolveAttendanceMethodContext($companyId, $employee, $data['method']);
+        $context = $this->resolveAttendanceMethodContext(
+            $companyId,
+            $employee,
+            $data['method'],
+            $user
+        );
 
         if ($methodError = $this->attendanceMethodUnavailableResponse($context, $data['method'])) {
             return $methodError;
@@ -229,13 +234,31 @@ if ($syncOpenSessions) {
         $locationDecision = null;
 
         if ($data['method'] === 'gps') {
+            $allowedLocationIds = collect(
+                $context->data->gps_locations ?? []
+            )
+                ->pluck('id')
+                ->map(fn ($id) => (int) $id)
+                ->values()
+                ->all();
+
             $locationDecision = $this->locationGateService->evaluateOnline(
                 companyId: $companyId,
                 employee: $employee,
                 payload: $data,
+                allowedLocationIds: $allowedLocationIds,
             );
 
             if (! $locationDecision->allowed) {
+                if ($branchError = $this->attendanceBranchScopeViolationResponse(
+                    $context,
+                    $companyId,
+                    $employee,
+                    $data
+                )) {
+                    return $branchError;
+                }
+
                 return response()->json(
                     $locationDecision->toResponseArray(),
                     $locationDecision->httpStatus
@@ -331,7 +354,12 @@ $log = $this->attendanceService->ensureLog(
             'location_captured_at' => ['nullable', 'date'],
         ]);
 
-        $context = $this->resolveAttendanceMethodContext($companyId, $employee, $data['method']);
+        $context = $this->resolveAttendanceMethodContext(
+            $companyId,
+            $employee,
+            $data['method'],
+            $user
+        );
 
         if ($methodError = $this->attendanceMethodUnavailableResponse($context, $data['method'])) {
             return $methodError;
@@ -340,13 +368,31 @@ $log = $this->attendanceService->ensureLog(
         $locationDecision = null;
 
         if ($data['method'] === 'gps') {
+            $allowedLocationIds = collect(
+                $context->data->gps_locations ?? []
+            )
+                ->pluck('id')
+                ->map(fn ($id) => (int) $id)
+                ->values()
+                ->all();
+
             $locationDecision = $this->locationGateService->evaluateOnline(
                 companyId: $companyId,
                 employee: $employee,
                 payload: $data,
+                allowedLocationIds: $allowedLocationIds,
             );
 
             if (! $locationDecision->allowed) {
+                if ($branchError = $this->attendanceBranchScopeViolationResponse(
+                    $context,
+                    $companyId,
+                    $employee,
+                    $data
+                )) {
+                    return $branchError;
+                }
+
                 return response()->json(
                     $locationDecision->toResponseArray(),
                     $locationDecision->httpStatus
@@ -401,7 +447,7 @@ $log = $this->attendanceService->ensureLog(
         return response()->json($res);
     }
 
-    protected function resolveAttendanceMethodContext(int $companyId, Employee $employee, string $method): object
+    protected function resolveAttendanceMethodContext(int $companyId, Employee $employee, string $method, $user = null): object
     {
         $ttl = now()->addSeconds(15);
 
@@ -523,31 +569,70 @@ $log = $this->attendanceService->ensureLog(
                 ->values()
                 ->all();
 
-            $branchId = isset($employee->branch_id)
-                ? (int) $employee->branch_id
-                : null;
+            /*
+             * Branch access and attendance-method availability are two
+             * separate concerns.
+             *
+             * null  = all branches
+             * array = only these branches
+             */
+            $allowedBranchIds = $this->resolveAttendanceBranchIds(
+                $user,
+                $employee,
+                $companyId
+            );
 
-            $gpsLocations = collect($allLocations)
-                ->filter(function (array $location) use ($employeeGroupIds, $branchId, $departmentId): bool {
-                    if (empty($employeeGroupIds)) {
-                        return true;
-                    }
+            $attendanceBranchScope = (string) (
+                $user->access_scope ?? 'all_branches'
+            );
 
-                    return $location['employee_group_id'] === null
+            /*
+             * First apply Employee Group rules independently.
+             *
+             * Important:
+             * An employee without groups keeps the previous behaviour of
+             * seeing group locations, but branch restrictions must still
+             * be enforced.
+             */
+            $groupFilteredLocations = collect($allLocations)
+                ->filter(function (array $location) use ($employeeGroupIds): bool {
+                    return empty($employeeGroupIds)
+                        || $location['employee_group_id'] === null
                         || in_array(
                             (int) $location['employee_group_id'],
                             $employeeGroupIds,
                             true
-                        )
-                        || $location['branch_id'] === null
-                        || (
-                            $branchId !== null
-                            && (int) $location['branch_id'] === $branchId
-                        )
-                        || (
-                            $departmentId !== null
-                            && (int) $location['branch_id'] === $departmentId
                         );
+                })
+                ->values();
+
+            /*
+             * Keep the group-compatible locations from all branches.
+             * They are used only to distinguish:
+             * - outside every attendance location
+             * - inside a location belonging to a forbidden branch
+             */
+            $allBranchGpsLocationIds = $groupFilteredLocations
+                ->pluck('id')
+                ->map(fn ($id) => (int) $id)
+                ->values()
+                ->all();
+
+            $gpsLocations = $groupFilteredLocations
+                ->filter(function (array $location) use ($allowedBranchIds): bool {
+                    if ($location['branch_id'] === null) {
+                        return true;
+                    }
+
+                    if ($allowedBranchIds === null) {
+                        return true;
+                    }
+
+                    return in_array(
+                        (int) $location['branch_id'],
+                        $allowedBranchIds,
+                        true
+                    );
                 })
                 ->map(fn (array $location) => (object) [
                     'id' => $location['id'],
@@ -574,8 +659,164 @@ $log = $this->attendanceService->ensureLog(
                     ],
                 ],
                 'gps_locations' => $gpsLocations,
+                'gps_location_ids_all_branches' => $allBranchGpsLocationIds ?? [],
+                'attendance_branch_scope' => $attendanceBranchScope ?? 'all_branches',
+                'allowed_branch_ids' => $allowedBranchIds ?? null,
             ],
         ];
+    }
+
+    /**
+     * Resolve the branches in which this user may record attendance.
+     *
+     * null means unrestricted / all branches.
+     */
+    protected function resolveAttendanceBranchIds(
+        $user,
+        Employee $employee,
+        int $companyId
+    ): ?array {
+        if (! $user) {
+            $branchId = (int) ($employee->branch_id ?? 0);
+
+            return $branchId > 0 ? [$branchId] : [];
+        }
+
+        /*
+         * Prefer the application's canonical restriction helper when it
+         * exists so attendance follows the same access-control rules as
+         * the rest of the system.
+         */
+        if (method_exists($user, 'restrictedBranchIds')) {
+            $restricted = $user->restrictedBranchIds();
+
+            if ($restricted === null) {
+                return null;
+            }
+
+            return collect($restricted)
+                ->map(fn ($id) => (int) $id)
+                ->filter(fn ($id) => $id > 0)
+                ->unique()
+                ->values()
+                ->all();
+        }
+
+        if (
+            method_exists($user, 'hasAnyRole')
+            && $user->hasAnyRole([
+                'saas-admin',
+                'super-admin',
+                'company-admin',
+                'system-admin',
+            ])
+        ) {
+            return null;
+        }
+
+        $scope = (string) ($user->access_scope ?? 'all_branches');
+
+        if ($scope === 'all_branches') {
+            return null;
+        }
+
+        if (in_array($scope, ['my_branch', 'branch'], true)) {
+            $branchId = (int) (
+                $employee->branch_id
+                ?? $user->branch_id
+                ?? 0
+            );
+
+            return $branchId > 0 ? [$branchId] : [];
+        }
+
+        return DB::table('branch_user_access')
+            ->where('user_id', (int) $user->id)
+            ->where('saas_company_id', $companyId)
+            ->pluck('branch_id')
+            ->map(fn ($id) => (int) $id)
+            ->filter(fn ($id) => $id > 0)
+            ->unique()
+            ->values()
+            ->all();
+    }
+
+    /**
+     * Return a branch-specific error only when the submitted GPS
+     * coordinates actually match an attendance location belonging to
+     * another permitted company/group branch.
+     */
+    protected function attendanceBranchScopeViolationResponse(
+        $context,
+        int $companyId,
+        Employee $employee,
+        array $payload
+    ) {
+        $scope = (string) (
+            $context->data->attendance_branch_scope
+            ?? 'all_branches'
+        );
+
+        if ($scope === 'all_branches') {
+            return null;
+        }
+
+        $allBranchLocationIds = collect(
+            $context->data->gps_location_ids_all_branches ?? []
+        )
+            ->map(fn ($id) => (int) $id)
+            ->filter(fn ($id) => $id > 0)
+            ->unique()
+            ->values()
+            ->all();
+
+        if (empty($allBranchLocationIds)) {
+            return null;
+        }
+
+        $anyBranchDecision = $this->locationGateService->evaluateOnline(
+            companyId: $companyId,
+            employee: $employee,
+            payload: $payload,
+            allowedLocationIds: $allBranchLocationIds,
+        );
+
+        /*
+         * The location does not match any company/group attendance
+         * location, so preserve the original geofence error.
+         */
+        if (! $anyBranchDecision->allowed) {
+            return null;
+        }
+
+        $isArabic = str_starts_with(
+            strtolower((string) app()->getLocale()),
+            'ar'
+        );
+
+        $ownBranchOnly = in_array(
+            $scope,
+            ['my_branch', 'branch'],
+            true
+        );
+
+        $message = $isArabic
+            ? (
+                $ownBranchOnly
+                    ? 'لا يمكنك التحضير إلا في فرعك المحدد.'
+                    : 'لا يمكنك التحضير إلا في الفروع المصرح لك بها.'
+            )
+            : (
+                $ownBranchOnly
+                    ? 'You can only check in at your assigned branch.'
+                    : 'You can only check in at your allowed branches.'
+            );
+
+        return response()->json([
+            'ok' => false,
+            'code' => 'branch_not_allowed',
+            'message' => $message,
+        ], 403);
     }
 
     protected function attendanceMethodUnavailableResponse($prep, $method)
