@@ -220,6 +220,132 @@ if ($syncOpenSessions) {
             'location_captured_at' => ['nullable', 'date'],
         ]);
 
+        /*
+         * CHECK-IN WORKDAY ELIGIBILITY GATE
+         *
+         * Do not create normal attendance when the employee has
+         * no effective workday, is on approved leave, or the day
+         * is a holiday.
+         *
+         * We intentionally do NOT block outside_work_window here.
+         * Existing attendance rules may allow early arrival such
+         * as 08:57 for a 09:00 shift.
+         *
+         * Check-out is intentionally not gated, so an already-open
+         * attendance session can still be closed safely.
+         */
+        $capturedAt = ! empty($data['location_captured_at'])
+            ? \Carbon\CarbonImmutable::parse(
+                (string) $data['location_captured_at']
+            )
+            : \Carbon\CarbonImmutable::now();
+
+        $workWindow = app(
+            \Athka\Attendance\Services\TrackingWorkWindowService::class
+        )->resolve(
+            $employee,
+            $capturedAt
+        );
+
+        /*
+         * An employee may have an assigned schedule while the captured
+         * date itself is a configured day off. WorkScheduleService
+         * represents this as status=off, not no_schedule.
+         *
+         * Only inspect this when tracking resolved to outside_work_window.
+         * This keeps early/late punches on real workdays allowed and
+         * preserves previous-day overnight shift resolution.
+         */
+        $isScheduleDayOff = false;
+
+        if (
+            $workWindow->state ===
+            \Athka\Attendance\Services\TrackingWorkWindowService::STATE_OUTSIDE_WORK_WINDOW
+        ) {
+            $capturedDate = $capturedAt->toDateString();
+
+            $workScheduleService = app(
+                \Athka\SystemSettings\Services\WorkScheduleService::class
+            );
+
+            $effectiveSchedule = $workScheduleService->getEffectiveSchedule(
+                $companyId,
+                $employee,
+                $capturedDate
+            );
+
+            $dayHolidays = $workScheduleService->getHolidays(
+                $companyId,
+                $capturedDate,
+                $capturedDate
+            );
+
+            $dayRequests = $workScheduleService->getEmployeeRequests(
+                (int) $employee->id,
+                $capturedDate,
+                $capturedDate
+            );
+
+            $dayMetrics = $workScheduleService->getMetricsForDate(
+                $capturedDate,
+                $effectiveSchedule,
+                $dayHolidays,
+                $employee,
+                $dayRequests
+            );
+
+            $isScheduleDayOff =
+                (string) ($dayMetrics['status'] ?? '') === 'off';
+        }
+
+        $blockedWorkStates = [
+            \Athka\Attendance\Services\TrackingWorkWindowService::STATE_NO_SCHEDULE,
+            \Athka\Attendance\Services\TrackingWorkWindowService::STATE_HOLIDAY,
+            \Athka\Attendance\Services\TrackingWorkWindowService::STATE_LEAVE,
+        ];
+
+        if (
+            in_array($workWindow->state, $blockedWorkStates, true)
+            || $isScheduleDayOff
+        ) {
+            $attendanceState = $isScheduleDayOff
+                ? 'day_off'
+                : $workWindow->state;
+            $isArabic = str_starts_with(
+                strtolower((string) app()->getLocale()),
+                'ar'
+            );
+
+            $message = match ($attendanceState) {
+                'day_off' =>
+                    $isArabic
+                        ? 'لا يمكنك تسجيل الحضور في يوم راحة.'
+                        : 'Check-in is not allowed on a day off.',
+
+                \Athka\Attendance\Services\TrackingWorkWindowService::STATE_HOLIDAY =>
+                    $isArabic
+                        ? 'لا يمكنك تسجيل الحضور في يوم عطلة.'
+                        : 'Check-in is not allowed on a holiday.',
+
+                \Athka\Attendance\Services\TrackingWorkWindowService::STATE_LEAVE =>
+                    $isArabic
+                        ? 'لا يمكنك تسجيل الحضور أثناء إجازة معتمدة.'
+                        : 'Check-in is not allowed during approved leave.',
+
+                default =>
+                    $isArabic
+                        ? 'لا يوجد لديك دوام مجدول لهذا اليوم.'
+                        : 'You do not have a scheduled workday today.',
+            };
+
+            return response()->json([
+                'ok' => false,
+                'code' => 'attendance_day_not_allowed',
+                'message' => $message,
+                'attendance_state' => $attendanceState,
+            ], 422);
+        }
+
         $context = $this->resolveAttendanceMethodContext(
             $companyId,
             $employee,
