@@ -415,40 +415,40 @@ class ExceptionalDaysIndex extends Component
 
         if ($this->getCompanyCalendarType() === 'hijri') {
             return [
-                1 => $isArabic ? 'محرم' : 'Muharram',
-                2 => $isArabic ? 'صفر' : 'Safar',
-                3 => $isArabic ? 'ربيع الأول' : 'Rabi I',
-                4 => $isArabic ? 'ربيع الآخر' : 'Rabi II',
-                5 => $isArabic ? 'جمادى الأولى' : 'Jumada I',
-                6 => $isArabic ? 'جمادى الآخرة' : 'Jumada II',
-                7 => $isArabic ? 'رجب' : 'Rajab',
-                8 => $isArabic ? 'شعبان' : 'Shaban',
-                9 => $isArabic ? 'رمضان' : 'Ramadan',
-                10 => $isArabic ? 'شوال' : 'Shawwal',
-                11 => $isArabic ? 'ذو القعدة' : 'Dhul Qadah',
-                12 => $isArabic ? 'ذو الحجة' : 'Dhul Hijjah',
+                1 => $isArabic ? 'Ù…Ø­Ø±Ù…' : 'Muharram',
+                2 => $isArabic ? 'ØµÙØ±' : 'Safar',
+                3 => $isArabic ? 'Ø±Ø¨ÙŠØ¹ Ø§Ù„Ø£ÙˆÙ„' : 'Rabi I',
+                4 => $isArabic ? 'Ø±Ø¨ÙŠØ¹ Ø§Ù„Ø¢Ø®Ø±' : 'Rabi II',
+                5 => $isArabic ? 'Ø¬Ù…Ø§Ø¯Ù‰ Ø§Ù„Ø£ÙˆÙ„Ù‰' : 'Jumada I',
+                6 => $isArabic ? 'Ø¬Ù…Ø§Ø¯Ù‰ Ø§Ù„Ø¢Ø®Ø±Ø©' : 'Jumada II',
+                7 => $isArabic ? 'Ø±Ø¬Ø¨' : 'Rajab',
+                8 => $isArabic ? 'Ø´Ø¹Ø¨Ø§Ù†' : 'Shaban',
+                9 => $isArabic ? 'Ø±Ù…Ø¶Ø§Ù†' : 'Ramadan',
+                10 => $isArabic ? 'Ø´ÙˆØ§Ù„' : 'Shawwal',
+                11 => $isArabic ? 'Ø°Ùˆ Ø§Ù„Ù‚Ø¹Ø¯Ø©' : 'Dhul Qadah',
+                12 => $isArabic ? 'Ø°Ùˆ Ø§Ù„Ø­Ø¬Ø©' : 'Dhul Hijjah',
             ];
         }
 
         return [
-            1 => $isArabic ? 'يناير' : 'January',
-            2 => $isArabic ? 'فبراير' : 'February',
-            3 => $isArabic ? 'مارس' : 'March',
-            4 => $isArabic ? 'أبريل' : 'April',
-            5 => $isArabic ? 'مايو' : 'May',
-            6 => $isArabic ? 'يونيو' : 'June',
-            7 => $isArabic ? 'يوليو' : 'July',
-            8 => $isArabic ? 'أغسطس' : 'August',
-            9 => $isArabic ? 'سبتمبر' : 'September',
-            10 => $isArabic ? 'أكتوبر' : 'October',
-            11 => $isArabic ? 'نوفمبر' : 'November',
-            12 => $isArabic ? 'ديسمبر' : 'December',
+            1 => $isArabic ? 'ÙŠÙ†Ø§ÙŠØ±' : 'January',
+            2 => $isArabic ? 'ÙØ¨Ø±Ø§ÙŠØ±' : 'February',
+            3 => $isArabic ? 'Ù…Ø§Ø±Ø³' : 'March',
+            4 => $isArabic ? 'Ø£Ø¨Ø±ÙŠÙ„' : 'April',
+            5 => $isArabic ? 'Ù…Ø§ÙŠÙˆ' : 'May',
+            6 => $isArabic ? 'ÙŠÙˆÙ†ÙŠÙˆ' : 'June',
+            7 => $isArabic ? 'ÙŠÙˆÙ„ÙŠÙˆ' : 'July',
+            8 => $isArabic ? 'Ø£ØºØ³Ø·Ø³' : 'August',
+            9 => $isArabic ? 'Ø³Ø¨ØªÙ…Ø¨Ø±' : 'September',
+            10 => $isArabic ? 'Ø£ÙƒØªÙˆØ¨Ø±' : 'October',
+            11 => $isArabic ? 'Ù†ÙˆÙÙ…Ø¨Ø±' : 'November',
+            12 => $isArabic ? 'Ø¯ÙŠØ³Ù…Ø¨Ø±' : 'December',
         ];
     }
     public function formatCompanyDate(?string $gregorianYmd): string
     {
         if (!$gregorianYmd)
-            return '—';
+            return 'â€”';
         $type = $this->getCompanyCalendarType();
         $d = \Carbon\Carbon::parse($gregorianYmd)->startOfDay();
         if ($type !== 'hijri' || !class_exists(\IntlDateFormatter::class)) {
@@ -866,7 +866,9 @@ class ExceptionalDaysIndex extends Component
                 (string) ($this->form['apply_on'] ?? 'absence')
             )
         ) {
-            $this->addError('form.start_date', tr('Date range overlaps with another exceptional day in the same scope.'));
+            $this->addError('form.start_date', (app()->getLocale() === 'ar'
+    ? 'لا يمكن الحفظ، يوجد يوم استثنائي آخر في نفس التاريخ أو الفترة يشمل موظفًا أو أكثر من النطاق المحدد.'
+    : 'Cannot save because another exceptional day in the same date or period includes one or more employees from the selected scope.'));
             return;
         }
 
@@ -1034,19 +1036,19 @@ class ExceptionalDaysIndex extends Component
             $toEnd = $to ? ($to->end_date ?? $to->start_date) : null;
 
             return [
-                'name' => $from->name ?? $to->name ?? '—',
+                'name' => $from->name ?? $to->name ?? 'â€”',
 
-                'from_start' => ($from && $from->start_date) ? $this->formatCompanyDate($from->start_date->toDateString()) : '—',
-                'to_start' => ($to && $to->start_date) ? $this->formatCompanyDate($to->start_date->toDateString()) : '—',
+                'from_start' => ($from && $from->start_date) ? $this->formatCompanyDate($from->start_date->toDateString()) : 'â€”',
+                'to_start' => ($to && $to->start_date) ? $this->formatCompanyDate($to->start_date->toDateString()) : 'â€”',
 
-                'from_end' => $fromEnd ? $this->formatCompanyDate($fromEnd->toDateString()) : '—',
-                'to_end' => $toEnd ? $this->formatCompanyDate($toEnd->toDateString()) : '—',
+                'from_end' => $fromEnd ? $this->formatCompanyDate($fromEnd->toDateString()) : 'â€”',
+                'to_end' => $toEnd ? $this->formatCompanyDate($toEnd->toDateString()) : 'â€”',
 
-                'from_apply' => $from ? $this->applyLabel($from) : '—',
-                'to_apply' => $to ? $this->applyLabel($to) : '—',
+                'from_apply' => $from ? $this->applyLabel($from) : 'â€”',
+                'to_apply' => $to ? $this->applyLabel($to) : 'â€”',
 
-                'from_percent' => $from ? number_format($this->exceptionalDayPercent($from), 2) . '%' : '—',
-                'to_percent' => $to ? number_format($this->exceptionalDayPercent($to), 2) . '%' : '—',
+                'from_percent' => $from ? number_format($this->exceptionalDayPercent($from), 2) . '%' : 'â€”',
+                'to_percent' => $to ? number_format($this->exceptionalDayPercent($to), 2) . '%' : 'â€”',
 
                 'status' => $this->compareRowStatus($from, $to),
             ];
