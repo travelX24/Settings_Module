@@ -240,6 +240,117 @@ class ExceptionalDayService
     }
 
     /**
+     * Resolve the branches the current user is allowed to access.
+     *
+     * null  = unrestricted / all branches
+     * array = only these branch IDs
+     */
+    public function currentUserAllowedBranchIds(int $companyId): ?array
+    {
+        $user = auth()->user();
+
+        if (!$user) {
+            return [];
+        }
+
+        /*
+         * Prefer the application's canonical branch restriction helper.
+         */
+        if (method_exists($user, 'restrictedBranchIds')) {
+            $restricted = $user->restrictedBranchIds();
+
+            if ($restricted === null) {
+                return null;
+            }
+
+            return collect($restricted)
+                ->map(fn ($id) => (int) $id)
+                ->filter(fn ($id) => $id > 0)
+                ->unique()
+                ->values()
+                ->all();
+        }
+
+        /*
+         * Administrative roles are unrestricted.
+         */
+        if (
+            method_exists($user, 'hasAnyRole')
+            && $user->hasAnyRole([
+                'saas-admin',
+                'super-admin',
+                'company-admin',
+                'system-admin',
+            ])
+        ) {
+            return null;
+        }
+
+        $scope = (string) ($user->access_scope ?? 'all_branches');
+
+        if ($scope === 'all_branches') {
+            return null;
+        }
+
+        /*
+         * Own branch only.
+         */
+        if (in_array($scope, ['my_branch', 'branch'], true)) {
+            $branchId = 0;
+
+            if (
+                !empty($user->employee_id)
+                && Schema::hasTable('employees')
+            ) {
+                $branchCol = $this->employeeBranchColumn();
+
+                if ($branchCol) {
+                    $query = DB::table('employees')
+                        ->where('id', (int) $user->employee_id);
+
+                    $companyCol = $this->companyColumnFor('employees');
+
+                    if ($companyCol) {
+                        $query->where($companyCol, $companyId);
+                    }
+
+                    $branchId = (int) ($query->value($branchCol) ?? 0);
+                }
+            }
+
+            if ($branchId <= 0) {
+                $branchId = (int) ($user->branch_id ?? 0);
+            }
+
+            return $branchId > 0 ? [$branchId] : [];
+        }
+
+        /*
+         * Selected/custom branches.
+         */
+        if (!Schema::hasTable('branch_user_access')) {
+            return [];
+        }
+
+        $query = DB::table('branch_user_access')
+            ->where('user_id', (int) $user->id);
+
+        if (Schema::hasColumn('branch_user_access', 'saas_company_id')) {
+            $query->where('saas_company_id', $companyId);
+        } elseif (Schema::hasColumn('branch_user_access', 'company_id')) {
+            $query->where('company_id', $companyId);
+        }
+
+        return $query
+            ->pluck('branch_id')
+            ->map(fn ($id) => (int) $id)
+            ->filter(fn ($id) => $id > 0)
+            ->unique()
+            ->values()
+            ->all();
+    }
+
+    /**
      * Load scope options (departments, employees, etc) for dropdowns
      */
     public function loadScopeOptions(int $companyId, string $locale = 'en', ?array $allowedBranchIds = null, ?array $parentDeptIds = null, string $employeeStatus = EmployeeStatus::ACTIVE): array
