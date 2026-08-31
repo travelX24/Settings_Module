@@ -148,7 +148,7 @@ class ExceptionalDayService
     }
 
     /**
-     * Check if a date range overlaps with existing exceptional days for the same violation type
+     * Check if a date range overlaps with an exceptional day targeting any of the same employees
      */
     public function checkOverlap(
         int $companyId,
@@ -162,7 +162,6 @@ class ExceptionalDayService
         $rows = AttendanceExceptionalDay::query()
             ->where('company_id', $companyId)
             ->when($ignoreId, fn($q) => $q->where('id', '!=', $ignoreId))
-            ->when($applyOn, fn($q) => $q->where('apply_on', $applyOn))
             ->where(function ($q) use ($start, $end) {
                 $q->whereBetween('start_date', [$start, $end])
                     ->orWhereBetween('end_date', [$start, $end])
@@ -180,7 +179,7 @@ class ExceptionalDayService
             $existingScopeType = (string) ($row->scope_type ?: 'all');
             $existingInclude = $this->normalizeScopeInclude((array) ($row->include ?? []));
 
-            if ($this->scopesConflict($existingScopeType, $existingInclude, $incomingScopeType, $incomingInclude)) {
+            if ($this->scopesConflict($companyId, $existingScopeType, $existingInclude, $incomingScopeType, $incomingInclude)) {
                 return true;
             }
         }
@@ -200,6 +199,160 @@ class ExceptionalDayService
     }
 
     private function scopesConflict(
+        int $companyId,
+        string $existingType,
+        array $existingInclude,
+        string $incomingType,
+        array $incomingInclude
+    ): bool {
+        $existingType = $this->normalizeScopeType($existingType, $existingInclude);
+        $incomingType = $this->normalizeScopeType($incomingType, $incomingInclude);
+
+        /*
+         * Resolve both scopes to the employees they actually target.
+         * This catches cross-scope conflicts such as:
+         * employee <-> department, employee <-> branch,
+         * department <-> branch, branch <-> contract type, etc.
+         */
+        if (Schema::hasTable('employees')) {
+            $existingEmployeeIds = $this->scopeEmployeeQuery(
+                $companyId,
+                $existingType,
+                $existingInclude
+            )->select('id');
+
+            return $this->scopeEmployeeQuery(
+                $companyId,
+                $incomingType,
+                $incomingInclude
+            )
+                ->whereIn('id', $existingEmployeeIds)
+                ->exists();
+        }
+
+        /*
+         * Safe compatibility fallback for installations where the
+         * employees table is not available.
+         */
+        return $this->legacyScopesConflict(
+            $existingType,
+            $existingInclude,
+            $incomingType,
+            $incomingInclude
+        );
+    }
+
+    private function scopeEmployeeQuery(
+        int $companyId,
+        string $scopeType,
+        array $include
+    ) {
+        $query = DB::table('employees');
+
+        $companyColumn = $this->companyColumnFor('employees');
+
+        if (!$companyColumn) {
+            return $query->whereRaw('1 = 0');
+        }
+
+        $query->where($companyColumn, $companyId);
+
+        if ($scopeType === 'all') {
+            return $query;
+        }
+
+        if ($scopeType === 'employees') {
+            $employeeIds = $this->positiveIntegerValues($include['employees'] ?? []);
+
+            return empty($employeeIds)
+                ? $query->whereRaw('1 = 0')
+                : $query->whereIn('id', $employeeIds);
+        }
+
+        if ($scopeType === 'branches') {
+            $branchIds = $this->positiveIntegerValues($include['branches'] ?? []);
+
+            return empty($branchIds)
+                ? $query->whereRaw('1 = 0')
+                : $query->whereIn('branch_id', $branchIds);
+        }
+
+        if ($scopeType === 'contract_types') {
+            $contractTypes = $this->nonEmptyStringValues($include['contract_types'] ?? []);
+
+            return empty($contractTypes)
+                ? $query->whereRaw('1 = 0')
+                : $query->whereIn('contract_type', $contractTypes);
+        }
+
+        if ($scopeType === 'departments') {
+            $departmentIds = $this->positiveIntegerValues($include['departments'] ?? []);
+            $sectionIds = $this->positiveIntegerValues($include['sections'] ?? []);
+
+            if (empty($departmentIds) && empty($sectionIds)) {
+                return $query->whereRaw('1 = 0');
+            }
+
+            return $query->where(function ($q) use ($departmentIds, $sectionIds) {
+                if (!empty($departmentIds)) {
+                    $q->whereIn('department_id', $departmentIds);
+                }
+
+                if (!empty($sectionIds)) {
+                    if (!empty($departmentIds)) {
+                        $q->orWhereIn('sub_department_id', $sectionIds);
+                    } else {
+                        $q->whereIn('sub_department_id', $sectionIds);
+                    }
+                }
+            });
+        }
+
+        return $query->whereRaw('1 = 0');
+    }
+
+    private function normalizeScopeType(string $scopeType, array $include): string
+    {
+        if (in_array($scopeType, ['all', 'departments', 'branches', 'contract_types', 'employees'], true)) {
+            return $scopeType;
+        }
+
+        if (!empty($include['employees'])) {
+            return 'employees';
+        }
+
+        if (!empty($include['branches'])) {
+            return 'branches';
+        }
+
+        if (!empty($include['contract_types'])) {
+            return 'contract_types';
+        }
+
+        if (!empty($include['departments']) || !empty($include['sections'])) {
+            return 'departments';
+        }
+
+        return 'all';
+    }
+
+    private function positiveIntegerValues(array $values): array
+    {
+        return array_values(array_unique(array_filter(
+            array_map('intval', $values),
+            fn ($value) => $value > 0
+        )));
+    }
+
+    private function nonEmptyStringValues(array $values): array
+    {
+        return array_values(array_unique(array_filter(
+            array_map(fn ($value) => trim((string) $value), $values),
+            fn ($value) => $value !== ''
+        )));
+    }
+
+    private function legacyScopesConflict(
         string $existingType,
         array $existingInclude,
         string $incomingType,
