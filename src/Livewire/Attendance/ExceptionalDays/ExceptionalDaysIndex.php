@@ -1266,7 +1266,7 @@ class ExceptionalDaysIndex extends Component
             'sectionsOptions' => $opts['sections'],
             'employeesOptions' => $opts['employees'],
             'branchesOptions' => $opts['branches'],
-            'contractTypesOptions' => $opts['contractTypes'],
+            'contractTypesOptions' => $opts['contract_types'],
 
             'createdByMap' => $createdByMap,
 
