@@ -95,7 +95,11 @@ class ApprovalSequenceSettings extends Component
         $this->is_active = $policy->is_active;
         $this->scope_type = $policy->scope_type;
         $this->scope_ids = $policy->scopes()->pluck('scope_id')->toArray();
-        $this->steps = $policy->steps()->orderBy('position')->get()->toArray();
+        $this->steps = $policy->steps()->orderBy('position')->get()->map(function ($step) {
+            $array = $step->toArray();
+            $array['_key'] = $array['_key'] ?? Str::random(8);
+            return $array;
+        })->toArray();
         $this->showModal = true;
     }
 
@@ -249,7 +253,12 @@ class ApprovalSequenceSettings extends Component
 
     private function resetSteps(): void
     {
-        $this->steps = [['approver_type' => 'direct_manager', 'approver_id' => 0]];
+        $this->steps = [[
+            '_key' => Str::random(8),
+            'approver_type' => 'direct_manager',
+            'approver_id' => 0,
+            'follow_standard' => false,
+        ]];
     }
 
     public function getTabsProperty(): array
