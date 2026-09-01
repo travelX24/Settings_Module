@@ -662,8 +662,9 @@
                     <div class="p-4 space-y-3 bg-gray-50/30 rounded-b-xl" style="overflow: visible;">
                         @foreach($steps as $i => $s)
                             @php($t = $steps[$i]['approver_type'] ?? 'direct_manager')
+                            @php($stepKey = $steps[$i]['_key'] ?? ('index-'.$i))
 
-                            <div class="bg-white border border-gray-200 rounded-xl p-4 shadow-sm hover:border-[color:var(--accent-orange)]/30 transition" wire:key="step-{{ $steps[$i]['_key'] ?? $i }}">
+                            <div class="bg-white border border-gray-200 rounded-xl p-4 shadow-sm hover:border-[color:var(--accent-orange)]/30 transition" wire:key="approval-step-item-{{ $stepKey }}">
 
                                 {{-- ✅ صف واحد مرتب + الأسهم فوق/تحت --}}
                                 <div class="flex flex-col lg:flex-row lg:items-center gap-4">
@@ -675,7 +676,7 @@
                                     {{-- Approver Type --}}
                                     <div class="shrink-0 lg:w-48">
                                         <x-ui.select 
-                                            wire:model.defer="steps.{{ $i }}.approver_type" 
+                                            wire:model.live="steps.{{ $i }}.approver_type"
                                             :disabled="!auth()->user()->can('settings.approval.manage')"
                                             align="up"
                                         >
