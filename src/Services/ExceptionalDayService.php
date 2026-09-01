@@ -159,9 +159,19 @@ class ExceptionalDayService
         array $include = [],
         ?string $applyOn = null
     ): bool {
+        $applyOnVal = $applyOn ?: 'absence';
+
         $rows = AttendanceExceptionalDay::query()
             ->where('company_id', $companyId)
             ->when($ignoreId, fn($q) => $q->where('id', '!=', $ignoreId))
+            ->when(
+                $applyOnVal === 'absence',
+                fn ($q) => $q->where(function ($applyOnQuery) {
+                    $applyOnQuery->where('apply_on', 'absence')
+                        ->orWhereNull('apply_on');
+                }),
+                fn ($q) => $q->where('apply_on', $applyOnVal)
+            )
             ->where(function ($q) use ($start, $end) {
                 $q->whereBetween('start_date', [$start, $end])
                     ->orWhereBetween('end_date', [$start, $end])
