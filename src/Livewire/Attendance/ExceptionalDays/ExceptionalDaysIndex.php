@@ -415,34 +415,34 @@ class ExceptionalDaysIndex extends Component
 
         if ($this->getCompanyCalendarType() === 'hijri') {
             return [
-                1 => $isArabic ? 'Ù…Ø­Ø±Ù…' : 'Muharram',
-                2 => $isArabic ? 'ØµÙØ±' : 'Safar',
-                3 => $isArabic ? 'Ø±Ø¨ÙŠØ¹ Ø§Ù„Ø£ÙˆÙ„' : 'Rabi I',
-                4 => $isArabic ? 'Ø±Ø¨ÙŠØ¹ Ø§Ù„Ø¢Ø®Ø±' : 'Rabi II',
-                5 => $isArabic ? 'Ø¬Ù…Ø§Ø¯Ù‰ Ø§Ù„Ø£ÙˆÙ„Ù‰' : 'Jumada I',
-                6 => $isArabic ? 'Ø¬Ù…Ø§Ø¯Ù‰ Ø§Ù„Ø¢Ø®Ø±Ø©' : 'Jumada II',
-                7 => $isArabic ? 'Ø±Ø¬Ø¨' : 'Rajab',
-                8 => $isArabic ? 'Ø´Ø¹Ø¨Ø§Ù†' : 'Shaban',
-                9 => $isArabic ? 'Ø±Ù…Ø¶Ø§Ù†' : 'Ramadan',
-                10 => $isArabic ? 'Ø´ÙˆØ§Ù„' : 'Shawwal',
-                11 => $isArabic ? 'Ø°Ùˆ Ø§Ù„Ù‚Ø¹Ø¯Ø©' : 'Dhul Qadah',
-                12 => $isArabic ? 'Ø°Ùˆ Ø§Ù„Ø­Ø¬Ø©' : 'Dhul Hijjah',
+                1 => $isArabic ? 'محرم' : 'Muharram',
+                2 => $isArabic ? 'صفر' : 'Safar',
+                3 => $isArabic ? 'ربيع الأول' : 'Rabi I',
+                4 => $isArabic ? 'ربيع الآخر' : 'Rabi II',
+                5 => $isArabic ? 'جمادى الأولى' : 'Jumada I',
+                6 => $isArabic ? 'جمادى الآخرة' : 'Jumada II',
+                7 => $isArabic ? 'رجب' : 'Rajab',
+                8 => $isArabic ? 'شعبان' : 'Shaban',
+                9 => $isArabic ? 'رمضان' : 'Ramadan',
+                10 => $isArabic ? 'شوال' : 'Shawwal',
+                11 => $isArabic ? 'ذو القعدة' : 'Dhul Qadah',
+                12 => $isArabic ? 'ذو الحجة' : 'Dhul Hijjah',
             ];
         }
 
         return [
-            1 => $isArabic ? 'ÙŠÙ†Ø§ÙŠØ±' : 'January',
-            2 => $isArabic ? 'ÙØ¨Ø±Ø§ÙŠØ±' : 'February',
-            3 => $isArabic ? 'Ù…Ø§Ø±Ø³' : 'March',
-            4 => $isArabic ? 'Ø£Ø¨Ø±ÙŠÙ„' : 'April',
-            5 => $isArabic ? 'Ù…Ø§ÙŠÙˆ' : 'May',
-            6 => $isArabic ? 'ÙŠÙˆÙ†ÙŠÙˆ' : 'June',
-            7 => $isArabic ? 'ÙŠÙˆÙ„ÙŠÙˆ' : 'July',
-            8 => $isArabic ? 'Ø£ØºØ³Ø·Ø³' : 'August',
-            9 => $isArabic ? 'Ø³Ø¨ØªÙ…Ø¨Ø±' : 'September',
-            10 => $isArabic ? 'Ø£ÙƒØªÙˆØ¨Ø±' : 'October',
-            11 => $isArabic ? 'Ù†ÙˆÙÙ…Ø¨Ø±' : 'November',
-            12 => $isArabic ? 'Ø¯ÙŠØ³Ù…Ø¨Ø±' : 'December',
+            1 => $isArabic ? 'يناير' : 'January',
+            2 => $isArabic ? 'فبراير' : 'February',
+            3 => $isArabic ? 'مارس' : 'March',
+            4 => $isArabic ? 'أبريل' : 'April',
+            5 => $isArabic ? 'مايو' : 'May',
+            6 => $isArabic ? 'يونيو' : 'June',
+            7 => $isArabic ? 'يوليو' : 'July',
+            8 => $isArabic ? 'أغسطس' : 'August',
+            9 => $isArabic ? 'سبتمبر' : 'September',
+            10 => $isArabic ? 'أكتوبر' : 'October',
+            11 => $isArabic ? 'نوفمبر' : 'November',
+            12 => $isArabic ? 'ديسمبر' : 'December',
         ];
     }
     public function formatCompanyDate(?string $gregorianYmd): string
