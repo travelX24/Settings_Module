@@ -154,7 +154,7 @@ class ApprovalInboxController extends Controller
         // ✅ Bulk load leave policies (for 'leaves' type only)
         $leavePoliciesMap = [];
         $leaveRows = [];
-        foreach (['leaves', 'leave_exceptions'] as $leaveType) {
+        foreach (['leaves', 'leave_exceptions', 'leave_cut'] as $leaveType) {
             if (isset($rawDataMap[$leaveType])) {
                 $leaveRows = array_merge($leaveRows, array_values($rawDataMap[$leaveType]));
             }
@@ -278,7 +278,7 @@ class ApprovalInboxController extends Controller
             $data['to_time']      = (string) ($data['to_time'] ?? '');
 
             // Leave Specifics (from pre-fetched maps)
-            if (in_array($task->approvable_type, ['leaves', 'leave_exceptions'], true)) {
+            if (in_array($task->approvable_type, ['leaves', 'leave_exceptions', 'leave_cut'], true)) {
                 $policyId = (int) ($data['leave_policy_id'] ?? 0);
                 $policy   = $policyId ? ($leavePoliciesMap[$policyId] ?? null) : null;
 
@@ -298,6 +298,15 @@ class ApprovalInboxController extends Controller
                     $data['balance']            = '';
                     $data['monthly_taken_days'] = 0;
                 }
+            }
+
+            if ($task->approvable_type === 'leave_cut') {
+                $data['from_date'] = (string) ($data['original_start_date'] ?? '');
+                $data['to_date'] = (string) ($data['cut_end_date'] ?? '');
+                $data['original_end_date'] = (string) ($data['original_end_date'] ?? '');
+                $data['postponed_start_date'] = (string) ($data['postponed_start_date'] ?? '');
+                $data['postponed_end_date'] = (string) ($data['postponed_end_date'] ?? '');
+                $data['requested_days'] = '';
             }
 
             // Permission Specifics (from pre-fetched maps)
@@ -461,6 +470,7 @@ class ApprovalInboxController extends Controller
         return [
             'leaves' => ['ar' => 'إجازة', 'en' => 'Leave'],
             'leave_exceptions' => ['ar' => 'إجازة استثنائية', 'en' => 'Exceptional Leave'],
+            'leave_cut' => ['ar' => 'قطع إجازة', 'en' => 'Leave Cut'],
             'permissions' => ['ar' => 'إذن', 'en' => 'Permission'],
             'missions' => ['ar' => 'مهمة', 'en' => 'Mission'],
             'replacements' => ['ar' => 'بديل', 'en' => 'Replacement'],
