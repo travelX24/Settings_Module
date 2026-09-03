@@ -197,6 +197,75 @@ class ExceptionalDayService
         return false;
     }
 
+    /**
+     * Resolve the active financial Exceptional Day for one employee and one
+     * concrete violation. Different violation types may coexist on the same
+     * date, so the generic calendar resolver must not decide financial priority.
+     */
+    public function findApplicableForEmployeeViolation(
+        int $companyId,
+        string $date,
+        int $employeeId,
+        string $applyOn
+    ): ?AttendanceExceptionalDay {
+        if (!in_array($applyOn, ['absence', 'late'], true)) {
+            return null;
+        }
+
+        if ($companyId <= 0 || $employeeId <= 0) {
+            return null;
+        }
+
+        $rows = AttendanceExceptionalDay::query()
+            ->where('company_id', $companyId)
+            ->where('is_active', true)
+            ->where('apply_on', $applyOn)
+            ->whereDate('start_date', '<=', $date)
+            ->where(function ($query) use ($date) {
+                $query->whereDate('end_date', '>=', $date)
+                    ->orWhere(function ($nested) use ($date) {
+                        $nested->whereNull('end_date')
+                            ->whereDate('start_date', '<=', $date);
+                    });
+            })
+            ->orderByDesc('id')
+            ->get();
+
+        foreach ($rows as $row) {
+            $include = $this->normalizeScopeInclude((array) ($row->include ?? []));
+            $scopeType = $this->normalizeScopeType(
+                (string) ($row->scope_type ?: 'all'),
+                $include
+            );
+
+            $matchesEmployee = $this->scopeEmployeeQuery(
+                $companyId,
+                $scopeType,
+                $include
+            )
+                ->where('id', $employeeId)
+                ->exists();
+
+            if (! $matchesEmployee) {
+                continue;
+            }
+
+            $exclude = (array) ($row->exclude ?? []);
+            $excludedEmployeeIds = array_values(array_unique(array_map(
+                'intval',
+                $exclude['employees'] ?? []
+            )));
+
+            if (in_array($employeeId, $excludedEmployeeIds, true)) {
+                continue;
+            }
+
+            return $row;
+        }
+
+        return null;
+    }
+
     private function normalizeScopeInclude(array $include): array
     {
         return [
