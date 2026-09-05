@@ -81,6 +81,7 @@ class ExceptionalDaysIndex extends Component
 
         'absence_multiplier' => 1.00,
         'late_multiplier' => 1.00,
+        'early_departure_multiplier' => 1.00,
 
         'grace_hours' => 0,
 
@@ -241,7 +242,7 @@ class ExceptionalDaysIndex extends Component
     {
         $v = (string) $value;
 
-        if (!in_array($v, ['late', 'absence'], true)) {
+        if (!in_array($v, ['late', 'absence', 'early_departure'], true)) {
             $v = 'absence';
             $this->form['apply_on'] = 'absence';
         }
@@ -342,7 +343,7 @@ class ExceptionalDaysIndex extends Component
                 'after_or_equal:form.start_date',
             ],
 
-            'form.apply_on' => ['required', Rule::in(['absence', 'late'])],
+            'form.apply_on' => ['required', Rule::in(['absence', 'late', 'early_departure'])],
 
             'form.deduction_mode' => ['required', Rule::in(['with', 'without'])],
 
@@ -609,6 +610,14 @@ class ExceptionalDaysIndex extends Component
         $mode = (string) ($this->form['deduction_mode'] ?? 'with');
         $apply = (string) ($this->form['apply_on'] ?? 'absence');
 
+        if (!in_array($apply, ['absence', 'late', 'early_departure'], true)) {
+            $apply = 'absence';
+        }
+
+        $this->form['absence_multiplier'] = 1.00;
+        $this->form['late_multiplier'] = 1.00;
+        $this->form['early_departure_multiplier'] = 1.00;
+
         if ($mode === 'without') {
             $this->form['deduction_percent'] = 0.0;
             $this->form['grace_hours'] = 0;
@@ -616,10 +625,10 @@ class ExceptionalDaysIndex extends Component
 
             if ($apply === 'late') {
                 $this->form['late_multiplier'] = 0.0;
-                $this->form['absence_multiplier'] = 1.00;
+            } elseif ($apply === 'early_departure') {
+                $this->form['early_departure_multiplier'] = 0.0;
             } else {
                 $this->form['absence_multiplier'] = 0.0;
-                $this->form['late_multiplier'] = 1.00;
             }
 
             return;
@@ -628,18 +637,22 @@ class ExceptionalDaysIndex extends Component
         $percent = (float) ($this->form['deduction_percent'] ?? 0.0);
         $factor = $percent / 100.0;
 
-        if ($factor < 0)
+        if ($factor < 0) {
             $factor = 0;
-        if ($factor > 10)
+        }
+
+        if ($factor > 10) {
             $factor = 10;
+        }
 
         if ($apply === 'absence') {
             $this->form['absence_multiplier'] = $factor;
-            $this->form['late_multiplier'] = 1.00;
+            $this->form['grace_hours'] = 0;
+        } elseif ($apply === 'early_departure') {
+            $this->form['early_departure_multiplier'] = $factor;
             $this->form['grace_hours'] = 0;
         } else {
             $this->form['late_multiplier'] = $factor;
-            $this->form['absence_multiplier'] = 1.00;
             $this->form['grace_hours'] = (int) ($this->form['grace_hours'] ?? 0);
         }
     }
@@ -647,7 +660,7 @@ class ExceptionalDaysIndex extends Component
     private function payloadForSave(int $companyId): array
     {
         $apply = (string) ($this->form['apply_on'] ?? 'absence');
-        if (!in_array($apply, ['absence', 'late'], true)) {
+        if (!in_array($apply, ['absence', 'late', 'early_departure'], true)) {
             $apply = 'absence';
         }
 
@@ -664,6 +677,7 @@ class ExceptionalDaysIndex extends Component
 
             'absence_multiplier' => (float) ($this->form['absence_multiplier'] ?? 1.0),
             'late_multiplier' => (float) ($this->form['late_multiplier'] ?? 1.0),
+            'early_departure_multiplier' => (float) ($this->form['early_departure_multiplier'] ?? 1.0),
             'grace_hours' => (int) ($this->form['grace_hours'] ?? 0),
 
             'scope_type' => $this->form['scope_type'] ?? 'all',
@@ -699,6 +713,7 @@ class ExceptionalDaysIndex extends Component
 
             'absence_multiplier' => 1.00,
             'late_multiplier' => 1.00,
+            'early_departure_multiplier' => 1.00,
             'grace_hours' => 0,
 
             'scope_type' => 'all',
@@ -726,7 +741,7 @@ class ExceptionalDaysIndex extends Component
             ->findOrFail($id);
 
         $applyStored = (string) ($row->apply_on ?? 'absence');
-        if (!in_array($applyStored, ['absence', 'late', 'none'], true)) {
+        if (!in_array($applyStored, ['absence', 'late', 'early_departure', 'none'], true)) {
             $applyStored = 'absence';
         }
 
@@ -737,6 +752,11 @@ class ExceptionalDaysIndex extends Component
             $deductionMode = 'without';
         } elseif ($applyStored === 'late' && ((float) $row->late_multiplier) <= 0) {
             $deductionMode = 'without';
+        } elseif (
+            $applyStored === 'early_departure'
+            && ((float) ($row->early_departure_multiplier ?? 1.0)) <= 0
+        ) {
+            $deductionMode = 'without';
         }
 
         $applyForUi = ($applyStored === 'none') ? 'absence' : $applyStored;
@@ -746,6 +766,8 @@ class ExceptionalDaysIndex extends Component
             $percent = (float) $row->absence_multiplier * 100.0;
         if ($applyStored === 'late')
             $percent = (float) $row->late_multiplier * 100.0;
+        if ($applyStored === 'early_departure')
+            $percent = (float) ($row->early_departure_multiplier ?? 1.0) * 100.0;
 
         if ($deductionMode === 'without') {
             $percent = 0.0;
@@ -790,6 +812,7 @@ class ExceptionalDaysIndex extends Component
 
             'absence_multiplier' => (float) $row->absence_multiplier,
             'late_multiplier' => (float) $row->late_multiplier,
+            'early_departure_multiplier' => (float) ($row->early_departure_multiplier ?? 1.0),
             'grace_hours' => (int) $row->grace_hours,
 
             'scope_type' => $scopeType,
@@ -1073,6 +1096,7 @@ class ExceptionalDaysIndex extends Component
 
         $absenceCount = $rows->filter(fn($row) => (string) ($row->apply_on ?? '') === 'absence')->count();
         $lateCount = $rows->filter(fn($row) => (string) ($row->apply_on ?? '') === 'late')->count();
+        $earlyDepartureCount = $rows->filter(fn($row) => (string) ($row->apply_on ?? '') === 'early_departure')->count();
         $withoutDeductionCount = $rows->filter(fn($row) => $this->exceptionalDayPercent($row) <= 0)->count();
 
         $avgDeduction = $rows->count() > 0
@@ -1085,6 +1109,7 @@ class ExceptionalDaysIndex extends Component
             'upcoming' => $upcoming,
             'absence_count' => $absenceCount,
             'late_count' => $lateCount,
+            'early_departure_count' => $earlyDepartureCount,
             'without_deduction_count' => $withoutDeductionCount,
             'avg_deduction' => $avgDeduction,
         ];
@@ -1098,24 +1123,24 @@ class ExceptionalDaysIndex extends Component
 
         $apply = (string) ($row->apply_on ?? 'absence');
 
-        if ($apply === 'absence') {
-            return (float) $row->absence_multiplier * 100.0;
-        }
-
-        if ($apply === 'late') {
-            return (float) $row->late_multiplier * 100.0;
-        }
-
-        return 0.0;
+        return match ($apply) {
+            'absence' => (float) $row->absence_multiplier * 100.0,
+            'late' => (float) $row->late_multiplier * 100.0,
+            'early_departure' => (float) ($row->early_departure_multiplier ?? 1.0) * 100.0,
+            default => 0.0,
+        };
     }
 
     private function applyLabel($row): string
     {
         $apply = (string) ($row->apply_on ?? 'absence');
 
-        return $apply === 'absence'
-            ? tr('Absence')
-            : ($apply === 'late' ? tr('Late') : tr('Without Deduction'));
+        return match ($apply) {
+            'absence' => tr('Absence'),
+            'late' => tr('Late'),
+            'early_departure' => tr('Early Departure'),
+            default => tr('Without Deduction'),
+        };
     }
 
     private function compareRowStatus($from, $to): string
@@ -1188,6 +1213,8 @@ class ExceptionalDaysIndex extends Component
                 $percent = (float) $r->absence_multiplier * 100.0;
             if ($apply === 'late')
                 $percent = (float) $r->late_multiplier * 100.0;
+            if ($apply === 'early_departure')
+                $percent = (float) ($r->early_departure_multiplier ?? 1.0) * 100.0;
 
             return [
                 $r->name,

@@ -18,6 +18,7 @@ class AttendanceExceptionalDay extends Model
         'apply_on',
         'absence_multiplier',
         'late_multiplier',
+        'early_departure_multiplier',
         'grace_hours',
         'scope_type',
         'include',
@@ -39,6 +40,7 @@ class AttendanceExceptionalDay extends Model
         'notified_at' => 'datetime',
         'absence_multiplier' => 'decimal:2',
         'late_multiplier' => 'decimal:2',
+        'early_departure_multiplier' => 'decimal:2',
     ];
 
     public function getTimelineStatusAttribute(): string

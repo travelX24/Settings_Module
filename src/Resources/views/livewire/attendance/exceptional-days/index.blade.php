@@ -143,6 +143,7 @@
                         <option value="all">{{ tr('All Types') }}</option>
                         <option value="absence">{{ tr('Absence') }}</option>
                         <option value="late">{{ tr('Late') }}</option>
+                        <option value="early_departure">{{ tr('Early Departure') }}</option>
                         <option value="without">{{ tr('Without Deduction') }}</option>
                     </x-ui.select>
                 </div>
@@ -485,6 +486,7 @@
                                 <x-ui.select wire:model.live="form.apply_on" :disabled="!$canManageAttendance">
                                     <option value="absence">{{ tr('Absence') }}</option>
                                     <option value="late">{{ tr('Late') }}</option>
+                                    <option value="early_departure">{{ tr('Early Departure') }}</option>
                                 </x-ui.select>
                                 @error('form.apply_on')
                                     <div class="text-xs text-[color:var(--error)] mt-1">{{ \Athka\AuthKit\Support\UiMsg::toText($message) ?? $message }}</div>
