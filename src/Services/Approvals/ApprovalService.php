@@ -271,6 +271,29 @@ class ApprovalService
             }
         }
 
+        if ($operationKey === 'leave_exceptions' && $this->policyFollowsStandard($policy)) {
+            $standardReason = null;
+
+            $hasStandardWorkflow = $this->hasApproversForEmployee(
+                'leaves',
+                $employeeId,
+                $companyId,
+                $standardReason
+            );
+
+            if (!$hasStandardWorkflow) {
+                $hasStandardPolicies = $this->hasActivePolicies('leaves', $companyId);
+
+                $hasFallbackManager = !$hasStandardPolicies
+                    && $this->resolveDirectManagerId($employeeId) > 0;
+
+                if (!$hasFallbackManager) {
+                    $reason = $standardReason ?: 'unresolvable_approver_step';
+                    return false;
+                }
+            }
+        }
+
         return true;
     }
 
@@ -332,7 +355,11 @@ class ApprovalService
             ->orderBy('position')
             ->get() : collect();
 
-        DB::transaction(function () use ($src, $request, $requestId, $companyId, $policy, $steps) {
+        $followStandard = ($src['operation_key'] ?? null) === 'leave_exceptions'
+            && $policy
+            && $this->policyFollowsStandard($policy);
+
+        DB::transaction(function () use ($src, $request, $requestId, $companyId, $policy, $steps, $followStandard) {
             $existing = ApprovalTask::whereIn('approvable_type', $this->equivalentApprovalTypes($src))
                 ->where('approvable_id', $requestId)
                 ->lockForUpdate()
@@ -388,7 +415,127 @@ class ApprovalService
                     ]);
                 }
             }
+
+            if ($followStandard) {
+                $this->appendStandardLeaveApprovalTasks(
+                    $src,
+                    $request,
+                    (int) $requestId,
+                    $companyId,
+                    $steps
+                );
+            }
         });
+    }
+
+    /**
+     * An exceptional-leave policy follows the normal leave workflow when
+     * any of its configured steps has Follow Standard enabled.
+     */
+    protected function policyFollowsStandard(object $policy): bool
+    {
+        if (!Schema::hasTable('approval_policy_steps')
+            || !Schema::hasColumn('approval_policy_steps', 'follow_standard')) {
+            return false;
+        }
+
+        return DB::table('approval_policy_steps')
+            ->where('policy_id', (int) $policy->id)
+            ->where('follow_standard', true)
+            ->exists();
+    }
+
+    /**
+     * Append the effective normal-leave approval sequence after the
+     * exceptional-leave sequence. Positions are offset so the existing
+     * successive-approval engine activates them only after the exception
+     * sequence has fully completed.
+     */
+    protected function appendStandardLeaveApprovalTasks(
+        array $src,
+        object $request,
+        int $requestId,
+        int $companyId,
+        $exceptionSteps
+    ): void {
+        if (($src['operation_key'] ?? null) !== 'leave_exceptions') {
+            return;
+        }
+
+        $employeeId = (int) ($request->{$src['employeeCol']} ?? 0);
+
+        if ($employeeId <= 0) {
+            return;
+        }
+
+        $positionOffset = (int) $exceptionSteps->max('position');
+
+        $standardPolicy = $this->resolvePolicyForEmployee(
+            'leaves',
+            $employeeId,
+            $companyId
+        );
+
+        // Match the normal-leave legacy behavior:
+        // if no normal policy exists at all, use the direct manager.
+        if (!$standardPolicy) {
+            if ($this->hasActivePolicies('leaves', $companyId)) {
+                return;
+            }
+
+            $managerId = $this->resolveDirectManagerId($employeeId);
+
+            if ($managerId > 0) {
+                ApprovalTask::firstOrCreate([
+                    'company_id' => $companyId,
+                    'operation_key' => 'leave_exceptions',
+                    'approvable_type' => $src['type'],
+                    'approvable_id' => $requestId,
+                    'position' => $positionOffset + 1,
+                ], [
+                    'request_employee_id' => $employeeId,
+                    'approver_employee_id' => $managerId,
+                    'status' => 'waiting',
+                ]);
+            }
+
+            return;
+        }
+
+        $standardSteps = DB::table('approval_policy_steps')
+            ->where('policy_id', $standardPolicy->id)
+            ->orderBy('position')
+            ->get();
+
+        foreach ($standardSteps as $step) {
+            $approverId = 0;
+
+            if ($step->approver_type === 'direct_manager') {
+                $approverId = $this->resolveDirectManagerId($employeeId);
+            } elseif ($step->approver_type === 'user') {
+                $approverId = DB::table('users')
+                    ->where('id', $step->approver_id)
+                    ->value('employee_id') ?: 0;
+            } elseif ($step->approver_type === 'employee') {
+                $approverId = (int) $step->approver_id;
+            }
+
+            if ($approverId <= 0) {
+                continue;
+            }
+
+            ApprovalTask::firstOrCreate([
+                'company_id' => $companyId,
+                'operation_key' => 'leave_exceptions',
+                'approvable_type' => $src['type'],
+                'approvable_id' => $requestId,
+                'position' => $positionOffset + (int) $step->position,
+            ], [
+                'request_employee_id' => $employeeId,
+                'approver_employee_id' => $approverId,
+                'status' => 'waiting',
+            ]);
+        }
     }
 
     protected function applySourceConditions($query, array $src): void
@@ -499,6 +646,8 @@ class ApprovalService
 
             $src = $this->getRequestSource($freshTask->approvable_type);
 
+            $this->syncExceptionalLeavePhaseStatus($freshTask, $status);
+
             if ($status === 'rejected') {
                 $this->cancelRemainingTasks($freshTask, 'Rejected by another approver');
                 $this->updateRequestStatus($src, $freshTask->approvable_id, 'rejected');
@@ -510,6 +659,79 @@ class ApprovalService
         });
     }
 
+    /**
+     * Synchronize the exceptional-leave phase status independently from the
+     * overall request status. When Follow Standard is enabled, the exception
+     * phase may be approved while the request itself is still pending.
+     */
+    protected function syncExceptionalLeavePhaseStatus(ApprovalTask $task, string $decision): void
+    {
+        if ($task->approvable_type !== 'leave_exceptions'
+            || !Schema::hasTable('attendance_leave_requests')
+            || !Schema::hasColumn('attendance_leave_requests', 'is_exception')
+            || !Schema::hasColumn('attendance_leave_requests', 'exception_status')) {
+            return;
+        }
+
+        $request = DB::table('attendance_leave_requests')
+            ->where('id', (int) $task->approvable_id)
+            ->first();
+
+        if (!$request
+            || !(bool) ($request->is_exception ?? false)
+            || empty($request->employee_id)) {
+            return;
+        }
+
+        $companyId = (int) (
+            $task->company_id
+            ?: ($request->company_id ?? 0)
+        );
+
+        if ($companyId <= 0) {
+            return;
+        }
+
+        $policy = $this->resolvePolicyForEmployee(
+            'leave_exceptions',
+            (int) $request->employee_id,
+            $companyId
+        );
+
+        if (!$policy) {
+            return;
+        }
+
+        $exceptionLastPosition = (int) DB::table('approval_policy_steps')
+            ->where('policy_id', (int) $policy->id)
+            ->max('position');
+
+        if ($exceptionLastPosition <= 0) {
+            return;
+        }
+
+        $taskPosition = (int) $task->position;
+
+        if ($decision === 'rejected' && $taskPosition <= $exceptionLastPosition) {
+            DB::table('attendance_leave_requests')
+                ->where('id', (int) $task->approvable_id)
+                ->update([
+                    'exception_status' => 'rejected',
+                    'updated_at' => now(),
+                ]);
+
+            return;
+        }
+
+        if ($decision === 'approved' && $taskPosition === $exceptionLastPosition) {
+            DB::table('attendance_leave_requests')
+                ->where('id', (int) $task->approvable_id)
+                ->update([
+                    'exception_status' => 'approved',
+                    'updated_at' => now(),
+                ]);
+        }
+    }
     protected function cancelRemainingTasks(ApprovalTask $task, string $comment)
     {
         ApprovalTask::where('approvable_type', $task->approvable_type)
