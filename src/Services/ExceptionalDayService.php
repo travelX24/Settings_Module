@@ -77,7 +77,7 @@ class ExceptionalDayService
             })
             ->when($deductionType !== 'all', function ($qq) use ($deductionType) {
                 $type = (string) $deductionType;
-                if (in_array($type, ['absence', 'late'], true)) {
+                if (in_array($type, ['absence', 'late', 'early_departure'], true)) {
                     $qq->where('apply_on', $type);
                     return;
                 }
@@ -89,6 +89,10 @@ class ExceptionalDayService
                             })
                             ->orWhere(function ($l) {
                                 $l->where('apply_on', 'late')->where('late_multiplier', '<=', 0);
+                            })
+                            ->orWhere(function ($e) {
+                                $e->where('apply_on', 'early_departure')
+                                    ->where('early_departure_multiplier', '<=', 0);
                             });
                     });
                 }
@@ -99,6 +103,9 @@ class ExceptionalDayService
                         $a->where('apply_on', 'absence')->where('absence_multiplier', '>=', $minFactor);
                     })->orWhere(function ($l) use ($minFactor) {
                         $l->where('apply_on', 'late')->where('late_multiplier', '>=', $minFactor);
+                    })->orWhere(function ($e) use ($minFactor) {
+                        $e->where('apply_on', 'early_departure')
+                            ->where('early_departure_multiplier', '>=', $minFactor);
                     });
                 });
             })
@@ -108,6 +115,9 @@ class ExceptionalDayService
                         $a->where('apply_on', 'absence')->where('absence_multiplier', '<=', $maxFactor);
                     })->orWhere(function ($l) use ($maxFactor) {
                         $l->where('apply_on', 'late')->where('late_multiplier', '<=', $maxFactor);
+                    })->orWhere(function ($e) use ($maxFactor) {
+                        $e->where('apply_on', 'early_departure')
+                            ->where('early_departure_multiplier', '<=', $maxFactor);
                     })->orWhere(function ($n) {
                         $n->where('apply_on', 'none');
                     });
@@ -208,7 +218,7 @@ class ExceptionalDayService
         int $employeeId,
         string $applyOn
     ): ?AttendanceExceptionalDay {
-        if (!in_array($applyOn, ['absence', 'late'], true)) {
+        if (!in_array($applyOn, ['absence', 'late', 'early_departure'], true)) {
             return null;
         }
 
